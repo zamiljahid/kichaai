@@ -2,6 +2,7 @@ import 'dart:async';
 import 'dart:convert';
 import 'package:flutter/material.dart';
 import 'package:geolocator/geolocator.dart';
+import 'package:google_maps_flutter/google_maps_flutter.dart';
 import 'package:image_picker/image_picker.dart';
 import '../models/dispatch_model.dart';
 import '../models/messaging_model.dart';
@@ -613,6 +614,31 @@ class _ActiveJobScreenState extends State<ActiveJobScreen> {
               ),
             ]),
           ],
+          // Customer's pickup point is fixed (unlike the customer's live map of the moving
+          // provider, see job_tracking_screen.dart) — a static marker is enough, no polling.
+          const SizedBox(height: 12),
+          ClipRRect(
+            borderRadius: BorderRadius.circular(12),
+            child: SizedBox(
+              height: 180,
+              child: GoogleMap(
+                initialCameraPosition: CameraPosition(
+                  target: LatLng(_job.pickupLatitude, _job.pickupLongitude),
+                  zoom: 15,
+                ),
+                markers: {
+                  Marker(
+                    markerId: const MarkerId('customer_pickup'),
+                    position: LatLng(_job.pickupLatitude, _job.pickupLongitude),
+                    infoWindow: const InfoWindow(title: 'গ্রাহকের অবস্থান'),
+                  ),
+                },
+                myLocationButtonEnabled: false,
+                zoomControlsEnabled: false,
+                liteModeEnabled: false,
+              ),
+            ),
+          ),
         ],
       ),
     );
