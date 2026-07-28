@@ -6,6 +6,7 @@ import '../core/network/api_client.dart';
 import '../screens/active_job_screen.dart';
 import '../screens/job_tracking_screen.dart';
 import '../screens/notifications_screen.dart';
+import '../screens/provider_dashboard_screen.dart';
 import 'dispatch_service.dart';
 import 'notification_service.dart';
 
@@ -113,8 +114,20 @@ class PushService {
     if (route == 'provider') {
       try {
         final job = await DispatchService.instance.getJob(jobId);
-        await navigator.push(
-            MaterialPageRoute(builder: (_) => ActiveJobScreen(job: job)));
+        // ActiveJobScreen is the post-accept tracking view (map/OTP/confirm) —
+        // it has no accept/reject action of its own. A "new job nearby" push
+        // fires while the job is still searching/assigned (this provider
+        // hasn't responded yet), so landing there directly showed a dead-end
+        // read-only screen with no way to accept. Route those to the
+        // dashboard instead, whose existing poll loop picks up the pending
+        // assignment and shows the real accept/reject dialog.
+        if (job.status == 'searching' || job.status == 'assigned') {
+          await navigator.push(MaterialPageRoute(
+              builder: (_) => const ProviderDashboardScreen()));
+        } else {
+          await navigator.push(
+              MaterialPageRoute(builder: (_) => ActiveJobScreen(job: job)));
+        }
       } catch (_) {
         // Job gone/unreachable — stay put.
       }
