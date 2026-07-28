@@ -154,7 +154,9 @@ class _ActiveJobScreenState extends State<ActiveJobScreen> {
         _syncLocationTracking();
       }
     } catch (e) {
-      _showError('OTP যাচাই ব্যর্থ হয়েছে');
+      // Show the real backend reason (e.g. "already started", wrong job status) instead of a
+      // generic OTP message — a masked reason here is exactly what hid the identity-check bug.
+      _showError(e.toString());
     } finally {
       if (mounted) setState(() => _isLoading = false);
     }
@@ -175,7 +177,7 @@ class _ActiveJobScreenState extends State<ActiveJobScreen> {
         _syncLocationTracking();
       }
     } catch (e) {
-      _showError('OTP যাচাই ব্যর্থ হয়েছে');
+      _showError(e.toString());
     } finally {
       if (mounted) setState(() => _isLoading = false);
     }
