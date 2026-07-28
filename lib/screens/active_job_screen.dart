@@ -581,7 +581,9 @@ class _ActiveJobScreenState extends State<ActiveJobScreen> {
           ] else if (_job.serviceKind != 'lawyer') ...[
             const SizedBox(height: 8),
             Text(
-              'গ্রাহক নিশ্চিত না করা পর্যন্ত নম্বর দেখা যাবে না — ততক্ষণ চ্যাটে কথা বলুন',
+              (_job.startConfirmed || _job.providerConfirmed)
+                  ? 'গ্রাহক কোনো ফোন নম্বর দেননি — চ্যাটে যোগাযোগ করুন'
+                  : 'গ্রাহক নিশ্চিত না করা পর্যন্ত নম্বর দেখা যাবে না — ততক্ষণ চ্যাটে কথা বলুন',
               style: TextStyle(color: AppColors.textMuted, fontSize: 12, height: 1.4),
             ),
           ],
