@@ -141,9 +141,9 @@ class _ActiveJobScreenState extends State<ActiveJobScreen> {
   Future<void> _requestAndConfirmStart() async {
     setState(() => _isLoading = true);
     try {
-      await DispatchService.instance.requestStart(_job.id);
+      final devOtp = await DispatchService.instance.requestStart(_job.id);
       setState(() => _isLoading = false);
-      final otp = await _showOtpDialog('কাজ শুরুর OTP');
+      final otp = await _showOtpDialog('কাজ শুরুর OTP', devOtp: devOtp);
       if (otp == null || otp.isEmpty) return;
       setState(() => _isLoading = true);
       await DispatchService.instance.confirmStart(_job.id, otp);
@@ -162,9 +162,9 @@ class _ActiveJobScreenState extends State<ActiveJobScreen> {
   Future<void> _requestAndConfirmCompletion() async {
     setState(() => _isLoading = true);
     try {
-      await DispatchService.instance.requestCompletion(_job.id);
+      final devOtp = await DispatchService.instance.requestCompletion(_job.id);
       setState(() => _isLoading = false);
-      final otp = await _showOtpDialog('কাজ সম্পন্নের OTP');
+      final otp = await _showOtpDialog('কাজ সম্পন্নের OTP', devOtp: devOtp);
       if (otp == null || otp.isEmpty) return;
       setState(() => _isLoading = true);
       await DispatchService.instance.confirmCompletion(_job.id, otp);
@@ -253,33 +253,43 @@ class _ActiveJobScreenState extends State<ActiveJobScreen> {
     }
   }
 
-  Future<String?> _showOtpDialog(String title) async {
-    _otpController.clear();
+  Future<String?> _showOtpDialog(String title, {String? devOtp}) async {
+    _otpController.text = devOtp ?? '';
     return showDialog<String>(
       context: context,
       builder: (ctx) => AlertDialog(
         backgroundColor: AppColors.bgMid,
         shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)),
         title: Text(title, style: const TextStyle(color: AppColors.textPrimary, fontSize: 16, fontWeight: FontWeight.w700)),
-        content: TextField(
-          controller: _otpController,
-          keyboardType: TextInputType.number,
-          maxLength: 6,
-          style: const TextStyle(color: AppColors.textPrimary, fontSize: 20, letterSpacing: 4),
-          textAlign: TextAlign.center,
-          decoration: InputDecoration(
-            hintText: '••••••',
-            hintStyle: TextStyle(color: AppColors.textMuted),
-            counterText: '',
-            border: OutlineInputBorder(
-              borderRadius: BorderRadius.circular(10),
-              borderSide: BorderSide(color: AppColors.glassBorder),
+        content: Column(
+          mainAxisSize: MainAxisSize.min,
+          children: [
+            if (devOtp != null) ...[
+              Text('টেস্ট মোড — OTP নিজে থেকেই ভরা হয়েছে: $devOtp',
+                  style: const TextStyle(color: AppColors.textMuted, fontSize: 12)),
+              const SizedBox(height: 10),
+            ],
+            TextField(
+              controller: _otpController,
+              keyboardType: TextInputType.number,
+              maxLength: 6,
+              style: const TextStyle(color: AppColors.textPrimary, fontSize: 20, letterSpacing: 4),
+              textAlign: TextAlign.center,
+              decoration: InputDecoration(
+                hintText: '••••••',
+                hintStyle: TextStyle(color: AppColors.textMuted),
+                counterText: '',
+                border: OutlineInputBorder(
+                  borderRadius: BorderRadius.circular(10),
+                  borderSide: BorderSide(color: AppColors.glassBorder),
+                ),
+                focusedBorder: OutlineInputBorder(
+                  borderRadius: BorderRadius.circular(10),
+                  borderSide: const BorderSide(color: AppColors.deepBlue),
+                ),
+              ),
             ),
-            focusedBorder: OutlineInputBorder(
-              borderRadius: BorderRadius.circular(10),
-              borderSide: const BorderSide(color: AppColors.deepBlue),
-            ),
-          ),
+          ],
         ),
         actions: [
           TextButton(

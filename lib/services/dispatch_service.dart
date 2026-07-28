@@ -365,9 +365,14 @@ class DispatchService {
 
   // ── Job Lifecycle (OTP + Photos) ──────────────────────────────────
 
-  Future<void> requestStart(String jobId) async {
+  /// Returns the dev-only OTP echo (only present when the backend has
+  /// ALLOW_ACTOR_OVERRIDE=true — there's no real SMS provider in test envs,
+  /// so this is how a tester sees the code without a second phone).
+  Future<String?> requestStart(String jobId) async {
     try {
-      await _client.post('/dispatch/jobs/$jobId/request-start');
+      final res = await _client.post('/dispatch/jobs/$jobId/request-start');
+      final data = res.data;
+      return data is Map ? data['devOtp'] as String? : null;
     } catch (e) {
       throw ApiClient.mapError(e);
     }
@@ -395,9 +400,12 @@ class DispatchService {
     }
   }
 
-  Future<void> requestCompletion(String jobId) async {
+  /// Same dev-only OTP echo as requestStart — see its doc comment.
+  Future<String?> requestCompletion(String jobId) async {
     try {
-      await _client.post('/dispatch/jobs/$jobId/request-completion');
+      final res = await _client.post('/dispatch/jobs/$jobId/request-completion');
+      final data = res.data;
+      return data is Map ? data['devOtp'] as String? : null;
     } catch (e) {
       throw ApiClient.mapError(e);
     }
