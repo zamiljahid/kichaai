@@ -1,0 +1,657 @@
+import 'package:flutter/material.dart';
+import 'package:flutter_animate/flutter_animate.dart';
+import 'package:geolocator/geolocator.dart';
+import 'package:google_maps_flutter/google_maps_flutter.dart';
+import '../core/network/api_client.dart';
+import '../services/dispatch_service.dart';
+import '../services/scrap_service.dart';
+import '../theme/app_theme.dart';
+import '../widgets/glass_button.dart';
+
+// ---------------------------------------------------------------------------
+// Screen
+// ---------------------------------------------------------------------------
+
+class ScrapScreen extends StatefulWidget {
+  const ScrapScreen({super.key});
+
+  @override
+  State<ScrapScreen> createState() => _ScrapScreenState();
+}
+
+const _kMinWeightKg = 10.0; // server-enforced minimum — matches the backend's 500 rejection
+
+class _ScrapScreenState extends State<ScrapScreen>
+    with SingleTickerProviderStateMixin {
+  late final TabController _tabController;
+
+  // Form state
+  final _formKey = GlobalKey<FormState>();
+  final _weightCtrl = TextEditingController();
+  final _addressCtrl = TextEditingController();
+
+  List<ScrapRateModel> _rates = [];
+  ScrapRateModel? _selectedType;
+  DateTime? _preferredDate;
+  bool _ratesLoading = true;
+
+  // My requests state
+  List<ScrapRequestModel> _myRequests = [];
+  bool _requestsLoading = true;
+
+  bool _isSubmitting = false;
+  bool _isLocating = false;
+  String? _userId;
+
+  double get _estimatedPrice {
+    final weight = double.tryParse(_weightCtrl.text.trim()) ?? 0.0;
+    final rate = _selectedType?.ratePerKg ?? 0.0;
+    return weight * rate;
+  }
+
+  @override
+  void initState() {
+    super.initState();
+    _tabController = TabController(length: 2, vsync: this);
+    _weightCtrl.addListener(() => setState(() {}));
+    _init();
+  }
+
+  @override
+  void dispose() {
+    _tabController.dispose();
+    _weightCtrl.dispose();
+    _addressCtrl.dispose();
+    super.dispose();
+  }
+
+  Future<void> _init() async {
+    _userId = await ApiClient.getUserId();
+    await Future.wait([_loadRates(), _loadMyRequests()]);
+  }
+
+  Future<void> _loadRates() async {
+    setState(() => _ratesLoading = true);
+    try {
+      final rates = await ScrapService.instance.getRatesToday();
+      if (mounted) setState(() { _rates = rates; _ratesLoading = false; });
+    } catch (_) {
+      if (mounted) setState(() => _ratesLoading = false);
+    }
+  }
+
+  Future<void> _loadMyRequests() async {
+    if (_userId == null) {
+      if (mounted) setState(() => _requestsLoading = false);
+      return;
+    }
+    setState(() => _requestsLoading = true);
+    try {
+      final requests = await ScrapService.instance.getMyRequests();
+      if (mounted) setState(() { _myRequests = requests; _requestsLoading = false; });
+    } catch (_) {
+      if (mounted) setState(() => _requestsLoading = false);
+    }
+  }
+
+  Future<void> _pickPreferredDate() async {
+    final now = DateTime.now();
+    final picked = await showDatePicker(
+      context: context,
+      initialDate: _preferredDate ?? now.add(const Duration(days: 1)),
+      firstDate: now,
+      lastDate: now.add(const Duration(days: 60)),
+    );
+    if (picked != null) setState(() => _preferredDate = picked);
+  }
+
+  Future<void> _detectLocation() async {
+    setState(() => _isLocating = true);
+    try {
+      bool serviceEnabled = await Geolocator.isLocationServiceEnabled();
+      if (!serviceEnabled) {
+        _showError('লোকেশন সার্ভিস চালু নেই — সেটিংস থেকে চালু করুন।');
+        setState(() => _isLocating = false);
+        return;
+      }
+      LocationPermission permission = await Geolocator.checkPermission();
+      if (permission == LocationPermission.denied) {
+        permission = await Geolocator.requestPermission();
+        if (permission == LocationPermission.denied) { setState(() => _isLocating = false); return; }
+      }
+      if (permission == LocationPermission.deniedForever) {
+        _showError('লোকেশন অনুমতি বন্ধ আছে — অ্যাপ সেটিংস থেকে চালু করুন।');
+        setState(() => _isLocating = false);
+        return;
+      }
+      final position = await Geolocator.getCurrentPosition(
+        locationSettings: const LocationSettings(accuracy: LocationAccuracy.high),
+      );
+      final addr = await DispatchService.instance.reverseGeocode(position.latitude, position.longitude);
+      if (!mounted) return;
+      if (addr != null) {
+        _addressCtrl.text = addr;
+      } else {
+        _showError('ঠিকানা খুঁজে পাওয়া যায়নি — ম্যাপে সরাসরি দেখিয়ে দিন।');
+      }
+      setState(() => _isLocating = false);
+    } catch (_) {
+      if (mounted) {
+        _showError('বর্তমান অবস্থান পাওয়া যায়নি।');
+        setState(() => _isLocating = false);
+      }
+    }
+  }
+
+  Future<void> _pickOnMap() async {
+    final pin = await Navigator.push<LatLng>(
+      context,
+      MaterialPageRoute(builder: (_) => const _ScrapPinPickerScreen()),
+    );
+    if (pin == null || !mounted) return;
+    setState(() => _isLocating = true);
+    final addr = await DispatchService.instance.reverseGeocode(pin.latitude, pin.longitude);
+    if (!mounted) return;
+    if (addr != null) {
+      _addressCtrl.text = addr;
+    } else {
+      // Reverse-geocode failed but the user DID pick a precise point — fall back to
+      // raw coordinates rather than silently discarding their choice.
+      _addressCtrl.text = '${pin.latitude.toStringAsFixed(6)}, ${pin.longitude.toStringAsFixed(6)}';
+    }
+    setState(() => _isLocating = false);
+  }
+
+  Future<void> _submitRequest() async {
+    if (!(_formKey.currentState?.validate() ?? false)) return;
+    if (_selectedType == null) {
+      _showError('অনুগ্রহ করে একটি ক্যাটাগরি বেছে নিন।');
+      return;
+    }
+    if (_preferredDate == null) {
+      _showError('পছন্দের তারিখ বেছে নিন।');
+      return;
+    }
+    if (_userId == null) {
+      _showError('লগইন তথ্য পাওয়া যায়নি।');
+      return;
+    }
+
+    setState(() => _isSubmitting = true);
+    try {
+      await ScrapService.instance.createRequest(
+        userId: _userId!,
+        scrapTypes: [_selectedType!.scrapType],
+        estimatedWeightKg: double.parse(_weightCtrl.text.trim()),
+        pickupAddress: _addressCtrl.text.trim(),
+        preferredDate: _preferredDate!,
+      );
+
+      if (!mounted) return;
+
+      _formKey.currentState?.reset();
+      _weightCtrl.clear();
+      _addressCtrl.clear();
+      setState(() {
+        _selectedType = null;
+        _preferredDate = null;
+        _isSubmitting = false;
+      });
+
+      ScaffoldMessenger.of(context).showSnackBar(
+        const SnackBar(
+          content: Text('আপনার অনুরোধ সফলভাবে পাঠানো হয়েছে।', style: TextStyle(color: Colors.white)),
+          backgroundColor: Color(0xFF10B981),
+          behavior: SnackBarBehavior.floating,
+          shape: RoundedRectangleBorder(borderRadius: BorderRadius.all(Radius.circular(12))),
+          margin: EdgeInsets.all(16),
+        ),
+      );
+
+      _tabController.animateTo(1);
+      await _loadMyRequests();
+    } catch (e) {
+      if (!mounted) return;
+      setState(() => _isSubmitting = false);
+      final ex = ApiClient.mapError(e);
+      _showError(ex.messageBn);
+    }
+  }
+
+  void _showError(String message) {
+    if (!mounted) return;
+    ScaffoldMessenger.of(context).showSnackBar(
+      SnackBar(
+        content: Text(message, style: const TextStyle(color: Colors.white)),
+        backgroundColor: const Color(0xFFEF4444),
+        behavior: SnackBarBehavior.floating,
+        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
+        margin: const EdgeInsets.all(16),
+      ),
+    );
+  }
+
+  String _formatDate(DateTime dt) =>
+      '${dt.day.toString().padLeft(2, '0')}/${dt.month.toString().padLeft(2, '0')}/${dt.year}';
+
+  @override
+  Widget build(BuildContext context) {
+    return Scaffold(
+      backgroundColor: AppColors.bgDark,
+      appBar: AppBar(
+        backgroundColor: AppColors.bgMid,
+        elevation: 0,
+        leading: IconButton(
+          icon: const Icon(Icons.arrow_back_ios_new_rounded, color: AppColors.textPrimary, size: 18),
+          onPressed: () => Navigator.of(context).pop(),
+        ),
+        title: const Text('স্ক্র্যাপ সংগ্রহ', style: TextStyle(color: AppColors.textPrimary, fontSize: 18, fontWeight: FontWeight.w700)),
+        bottom: TabBar(
+          controller: _tabController,
+          labelColor: AppColors.deepBlue,
+          unselectedLabelColor: AppColors.textMuted,
+          indicatorColor: AppColors.deepBlue,
+          indicatorWeight: 2.5,
+          labelStyle: const TextStyle(fontSize: 14, fontWeight: FontWeight.w600),
+          unselectedLabelStyle: const TextStyle(fontSize: 14, fontWeight: FontWeight.w400),
+          tabs: const [Tab(text: 'নতুন অনুরোধ'), Tab(text: 'আমার অনুরোধ')],
+        ),
+      ),
+      body: TabBarView(
+        controller: _tabController,
+        children: [_buildNewRequestTab(), _buildMyRequestsTab()],
+      ),
+    );
+  }
+
+  // ---------------------------------------------------------------------------
+  // Tab 0 — New Request
+  // ---------------------------------------------------------------------------
+
+  Widget _buildNewRequestTab() {
+    return SingleChildScrollView(
+      padding: const EdgeInsets.fromLTRB(20, 24, 20, 40),
+      child: Form(
+        key: _formKey,
+        child: Column(
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: [
+            _buildSectionLabel('ক্যাটাগরি', Icons.category_outlined),
+            const SizedBox(height: 8),
+            _buildCategoryDropdown(),
+            if (_selectedType != null) ...[
+              const SizedBox(height: 8),
+              _buildPriceHint(),
+            ],
+            const SizedBox(height: 20),
+            _buildSectionLabel('আনুমানিক ওজন (কেজি, ন্যূনতম ১০)', Icons.scale_outlined),
+            const SizedBox(height: 8),
+            _buildWeightField(),
+            const SizedBox(height: 20),
+            _buildSectionLabel('ঠিকানা', Icons.location_on_outlined),
+            const SizedBox(height: 8),
+            _buildAddressField(),
+            const SizedBox(height: 20),
+            _buildSectionLabel('পছন্দের তারিখ', Icons.calendar_today_outlined),
+            const SizedBox(height: 8),
+            _buildDatePicker(),
+            const SizedBox(height: 32),
+            GlassButton(
+              label: _isSubmitting ? 'পাঠানো হচ্ছে...' : 'অনুরোধ পাঠান',
+              onPressed: _isSubmitting ? null : _submitRequest,
+            ).animate().fadeIn(duration: 400.ms).slideY(begin: 0.1),
+          ],
+        ),
+      ),
+    ).animate().fadeIn(duration: 350.ms);
+  }
+
+  Widget _buildSectionLabel(String label, IconData icon) {
+    return Row(
+      children: [
+        Icon(icon, color: AppColors.deepBlue, size: 16),
+        const SizedBox(width: 6),
+        Text(label, style: const TextStyle(color: AppColors.textPrimary, fontSize: 13, fontWeight: FontWeight.w600)),
+      ],
+    );
+  }
+
+  InputDecoration _fieldDeco({String? hint, String? suffixText}) => InputDecoration(
+        hintText: hint,
+        hintStyle: const TextStyle(color: AppColors.textMuted, fontSize: 14),
+        suffixText: suffixText,
+        suffixStyle: const TextStyle(color: AppColors.textMuted, fontSize: 13, fontWeight: FontWeight.w500),
+        filled: true,
+        fillColor: AppColors.glassWhite,
+        contentPadding: const EdgeInsets.symmetric(horizontal: 20, vertical: 16),
+        border: OutlineInputBorder(borderRadius: BorderRadius.circular(16), borderSide: const BorderSide(color: AppColors.glassBorder, width: 1)),
+        enabledBorder: OutlineInputBorder(borderRadius: BorderRadius.circular(16), borderSide: const BorderSide(color: AppColors.glassBorder, width: 1)),
+        focusedBorder: OutlineInputBorder(borderRadius: BorderRadius.circular(16), borderSide: const BorderSide(color: AppColors.deepBlue, width: 1.5)),
+        errorBorder: OutlineInputBorder(borderRadius: BorderRadius.circular(16), borderSide: const BorderSide(color: Color(0xFFEF4444), width: 1)),
+        focusedErrorBorder: OutlineInputBorder(borderRadius: BorderRadius.circular(16), borderSide: const BorderSide(color: Color(0xFFEF4444), width: 1.5)),
+        errorStyle: const TextStyle(color: Color(0xFFEF4444), fontSize: 11),
+      );
+
+  Widget _buildCategoryDropdown() {
+    if (_ratesLoading) {
+      return Container(
+        height: 56,
+        decoration: BoxDecoration(color: AppColors.glassWhite, borderRadius: BorderRadius.circular(16), border: Border.all(color: AppColors.glassBorder)),
+        child: const Center(child: SizedBox(width: 20, height: 20, child: CircularProgressIndicator(strokeWidth: 2, color: AppColors.deepBlue))),
+      );
+    }
+
+    if (_rates.isEmpty) {
+      return Container(
+        padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 16),
+        decoration: BoxDecoration(color: AppColors.glassWhite, borderRadius: BorderRadius.circular(16), border: Border.all(color: AppColors.glassBorder)),
+        child: const Text('কোনো ক্যাটাগরি পাওয়া যায়নি', style: TextStyle(color: AppColors.textMuted, fontSize: 14)),
+      );
+    }
+
+    return DropdownButtonFormField<ScrapRateModel>(
+      value: _selectedType,
+      decoration: _fieldDeco(hint: 'একটি ক্যাটাগরি বেছে নিন'),
+      dropdownColor: AppColors.bgMid,
+      iconEnabledColor: AppColors.textMuted,
+      style: const TextStyle(color: AppColors.textPrimary, fontSize: 14, fontWeight: FontWeight.w500),
+      items: _rates.map((r) => DropdownMenuItem(value: r, child: Text(r.labelBn, style: const TextStyle(color: AppColors.textPrimary, fontSize: 14)))).toList(),
+      onChanged: (val) => setState(() => _selectedType = val),
+      validator: (val) => val == null ? 'একটি ক্যাটাগরি বেছে নিন' : null,
+    );
+  }
+
+  Widget _buildPriceHint() {
+    final price = _estimatedPrice;
+    return Container(
+      padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 10),
+      decoration: BoxDecoration(
+        color: AppColors.deepBlue.withOpacity(0.12),
+        borderRadius: BorderRadius.circular(12),
+        border: Border.all(color: AppColors.deepBlue.withOpacity(0.3)),
+      ),
+      child: Row(
+        children: [
+          const Icon(Icons.info_outline_rounded, color: AppColors.deepBlue, size: 16),
+          const SizedBox(width: 8),
+          Text('আনুমানিক মূল্য: ৳${price.toStringAsFixed(0)}', style: const TextStyle(color: AppColors.deepBlue, fontSize: 13, fontWeight: FontWeight.w600)),
+          const SizedBox(width: 4),
+          Text('(৳${_selectedType!.ratePerKg.toStringAsFixed(0)}/কেজি)', style: const TextStyle(color: AppColors.textMuted, fontSize: 11)),
+        ],
+      ),
+    ).animate().fadeIn(duration: 250.ms).scale(begin: const Offset(0.97, 0.97));
+  }
+
+  Widget _buildWeightField() {
+    return TextFormField(
+      controller: _weightCtrl,
+      keyboardType: const TextInputType.numberWithOptions(decimal: true),
+      style: const TextStyle(color: AppColors.textPrimary, fontSize: 14),
+      decoration: _fieldDeco(hint: 'যেমন: ১৫', suffixText: 'কেজি'),
+      validator: (val) {
+        if (val == null || val.trim().isEmpty) return 'ওজন লিখুন';
+        final parsed = double.tryParse(val.trim());
+        if (parsed == null || parsed <= 0) return 'সঠিক ওজন লিখুন';
+        if (parsed < _kMinWeightKg) return 'ন্যূনতম $_kMinWeightKg কেজি লাগবে';
+        return null;
+      },
+    );
+  }
+
+  Widget _buildAddressField() {
+    return Column(
+      crossAxisAlignment: CrossAxisAlignment.start,
+      children: [
+        TextFormField(
+          controller: _addressCtrl,
+          style: const TextStyle(color: AppColors.textPrimary, fontSize: 14),
+          decoration: _fieldDeco(hint: 'সম্পূর্ণ ঠিকানা লিখুন'),
+          validator: (val) => (val == null || val.trim().isEmpty) ? 'ঠিকানা লিখুন' : null,
+        ),
+        const SizedBox(height: 8),
+        Row(children: [
+          Expanded(
+            child: OutlinedButton.icon(
+              onPressed: _isLocating ? null : _detectLocation,
+              icon: _isLocating
+                  ? const SizedBox(width: 14, height: 14, child: CircularProgressIndicator(strokeWidth: 2, color: AppColors.deepBlue))
+                  : const Icon(Icons.my_location_rounded, size: 16, color: AppColors.deepBlue),
+              label: const Text('বর্তমান অবস্থান', style: TextStyle(color: AppColors.deepBlue, fontSize: 12, fontWeight: FontWeight.w600)),
+              style: OutlinedButton.styleFrom(
+                side: const BorderSide(color: AppColors.glassBorder),
+                padding: const EdgeInsets.symmetric(vertical: 10),
+                shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
+              ),
+            ),
+          ),
+          const SizedBox(width: 10),
+          Expanded(
+            child: OutlinedButton.icon(
+              onPressed: _isLocating ? null : _pickOnMap,
+              icon: const Icon(Icons.map_outlined, size: 16, color: AppColors.deepBlue),
+              label: const Text('ম্যাপে দেখান', style: TextStyle(color: AppColors.deepBlue, fontSize: 12, fontWeight: FontWeight.w600)),
+              style: OutlinedButton.styleFrom(
+                side: const BorderSide(color: AppColors.glassBorder),
+                padding: const EdgeInsets.symmetric(vertical: 10),
+                shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
+              ),
+            ),
+          ),
+        ]),
+      ],
+    );
+  }
+
+  Widget _buildDatePicker() {
+    return GestureDetector(
+      onTap: _pickPreferredDate,
+      child: Container(
+        padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 16),
+        decoration: BoxDecoration(
+          color: AppColors.glassWhite,
+          borderRadius: BorderRadius.circular(16),
+          border: Border.all(color: AppColors.glassBorder),
+        ),
+        child: Row(
+          children: [
+            const Icon(Icons.calendar_today_outlined, color: AppColors.textMuted, size: 16),
+            const SizedBox(width: 10),
+            Text(
+              _preferredDate == null ? 'তারিখ বেছে নিন' : _formatDate(_preferredDate!),
+              style: TextStyle(
+                color: _preferredDate == null ? AppColors.textMuted : AppColors.textPrimary,
+                fontSize: 14,
+                fontWeight: _preferredDate == null ? FontWeight.w400 : FontWeight.w600,
+              ),
+            ),
+          ],
+        ),
+      ),
+    );
+  }
+
+  // ---------------------------------------------------------------------------
+  // Tab 1 — My Requests
+  // ---------------------------------------------------------------------------
+
+  Widget _buildMyRequestsTab() {
+    if (_requestsLoading) {
+      return const Center(child: CircularProgressIndicator(color: AppColors.deepBlue));
+    }
+    if (_myRequests.isEmpty) {
+      return _buildEmptyState();
+    }
+    return RefreshIndicator(
+      onRefresh: _loadMyRequests,
+      color: AppColors.deepBlue,
+      backgroundColor: AppColors.bgMid,
+      child: ListView.builder(
+        padding: const EdgeInsets.fromLTRB(16, 16, 16, 40),
+        itemCount: _myRequests.length,
+        itemBuilder: (ctx, i) => _buildRequestCard(_myRequests[i], i),
+      ),
+    ).animate().fadeIn(duration: 350.ms);
+  }
+
+  Widget _buildEmptyState() {
+    return Center(
+      child: Column(
+        mainAxisSize: MainAxisSize.min,
+        children: [
+          Container(
+            width: 80, height: 80,
+            decoration: BoxDecoration(color: AppColors.glassWhite, shape: BoxShape.circle, border: Border.all(color: AppColors.glassBorder)),
+            child: const Icon(Icons.recycling_rounded, color: AppColors.textMuted, size: 36),
+          ),
+          const SizedBox(height: 16),
+          const Text('কোনো অনুরোধ নেই', style: TextStyle(color: AppColors.textMuted, fontSize: 15, fontWeight: FontWeight.w500)),
+          const SizedBox(height: 6),
+          const Text('নতুন অনুরোধ ট্যাবে যান এবং স্ক্র্যাপ সংগ্রহের জন্য অনুরোধ করুন।', textAlign: TextAlign.center, style: TextStyle(color: AppColors.textMuted, fontSize: 12)),
+        ],
+      ),
+    ).animate().fadeIn(duration: 400.ms).scale(begin: const Offset(0.95, 0.95));
+  }
+
+  Widget _buildRequestCard(ScrapRequestModel req, int index) {
+    final statusConfig = _statusConfig(req.status);
+
+    return Container(
+      margin: const EdgeInsets.only(bottom: 12),
+      padding: const EdgeInsets.all(16),
+      decoration: BoxDecoration(color: AppColors.bgMid, borderRadius: BorderRadius.circular(16), border: Border.all(color: AppColors.glassBorder)),
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          Row(
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: [
+              Container(
+                width: 40, height: 40,
+                decoration: BoxDecoration(color: AppColors.deepBlue.withOpacity(0.12), borderRadius: BorderRadius.circular(12)),
+                child: const Icon(Icons.recycling_rounded, color: AppColors.deepBlue, size: 20),
+              ),
+              const SizedBox(width: 12),
+              Expanded(
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    Text(req.scrapTypesLabelBn, style: const TextStyle(color: AppColors.textPrimary, fontSize: 14, fontWeight: FontWeight.w700)),
+                    const SizedBox(height: 2),
+                    Text('${req.estimatedWeightKg.toStringAsFixed(1)} কেজি', style: const TextStyle(color: AppColors.textMuted, fontSize: 12)),
+                  ],
+                ),
+              ),
+              _buildStatusBadge(statusConfig),
+            ],
+          ),
+          const SizedBox(height: 12),
+          _buildInfoRow(Icons.location_on_outlined, req.pickupAddress),
+          const SizedBox(height: 6),
+          _buildInfoRow(Icons.event_outlined, 'পছন্দের তারিখ: ${_formatDate(req.preferredDate)}'),
+          if (req.adminNote != null && req.adminNote!.isNotEmpty) ...[
+            const SizedBox(height: 6),
+            _buildInfoRow(Icons.notes_outlined, req.adminNote!),
+          ],
+          if (req.status == 'COLLECTED' && req.amountPaidToUser != null) ...[
+            const SizedBox(height: 6),
+            _buildInfoRow(Icons.payments_outlined, 'প্রদান করা হয়েছে: ৳${req.amountPaidToUser!.toStringAsFixed(0)}'),
+          ],
+        ],
+      ),
+    ).animate(delay: Duration(milliseconds: 50 * index)).fadeIn(duration: 300.ms).slideY(begin: 0.05, end: 0);
+  }
+
+  Widget _buildStatusBadge(({String label, Color color}) config) {
+    return Container(
+      padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 4),
+      decoration: BoxDecoration(color: config.color.withOpacity(0.12), borderRadius: BorderRadius.circular(8), border: Border.all(color: config.color.withOpacity(0.4))),
+      child: Text(config.label, style: TextStyle(color: config.color, fontSize: 11, fontWeight: FontWeight.w700)),
+    );
+  }
+
+  Widget _buildInfoRow(IconData icon, String text) {
+    return Row(
+      crossAxisAlignment: CrossAxisAlignment.start,
+      children: [
+        Icon(icon, color: AppColors.textMuted, size: 13),
+        const SizedBox(width: 6),
+        Expanded(child: Text(text, style: const TextStyle(color: AppColors.textMuted, fontSize: 12), maxLines: 2, overflow: TextOverflow.ellipsis)),
+      ],
+    );
+  }
+
+  ({String label, Color color}) _statusConfig(String status) {
+    switch (status) {
+      case 'COLLECTED':
+        return (label: 'সংগৃহীত', color: const Color(0xFF10B981));
+      case 'CANCELLED':
+        return (label: 'বাতিল', color: const Color(0xFFEF4444));
+      case 'SCHEDULED':
+        return (label: 'সময়সূচি নির্ধারিত', color: AppColors.deepBlue);
+      default:
+        return (label: 'অপেক্ষমাণ', color: const Color(0xFFF59E0B));
+    }
+  }
+}
+
+// ── Manual pin picker — tap the map to mark exactly where to collect from,
+// then reverse-geocoded back into the address field (mirrors post_mess_screen's
+// picker, kept local here since the two forms have unrelated submit flows).
+class _ScrapPinPickerScreen extends StatefulWidget {
+  const _ScrapPinPickerScreen();
+
+  @override
+  State<_ScrapPinPickerScreen> createState() => _ScrapPinPickerScreenState();
+}
+
+class _ScrapPinPickerScreenState extends State<_ScrapPinPickerScreen> {
+  static const _dhaka = LatLng(23.8103, 90.4125);
+  LatLng? _pin;
+
+  @override
+  Widget build(BuildContext context) {
+    return Scaffold(
+      backgroundColor: AppColors.bgDark,
+      appBar: AppBar(
+        backgroundColor: AppColors.bgMid,
+        elevation: 0,
+        title: const Text('ম্যাপে দেখান', style: TextStyle(color: AppColors.textPrimary, fontSize: 17, fontWeight: FontWeight.w700)),
+        leading: IconButton(
+          icon: const Icon(Icons.arrow_back_ios_new_rounded, color: AppColors.textPrimary, size: 18),
+          onPressed: () => Navigator.pop(context),
+        ),
+      ),
+      body: Stack(children: [
+        GoogleMap(
+          initialCameraPosition: const CameraPosition(target: _dhaka, zoom: 12),
+          onTap: (p) => setState(() => _pin = p),
+          markers: {
+            if (_pin != null) Marker(markerId: const MarkerId('pin'), position: _pin!),
+          },
+          myLocationButtonEnabled: false,
+          zoomControlsEnabled: false,
+          mapToolbarEnabled: false,
+        ),
+        Positioned(
+          left: 16, right: 16, bottom: 24,
+          child: GestureDetector(
+            onTap: _pin == null ? null : () => Navigator.pop(context, _pin),
+            child: Container(
+              padding: const EdgeInsets.symmetric(vertical: 15),
+              decoration: BoxDecoration(
+                color: _pin == null ? AppColors.textMuted : AppColors.deepBlue,
+                borderRadius: BorderRadius.circular(14),
+              ),
+              child: Center(
+                child: Text(
+                  _pin == null ? 'ম্যাপে ট্যাপ করে জায়গাটি দেখান' : 'এই জায়গাটিই ঠিক আছে',
+                  style: const TextStyle(color: Colors.white, fontSize: 15, fontWeight: FontWeight.w700),
+                ),
+              ),
+            ),
+          ),
+        ),
+      ]),
+    );
+  }
+}

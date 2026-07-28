@@ -1,0 +1,48 @@
+{
+  "project_info": {
+    "project_number": "635941830068",
+    "project_id": "ki-chaai",
+    "storage_bucket": "ki-chaai.firebasestorage.app"
+  },
+  "client": [
+    {
+      "client_info": {
+        "mobilesdk_app_id": "1:635941830068:android:392875ef0a7dbdf2ec46e1",
+        "android_client_info": {
+          "package_name": "com.example.ki_chai"
+        }
+      },
+      "oauth_client": [],
+      "api_key": [
+        {
+          "current_key": "AIzaSyBq8AWtoALOOh1lB8FvSK7UkQb2ANIdT6s"
+        }
+      ],
+      "services": {
+        "appinvite_service": {
+          "other_platform_oauth_client": []
+        }
+      }
+    },
+    {
+      "client_info": {
+        "mobilesdk_app_id": "1:635941830068:android:be5138dedf94dcddec46e1",
+        "android_client_info": {
+          "package_name": "com.kichaai.app"
+        }
+      },
+      "oauth_client": [],
+      "api_key": [
+        {
+          "current_key": "AIzaSyBq8AWtoALOOh1lB8FvSK7UkQb2ANIdT6s"
+        }
+      ],
+      "services": {
+        "appinvite_service": {
+          "other_platform_oauth_client": []
+        }
+      }
+    }
+  ],
+  "configuration_version": "1"
+}

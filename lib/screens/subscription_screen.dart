@@ -1,0 +1,223 @@
+import 'dart:ui';
+import 'package:flutter/material.dart';
+import 'package:flutter_animate/flutter_animate.dart';
+import 'package:provider/provider.dart';
+import '../core/network/api_client.dart';
+import '../core/utils/app_strings.dart';
+import '../theme/app_theme.dart';
+import '../widgets/glass_button.dart';
+
+class SubscriptionScreen extends StatefulWidget {
+  const SubscriptionScreen({super.key});
+
+  @override
+  State<SubscriptionScreen> createState() => _SubscriptionScreenState();
+}
+
+class _SubscriptionScreenState extends State<SubscriptionScreen> {
+  final _client = ApiClient.instance.dio;
+  Map<String, dynamic>? _subscription;
+  bool _isLoading = true;
+  bool _isSaving = false;
+  bool _isBn = true;
+
+  final _plans = [
+    {'plan': 'FREE', 'price': 0,
+      'featuresBn': ['৫টি জব/মাস', 'বেসিক সাপোর্ট', 'স্ট্যান্ডার্ড লিস্টিং'],
+      'featuresEn': ['5 jobs/month', 'Basic support', 'Standard listing']},
+    {'plan': 'STANDARD', 'price': 499,
+      'featuresBn': ['৩০টি জব/মাস', 'প্রায়োরিটি সাপোর্ট', 'উপরে তালিকাভুক্তি', 'ব্যাজ দেখানো'],
+      'featuresEn': ['30 jobs/month', 'Priority support', 'Top listing', 'Verified badge']},
+    {'plan': 'PRO', 'price': 999,
+      'featuresBn': ['আনলিমিটেড জব', '২৪/৭ সাপোর্ট', 'সর্বোচ্চ অগ্রাধিকার', 'গোল্ড ব্যাজ', 'বিশ্লেষণ ড্যাশবোর্ড'],
+      'featuresEn': ['Unlimited jobs', '24/7 support', 'Highest priority', 'Gold badge', 'Analytics dashboard']},
+  ];
+
+  @override
+  void initState() {
+    super.initState();
+    _load();
+  }
+
+  Future<void> _load() async {
+    setState(() => _isLoading = true);
+    try {
+      final res = await _client.get('/auth/subscriptions/me');
+      if (mounted) setState(() { _subscription = res.data as Map<String, dynamic>?; _isLoading = false; });
+    } catch (_) {
+      if (mounted) setState(() => _isLoading = false);
+    }
+  }
+
+  Future<void> _subscribe(String plan) async {
+    final confirm = await showDialog<bool>(
+      context: context,
+      builder: (ctx) => AlertDialog(
+        backgroundColor: AppColors.bgMid,
+        title: Text('$plan ${_isBn ? 'সাবস্ক্রিপশন' : 'subscription'}', style: const TextStyle(color: AppColors.textPrimary)),
+        content: Text(_isBn ? '$plan প্ল্যানে সাবস্ক্রাইব করতে চান?' : 'Subscribe to the $plan plan?', style: const TextStyle(color: AppColors.textMuted)),
+        actions: [
+          TextButton(onPressed: () => Navigator.pop(ctx, false), child: Text(_isBn ? 'বাতিল' : 'Cancel', style: const TextStyle(color: AppColors.textMuted))),
+          TextButton(onPressed: () => Navigator.pop(ctx, true), child: Text(_isBn ? 'নিশ্চিত করুন' : 'Confirm', style: const TextStyle(color: AppColors.deepBlue))),
+        ],
+      ),
+    );
+    if (confirm != true) return;
+
+    setState(() => _isSaving = true);
+    try {
+      await _client.post('/auth/subscriptions', data: {'plan': plan});
+      await _load();
+      if (mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(content: Text(_isBn ? '$plan সাবস্ক্রিপশন সক্রিয় হয়েছে' : '$plan subscription activated', style: const TextStyle(color: Colors.white)), backgroundColor: const Color(0xFF10B981), behavior: SnackBarBehavior.floating),
+        );
+      }
+    } catch (e) {
+      final ex = ApiClient.mapError(e);
+      if (mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(content: Text(ex.messageBn, style: const TextStyle(color: Colors.white)), backgroundColor: const Color(0xFFEF4444), behavior: SnackBarBehavior.floating),
+        );
+      }
+    } finally {
+      if (mounted) setState(() => _isSaving = false);
+    }
+  }
+
+  Future<void> _cancel() async {
+    final confirm = await showDialog<bool>(
+      context: context,
+      builder: (ctx) => AlertDialog(
+        backgroundColor: AppColors.bgMid,
+        title: Text(_isBn ? 'সাবস্ক্রিপশন বাতিল করুন?' : 'Cancel subscription?', style: const TextStyle(color: AppColors.textPrimary)),
+        content: Text(_isBn ? 'আপনার সাবস্ক্রিপশন বাতিল করতে চান?' : 'Cancel your subscription?', style: const TextStyle(color: AppColors.textMuted)),
+        actions: [
+          TextButton(onPressed: () => Navigator.pop(ctx, false), child: Text(_isBn ? 'না' : 'No', style: const TextStyle(color: AppColors.textMuted))),
+          TextButton(onPressed: () => Navigator.pop(ctx, true), child: Text(_isBn ? 'বাতিল করুন' : 'Cancel', style: const TextStyle(color: Color(0xFFEF4444)))),
+        ],
+      ),
+    );
+    if (confirm != true) return;
+
+    try {
+      await _client.post('/auth/subscriptions/cancel');
+      await _load();
+    } catch (_) {}
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    _isBn = context.watch<LanguageNotifier>().isBengali;
+    final currentPlan = _subscription?['plan'] as String? ?? 'FREE';
+
+    return Scaffold(
+      backgroundColor: AppColors.bgDark,
+      appBar: AppBar(
+        backgroundColor: Colors.transparent,
+        elevation: 0,
+        title: Text(_isBn ? 'সাবস্ক্রিপশন' : 'Subscription', style: const TextStyle(color: AppColors.textPrimary, fontSize: 18, fontWeight: FontWeight.w700)),
+        leading: IconButton(
+          icon: const Icon(Icons.arrow_back_ios_new_rounded, color: AppColors.textPrimary, size: 18),
+          onPressed: () => Navigator.pop(context),
+        ),
+      ),
+      body: _isLoading
+          ? const Center(child: CircularProgressIndicator(color: AppColors.deepBlue))
+          : ListView(
+              padding: const EdgeInsets.fromLTRB(16, 12, 16, 100),
+              children: [
+                _buildCurrentCard(currentPlan),
+                const SizedBox(height: 24),
+                Text(_isBn ? 'প্ল্যান তুলনা' : 'Compare plans', style: const TextStyle(color: AppColors.textMuted, fontSize: 12, fontWeight: FontWeight.w600, letterSpacing: 1)),
+                const SizedBox(height: 12),
+                ..._plans.asMap().entries.map((entry) {
+                  final i = entry.key;
+                  final p = entry.value;
+                  final plan = p['plan'] as String;
+                  final price = p['price'] as int;
+                  final features = (p[_isBn ? 'featuresBn' : 'featuresEn'] as List).cast<String>();
+                  final isCurrent = plan == currentPlan;
+                  return _buildPlanCard(plan, price, features, isCurrent, i);
+                }),
+                if (currentPlan != 'FREE') ...[
+                  const SizedBox(height: 16),
+                  TextButton(
+                    onPressed: _cancel,
+                    child: Text(_isBn ? 'সাবস্ক্রিপশন বাতিল করুন' : 'Cancel subscription', style: const TextStyle(color: Color(0xFFEF4444), fontSize: 13)),
+                  ),
+                ],
+              ],
+            ),
+    );
+  }
+
+  Widget _buildCurrentCard(String plan) {
+    final planColors = {'FREE': const Color(0xFF6B7280), 'STANDARD': AppColors.deepBlue, 'PRO': const Color(0xFFF59E0B)};
+    final color = planColors[plan] ?? AppColors.textMuted;
+    return Container(
+      padding: const EdgeInsets.all(20),
+      decoration: BoxDecoration(
+        color: color.withOpacity(0.08),
+        borderRadius: BorderRadius.circular(20),
+        border: Border.all(color: color.withOpacity(0.2)),
+      ),
+      child: Row(children: [
+        Column(crossAxisAlignment: CrossAxisAlignment.start, children: [
+          Text(_isBn ? 'বর্তমান প্ল্যান' : 'Current plan', style: const TextStyle(color: AppColors.textMuted, fontSize: 12)),
+          const SizedBox(height: 4),
+          Text(plan, style: TextStyle(color: color, fontSize: 22, fontWeight: FontWeight.w800)),
+          if (_subscription?['expiresAt'] != null)
+            Text('${_isBn ? 'মেয়াদ' : 'Expires'}: ${_subscription!['expiresAt'].toString().substring(0, 10)}', style: const TextStyle(color: AppColors.textMuted, fontSize: 11)),
+        ]),
+        const Spacer(),
+        Icon(Icons.star_rounded, color: color, size: 48),
+      ]),
+    ).animate().fadeIn();
+  }
+
+  Widget _buildPlanCard(String plan, int price, List<String> features, bool isCurrent, int index) {
+    final planColors = {'FREE': const Color(0xFF6B7280), 'STANDARD': AppColors.deepBlue, 'PRO': const Color(0xFFF59E0B)};
+    final color = planColors[plan] ?? AppColors.textMuted;
+    return Container(
+      margin: const EdgeInsets.only(bottom: 12),
+      padding: const EdgeInsets.all(16),
+      decoration: BoxDecoration(
+        color: AppColors.bgMid,
+        borderRadius: BorderRadius.circular(16),
+        border: Border.all(color: isCurrent ? color : AppColors.glassBorder, width: isCurrent ? 2 : 1),
+      ),
+      child: ClipRRect(
+        borderRadius: BorderRadius.circular(16),
+        child: BackdropFilter(
+          filter: ImageFilter.blur(sigmaX: 6, sigmaY: 6),
+          child: Column(crossAxisAlignment: CrossAxisAlignment.start, children: [
+            Row(children: [
+              Text(plan, style: TextStyle(color: color, fontSize: 18, fontWeight: FontWeight.w800)),
+              const SizedBox(width: 8),
+              if (isCurrent) Container(padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 2), decoration: BoxDecoration(color: color.withOpacity(0.1), borderRadius: BorderRadius.circular(6)), child: Text(_isBn ? 'বর্তমান' : 'Current', style: TextStyle(color: color, fontSize: 10, fontWeight: FontWeight.w600))),
+              const Spacer(),
+              Text(price == 0 ? (_isBn ? 'বিনামূল্যে' : 'Free') : '৳$price/${_isBn ? 'মাস' : 'mo'}', style: TextStyle(color: color, fontSize: 16, fontWeight: FontWeight.w700)),
+            ]),
+            const SizedBox(height: 12),
+            ...features.map((f) => Padding(
+              padding: const EdgeInsets.only(bottom: 6),
+              child: Row(children: [
+                Icon(Icons.check_circle_rounded, color: color, size: 16),
+                const SizedBox(width: 8),
+                Text(f, style: const TextStyle(color: AppColors.textPrimary, fontSize: 13)),
+              ]),
+            )),
+            if (!isCurrent) ...[
+              const SizedBox(height: 12),
+              GlassButton(
+                label: _isSaving ? (_isBn ? 'প্রসেস হচ্ছে...' : 'Processing...') : (_isBn ? '$plan নির্বাচন করুন' : 'Choose $plan'),
+                onPressed: _isSaving ? null : () => _subscribe(plan),
+              ),
+            ],
+          ]),
+        ),
+      ),
+    ).animate().fadeIn(delay: Duration(milliseconds: index * 80)).slideY(begin: 0.1, end: 0);
+  }
+}

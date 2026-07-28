@@ -1,0 +1,128 @@
+class UserModel {
+  final String id;
+  final String fullName;
+  final String? email;
+  final String? phone;
+  final String role;
+  final bool isEmailVerified;
+  final bool isPhoneVerified;
+  final String? profileImageUrl;
+  final String? tier;
+  final String? providerProfileId;
+
+  const UserModel({
+    required this.id,
+    required this.fullName,
+    this.email,
+    this.phone,
+    required this.role,
+    this.isEmailVerified = false,
+    this.isPhoneVerified = false,
+    this.profileImageUrl,
+    this.tier,
+    this.providerProfileId,
+  });
+
+  factory UserModel.fromJson(Map<String, dynamic> json) => UserModel(
+        id: json['id'] as String,
+        fullName: json['fullName'] as String,
+        email: json['email'] as String?,
+        phone: json['phone'] as String?,
+        role: json['role'] as String? ?? 'user',
+        isEmailVerified: json['isEmailVerified'] as bool? ?? false,
+        isPhoneVerified: json['isPhoneVerified'] as bool? ?? false,
+        profileImageUrl: json['profileImageUrl'] as String?,
+        tier: json['tier'] as String?,
+        providerProfileId: json['providerProfileId'] as String?,
+      );
+
+  Map<String, dynamic> toJson() => {
+        'id': id,
+        'fullName': fullName,
+        if (email != null) 'email': email,
+        if (phone != null) 'phone': phone,
+        'role': role,
+        'isEmailVerified': isEmailVerified,
+        'isPhoneVerified': isPhoneVerified,
+        if (profileImageUrl != null) 'profileImageUrl': profileImageUrl,
+        if (tier != null) 'tier': tier,
+      };
+
+  UserModel copyWith({
+    String? fullName,
+    String? email,
+    String? phone,
+    String? profileImageUrl,
+    String? tier,
+  }) =>
+      UserModel(
+        id: id,
+        fullName: fullName ?? this.fullName,
+        email: email ?? this.email,
+        phone: phone ?? this.phone,
+        role: role,
+        isEmailVerified: isEmailVerified,
+        isPhoneVerified: isPhoneVerified,
+        profileImageUrl: profileImageUrl ?? this.profileImageUrl,
+        tier: tier ?? this.tier,
+      );
+}
+
+class AddressModel {
+  final String id;
+  final String? label;
+  final String line1;
+  final String? line2;
+  final String? area;
+  final String? city;
+  final String? district;
+  final String? postalCode;
+  final bool isDefault;
+
+  const AddressModel({
+    required this.id,
+    this.label,
+    required this.line1,
+    this.line2,
+    this.area,
+    this.city,
+    this.district,
+    this.postalCode,
+    this.isDefault = false,
+  });
+
+  factory AddressModel.fromJson(Map<String, dynamic> json) => AddressModel(
+        id: json['id'] as String,
+        label: json['label'] as String?,
+        line1: json['line1'] as String,
+        line2: json['line2'] as String?,
+        area: json['area'] as String?,
+        city: json['city'] as String?,
+        district: json['district'] as String?,
+        postalCode: json['postalCode'] as String?,
+        isDefault: json['isDefault'] as bool? ?? false,
+      );
+
+  String get displayText {
+    final parts = [line1, if (line2 != null) line2, if (area != null) area, if (city != null) city];
+    return parts.join(', ');
+  }
+}
+
+class AuthResponse {
+  final String accessToken;
+  final String refreshToken;
+  final UserModel user;
+
+  const AuthResponse({
+    required this.accessToken,
+    required this.refreshToken,
+    required this.user,
+  });
+
+  factory AuthResponse.fromJson(Map<String, dynamic> json) => AuthResponse(
+        accessToken: json['accessToken'] as String,
+        refreshToken: json['refreshToken'] as String,
+        user: UserModel.fromJson(json['user'] as Map<String, dynamic>),
+      );
+}

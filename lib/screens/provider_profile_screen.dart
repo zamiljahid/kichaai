@@ -1,0 +1,165 @@
+import 'package:flutter/material.dart';
+import 'package:flutter_animate/flutter_animate.dart';
+import '../models/matchmaking_model.dart';
+import '../services/matchmaking_service.dart';
+import '../theme/app_theme.dart';
+import '../widgets/animated_background.dart';
+import '../widgets/glass_button.dart';
+import '../widgets/glass_card.dart';
+import 'match_request_screen.dart';
+
+class ProviderProfileScreen extends StatefulWidget {
+  final String providerId;
+  final String kind;
+  const ProviderProfileScreen({super.key, required this.providerId, required this.kind});
+
+  @override
+  State<ProviderProfileScreen> createState() => _ProviderProfileScreenState();
+}
+
+class _ProviderProfileScreenState extends State<ProviderProfileScreen> {
+  MatchProviderModel? _provider;
+  bool _isLoading = true;
+
+  @override
+  void initState() {
+    super.initState();
+    _load();
+  }
+
+  Future<void> _load() async {
+    try {
+      final p = await MatchmakingService.instance.getProvider(widget.providerId);
+      if (mounted) setState(() { _provider = p; _isLoading = false; });
+    } catch (_) {
+      if (mounted) setState(() => _isLoading = false);
+    }
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    return Scaffold(
+      body: AnimatedBackground(
+        child: SafeArea(
+          child: Column(
+            children: [
+              _buildHeader(context),
+              if (_isLoading)
+                const Expanded(child: Center(child: CircularProgressIndicator(color: AppColors.deepBlue)))
+              else if (_provider == null)
+                Expanded(child: Center(child: Text('তথ্য পাওয়া যায়নি', style: TextStyle(color: AppColors.textMuted))))
+              else
+                Expanded(
+                  child: SingleChildScrollView(
+                    padding: const EdgeInsets.fromLTRB(16, 0, 16, 24),
+                    child: Column(children: [
+                      _buildProfileCard(_provider!),
+                      const SizedBox(height: 16),
+                      if (_provider!.bio?.isNotEmpty ?? false) _buildBioCard(_provider!),
+                      if (_provider!.portfolioImages.isNotEmpty) ...[
+                        const SizedBox(height: 16),
+                        _buildPortfolioGrid(_provider!),
+                      ],
+                      const SizedBox(height: 24),
+                      GlassButton(
+                        label: 'অনুরোধ পাঠান',
+                        onPressed: () => Navigator.of(context).push(MaterialPageRoute(
+                          builder: (_) => MatchRequestScreen(providerId: widget.providerId, kind: widget.kind),
+                        )),
+                      ),
+                    ]),
+                  ),
+                ),
+            ],
+          ),
+        ),
+      ),
+    );
+  }
+
+  Widget _buildHeader(BuildContext context) {
+    return Padding(
+      padding: const EdgeInsets.fromLTRB(20, 16, 20, 20),
+      child: Row(
+        children: [
+          GestureDetector(
+            onTap: () => Navigator.of(context).pop(),
+            child: Container(
+              width: 40, height: 40,
+              decoration: BoxDecoration(color: AppColors.glassWhite, borderRadius: BorderRadius.circular(12), border: Border.all(color: AppColors.glassBorder, width: 1.5)),
+              child: const Icon(Icons.arrow_back_ios_new_rounded, color: AppColors.textPrimary, size: 18),
+            ),
+          ),
+          const SizedBox(width: 16),
+          const Text('Provider প্রোফাইল', style: TextStyle(color: AppColors.textPrimary, fontSize: 18, fontWeight: FontWeight.w700)),
+        ],
+      ),
+    );
+  }
+
+  Widget _buildProfileCard(MatchProviderModel p) {
+    return GlassCard(
+      child: Column(
+        children: [
+          Container(
+            width: 80, height: 80,
+            decoration: BoxDecoration(gradient: AppColors.blueGradient, shape: BoxShape.circle,
+              boxShadow: [BoxShadow(color: AppColors.deepBlue.withOpacity(0.4), blurRadius: 20)]),
+            child: Center(child: Text(p.name.isNotEmpty ? p.name[0].toUpperCase() : '?',
+              style: const TextStyle(color: AppColors.ivory, fontSize: 34, fontWeight: FontWeight.w700))),
+          ),
+          const SizedBox(height: 14),
+          Text(p.name, style: const TextStyle(color: AppColors.textPrimary, fontSize: 20, fontWeight: FontWeight.w700)),
+          const SizedBox(height: 8),
+          Row(mainAxisAlignment: MainAxisAlignment.center, children: [
+            if (p.rating != null) ...[
+              const Icon(Icons.star_rounded, color: Color(0xFFFFC107), size: 18),
+              const SizedBox(width: 4),
+              Text(p.rating!.toStringAsFixed(1), style: const TextStyle(color: AppColors.textPrimary, fontSize: 15, fontWeight: FontWeight.w700)),
+              const SizedBox(width: 6),
+            ],
+            if (p.totalReviews != null)
+              Text('(${p.totalReviews} রিভিউ)', style: TextStyle(color: AppColors.textMuted, fontSize: 12)),
+          ]),
+          if (p.totalJobs != null) ...[
+            const SizedBox(height: 4),
+            Text('${p.totalJobs} কাজ সম্পন্ন', style: TextStyle(color: AppColors.textMuted, fontSize: 12)),
+          ],
+        ],
+      ),
+    ).animate().fadeIn(duration: 400.ms).scale(begin: const Offset(0.95, 0.95));
+  }
+
+  Widget _buildBioCard(MatchProviderModel p) {
+    return GlassCard(
+      padding: const EdgeInsets.all(16),
+      child: Column(crossAxisAlignment: CrossAxisAlignment.start, children: [
+        const Text('পরিচিতি', style: TextStyle(color: AppColors.textSecondary, fontSize: 12, fontWeight: FontWeight.w600)),
+        const SizedBox(height: 8),
+        Text(p.bio!, style: const TextStyle(color: AppColors.textPrimary, fontSize: 14, height: 1.6)),
+      ]),
+    ).animate(delay: 100.ms).fadeIn().slideY(begin: 0.05);
+  }
+
+  Widget _buildPortfolioGrid(MatchProviderModel p) {
+    return GlassCard(
+      padding: const EdgeInsets.all(16),
+      child: Column(crossAxisAlignment: CrossAxisAlignment.start, children: [
+        const Text('পোর্টফোলিও', style: TextStyle(color: AppColors.textSecondary, fontSize: 12, fontWeight: FontWeight.w600)),
+        const SizedBox(height: 12),
+        GridView.builder(
+          shrinkWrap: true,
+          physics: const NeverScrollableScrollPhysics(),
+          itemCount: p.portfolioImages.length,
+          gridDelegate: const SliverGridDelegateWithFixedCrossAxisCount(crossAxisCount: 3, crossAxisSpacing: 8, mainAxisSpacing: 8),
+          itemBuilder: (_, i) => ClipRRect(
+            borderRadius: BorderRadius.circular(8),
+            child: Image.network(p.portfolioImages[i], fit: BoxFit.cover,
+              errorBuilder: (_, __, ___) => Container(color: AppColors.glassWhite,
+                child: const Icon(Icons.image_rounded, color: AppColors.textMuted))),
+          ),
+        ),
+      ]),
+    ).animate(delay: 200.ms).fadeIn().slideY(begin: 0.05);
+  }
+}

@@ -1,0 +1,158 @@
+import 'package:flutter/material.dart';
+import 'package:flutter_animate/flutter_animate.dart';
+import '../core/network/api_client.dart';
+import '../theme/app_theme.dart';
+import '../widgets/animated_background.dart';
+import '../widgets/glass_button.dart';
+import '../widgets/glass_card.dart';
+import 'main_navigation.dart';
+
+class OtpScreen extends StatefulWidget {
+  final String email;
+  const OtpScreen({super.key, required this.email});
+
+  @override
+  State<OtpScreen> createState() => _OtpScreenState();
+}
+
+class _OtpScreenState extends State<OtpScreen> {
+  final _otpController = TextEditingController();
+  bool _isLoading = false;
+
+  @override
+  void dispose() {
+    _otpController.dispose();
+    super.dispose();
+  }
+
+  void _showError(String message) {
+    if (!mounted) return;
+    ScaffoldMessenger.of(context).showSnackBar(SnackBar(
+      content: Text(message, style: const TextStyle(color: AppColors.ivory)),
+      backgroundColor: const Color(0xFFEF4444),
+      behavior: SnackBarBehavior.floating,
+      shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
+      margin: const EdgeInsets.all(16),
+    ));
+  }
+
+  Future<void> _verify() async {
+    final otp = _otpController.text.trim();
+    if (otp.length < 4) {
+      _showError('সঠিক OTP কোড দিন');
+      return;
+    }
+    setState(() => _isLoading = true);
+    try {
+      final client = ApiClient.instance.dio;
+      await client.post('/auth/verify-otp', data: {
+        'targetValue': widget.email,
+        'targetType': 'email',
+        'otpCode': otp,
+        'purpose': 'email_verification',
+      });
+      if (!mounted) return;
+      WidgetsBinding.instance.addPostFrameCallback((_) {
+        if (mounted) {
+          Navigator.of(context).pushReplacement(
+            MaterialPageRoute(builder: (_) => const MainNavigation()),
+          );
+        }
+      });
+    } catch (e) {
+      _showError(ApiClient.mapError(e).messageBn);
+    } finally {
+      if (mounted) setState(() => _isLoading = false);
+    }
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    return Scaffold(
+      body: AnimatedBackground(
+        child: SafeArea(
+          child: SingleChildScrollView(
+            padding: const EdgeInsets.symmetric(horizontal: 24),
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.center,
+              children: [
+                const SizedBox(height: 60),
+                Container(
+                  width: 72,
+                  height: 72,
+                  decoration: BoxDecoration(
+                    gradient: AppColors.blueGradient,
+                    borderRadius: BorderRadius.circular(20),
+                    boxShadow: [
+                      BoxShadow(
+                        color: AppColors.deepBlue.withOpacity(0.5),
+                        blurRadius: 24,
+                        offset: const Offset(0, 8),
+                      ),
+                    ],
+                  ),
+                  child: const Icon(Icons.mark_email_read_rounded, color: AppColors.ivory, size: 36),
+                ).animate().fadeIn(duration: 500.ms).scale(begin: const Offset(0.8, 0.8)),
+                const SizedBox(height: 20),
+                const Text(
+                  'ইমেইল যাচাই করুন',
+                  style: TextStyle(color: AppColors.textPrimary, fontSize: 24, fontWeight: FontWeight.w700),
+                ).animate().fadeIn(duration: 400.ms, delay: 100.ms),
+                const SizedBox(height: 8),
+                Text(
+                  '${widget.email} ঠিকানায় পাঠানো OTP কোডটি দিন',
+                  style: const TextStyle(color: AppColors.textSecondary, fontSize: 14),
+                  textAlign: TextAlign.center,
+                ).animate().fadeIn(duration: 400.ms, delay: 150.ms),
+                const SizedBox(height: 32),
+                GlassCard(
+                  child: Column(
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    children: [
+                      const Text(
+                        'OTP কোড',
+                        style: TextStyle(color: AppColors.textSecondary, fontSize: 13, fontWeight: FontWeight.w500),
+                      ),
+                      const SizedBox(height: 8),
+                      TextField(
+                        controller: _otpController,
+                        keyboardType: TextInputType.number,
+                        maxLength: 6,
+                        textAlign: TextAlign.center,
+                        style: const TextStyle(
+                          color: AppColors.textPrimary,
+                          fontSize: 28,
+                          fontWeight: FontWeight.w700,
+                          letterSpacing: 12,
+                        ),
+                        decoration: InputDecoration(
+                          counterText: '',
+                          hintText: '------',
+                          hintStyle: TextStyle(color: AppColors.textMuted, fontSize: 28, letterSpacing: 12),
+                        ),
+                      ),
+                      const SizedBox(height: 24),
+                      GlassButton(
+                        label: 'যাচাই করুন',
+                        isLoading: _isLoading,
+                        onPressed: _verify,
+                      ),
+                    ],
+                  ),
+                ).animate().fadeIn(duration: 400.ms, delay: 200.ms).slideY(begin: 0.1),
+                const SizedBox(height: 16),
+                TextButton(
+                  onPressed: () => Navigator.of(context).pop(),
+                  child: const Text(
+                    'ফিরে যান',
+                    style: TextStyle(color: AppColors.textMuted, fontSize: 14),
+                  ),
+                ),
+              ],
+            ),
+          ),
+        ),
+      ),
+    );
+  }
+}
