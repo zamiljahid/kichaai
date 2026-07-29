@@ -15,7 +15,7 @@ class AuthService {
   // serverClientId (SDK returns an id_token stamped with that audience).
   // On web the plugin rejects serverClientId — has to be passed as clientId.
   static const _webClientId =
-      '722468376620-imobf3gvmhrf2ko6kargg7d0b0ks88jh.apps.googleusercontent.com';
+      '635941830068-6vjp82j9h61ib92jt9o38uokooce16mn.apps.googleusercontent.com';
   static final _googleSignIn = GoogleSignIn(
     clientId: kIsWeb ? _webClientId : null,
     serverClientId: kIsWeb ? null : _webClientId,
