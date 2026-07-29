@@ -12,7 +12,12 @@
           "package_name": "com.example.ki_chai"
         }
       },
-      "oauth_client": [],
+      "oauth_client": [
+        {
+          "client_id": "635941830068-6vjp82j9h61ib92jt9o38uokooce16mn.apps.googleusercontent.com",
+          "client_type": 3
+        }
+      ],
       "api_key": [
         {
           "current_key": "AIzaSyBq8AWtoALOOh1lB8FvSK7UkQb2ANIdT6s"
@@ -20,7 +25,19 @@
       ],
       "services": {
         "appinvite_service": {
-          "other_platform_oauth_client": []
+          "other_platform_oauth_client": [
+            {
+              "client_id": "635941830068-6vjp82j9h61ib92jt9o38uokooce16mn.apps.googleusercontent.com",
+              "client_type": 3
+            },
+            {
+              "client_id": "635941830068-6r3qrip9832datf0p11ef8kabf36lqsg.apps.googleusercontent.com",
+              "client_type": 2,
+              "ios_info": {
+                "bundle_id": "com.kichaai.app"
+              }
+            }
+          ]
         }
       }
     },
@@ -31,7 +48,20 @@
           "package_name": "com.kichaai.app"
         }
       },
-      "oauth_client": [],
+      "oauth_client": [
+        {
+          "client_id": "635941830068-dvkm7fgekjlft49sgondcbs7tgiqp6qt.apps.googleusercontent.com",
+          "client_type": 1,
+          "android_info": {
+            "package_name": "com.kichaai.app",
+            "certificate_hash": "6dfeaaf23c2cfbff1d32cb7ba693e27065523b34"
+          }
+        },
+        {
+          "client_id": "635941830068-6vjp82j9h61ib92jt9o38uokooce16mn.apps.googleusercontent.com",
+          "client_type": 3
+        }
+      ],
       "api_key": [
         {
           "current_key": "AIzaSyBq8AWtoALOOh1lB8FvSK7UkQb2ANIdT6s"
@@ -39,7 +69,19 @@
       ],
       "services": {
         "appinvite_service": {
-          "other_platform_oauth_client": []
+          "other_platform_oauth_client": [
+            {
+              "client_id": "635941830068-6vjp82j9h61ib92jt9o38uokooce16mn.apps.googleusercontent.com",
+              "client_type": 3
+            },
+            {
+              "client_id": "635941830068-6r3qrip9832datf0p11ef8kabf36lqsg.apps.googleusercontent.com",
+              "client_type": 2,
+              "ios_info": {
+                "bundle_id": "com.kichaai.app"
+              }
+            }
+          ]
         }
       }
     }
