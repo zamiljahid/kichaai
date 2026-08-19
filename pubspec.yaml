@@ -22,16 +22,41 @@ dependencies:
   google_maps_flutter: ^2.9.0
   # Pin to 6.x — 7.x has breaking API changes we haven't migrated to.
   google_sign_in: ^6.2.1
+  # Opens the Google Meet link directly (Meet app if installed, else browser) — lawyer
+  # consultation "join" buttons used to only offer copy-the-link-and-paste-it-yourself.
+  url_launcher: ^6.3.1
   firebase_core: ^3.6.0
   firebase_messaging: ^15.1.3
+  # Loud, alarm-style local notification for new job offers / scheduled
+  # consultation reminders — on Android this rides the device's own
+  # ALARM-stream sound (no bundled asset needed); on iOS there is no
+  # equivalent "use the system alarm sound" API, so this is only the
+  # background/killed-app tray notification there (default system sound).
+  flutter_local_notifications: ^18.0.1
+  # Foreground continuous "ringing" loop (assets/sounds/alarm_ring.wav — a
+  # synthesized two-tone siren, not a licensed/fetched sound file) played
+  # while a job-offer alert is on screen. Set to iOS AVAudioSession
+  # "playback" category, which plays through the mute/silent switch without
+  # needing Apple's special Critical Alerts entitlement.
+  audioplayers: ^6.1.0
 
 dev_dependencies:
   flutter_test:
     sdk: flutter
   flutter_lints: ^3.0.0
+  flutter_launcher_icons: ^0.14.1
 
 flutter:
   uses-material-design: true
   assets:
     - assets/images/
     - assets/images/services/
+    - assets/sounds/
+
+# Generates android/ios launcher icons from assets/images/logo.png — run
+# `flutter pub run flutter_launcher_icons` after replacing the source file.
+flutter_launcher_icons:
+  android: true
+  ios: true
+  image_path: "assets/images/logo.png"
+  remove_alpha_ios: true
