@@ -3,7 +3,9 @@ import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:flutter_animate/flutter_animate.dart';
 import 'package:image_picker/image_picker.dart';
+import 'package:provider/provider.dart';
 import '../core/network/api_client.dart';
+import '../core/utils/app_strings.dart';
 import '../services/auth_service.dart';
 import '../services/catalog_service.dart';
 import '../services/onboarding_service.dart';
@@ -12,6 +14,9 @@ import '../widgets/animated_background.dart';
 import '../widgets/glass_button.dart';
 import 'main_navigation.dart';
 import 'legal_onboarding_screen.dart';
+import 'commute_partner_onboarding_screen.dart';
+import 'cook_provider_screen.dart';
+import 'technician_onboarding_screen.dart';
 
 // ── Step enum ─────────────────────────────────────────────────────
 
@@ -45,6 +50,7 @@ class _ProviderOnboardingScreenState extends State<ProviderOnboardingScreen> {
   String? _selectedServiceTypeName;
   List<_DocEntry> _docEntries = [];
   String? _error;
+  bool _isBn = true;
 
   @override
   void initState() {
@@ -58,7 +64,7 @@ class _ProviderOnboardingScreenState extends State<ProviderOnboardingScreen> {
       await Future.wait([_callBecomeProvider(), _loadServiceTypes()]);
       if (mounted) setState(() => _step = _OBStep.selectService);
     } catch (e) {
-      if (mounted) setState(() { _step = _OBStep.selectService; _error = e.toString(); });
+      if (mounted) setState(() { _step = _OBStep.selectService; _error = ApiClient.mapError(e).localized(_isBn); });
     }
   }
 
@@ -81,6 +87,32 @@ class _ProviderOnboardingScreenState extends State<ProviderOnboardingScreen> {
   }
 
   Future<void> _onServiceSelected(String id, String name) async {
+    // Technician needs a group + specialization + group-specific hard-stop gate before the
+    // generic document requirements even make sense (they don't vary by group) — captured in
+    // a dedicated screen first. Bail out to the select-service step if the user backs out.
+    if (id == 'st_technician') {
+      final ok = await Navigator.of(context).push<bool>(
+        MaterialPageRoute(builder: (_) => const TechnicianOnboardingScreen()),
+      );
+      if (ok != true || !mounted) return;
+    }
+    // Cook and ride follow the same shape as technician: a dedicated screen captures the
+    // service-specific extras (menu items / vehicle papers) that the generic document step
+    // can't express, then the normal requirements + application flow continues. Before rides
+    // moved onto dispatch these two SKIPPED the application entirely, which is precisely why
+    // a verified cook or driver could never go online — nothing granted them the kind.
+    if (id == 'st_cook') {
+      final ok = await Navigator.of(context).push<bool>(
+        MaterialPageRoute(builder: (_) => const CookOnboardingScreen()),
+      );
+      if (ok != true || !mounted) return;
+    }
+    if (id == 'st_commute') {
+      final ok = await Navigator.of(context).push<bool>(
+        MaterialPageRoute(builder: (_) => const CommutePartnerOnboardingScreen()),
+      );
+      if (ok != true || !mounted) return;
+    }
     setState(() { _step = _OBStep.loading; _error = null; });
     try {
       final reqs = await OnboardingService.instance.getServiceTypeRequirements(id);
@@ -91,7 +123,7 @@ class _ProviderOnboardingScreenState extends State<ProviderOnboardingScreen> {
             return _DocEntry(
               documentTypeId: r['documentTypeId'] as String,
               code: (dt['code'] ?? '').toString(),
-              name: (dt['name'] ?? dt['code'] ?? 'ডকুমেন্ট').toString(),
+              name: (dt['name'] ?? dt['code'] ?? (_isBn ? 'ডকুমেন্ট' : 'Document')).toString(),
               // Backend flag — but BSC_DIPLOMA overrides this with a checkbox
               // (see _DocEntry.blocksSubmit). Default true if the field is
               // missing so a partial backend response can't silently unblock.
@@ -107,7 +139,7 @@ class _ProviderOnboardingScreenState extends State<ProviderOnboardingScreen> {
         _step = _OBStep.documentUpload;
       });
     } catch (e) {
-      if (mounted) setState(() { _step = _OBStep.selectService; _error = e.toString(); });
+      if (mounted) setState(() { _step = _OBStep.selectService; _error = ApiClient.mapError(e).localized(_isBn); });
     }
   }
 
@@ -117,7 +149,7 @@ class _ProviderOnboardingScreenState extends State<ProviderOnboardingScreen> {
     try {
       final providerId = await ApiClient.getUserId();
       if (providerId == null || providerId.isEmpty) {
-        throw Exception('User session expired — please log in again.');
+        throw Exception(_isBn ? 'সেশনের মেয়াদ শেষ হয়ে গেছে — আবার লগইন করুন' : 'Session expired — please log in again.');
       }
       final appId = await OnboardingService.instance.createApplication(
         providerId: providerId,
@@ -139,7 +171,7 @@ class _ProviderOnboardingScreenState extends State<ProviderOnboardingScreen> {
       await OnboardingService.instance.submitApplication(appId);
       if (mounted) setState(() => _step = _OBStep.success);
     } catch (e) {
-      if (mounted) setState(() { _step = _OBStep.documentUpload; _error = e.toString(); });
+      if (mounted) setState(() { _step = _OBStep.documentUpload; _error = ApiClient.mapError(e).localized(_isBn); });
     }
   }
 
@@ -157,6 +189,7 @@ class _ProviderOnboardingScreenState extends State<ProviderOnboardingScreen> {
 
   @override
   Widget build(BuildContext context) {
+    _isBn = context.watch<LanguageNotifier>().isBengali;
     return Scaffold(
       body: AnimatedBackground(
         child: SafeArea(
@@ -185,12 +218,19 @@ class _ProviderOnboardingScreenState extends State<ProviderOnboardingScreen> {
   }
 
   Widget _buildAppBar() {
-    final title = switch (_step) {
-      _OBStep.success => 'আবেদন সফল!',
-      _OBStep.documentUpload => 'ডকুমেন্ট আপলোড',
-      _OBStep.submitting => 'জমা হচ্ছে...',
-      _ => 'সেবা নির্বাচন করুন',
-    };
+    final title = _isBn
+        ? switch (_step) {
+            _OBStep.success => 'আবেদন সফল!',
+            _OBStep.documentUpload => 'ডকুমেন্ট আপলোড',
+            _OBStep.submitting => 'জমা হচ্ছে...',
+            _ => 'সেবা নির্বাচন করুন',
+          }
+        : switch (_step) {
+            _OBStep.success => 'Application Successful!',
+            _OBStep.documentUpload => 'Document Upload',
+            _OBStep.submitting => 'Submitting...',
+            _ => 'Select a Service',
+          };
     return Padding(
       padding: const EdgeInsets.fromLTRB(4, 4, 16, 0),
       child: Row(
@@ -224,19 +264,19 @@ class _ProviderOnboardingScreenState extends State<ProviderOnboardingScreen> {
   Widget _buildBody() {
     switch (_step) {
       case _OBStep.loading:
-        return const Center(
+        return Center(
           child: Column(mainAxisSize: MainAxisSize.min, children: [
-            CircularProgressIndicator(color: AppColors.deepBlue),
-            SizedBox(height: 16),
-            Text('লোড হচ্ছে...', style: TextStyle(color: AppColors.textSecondary)),
+            const CircularProgressIndicator(color: AppColors.deepBlue),
+            const SizedBox(height: 16),
+            Text(_isBn ? 'লোড হচ্ছে...' : 'Loading...', style: const TextStyle(color: AppColors.textSecondary)),
           ]),
         );
       case _OBStep.submitting:
-        return const Center(
+        return Center(
           child: Column(mainAxisSize: MainAxisSize.min, children: [
-            CircularProgressIndicator(color: AppColors.deepBlue),
-            SizedBox(height: 16),
-            Text('আবেদন জমা হচ্ছে...', style: TextStyle(color: AppColors.textSecondary)),
+            const CircularProgressIndicator(color: AppColors.deepBlue),
+            const SizedBox(height: 16),
+            Text(_isBn ? 'আবেদন জমা হচ্ছে...' : 'Submitting application...', style: const TextStyle(color: AppColors.textSecondary)),
           ]),
         );
       case _OBStep.success:
@@ -245,6 +285,7 @@ class _ProviderOnboardingScreenState extends State<ProviderOnboardingScreen> {
         return _ServiceSelectStep(
           serviceTypes: _serviceTypes,
           onSelect: _onServiceSelected,
+          isBn: _isBn,
         );
       case _OBStep.documentUpload:
         return _DocumentUploadStep(
@@ -253,6 +294,7 @@ class _ProviderOnboardingScreenState extends State<ProviderOnboardingScreen> {
           entries: _docEntries,
           onChanged: () => setState(() {}),
           onSubmit: _submit,
+          isBn: _isBn,
         );
     }
   }
@@ -274,20 +316,20 @@ class _ProviderOnboardingScreenState extends State<ProviderOnboardingScreen> {
               child: const Icon(Icons.check_rounded, color: AppColors.ivory, size: 52),
             ).animate().scale(duration: 500.ms, curve: Curves.elasticOut).fadeIn(),
             const SizedBox(height: 32),
-            const Text(
-              'আবেদন সফলভাবে জমা হয়েছে!',
-              style: TextStyle(color: AppColors.textPrimary, fontSize: 22, fontWeight: FontWeight.w700),
+            Text(
+              _isBn ? 'আবেদন সফলভাবে জমা হয়েছে!' : 'Application submitted successfully!',
+              style: const TextStyle(color: AppColors.textPrimary, fontSize: 22, fontWeight: FontWeight.w700),
               textAlign: TextAlign.center,
             ).animate(delay: 300.ms).fadeIn().slideY(begin: 0.2),
             const SizedBox(height: 12),
-            const Text(
-              'Admin যাচাই করলে আপনি notification পাবেন।',
-              style: TextStyle(color: AppColors.textSecondary, fontSize: 14, height: 1.5),
+            Text(
+              _isBn ? 'Admin যাচাই করলে আপনি notification পাবেন।' : 'You\'ll get a notification once admin reviews it.',
+              style: const TextStyle(color: AppColors.textSecondary, fontSize: 14, height: 1.5),
               textAlign: TextAlign.center,
             ).animate(delay: 500.ms).fadeIn(),
             const SizedBox(height: 48),
             GlassButton(
-              label: 'ড্যাশবোর্ডে ফিরুন',
+              label: _isBn ? 'ড্যাশবোর্ডে ফিরুন' : 'Back to Dashboard',
               icon: Icons.dashboard_rounded,
               onPressed: () => Navigator.of(context).pushAndRemoveUntil(
                 MaterialPageRoute(builder: (_) => const MainNavigation()),
@@ -296,14 +338,14 @@ class _ProviderOnboardingScreenState extends State<ProviderOnboardingScreen> {
             ).animate(delay: 700.ms).fadeIn().slideY(begin: 0.2),
             const SizedBox(height: 16),
             GlassButton(
-              label: 'আরো একটি সেবা যোগ করুন',
+              label: _isBn ? 'আরো একটি সেবা যোগ করুন' : 'Add Another Service',
               icon: Icons.add_rounded,
               isOutlined: true,
               onPressed: _resetForAnotherService,
             ).animate(delay: 850.ms).fadeIn().slideY(begin: 0.2),
             const SizedBox(height: 16),
             GlassButton(
-              label: 'আইনজীবী হিসেবে যুক্ত হন',
+              label: _isBn ? 'আইনজীবী হিসেবে যুক্ত হন' : 'Join as a Lawyer',
               icon: Icons.gavel_rounded,
               isOutlined: true,
               onPressed: () => Navigator.of(context).push(
@@ -322,72 +364,110 @@ class _ProviderOnboardingScreenState extends State<ProviderOnboardingScreen> {
 class _ServiceSelectStep extends StatelessWidget {
   final List<Map<String, dynamic>> serviceTypes;
   final void Function(String id, String name) onSelect;
+  final bool isBn;
 
-  const _ServiceSelectStep({required this.serviceTypes, required this.onSelect});
+  const _ServiceSelectStep({required this.serviceTypes, required this.onSelect, required this.isBn});
 
   @override
   Widget build(BuildContext context) {
     if (serviceTypes.isEmpty) {
-      return const Center(
+      return Center(
         child: Column(mainAxisSize: MainAxisSize.min, children: [
-          Icon(Icons.grid_view_rounded, color: AppColors.textMuted, size: 48),
-          SizedBox(height: 16),
-          Text('সেবার তালিকা পাওয়া যায়নি', style: TextStyle(color: AppColors.textSecondary, fontSize: 14)),
+          const Icon(Icons.grid_view_rounded, color: AppColors.textMuted, size: 48),
+          const SizedBox(height: 16),
+          Text(isBn ? 'সেবার তালিকা পাওয়া যায়নি' : 'No services found', style: const TextStyle(color: AppColors.textSecondary, fontSize: 14)),
         ]),
       );
     }
 
-    return GridView.builder(
+    return SingleChildScrollView(
       padding: const EdgeInsets.fromLTRB(16, 8, 16, 20),
-      gridDelegate: const SliverGridDelegateWithFixedCrossAxisCount(
-        crossAxisCount: 2,
-        crossAxisSpacing: 12,
-        mainAxisSpacing: 12,
-        childAspectRatio: 1.25,
-      ),
-      itemCount: serviceTypes.length,
-      itemBuilder: (context, i) {
-        final s = serviceTypes[i];
-        final id = s['id'] as String? ?? '';
-        final icon = s['icon'] as String? ?? '🔧';
-        final name = s['name'] as String? ?? '';
-        final nameEn = s['nameEn'] as String? ?? '';
-
-        return GestureDetector(
-          onTap: () => onSelect(id, name),
-          child: Container(
-            decoration: BoxDecoration(
-              color: AppColors.glassWhite,
-              borderRadius: BorderRadius.circular(16),
-              border: Border.all(color: AppColors.glassBorder, width: 1.5),
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          GridView.builder(
+            shrinkWrap: true,
+            physics: const NeverScrollableScrollPhysics(),
+            gridDelegate: const SliverGridDelegateWithFixedCrossAxisCount(
+              crossAxisCount: 2,
+              crossAxisSpacing: 12,
+              mainAxisSpacing: 12,
+              childAspectRatio: 1.25,
             ),
-            padding: const EdgeInsets.all(12),
-            child: Column(
-              mainAxisAlignment: MainAxisAlignment.center,
-              children: [
-                Text(icon, style: const TextStyle(fontSize: 28)),
-                const SizedBox(height: 6),
-                Text(
-                  name,
-                  style: const TextStyle(color: AppColors.textPrimary, fontSize: 12, fontWeight: FontWeight.w700),
-                  textAlign: TextAlign.center,
-                  maxLines: 2,
-                  overflow: TextOverflow.ellipsis,
-                ),
-                const SizedBox(height: 2),
-                Text(
-                  nameEn,
-                  style: const TextStyle(color: AppColors.textMuted, fontSize: 10),
-                  textAlign: TextAlign.center,
-                  maxLines: 1,
-                  overflow: TextOverflow.ellipsis,
-                ),
-              ],
-            ),
+            // Regular API-driven services plus lawyer, which is the one track that still has no
+            // onboarding application at all (dispatch grants it from ProviderProfile.legalRole
+            // instead). Cook and ride used to be pinned here too, but now come from the API list
+            // like everything else — their dedicated screens run from _onServiceSelected so they
+            // also create a real application, which is what lets them go online.
+            itemCount: serviceTypes.length + 1,
+            itemBuilder: (context, i) {
+              if (i < serviceTypes.length) {
+                final s = serviceTypes[i];
+                final id = s['id'] as String? ?? '';
+                final icon = s['icon'] as String? ?? '🔧';
+                final name = s['name'] as String? ?? '';
+                final nameEn = s['nameEn'] as String? ?? '';
+                return _ServiceTile(icon: icon, name: name, nameEn: nameEn, onTap: () => onSelect(id, name), delayIndex: i);
+              }
+              return _ServiceTile(
+                icon: '⚖️',
+                name: isBn ? 'আইনজীবী হিসেবে যুক্ত হন' : 'Join as a Lawyer',
+                nameEn: 'Lawyer',
+                onTap: () => Navigator.of(context).push(MaterialPageRoute(builder: (_) => const LegalOnboardingScreen())),
+                delayIndex: i,
+              );
+            },
           ),
-        ).animate(delay: Duration(milliseconds: 40 * i)).fadeIn(duration: 250.ms).slideY(begin: 0.08);
-      },
+        ],
+      ),
     );
+  }
+}
+
+class _ServiceTile extends StatelessWidget {
+  final String icon;
+  final String name;
+  final String nameEn;
+  final VoidCallback onTap;
+  final int delayIndex;
+
+  const _ServiceTile({required this.icon, required this.name, required this.nameEn, required this.onTap, required this.delayIndex});
+
+  @override
+  Widget build(BuildContext context) {
+    return GestureDetector(
+      onTap: onTap,
+      child: Container(
+        decoration: BoxDecoration(
+          color: AppColors.glassWhite,
+          borderRadius: BorderRadius.circular(16),
+          border: Border.all(color: AppColors.glassBorder, width: 1.5),
+        ),
+        padding: const EdgeInsets.all(12),
+        child: Column(
+          mainAxisAlignment: MainAxisAlignment.center,
+          children: [
+            Text(icon, style: const TextStyle(fontSize: 28)),
+            const SizedBox(height: 6),
+            Text(
+              name,
+              style: const TextStyle(color: AppColors.textPrimary, fontSize: 12, fontWeight: FontWeight.w700),
+              textAlign: TextAlign.center,
+              maxLines: 2,
+              overflow: TextOverflow.ellipsis,
+            ),
+            const SizedBox(height: 2),
+            Text(
+              nameEn,
+              style: const TextStyle(color: AppColors.textMuted, fontSize: 10),
+              textAlign: TextAlign.center,
+              maxLines: 1,
+              overflow: TextOverflow.ellipsis,
+            ),
+          ],
+        ),
+      ),
+    ).animate(delay: Duration(milliseconds: 40 * delayIndex)).fadeIn(duration: 250.ms).slideY(begin: 0.08);
   }
 }
 
@@ -399,6 +479,7 @@ class _DocumentUploadStep extends StatelessWidget {
   final List<_DocEntry> entries;
   final VoidCallback onChanged;
   final Future<void> Function() onSubmit;
+  final bool isBn;
 
   const _DocumentUploadStep({
     required this.serviceTypeId,
@@ -406,6 +487,7 @@ class _DocumentUploadStep extends StatelessWidget {
     required this.entries,
     required this.onChanged,
     required this.onSubmit,
+    required this.isBn,
   });
 
   int get _missingCount => entries.where((e) => e.blocksSubmit).length;
@@ -415,12 +497,12 @@ class _DocumentUploadStep extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     if (entries.isEmpty) {
-      return const Center(
+      return Center(
         child: Padding(
-          padding: EdgeInsets.all(32),
+          padding: const EdgeInsets.all(32),
           child: Text(
-            'এই সেবার জন্য কোনো ডকুমেন্ট প্রয়োজন নেই।',
-            style: TextStyle(color: AppColors.textSecondary, fontSize: 14),
+            isBn ? 'এই সেবার জন্য কোনো ডকুমেন্ট প্রয়োজন নেই।' : 'No documents are required for this service.',
+            style: const TextStyle(color: AppColors.textSecondary, fontSize: 14),
             textAlign: TextAlign.center,
           ),
         ),
@@ -443,6 +525,7 @@ class _DocumentUploadStep extends StatelessWidget {
                     entry: e,
                     serviceTypeId: serviceTypeId,
                     onChanged: onChanged,
+                    isBn: isBn,
                   )),
             ],
           ),
@@ -451,12 +534,12 @@ class _DocumentUploadStep extends StatelessWidget {
           padding: const EdgeInsets.fromLTRB(16, 8, 16, 20),
           child: GlassButton(
             label: _canSubmit
-                ? 'জমা দিন'
+                ? (isBn ? 'জমা দিন' : 'Submit')
                 : _anyBusy
-                    ? 'অপেক্ষা করুন...'
+                    ? (isBn ? 'অপেক্ষা করুন...' : 'Please wait...')
                     : _missingCount > 0
-                        ? '$_missingCount টি ডকুমেন্ট বাকি আছে'
-                        : 'জমা দিন',
+                        ? (isBn ? '$_missingCount টি ডকুমেন্ট বাকি আছে' : '$_missingCount document(s) remaining')
+                        : (isBn ? 'জমা দিন' : 'Submit'),
             icon: _canSubmit ? Icons.check_circle_rounded : Icons.hourglass_bottom_rounded,
             onPressed: _canSubmit ? () async => await onSubmit() : null,
           ),
@@ -472,8 +555,9 @@ class _DocCard extends StatelessWidget {
   final _DocEntry entry;
   final String serviceTypeId;
   final VoidCallback onChanged;
+  final bool isBn;
 
-  const _DocCard({required this.entry, required this.serviceTypeId, required this.onChanged});
+  const _DocCard({required this.entry, required this.serviceTypeId, required this.onChanged, required this.isBn});
 
   // Show the "ঐচ্ছিক" badge for genuinely-optional codes. BSC_DIPLOMA is
   // excluded — its optionality is controlled by the in-card checkbox, not the
@@ -483,11 +567,11 @@ class _DocCard extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final body = switch (entry.code) {
-      _kDocPortfolio => _PortfolioBody(entry: entry, onChanged: onChanged),
-      _kDocEquipment => _EquipmentBody(entry: entry, serviceTypeId: serviceTypeId, onChanged: onChanged),
-      _kDocExperience => _ExperienceBody(entry: entry, onChanged: onChanged),
-      _kDocBscDiploma => _BscDiplomaBody(entry: entry, onChanged: onChanged),
-      _ => _SingleImageBody(entry: entry, onChanged: onChanged),
+      _kDocPortfolio => _PortfolioBody(entry: entry, onChanged: onChanged, isBn: isBn),
+      _kDocEquipment => _EquipmentBody(entry: entry, serviceTypeId: serviceTypeId, onChanged: onChanged, isBn: isBn),
+      _kDocExperience => _ExperienceBody(entry: entry, onChanged: onChanged, isBn: isBn),
+      _kDocBscDiploma => _BscDiplomaBody(entry: entry, onChanged: onChanged, isBn: isBn),
+      _ => _SingleImageBody(entry: entry, onChanged: onChanged, isBn: isBn),
     };
     return Container(
       margin: const EdgeInsets.only(bottom: 16),
@@ -525,9 +609,9 @@ class _DocCard extends StatelessWidget {
                     borderRadius: BorderRadius.circular(8),
                     border: Border.all(color: AppColors.glassBorder),
                   ),
-                  child: const Text(
-                    'ঐচ্ছিক',
-                    style: TextStyle(color: AppColors.textMuted, fontSize: 10, fontWeight: FontWeight.w700),
+                  child: Text(
+                    isBn ? 'ঐচ্ছিক' : 'Optional',
+                    style: const TextStyle(color: AppColors.textMuted, fontSize: 10, fontWeight: FontWeight.w700),
                   ),
                 ),
             ],
@@ -545,8 +629,9 @@ class _DocCard extends StatelessWidget {
 class _SingleImageBody extends StatelessWidget {
   final _DocEntry entry;
   final VoidCallback onChanged;
+  final bool isBn;
 
-  const _SingleImageBody({required this.entry, required this.onChanged});
+  const _SingleImageBody({required this.entry, required this.onChanged, required this.isBn});
 
   Future<void> _pick(BuildContext context) async {
     final f = await ImagePicker().pickImage(source: ImageSource.gallery, imageQuality: 80);
@@ -559,7 +644,7 @@ class _SingleImageBody extends StatelessWidget {
         ..clear()
         ..add(upload);
     } catch (e) {
-      if (context.mounted) _snack(context, e.toString());
+      if (context.mounted) _snack(context, ApiClient.mapError(e).localized(isBn));
     } finally {
       entry.uploading = false;
       onChanged();
@@ -570,10 +655,11 @@ class _SingleImageBody extends StatelessWidget {
   Widget build(BuildContext context) {
     final file = entry.files.isNotEmpty ? entry.files.first : null;
     return _ImagePickBox(
-      hint: 'ট্যাপ করে ছবি বেছে নিন',
+      hint: isBn ? 'ট্যাপ করে ছবি বেছে নিন' : 'Tap to choose a photo',
       preview: file?.previewBytes,
       isBusy: entry.uploading,
       onTap: () => _pick(context),
+      isBn: isBn,
     );
   }
 }
@@ -583,8 +669,9 @@ class _SingleImageBody extends StatelessWidget {
 class _PortfolioBody extends StatelessWidget {
   final _DocEntry entry;
   final VoidCallback onChanged;
+  final bool isBn;
 
-  const _PortfolioBody({required this.entry, required this.onChanged});
+  const _PortfolioBody({required this.entry, required this.onChanged, required this.isBn});
 
   Future<void> _pick(BuildContext context) async {
     final f = await ImagePicker().pickImage(source: ImageSource.gallery, imageQuality: 80);
@@ -595,7 +682,7 @@ class _PortfolioBody extends StatelessWidget {
       final upload = await _uploadFile(f);
       entry.files.add(upload);
     } catch (e) {
-      if (context.mounted) _snack(context, e.toString());
+      if (context.mounted) _snack(context, ApiClient.mapError(e).localized(isBn));
     } finally {
       entry.uploading = false;
       onChanged();
@@ -613,6 +700,7 @@ class _PortfolioBody extends StatelessWidget {
             entry.useLink = v;
             onChanged();
           },
+          isBn: isBn,
         ),
         const SizedBox(height: 12),
         if (entry.useLink)
@@ -648,8 +736,9 @@ class _PortfolioBody extends StatelessWidget {
 class _ExperienceBody extends StatelessWidget {
   final _DocEntry entry;
   final VoidCallback onChanged;
+  final bool isBn;
 
-  const _ExperienceBody({required this.entry, required this.onChanged});
+  const _ExperienceBody({required this.entry, required this.onChanged, required this.isBn});
 
   @override
   Widget build(BuildContext context) {
@@ -662,9 +751,9 @@ class _ExperienceBody extends StatelessWidget {
       keyboardType: TextInputType.number,
       inputFormatters: [FilteringTextInputFormatter.digitsOnly],
       style: const TextStyle(color: AppColors.textPrimary, fontSize: 14),
-      decoration: const InputDecoration(
-        hintText: 'কত বছরের অভিজ্ঞতা?',
-        prefixIcon: Icon(Icons.timelapse_rounded, color: AppColors.textMuted, size: 20),
+      decoration: InputDecoration(
+        hintText: isBn ? 'কত বছরের অভিজ্ঞতা?' : 'How many years of experience?',
+        prefixIcon: const Icon(Icons.timelapse_rounded, color: AppColors.textMuted, size: 20),
       ),
     );
   }
@@ -675,8 +764,9 @@ class _ExperienceBody extends StatelessWidget {
 class _BscDiplomaBody extends StatelessWidget {
   final _DocEntry entry;
   final VoidCallback onChanged;
+  final bool isBn;
 
-  const _BscDiplomaBody({required this.entry, required this.onChanged});
+  const _BscDiplomaBody({required this.entry, required this.onChanged, required this.isBn});
 
   Future<void> _pick(BuildContext context) async {
     final f = await ImagePicker().pickImage(source: ImageSource.gallery, imageQuality: 80);
@@ -689,7 +779,7 @@ class _BscDiplomaBody extends StatelessWidget {
         ..clear()
         ..add(upload);
     } catch (e) {
-      if (context.mounted) _snack(context, e.toString());
+      if (context.mounted) _snack(context, ApiClient.mapError(e).localized(isBn));
     } finally {
       entry.uploading = false;
       onChanged();
@@ -720,10 +810,12 @@ class _BscDiplomaBody extends StatelessWidget {
                   size: 22,
                 ),
                 const SizedBox(width: 8),
-                const Expanded(
+                Expanded(
                   child: Text(
-                    'আমি বর্তমানে বিশ্ববিদ্যালয়ে অধ্যয়নরত (এখনো সার্টিফিকেট নেই)',
-                    style: TextStyle(color: AppColors.textSecondary, fontSize: 13, height: 1.35),
+                    isBn
+                        ? 'আমি বর্তমানে বিশ্ববিদ্যালয়ে অধ্যয়নরত (এখনো সার্টিফিকেট নেই)'
+                        : 'I am currently studying at university (no certificate yet)',
+                    style: const TextStyle(color: AppColors.textSecondary, fontSize: 13, height: 1.35),
                   ),
                 ),
               ],
@@ -733,9 +825,10 @@ class _BscDiplomaBody extends StatelessWidget {
         if (!entry.currentlyStudying) ...[
           const SizedBox(height: 10),
           _ImagePickBox(
-            hint: 'ট্যাপ করে ছবি বেছে নিন',
+            hint: isBn ? 'ট্যাপ করে ছবি বেছে নিন' : 'Tap to select an image',
             preview: entry.files.isNotEmpty ? entry.files.first.previewBytes : null,
             isBusy: entry.uploading,
+            isBn: isBn,
             onTap: () => _pick(context),
           ),
         ],
@@ -753,11 +846,13 @@ class _EquipmentBody extends StatefulWidget {
   final _DocEntry entry;
   final String serviceTypeId;
   final VoidCallback onChanged;
+  final bool isBn;
 
   const _EquipmentBody({
     required this.entry,
     required this.serviceTypeId,
     required this.onChanged,
+    required this.isBn,
   });
 
   @override
@@ -789,7 +884,7 @@ class _EquipmentBodyState extends State<_EquipmentBody> {
     } catch (e) {
       if (!mounted) return;
       setState(() {
-        _loadError = e.toString();
+        _loadError = ApiClient.mapError(e).localized(widget.isBn);
         _loading = false;
       });
     }
@@ -877,7 +972,7 @@ class _EquipmentBodyState extends State<_EquipmentBody> {
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
           Text(
-            'সরঞ্জাম তালিকা লোড করা যায়নি: $_loadError',
+            widget.isBn ? 'সরঞ্জাম তালিকা লোড করা যায়নি: $_loadError' : 'Could not load equipment list: $_loadError',
             style: const TextStyle(color: Color(0xFFEF4444), fontSize: 12),
           ),
           const SizedBox(height: 8),
@@ -889,7 +984,7 @@ class _EquipmentBodyState extends State<_EquipmentBody> {
               });
               _fetch();
             },
-            child: const Text('আবার চেষ্টা করুন', style: TextStyle(color: AppColors.deepBlue)),
+            child: Text(widget.isBn ? 'আবার চেষ্টা করুন' : 'Try again', style: const TextStyle(color: AppColors.deepBlue)),
           ),
         ],
       );
@@ -918,7 +1013,7 @@ class _EquipmentBodyState extends State<_EquipmentBody> {
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
         Text(
-          cat.bn,
+          widget.isBn ? cat.bn : cat.en,
           style: const TextStyle(
             color: AppColors.textSecondary,
             fontSize: 12,
@@ -943,13 +1038,13 @@ class _EquipmentBodyState extends State<_EquipmentBody> {
       dropdownColor: AppColors.bgMid,
       icon: const Icon(Icons.arrow_drop_down_rounded, color: AppColors.textMuted),
       style: const TextStyle(color: AppColors.textPrimary, fontSize: 14),
-      decoration: const InputDecoration(
-        hintText: 'বেছে নিন',
+      decoration: InputDecoration(
+        hintText: widget.isBn ? 'বেছে নিন' : 'Select',
       ),
       items: cat.items
           .map((it) => DropdownMenuItem<String>(
                 value: it.code,
-                child: Text(it.bn, overflow: TextOverflow.ellipsis),
+                child: Text(widget.isBn ? it.bn : it.en, overflow: TextOverflow.ellipsis),
               ))
           .toList(),
       onChanged: (v) {
@@ -970,7 +1065,7 @@ class _EquipmentBodyState extends State<_EquipmentBody> {
         if (t.isNotEmpty) labels.add(t);
       } else {
         final item = _itemByCode(cat, code);
-        if (item != null) labels.add(item.bn);
+        if (item != null) labels.add(widget.isBn ? item.bn : item.en);
       }
     }
     final displayText = labels.join(', ');
@@ -980,9 +1075,9 @@ class _EquipmentBodyState extends State<_EquipmentBody> {
       onTap: () => _openMultiPicker(cat, sel),
       child: InputDecorator(
         isEmpty: displayText.isEmpty,
-        decoration: const InputDecoration(
-          hintText: 'বেছে নিন (একাধিক)',
-          suffixIcon: Icon(Icons.arrow_drop_down_rounded, color: AppColors.textMuted),
+        decoration: InputDecoration(
+          hintText: widget.isBn ? 'বেছে নিন (একাধিক)' : 'Select (multiple)',
+          suffixIcon: const Icon(Icons.arrow_drop_down_rounded, color: AppColors.textMuted),
         ),
         child: Text(
           displayText,
@@ -1024,7 +1119,7 @@ class _EquipmentBodyState extends State<_EquipmentBody> {
                     ),
                     const SizedBox(height: 12),
                     Text(
-                      cat.bn,
+                      widget.isBn ? cat.bn : cat.en,
                       style: const TextStyle(
                         color: AppColors.textPrimary,
                         fontSize: 15,
@@ -1032,9 +1127,9 @@ class _EquipmentBodyState extends State<_EquipmentBody> {
                       ),
                     ),
                     const SizedBox(height: 2),
-                    const Text(
-                      'একাধিক বেছে নিতে পারবেন',
-                      style: TextStyle(color: AppColors.textMuted, fontSize: 12),
+                    Text(
+                      widget.isBn ? 'একাধিক বেছে নিতে পারবেন' : 'You can select multiple',
+                      style: const TextStyle(color: AppColors.textMuted, fontSize: 12),
                     ),
                     const SizedBox(height: 4),
                     Flexible(
@@ -1049,7 +1144,7 @@ class _EquipmentBodyState extends State<_EquipmentBody> {
                             activeColor: AppColors.deepBlue,
                             checkColor: AppColors.ivory,
                             title: Text(
-                              it.bn,
+                              widget.isBn ? it.bn : it.en,
                               style: const TextStyle(color: AppColors.textPrimary, fontSize: 13),
                             ),
                             onChanged: (v) {
@@ -1084,9 +1179,9 @@ class _EquipmentBodyState extends State<_EquipmentBody> {
                           padding: const EdgeInsets.symmetric(vertical: 12),
                           shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(10)),
                         ),
-                        child: const Text(
-                          'হয়েছে',
-                          style: TextStyle(color: AppColors.ivory, fontWeight: FontWeight.w700),
+                        child: Text(
+                          widget.isBn ? 'হয়েছে' : 'Done',
+                          style: const TextStyle(color: AppColors.ivory, fontWeight: FontWeight.w700),
                         ),
                       ),
                     ),
@@ -1112,8 +1207,8 @@ class _EquipmentBodyState extends State<_EquipmentBody> {
       style: const TextStyle(color: AppColors.textPrimary, fontSize: 14),
       decoration: InputDecoration(
         hintText: cat.multiSelect
-            ? 'অন্যান্য লেন্সের বিবরণ লিখুন'
-            : '${cat.bn} মডেলের নাম লিখুন',
+            ? (widget.isBn ? 'অন্যান্য লেন্সের বিবরণ লিখুন' : 'Enter other lens details')
+            : (widget.isBn ? '${cat.bn} মডেলের নাম লিখুন' : 'Enter ${cat.en} model name'),
         prefixIcon: const Icon(Icons.edit_rounded, color: AppColors.textMuted, size: 20),
       ),
     );
@@ -1129,8 +1224,9 @@ class _EqCategorySelection {
 class _ModeToggle extends StatelessWidget {
   final bool useLink;
   final void Function(bool) onChanged;
+  final bool isBn;
 
-  const _ModeToggle({required this.useLink, required this.onChanged});
+  const _ModeToggle({required this.useLink, required this.onChanged, required this.isBn});
 
   @override
   Widget build(BuildContext context) {
@@ -1166,8 +1262,8 @@ class _ModeToggle extends StatelessWidget {
       ),
       child: Row(
         children: [
-          seg('ছবি আপলোড', !useLink, () => onChanged(false)),
-          seg('লিংক দিন', useLink, () => onChanged(true)),
+          seg(isBn ? 'ছবি আপলোড' : 'Upload image', !useLink, () => onChanged(false)),
+          seg(isBn ? 'লিংক দিন' : 'Give a link', useLink, () => onChanged(true)),
         ],
       ),
     );
@@ -1180,12 +1276,14 @@ class _ImagePickBox extends StatelessWidget {
   final String hint;
   final Uint8List? preview;
   final bool isBusy;
+  final bool isBn;
   final VoidCallback onTap;
 
   const _ImagePickBox({
     required this.hint,
     required this.preview,
     required this.isBusy,
+    required this.isBn,
     required this.onTap,
   });
 
@@ -1218,9 +1316,9 @@ class _ImagePickBox extends StatelessWidget {
                           child: Container(
                             padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
                             decoration: BoxDecoration(color: AppColors.deepBlue, borderRadius: BorderRadius.circular(8)),
-                            child: const Text(
-                              'পরিবর্তন করুন',
-                              style: TextStyle(color: AppColors.ivory, fontSize: 10, fontWeight: FontWeight.w600),
+                            child: Text(
+                              isBn ? 'পরিবর্তন করুন' : 'Change',
+                              style: const TextStyle(color: AppColors.ivory, fontSize: 10, fontWeight: FontWeight.w600),
                             ),
                           ),
                         ),

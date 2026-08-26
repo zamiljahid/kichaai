@@ -1,8 +1,10 @@
 // The API serializes Prisma Decimal fields as JSON strings (e.g. "23.793"),
 // so numeric fields must accept both num and String.
-double _asDouble(dynamic v) => v is num ? v.toDouble() : double.parse(v.toString());
-double? _asDoubleOrNull(dynamic v) =>
-    v == null ? null : (v is num ? v.toDouble() : double.tryParse(v.toString()));
+double _asDouble(dynamic v) =>
+    v is num ? v.toDouble() : double.parse(v.toString());
+double? _asDoubleOrNull(dynamic v) => v == null
+    ? null
+    : (v is num ? v.toDouble() : double.tryParse(v.toString()));
 
 class JobModel {
   final String id;
@@ -24,24 +26,58 @@ class JobModel {
   final String? assignedProviderId;
   final String? providerNameSnapshot;
   final String? providerPhoneSnapshot;
-  final String? taskCategory;   // technician-type jobs only
-  final String? pricingMode;    // FIXED | CUSTOM
-  final double? quotedAmount;   // set once provider submits a CUSTOM quote
+  final String? taskCategory; // technician-type jobs only
+  final String? pricingMode; // FIXED | CUSTOM
+  final double? quotedAmount; // set once provider submits a CUSTOM quote
   final DateTime? quoteApprovedAt;
-  final DateTime? assignedAt;   // when the provider accepted (start of the 15-min cancel grace)
-  final DateTime? confirmedAt;  // when the customer OTP-confirmed start (job engaged)
-  final DateTime? providerConfirmedAt; // when the customer confirmed the accepted provider (reveals phone numbers)
-  final bool exactLocationHidden; // true → address is coarse + pin fuzzed (pre-accept / not owner)
-  final String? meetLink;       // lawyer video consultations — Google Meet link
-  final String? startPhotoUrl;  // provider's photo proof — with a photo the commission is 15%, without 20%
+  final DateTime?
+      assignedAt; // when the provider accepted (start of the 15-min cancel grace)
+  final DateTime?
+      confirmedAt; // when the customer OTP-confirmed start (job engaged)
+  final DateTime?
+      providerConfirmedAt; // when the customer confirmed the accepted provider (reveals phone numbers)
+  final bool
+      exactLocationHidden; // true → address is coarse + pin fuzzed (pre-accept / not owner)
+  final String? meetLink; // lawyer video consultations — Google Meet link
+  final String? consultationTiming; // lawyer only — 'instant' | 'schedule'
+  final DateTime?
+      scheduledAt; // lawyer schedule-mode — set once a slot is picked
+  final String?
+      startPhotoUrl; // provider's photo proof — with a photo the commission is 15%, without 20%
   final String? endPhotoUrl;
-  final int? notifiedProviderCount; // createJob response only — how many providers the broadcast reached
-  final DateTime? eventDate;    // advance-booking jobs — scheduled start time
+  final int?
+      notifiedProviderCount; // createJob response only — how many providers the broadcast reached
+  final DateTime? eventDate; // advance-booking jobs — scheduled start time
   final int? estimatedDurationHours; // advance-booking jobs — planned duration
+  final double?
+      depositAmount; // advance-booking jobs — 50% deposit, null if this job has none
+  final String? depositStatus; // pending | paid | released | refunded
+  /// Caregiver only — patient condition/age, null when the job carries none.
+  final CaregiverDetail? caregiverDetail;
+
+  /// Caregiver/photographer/cinematographer/makeup_artist — self-declared, informational
+  /// only (never filters the broadcast). null/'any' = no preference.
+  final String? providerGenderPreference;
+
+  /// Ride (commute) only — the destination. Null on every other kind, which all happen
+  /// AT the pickup location. `_asDoubleOrNull` is deliberate: `_asDouble` throws on null.
+  final double? dropoffLatitude;
+  final double? dropoffLongitude;
+  final String? dropoffAddressSnapshot;
+
+  /// Ride only — straight-line pickup→dropoff distance the fare was quoted from.
+  final double? distanceKm;
+
+  /// Ride only — vehicle type + fare breakdown.
+  final RideDetail? rideDetail;
+
   /// Provider location breadcrumbs, newest first. Backend guarantees this is
   /// empty until the provider is assigned AND has started sharing location.
   final List<LocationTrackModel> locationTracks;
   final DateTime createdAt;
+
+  /// True when this job is a point-to-point ride (drives the destination marker + route line).
+  bool get isRide => dropoffLatitude != null && dropoffLongitude != null;
 
   const JobModel({
     required this.id,
@@ -72,11 +108,22 @@ class JobModel {
     this.providerConfirmedAt,
     this.exactLocationHidden = false,
     this.meetLink,
+    this.consultationTiming,
+    this.scheduledAt,
     this.startPhotoUrl,
     this.endPhotoUrl,
     this.notifiedProviderCount,
     this.eventDate,
     this.estimatedDurationHours,
+    this.depositAmount,
+    this.depositStatus,
+    this.caregiverDetail,
+    this.providerGenderPreference,
+    this.dropoffLatitude,
+    this.dropoffLongitude,
+    this.dropoffAddressSnapshot,
+    this.distanceKm,
+    this.rideDetail,
     this.locationTracks = const [],
     required this.createdAt,
   });
@@ -122,16 +169,37 @@ class JobModel {
             : null,
         exactLocationHidden: json['exactLocationHidden'] == true,
         meetLink: json['meetLink'] as String?,
+        consultationTiming: json['consultationTiming'] as String?,
+        scheduledAt: json['scheduledAt'] != null
+            ? DateTime.tryParse(json['scheduledAt'] as String)
+            : null,
         startPhotoUrl: json['startPhotoUrl'] as String?,
         endPhotoUrl: json['endPhotoUrl'] as String?,
         notifiedProviderCount: (json['notifiedProviderCount'] as num?)?.toInt(),
         eventDate: json['eventDate'] != null
             ? DateTime.tryParse(json['eventDate'] as String)
             : null,
-        estimatedDurationHours: (json['estimatedDurationHours'] as num?)?.toInt(),
+        estimatedDurationHours:
+            (json['estimatedDurationHours'] as num?)?.toInt(),
+        depositAmount: _asDoubleOrNull(json['depositAmount']),
+        depositStatus: json['depositStatus'] as String?,
+        caregiverDetail: json['caregiverDetail'] != null
+            ? CaregiverDetail.fromJson(
+                Map<String, dynamic>.from(json['caregiverDetail'] as Map))
+            : null,
+        providerGenderPreference: json['providerGenderPreference'] as String?,
+        dropoffLatitude: _asDoubleOrNull(json['dropoffLatitude']),
+        dropoffLongitude: _asDoubleOrNull(json['dropoffLongitude']),
+        dropoffAddressSnapshot: json['dropoffAddressSnapshot'] as String?,
+        distanceKm: _asDoubleOrNull(json['distanceKm']),
+        rideDetail: json['rideDetail'] != null
+            ? RideDetail.fromJson(
+                Map<String, dynamic>.from(json['rideDetail'] as Map))
+            : null,
         locationTracks: ((json['locationTracks'] as List?) ?? const [])
             .whereType<Map>()
-            .map((e) => LocationTrackModel.fromJson(Map<String, dynamic>.from(e)))
+            .map((e) =>
+                LocationTrackModel.fromJson(Map<String, dynamic>.from(e)))
             .toList(),
         createdAt: DateTime.parse(
           json['createdAt'] as String? ?? DateTime.now().toIso8601String(),
@@ -139,11 +207,17 @@ class JobModel {
       );
 
   /// CUSTOM-pricing job where the provider still needs to submit a quote.
-  bool get awaitingProviderQuote => pricingMode == 'CUSTOM' && quotedAmount == null;
+  bool get awaitingProviderQuote =>
+      pricingMode == 'CUSTOM' && quotedAmount == null;
 
   /// CUSTOM quote submitted, waiting for the customer to approve/reject.
   bool get awaitingQuoteApproval =>
-      pricingMode == 'CUSTOM' && quotedAmount != null && quoteApprovedAt == null;
+      pricingMode == 'CUSTOM' &&
+      quotedAmount != null &&
+      quoteApprovedAt == null;
+
+  /// Advance-booking job with an unpaid deposit — the shoot can't start until this clears.
+  bool get depositRequired => depositAmount != null && depositStatus != 'paid';
 
   String statusBn() {
     switch (status) {
@@ -163,6 +237,30 @@ class JobModel {
         return 'বাতিল';
       case 'expired':
         return 'মেয়াদ শেষ';
+      default:
+        return status;
+    }
+  }
+
+  String statusLabel(bool isBn) {
+    if (isBn) return statusBn();
+    switch (status) {
+      case 'searching':
+        return 'Searching';
+      case 'assigned':
+        return 'Assigned';
+      case 'accepted':
+        return 'Accepted';
+      case 'arriving':
+        return 'Arriving';
+      case 'in_progress':
+        return 'In progress';
+      case 'completed':
+        return 'Completed';
+      case 'cancelled':
+        return 'Cancelled';
+      case 'expired':
+        return 'Expired';
       default:
         return status;
     }
@@ -188,15 +286,17 @@ class JobModel {
 
   /// Still inside the free-cancel grace window after accepting.
   bool get inCancelGrace {
-    if (assignedAt == null) return true; // not yet assigned → nothing to penalise
-    return DateTime.now().difference(assignedAt!).inMinutes < cancelGraceMinutes;
+    if (assignedAt == null)
+      return true; // not yet assigned → nothing to penalise
+    return DateTime.now().difference(assignedAt!).inMinutes <
+        cancelGraceMinutes;
   }
 
   /// Whole minutes left in the free-cancel window (0 once it has expired).
   int get cancelGraceMinutesLeft {
     if (assignedAt == null) return cancelGraceMinutes;
-    final left = cancelGraceMinutes -
-        DateTime.now().difference(assignedAt!).inMinutes;
+    final left =
+        cancelGraceMinutes - DateTime.now().difference(assignedAt!).inMinutes;
     return left < 0 ? 0 : left;
   }
 
@@ -209,6 +309,65 @@ class JobModel {
     return startConfirmed ? 'fee' : 'card';
   }
 }
+
+/// Caregiver-only job detail — nested `job.caregiverDetail` from GET /dispatch/jobs/:id.
+class CaregiverDetail {
+  final String? patientCondition;
+  final int? patientAge;
+
+  const CaregiverDetail({this.patientCondition, this.patientAge});
+
+  factory CaregiverDetail.fromJson(Map<String, dynamic> json) =>
+      CaregiverDetail(
+        patientCondition: json['patientCondition'] as String?,
+        patientAge: (json['patientAge'] as num?)?.toInt(),
+      );
+}
+
+/// Ride-only job detail — nested `job.rideDetail` from GET /dispatch/jobs/:id.
+class RideDetail {
+  final String vehicleType; // motorcycle | car | cng
+  final int passengerCount;
+  final double? baseFare;
+  final double? perKmRate;
+  final double? surgeMultiplier;
+
+  const RideDetail({
+    required this.vehicleType,
+    this.passengerCount = 1,
+    this.baseFare,
+    this.perKmRate,
+    this.surgeMultiplier,
+  });
+
+  /// True when a surge multiplier above 1 was applied — worth telling the customer why
+  /// the fare is higher than usual rather than letting it look like a bug.
+  bool get hasSurge => (surgeMultiplier ?? 1) > 1;
+
+  factory RideDetail.fromJson(Map<String, dynamic> json) => RideDetail(
+        vehicleType: json['vehicleType'] as String? ?? 'motorcycle',
+        passengerCount: (json['passengerCount'] as num?)?.toInt() ?? 1,
+        baseFare: _asDoubleOrNull(json['baseFare']),
+        perKmRate: _asDoubleOrNull(json['perKmRate']),
+        surgeMultiplier: _asDoubleOrNull(json['surgeMultiplier']),
+      );
+}
+
+/// The three vehicle types a ride can request. Order is deliberate — cheapest first,
+/// matching how Pathao/Uber present options.
+const kRideVehicleTypes = ['motorcycle', 'cng', 'car'];
+
+const kRideVehicleLabelsBn = {
+  'motorcycle': 'বাইক',
+  'cng': 'সিএনজি',
+  'car': 'কার',
+};
+
+const kRideVehicleLabelsEn = {
+  'motorcycle': 'Bike',
+  'cng': 'CNG',
+  'car': 'Car',
+};
 
 class AssignmentModel {
   final String id;
@@ -231,7 +390,8 @@ class AssignmentModel {
     required this.status,
   });
 
-  factory AssignmentModel.fromJson(Map<String, dynamic> json) => AssignmentModel(
+  factory AssignmentModel.fromJson(Map<String, dynamic> json) =>
+      AssignmentModel(
         id: json['id'] as String,
         // API field is `dispatchJobId`; `response` carries pending/accepted/rejected.
         jobId: (json['jobId'] ?? json['dispatchJobId']) as String? ?? '',
@@ -270,18 +430,22 @@ class LiveSessionModel {
     this.isActive = true,
   });
 
-  factory LiveSessionModel.fromJson(Map<String, dynamic> json) => LiveSessionModel(
+  factory LiveSessionModel.fromJson(Map<String, dynamic> json) =>
+      LiveSessionModel(
         id: json['id'] as String,
         providerId: json['providerId'] as String,
         serviceKinds: (json['serviceKinds'] as List<dynamic>)
-            .map((e) => e is Map ? (e['serviceKind'] as String? ?? '') : e as String)
+            .map((e) =>
+                e is Map ? (e['serviceKind'] as String? ?? '') : e as String)
             .where((s) => s.isNotEmpty)
             .toList(),
         // /dispatch/sessions/me sends currentLatitude/currentLongitude (Decimal → string);
         // plain latitude/longitude never existed in that payload, so parsing used to throw
         // on the null and getMySession() failed for every caller since the model was written.
-        latitude: _asDoubleOrNull(json['latitude'] ?? json['currentLatitude']) ?? 0,
-        longitude: _asDoubleOrNull(json['longitude'] ?? json['currentLongitude']) ?? 0,
+        latitude:
+            _asDoubleOrNull(json['latitude'] ?? json['currentLatitude']) ?? 0,
+        longitude:
+            _asDoubleOrNull(json['longitude'] ?? json['currentLongitude']) ?? 0,
         providerNameSnapshot: json['providerNameSnapshot'] as String?,
         providerAvgRatingSnapshot:
             _asDoubleOrNull(json['providerAvgRatingSnapshot']),
@@ -289,7 +453,8 @@ class LiveSessionModel {
         profileImageUrl: json['profileImageUrl'] as String?,
         // Backend field is isOnline (ProviderLiveSession) — `isActive` never existed in the
         // response, so this always defaulted to true and an offline session read as active.
-        isActive: json['isOnline'] as bool? ?? json['isActive'] as bool? ?? true,
+        isActive:
+            json['isOnline'] as bool? ?? json['isActive'] as bool? ?? true,
       );
 }
 
@@ -321,7 +486,9 @@ class NearbyProviderModel {
   factory NearbyProviderModel.fromJson(Map<String, dynamic> json) =>
       NearbyProviderModel(
         id: json['id'] as String,
-        name: json['name'] as String? ?? json['providerNameSnapshot'] as String? ?? '',
+        name: json['name'] as String? ??
+            json['providerNameSnapshot'] as String? ??
+            '',
         phone: json['phone'] as String?,
         rating: _asDoubleOrNull(json['rating']),
         distanceKm: _asDoubleOrNull(json['distanceKm']),
@@ -424,7 +591,7 @@ class CancelResult {
   final bool cardGiven;
   final bool feeCharged;
   final double? feeAmount;
-  final bool suspended;      // 3rd card → temp ban triggered
+  final bool suspended; // 3rd card → temp ban triggered
   final DateTime? bannedUntil;
   final int? redFlags;
 
@@ -487,7 +654,8 @@ class ProviderStanding {
     this.dispatchAvgRating,
   });
 
-  factory ProviderStanding.fromJson(Map<String, dynamic> json) => ProviderStanding(
+  factory ProviderStanding.fromJson(Map<String, dynamic> json) =>
+      ProviderStanding(
         redFlags: json['redFlags'] as int? ?? 0,
         cardsUntilBan: json['cardsUntilBan'] as int? ?? 3,
         isBanned: json['isBanned'] == true,
@@ -571,7 +739,8 @@ const kSpecializationTaskCategories = <String, List<String>>{
 /// Categories relevant to [specializationCode]; falls back to GENERAL_HANDYMAN.
 List<String> taskCategoriesForSpecialization(String? specializationCode) {
   if (specializationCode == null) return const [];
-  return kSpecializationTaskCategories[specializationCode] ?? const ['GENERAL_HANDYMAN'];
+  return kSpecializationTaskCategories[specializationCode] ??
+      const ['GENERAL_HANDYMAN'];
 }
 
 /// Group-level filter — applies as soon as the customer picks a GROUP tile,
@@ -579,9 +748,19 @@ List<String> taskCategoriesForSpecialization(String? specializationCode) {
 /// job types, বাসাবাড়ি shows only household ones. Picking a type narrows further.
 const kSpecGroupTaskCategories = <String, List<String>>{
   'HOME_ELECTRICAL': [
-    'AC_SERVICE', 'REFRIGERATOR_REPAIR', 'WASHING_MACHINE_REPAIR', 'PLUMBING',
-    'ELECTRICAL', 'PAINTING', 'CARPENTRY', 'TILES_WORK', 'TV_REPAIR',
-    'GENERAL_HANDYMAN', 'CLEANING', 'PEST_CONTROL', 'BABY_SITTING_SHORT',
+    'AC_SERVICE',
+    'REFRIGERATOR_REPAIR',
+    'WASHING_MACHINE_REPAIR',
+    'PLUMBING',
+    'ELECTRICAL',
+    'PAINTING',
+    'CARPENTRY',
+    'TILES_WORK',
+    'TV_REPAIR',
+    'GENERAL_HANDYMAN',
+    'CLEANING',
+    'PEST_CONTROL',
+    'BABY_SITTING_SHORT',
   ],
   'AUTOMOTIVE': ['CAR_REPAIR', 'MOTORCYCLE_REPAIR'],
   'IT_COMPUTER': ['COMPUTER_REPAIR', 'ELECTRICAL'],
@@ -609,7 +788,8 @@ class TaskCategoryRate {
     this.isActive = true,
   });
 
-  factory TaskCategoryRate.fromJson(Map<String, dynamic> json) => TaskCategoryRate(
+  factory TaskCategoryRate.fromJson(Map<String, dynamic> json) =>
+      TaskCategoryRate(
         taskCategory: json['taskCategory'] as String,
         fixedPrice: _asDouble(json['fixedPrice']),
         visitingFee: _asDouble(json['visitingFee']),
@@ -625,12 +805,43 @@ class JobOffer {
   final String assignmentId;
   final double? distanceKm;
 
-  const JobOffer({required this.job, required this.assignmentId, this.distanceKm});
+  const JobOffer(
+      {required this.job, required this.assignmentId, this.distanceKm});
 
   factory JobOffer.fromJson(Map<String, dynamic> json) => JobOffer(
         job: JobModel.fromJson(json['job'] as Map<String, dynamic>),
         assignmentId: json['assignmentId'] as String,
         distanceKm: _asDoubleOrNull(json['distanceKm']),
+      );
+}
+
+/// One customer review on the provider dashboard's reviews card.
+class ProviderReview {
+  final String jobId;
+  final String? customerName;
+  final int? rating;
+  final String? review;
+  final DateTime? ratedAt;
+  final String? jobTitle;
+
+  const ProviderReview({
+    required this.jobId,
+    this.customerName,
+    this.rating,
+    this.review,
+    this.ratedAt,
+    this.jobTitle,
+  });
+
+  factory ProviderReview.fromJson(Map<String, dynamic> json) => ProviderReview(
+        jobId: json['jobId'] as String,
+        customerName: json['customerName'] as String?,
+        rating: json['rating'] as int?,
+        review: json['review'] as String?,
+        ratedAt: json['ratedAt'] != null
+            ? DateTime.tryParse(json['ratedAt'] as String)
+            : null,
+        jobTitle: json['jobTitle'] as String?,
       );
 }
 
@@ -678,7 +889,8 @@ class LocationTrackModel {
     this.recordedAt,
   });
 
-  factory LocationTrackModel.fromJson(Map<String, dynamic> json) => LocationTrackModel(
+  factory LocationTrackModel.fromJson(Map<String, dynamic> json) =>
+      LocationTrackModel(
         id: json['id'] as String? ?? '',
         providerId: json['providerId'] as String? ?? '',
         latitude: _asDouble(json['latitude']),
@@ -712,7 +924,8 @@ class AvailableProviderModel {
     this.verified = false,
   });
 
-  factory AvailableProviderModel.fromJson(Map<String, dynamic> json) => AvailableProviderModel(
+  factory AvailableProviderModel.fromJson(Map<String, dynamic> json) =>
+      AvailableProviderModel(
         providerId: json['providerId'] as String,
         name: (json['name'] ?? '?').toString(),
         rating: _asDoubleOrNull(json['rating']),

@@ -1,3 +1,6 @@
+import 'dart:async';
+import 'package:flutter/foundation.dart';
+import 'package:geolocator/geolocator.dart';
 import '../core/network/api_client.dart';
 import '../models/dispatch_model.dart';
 
@@ -6,6 +9,57 @@ class DispatchService {
   DispatchService._();
 
   final _client = ApiClient.instance.dio;
+
+  // ── Live location tracking (while online) ──────────────────────────
+  // Lives on this app-lifetime singleton, NOT inside a screen's State — a screen's dispose()
+  // used to cancel this timer the moment a provider navigated away from the "online" screen
+  // (to check chat, the dashboard, etc.), silently going location-stale and dropping out of
+  // job matching without ever tapping "offline". Started on go-online, stopped only on
+  // explicit go-offline (or logout) — survives navigating anywhere else in the app.
+  Timer? _locationTimer;
+
+  // Shared with MainNavigation's top bar so a provider browsing the customer tab can still
+  // see "I'm online" at a glance — going online used to be invisible the moment you left the
+  // provider dashboard screen, even though the underlying session stayed live.
+  final ValueNotifier<bool> isOnlineNotifier = ValueNotifier(false);
+
+  void startLocationTracking() {
+    isOnlineNotifier.value = true;
+    if (_locationTimer != null) return; // already running — idempotent
+    _locationTimer = Timer.periodic(const Duration(seconds: 30), (_) async {
+      try {
+        final perm = await Geolocator.checkPermission();
+        if (perm == LocationPermission.denied ||
+            perm == LocationPermission.deniedForever) return;
+        final pos = await Geolocator.getCurrentPosition(
+            desiredAccuracy: LocationAccuracy.high);
+        await _client.post('/dispatch/sessions/location', data: {
+          'latitude': pos.latitude,
+          'longitude': pos.longitude,
+        });
+      } catch (_) {
+        // best-effort — a missed tick just tries again in 30s
+      }
+    });
+  }
+
+  void stopLocationTracking() {
+    isOnlineNotifier.value = false;
+    _locationTimer?.cancel();
+    _locationTimer = null;
+  }
+
+  // Called once on app start (MainNavigation) — restores isOnlineNotifier's value from the
+  // backend after a fresh page load/app restart, when no go-online tap happened this session
+  // to set it locally.
+  Future<void> syncOnlineStatus() async {
+    try {
+      final s = await getMySession();
+      if (s.isActive) isOnlineNotifier.value = true;
+    } catch (_) {
+      // No live session — genuinely offline, notifier stays at its default false.
+    }
+  }
 
   // ── Jobs ──────────────────────────────────────────────────────────
 
@@ -23,14 +77,36 @@ class DispatchService {
     double? estimatedAmount,
     String? preferredProviderId,
     String urgencyLevel = 'normal',
-    String? taskCategory,     // technician jobs — backend resolves estimatedAmount from this
-    String? specialization,   // technician jobs — narrows matching to techs who ticked this type
-    String? legalArea,        // lawyer only — required for a lawyer consultation
-    String? legalService,     // lawyer only — decides which role is eligible
+    String?
+        taskCategory, // technician jobs — backend resolves estimatedAmount from this
+    String?
+        specialization, // technician jobs — narrows matching to techs who ticked this type
+    String? legalArea, // lawyer only — required for a lawyer consultation
+    String? legalService, // lawyer only — decides which role is eligible
     String? consultationMode, // lawyer only — phone | video | chat | in_person
-    DateTime? eventDate,      // advance-booking (photographer/cinematographer/makeup_artist) —
-                              // presence flips the backend to browse-and-confirm instead of nearest-first
-    int? estimatedDurationHours, // advance-booking only — job duration for the calendar slot
+    String?
+        consultationTiming, // lawyer only — 'instant' | 'schedule', defaults backend-side to instant
+    DateTime?
+        eventDate, // advance-booking (photographer/cinematographer/makeup_artist) —
+    // presence flips the backend to browse-and-confirm instead of nearest-first
+    int?
+        estimatedDurationHours, // advance-booking only — job duration for the calendar slot
+    DateTime?
+        eventEndDate, // caregiver multi-day booking — range end (eventDate is the start)
+    String? bookingMode, // caregiver only — 'now' | 'schedule'
+    String?
+        providerGenderPreference, // caregiver/photographer/cinematographer/makeup_artist — informational only
+    String? patientCondition, // caregiver only
+    int? patientAge, // caregiver only
+    // Ride (commute) only — a ride is the one point-to-point job kind. The backend REQUIRES
+    // all of dropoffLatitude/dropoffLongitude/vehicleType for serviceKind 'commute' and
+    // computes the fare itself from the pickup→dropoff distance; anything we send as
+    // estimatedAmount is ignored for rides.
+    double? dropoffLatitude,
+    double? dropoffLongitude,
+    String? dropoffAddressSnapshot,
+    String? vehicleType, // 'motorcycle' | 'car' | 'cng'
+    int? passengerCount,
   }) async {
     try {
       final res = await _client.post('/dispatch/jobs', data: {
@@ -41,19 +117,39 @@ class DispatchService {
         'pickupLatitude': pickupLatitude,
         'pickupLongitude': pickupLongitude,
         'urgencyLevel': urgencyLevel,
-        if (customerNameSnapshot != null) 'customerNameSnapshot': customerNameSnapshot,
-        if (customerPhoneSnapshot != null) 'customerPhoneSnapshot': customerPhoneSnapshot,
+        if (customerNameSnapshot != null)
+          'customerNameSnapshot': customerNameSnapshot,
+        if (customerPhoneSnapshot != null)
+          'customerPhoneSnapshot': customerPhoneSnapshot,
         if (description != null) 'description': description,
-        if (pickupAddressSnapshot != null) 'pickupAddressSnapshot': pickupAddressSnapshot,
+        if (pickupAddressSnapshot != null)
+          'pickupAddressSnapshot': pickupAddressSnapshot,
         if (estimatedAmount != null) 'estimatedAmount': estimatedAmount,
-        if (preferredProviderId != null) 'preferredProviderId': preferredProviderId,
+        if (preferredProviderId != null)
+          'preferredProviderId': preferredProviderId,
         if (taskCategory != null) 'taskCategory': taskCategory,
         if (specialization != null) 'specialization': specialization,
         if (legalArea != null) 'legalArea': legalArea,
         if (legalService != null) 'legalService': legalService,
         if (consultationMode != null) 'consultationMode': consultationMode,
+        if (consultationTiming != null)
+          'consultationTiming': consultationTiming,
         if (eventDate != null) 'eventDate': eventDate.toUtc().toIso8601String(),
-        if (estimatedDurationHours != null) 'estimatedDurationHours': estimatedDurationHours,
+        if (estimatedDurationHours != null)
+          'estimatedDurationHours': estimatedDurationHours,
+        if (eventEndDate != null)
+          'eventEndDate': eventEndDate.toUtc().toIso8601String(),
+        if (bookingMode != null) 'bookingMode': bookingMode,
+        if (providerGenderPreference != null)
+          'providerGenderPreference': providerGenderPreference,
+        if (patientCondition != null) 'patientCondition': patientCondition,
+        if (patientAge != null) 'patientAge': patientAge,
+        if (dropoffLatitude != null) 'dropoffLatitude': dropoffLatitude,
+        if (dropoffLongitude != null) 'dropoffLongitude': dropoffLongitude,
+        if (dropoffAddressSnapshot != null)
+          'dropoffAddressSnapshot': dropoffAddressSnapshot,
+        if (vehicleType != null) 'vehicleType': vehicleType,
+        if (passengerCount != null) 'passengerCount': passengerCount,
       });
       return JobModel.fromJson(res.data as Map<String, dynamic>);
     } catch (e) {
@@ -68,27 +164,32 @@ class DispatchService {
   Future<List<AvailableProviderModel>> listAvailableProviders({
     required String serviceKind,
     required DateTime eventDate,
+    DateTime?
+        eventEndDate, // multi-day (caregiver) — filters to providers free EVERY day in range
     String? specialty,
     int? limit,
     int? offset,
   }) async {
     try {
-      final res = await _client.get('/dispatch/providers/available', queryParameters: {
+      final res =
+          await _client.get('/dispatch/providers/available', queryParameters: {
         'serviceKind': serviceKind,
         'eventDate': eventDate.toUtc().toIso8601String(),
+        if (eventEndDate != null)
+          'eventEndDate': eventEndDate.toUtc().toIso8601String(),
         if (specialty != null) 'specialty': specialty,
         if (limit != null) 'limit': limit,
         if (offset != null) 'offset': offset,
       });
       final list = res.data as List<dynamic>;
       return list
-          .map((e) => AvailableProviderModel.fromJson(e as Map<String, dynamic>))
+          .map(
+              (e) => AvailableProviderModel.fromJson(e as Map<String, dynamic>))
           .toList();
     } catch (e) {
       throw ApiClient.mapError(e);
     }
   }
-
 
   /// GET /dispatch/providers/:id/availability — a photographer/cinematographer/
   /// makeup_artist's booked event slots + self-marked days off in a date window.
@@ -100,12 +201,16 @@ class DispatchService {
     DateTime? to,
   }) async {
     try {
-      final res = await _client.get('/dispatch/providers/$providerId/availability', queryParameters: {
-        if (from != null) 'from': from.toUtc().toIso8601String(),
-        if (to != null) 'to': to.toUtc().toIso8601String(),
-      });
+      final res = await _client.get(
+          '/dispatch/providers/$providerId/availability',
+          queryParameters: {
+            if (from != null) 'from': from.toUtc().toIso8601String(),
+            if (to != null) 'to': to.toUtc().toIso8601String(),
+          });
       final data = res.data;
-      return data is Map ? Map<String, dynamic>.from(data) : {'bookedSlots': [], 'blockedDates': []};
+      return data is Map
+          ? Map<String, dynamic>.from(data)
+          : {'bookedSlots': [], 'blockedDates': []};
     } catch (e) {
       throw ApiClient.mapError(e);
     }
@@ -117,7 +222,8 @@ class DispatchService {
   /// Provider marks a day off — excluded from advance-booking browse/confirm.
   Future<void> blockDate(DateTime date) async {
     try {
-      await _client.post('/dispatch/me/blocked-dates', data: {'date': _dateOnly(date)});
+      await _client
+          .post('/dispatch/me/blocked-dates', data: {'date': _dateOnly(date)});
     } catch (e) {
       throw ApiClient.mapError(e);
     }
@@ -138,14 +244,17 @@ class DispatchService {
   /// Runs the SAME eligibility rules as the broadcast (verified, role, daily cap),
   /// so the badge can never disagree with who actually gets notified.
   /// Returns null on any failure — the badge is a nice-to-have; hide it, never block.
-  Future<int?> countOnlineLawyers({String? legalArea, String? legalService}) async {
+  Future<int?> countOnlineLawyers(
+      {String? legalArea, String? legalService}) async {
     try {
-      final res = await _client.get('/dispatch/lawyers/online-count', queryParameters: {
+      final res =
+          await _client.get('/dispatch/lawyers/online-count', queryParameters: {
         if (legalArea != null) 'legalArea': legalArea,
         if (legalService != null) 'legalService': legalService,
       });
       final data = res.data;
-      if (data is Map && data['count'] is num) return (data['count'] as num).toInt();
+      if (data is Map && data['count'] is num)
+        return (data['count'] as num).toInt();
       return null;
     } catch (_) {
       return null;
@@ -170,7 +279,8 @@ class DispatchService {
         },
       );
       final data = res.data;
-      if (data is Map && data['count'] is num) return (data['count'] as num).toInt();
+      if (data is Map && data['count'] is num)
+        return (data['count'] as num).toInt();
       return null;
     } catch (_) {
       return null;
@@ -193,7 +303,46 @@ class DispatchService {
   /// generates the Google Meet link here, so the returned job carries `meetLink`.
   Future<JobModel> confirmProvider(String jobId, String providerId) async {
     try {
-      final res = await _client.post('/dispatch/jobs/$jobId/confirm-provider', data: {'providerId': providerId});
+      final res = await _client.post('/dispatch/jobs/$jobId/confirm-provider',
+          data: {'providerId': providerId});
+      return JobModel.fromJson(res.data as Map<String, dynamic>);
+    } catch (e) {
+      throw ApiClient.mapError(e);
+    }
+  }
+
+  /// On-demand jobs (technician, caregiver, ...) default to cash-on-completion — this lets the
+  /// customer opt INTO paying online instead. Sets the job's amount to be collected; call
+  /// initiateDepositPayment right after to actually start the SSLCommerz session.
+  Future<Map<String, dynamic>> optInOnlinePayment(String jobId) async {
+    try {
+      final res =
+          await _client.post('/dispatch/jobs/$jobId/opt-in-online-payment');
+      return res.data is Map ? Map<String, dynamic>.from(res.data as Map) : {};
+    } catch (e) {
+      throw ApiClient.mapError(e);
+    }
+  }
+
+  /// Starts a real SSLCommerz session for the job's 50% advance-booking deposit. Returns
+  /// the raw transaction map (includes gatewayPageUrl) — throws if the job has no deposit.
+  Future<Map<String, dynamic>> initiateDepositPayment(String jobId,
+      {String? couponCode}) async {
+    try {
+      final res = await _client.post('/dispatch/jobs/$jobId/deposit/initiate',
+          data: couponCode != null ? {'couponCode': couponCode} : null);
+      final data = res.data as Map<String, dynamic>;
+      return Map<String, dynamic>.from(data['transaction'] as Map? ?? data);
+    } catch (e) {
+      throw ApiClient.mapError(e);
+    }
+  }
+
+  /// Only marks the deposit paid once the backend independently verifies a completed
+  /// transaction — never trusts the client's say-so.
+  Future<JobModel> confirmDepositPayment(String jobId) async {
+    try {
+      final res = await _client.post('/dispatch/jobs/$jobId/deposit/confirm');
       return JobModel.fromJson(res.data as Map<String, dynamic>);
     } catch (e) {
       throw ApiClient.mapError(e);
@@ -201,9 +350,11 @@ class DispatchService {
   }
 
   /// Customer skips the presented provider → exclude + present the next one.
-  Future<Map<String, dynamic>> rejectProvider(String jobId, String providerId, {String? reason}) async {
+  Future<Map<String, dynamic>> rejectProvider(String jobId, String providerId,
+      {String? reason}) async {
     try {
-      final res = await _client.post('/dispatch/jobs/$jobId/reject-provider', data: {
+      final res =
+          await _client.post('/dispatch/jobs/$jobId/reject-provider', data: {
         'providerId': providerId,
         if (reason != null) 'reason': reason,
       });
@@ -214,9 +365,11 @@ class DispatchService {
   }
 
   /// Legal-assistant consultation escalates to an advocate (new advocate-only job).
-  Future<Map<String, dynamic>> referToAdvocate(String jobId, {String? legalService}) async {
+  Future<Map<String, dynamic>> referToAdvocate(String jobId,
+      {String? legalService}) async {
     try {
-      final res = await _client.post('/dispatch/jobs/$jobId/refer-advocate', data: {
+      final res =
+          await _client.post('/dispatch/jobs/$jobId/refer-advocate', data: {
         if (legalService != null) 'legalService': legalService,
       });
       return res.data is Map ? Map<String, dynamic>.from(res.data as Map) : {};
@@ -236,10 +389,13 @@ class DispatchService {
         if (status != null) 'status': status,
         if (serviceKind != null) 'serviceKind': serviceKind,
         if (customerId != null) 'customerId': customerId,
-        if (assignedProviderId != null) 'assignedProviderId': assignedProviderId,
+        if (assignedProviderId != null)
+          'assignedProviderId': assignedProviderId,
       });
       final list = res.data as List<dynamic>;
-      return list.map((e) => JobModel.fromJson(e as Map<String, dynamic>)).toList();
+      return list
+          .map((e) => JobModel.fromJson(e as Map<String, dynamic>))
+          .toList();
     } catch (e) {
       throw ApiClient.mapError(e);
     }
@@ -269,7 +425,8 @@ class DispatchService {
 
   /// Provider: post my current location for an active job — this is what feeds
   /// the customer's live tracking map. providerId comes from the JWT server-side.
-  Future<void> trackLocation(String jobId, double latitude, double longitude) async {
+  Future<void> trackLocation(
+      String jobId, double latitude, double longitude) async {
     try {
       await _client.post('/dispatch/jobs/$jobId/track', data: {
         'latitude': latitude,
@@ -280,7 +437,8 @@ class DispatchService {
     }
   }
 
-  Future<JobModel> updateJobStatus(String id, String status, {double? finalAmount}) async {
+  Future<JobModel> updateJobStatus(String id, String status,
+      {double? finalAmount}) async {
     try {
       final res = await _client.patch('/dispatch/jobs/$id/status', data: {
         'status': status,
@@ -324,6 +482,20 @@ class DispatchService {
       final list = res.data as List<dynamic>;
       return list
           .map((e) => JobOffer.fromJson(e as Map<String, dynamic>))
+          .toList();
+    } catch (e) {
+      throw ApiClient.mapError(e);
+    }
+  }
+
+  /// Provider dashboard's reviews card — most recent customer reviews, newest first.
+  Future<List<ProviderReview>> getMyReviews({int limit = 3}) async {
+    try {
+      final res = await _client
+          .get('/dispatch/me/reviews', queryParameters: {'limit': limit});
+      final list = res.data as List<dynamic>;
+      return list
+          .map((e) => ProviderReview.fromJson(e as Map<String, dynamic>))
           .toList();
     } catch (e) {
       throw ApiClient.mapError(e);
@@ -380,13 +552,15 @@ class DispatchService {
 
   Future<void> confirmStart(String jobId, String otp) async {
     try {
-      await _client.post('/dispatch/jobs/$jobId/confirm-start', data: {'otp': otp});
+      await _client
+          .post('/dispatch/jobs/$jobId/confirm-start', data: {'otp': otp});
     } catch (e) {
       throw ApiClient.mapError(e);
     }
   }
 
-  Future<void> uploadJobPhoto(String jobId, {
+  Future<void> uploadJobPhoto(
+    String jobId, {
     required String photoType,
     required String photoUrl,
   }) async {
@@ -403,7 +577,8 @@ class DispatchService {
   /// Same dev-only OTP echo as requestStart — see its doc comment.
   Future<String?> requestCompletion(String jobId) async {
     try {
-      final res = await _client.post('/dispatch/jobs/$jobId/request-completion');
+      final res =
+          await _client.post('/dispatch/jobs/$jobId/request-completion');
       final data = res.data;
       return data is Map ? data['devOtp'] as String? : null;
     } catch (e) {
@@ -413,13 +588,15 @@ class DispatchService {
 
   Future<void> confirmCompletion(String jobId, String otp) async {
     try {
-      await _client.post('/dispatch/jobs/$jobId/confirm-completion', data: {'otp': otp});
+      await _client
+          .post('/dispatch/jobs/$jobId/confirm-completion', data: {'otp': otp});
     } catch (e) {
       throw ApiClient.mapError(e);
     }
   }
 
-  Future<void> rateJob(String jobId, {required int rating, String? review}) async {
+  Future<void> rateJob(String jobId,
+      {required int rating, String? review}) async {
     try {
       await _client.post('/dispatch/jobs/$jobId/rate', data: {
         'rating': rating,
@@ -432,7 +609,8 @@ class DispatchService {
 
   // ── CUSTOM-pricing quote flow ─────────────────────────────────────
   /// Provider submits an on-site quote after inspecting a CUSTOM-priced job.
-  Future<JobModel> submitQuote(String jobId, {required double quotedAmount}) async {
+  Future<JobModel> submitQuote(String jobId,
+      {required double quotedAmount}) async {
     try {
       final res = await _client.post('/dispatch/jobs/$jobId/quote', data: {
         'quotedAmount': quotedAmount,
@@ -445,9 +623,11 @@ class DispatchService {
 
   /// Customer approves or rejects the provider's quote. Rejecting cancels the
   /// job — only the visiting fee is owed.
-  Future<JobModel> respondToQuote(String jobId, {required bool approved, String? rejectionReason}) async {
+  Future<JobModel> respondToQuote(String jobId,
+      {required bool approved, String? rejectionReason}) async {
     try {
-      final res = await _client.post('/dispatch/jobs/$jobId/quote/respond', data: {
+      final res =
+          await _client.post('/dispatch/jobs/$jobId/quote/respond', data: {
         'approved': approved,
         if (rejectionReason != null) 'rejectionReason': rejectionReason,
       });
@@ -465,7 +645,9 @@ class DispatchService {
           queryParameters: {'isActive': 'true', 'limit': 100, 'offset': 0});
       final data = res.data;
       final list = data is List ? data : (data['items'] ?? data['data'] ?? []);
-      return (list as List).map((e) => Map<String, dynamic>.from(e as Map)).toList();
+      return (list as List)
+          .map((e) => Map<String, dynamic>.from(e as Map))
+          .toList();
     } catch (e) {
       throw ApiClient.mapError(e);
     }
@@ -474,11 +656,14 @@ class DispatchService {
   /// My pricing-mode choices per task category.
   Future<List<Map<String, dynamic>>> getMyPricingPreferences() async {
     try {
-      final res = await _client.get('/dispatch/provider/task-pricing-preference/me',
+      final res = await _client.get(
+          '/dispatch/provider/task-pricing-preference/me',
           queryParameters: {'limit': 100, 'offset': 0});
       final data = res.data;
       final list = data is List ? data : (data['items'] ?? data['data'] ?? []);
-      return (list as List).map((e) => Map<String, dynamic>.from(e as Map)).toList();
+      return (list as List)
+          .map((e) => Map<String, dynamic>.from(e as Map))
+          .toList();
     } catch (e) {
       throw ApiClient.mapError(e);
     }
@@ -490,7 +675,8 @@ class DispatchService {
     required String mode, // 'FIXED' | 'CUSTOM'
   }) async {
     try {
-      final res = await _client.patch('/dispatch/provider/task-pricing-preference', data: {
+      final res = await _client
+          .patch('/dispatch/provider/task-pricing-preference', data: {
         'taskCategory': taskCategory,
         'mode': mode,
       });
@@ -502,7 +688,8 @@ class DispatchService {
 
   // ── Lawyer consultation — opinion + case documents ────────────────
   /// Lawyer submits the written opinion, completing the consultation job.
-  Future<JobModel> submitOpinion(String jobId, {
+  Future<JobModel> submitOpinion(
+    String jobId, {
     required String opinionSummary,
     String? opinionAdvice,
     String? opinionNextSteps,
@@ -520,12 +707,14 @@ class DispatchService {
   }
 
   /// Customer uploads a case document (fileUrl) for a lawyer consultation.
-  Future<Map<String, dynamic>> addConsultationDocument(String jobId, {
+  Future<Map<String, dynamic>> addConsultationDocument(
+    String jobId, {
     required String fileUrl,
     String? docType,
   }) async {
     try {
-      final res = await _client.post('/dispatch/jobs/$jobId/consultation-documents', data: {
+      final res = await _client
+          .post('/dispatch/jobs/$jobId/consultation-documents', data: {
         'fileUrl': fileUrl,
         if (docType != null) 'docType': docType,
       });
@@ -535,13 +724,17 @@ class DispatchService {
     }
   }
 
-  Future<List<Map<String, dynamic>>> listConsultationDocuments(String jobId) async {
+  Future<List<Map<String, dynamic>>> listConsultationDocuments(
+      String jobId) async {
     try {
-      final res = await _client.get('/dispatch/jobs/$jobId/consultation-documents',
+      final res = await _client.get(
+          '/dispatch/jobs/$jobId/consultation-documents',
           queryParameters: {'limit': 50, 'offset': 0});
       final data = res.data;
       final list = data is List ? data : (data['items'] ?? data['data'] ?? []);
-      return (list as List).map((e) => Map<String, dynamic>.from(e as Map)).toList();
+      return (list as List)
+          .map((e) => Map<String, dynamic>.from(e as Map))
+          .toList();
     } catch (e) {
       throw ApiClient.mapError(e);
     }
@@ -560,9 +753,12 @@ class DispatchService {
     try {
       final res = await _client.post('/dispatch/jobs/$jobId/assign', data: {
         'providerId': providerId,
-        if (providerNameSnapshot != null) 'providerNameSnapshot': providerNameSnapshot,
-        if (providerPhoneSnapshot != null) 'providerPhoneSnapshot': providerPhoneSnapshot,
-        if (providerRatingSnapshot != null) 'providerRatingSnapshot': providerRatingSnapshot,
+        if (providerNameSnapshot != null)
+          'providerNameSnapshot': providerNameSnapshot,
+        if (providerPhoneSnapshot != null)
+          'providerPhoneSnapshot': providerPhoneSnapshot,
+        if (providerRatingSnapshot != null)
+          'providerRatingSnapshot': providerRatingSnapshot,
         if (distanceKm != null) 'distanceKm': distanceKm,
       });
       return AssignmentModel.fromJson(res.data as Map<String, dynamic>);
@@ -575,7 +771,9 @@ class DispatchService {
     try {
       final res = await _client.get('/dispatch/jobs/$jobId/assignments');
       final list = res.data as List<dynamic>;
-      return list.map((e) => AssignmentModel.fromJson(e as Map<String, dynamic>)).toList();
+      return list
+          .map((e) => AssignmentModel.fromJson(e as Map<String, dynamic>))
+          .toList();
     } catch (e) {
       throw ApiClient.mapError(e);
     }
@@ -589,7 +787,8 @@ class DispatchService {
     required String jobId,
   }) async {
     try {
-      final res = await _client.post('/dispatch/assignments/$assignmentId/respond', data: {
+      final res = await _client
+          .post('/dispatch/assignments/$assignmentId/respond', data: {
         'response': response,
         'jobId': jobId,
       });
@@ -599,9 +798,52 @@ class DispatchService {
     }
   }
 
+  // ── Schedule-mode consultation slots (lawyer only) ──────────────────
+
+  /// Provider (lawyer): propose 1-3 alternative times instead of accepting
+  /// this `schedule`-timing job right away.
+  Future<void> proposeSlots(
+      String jobId, List<Map<String, String>> slots) async {
+    try {
+      await _client
+          .post('/dispatch/jobs/$jobId/propose-slots', data: {'slots': slots});
+    } catch (e) {
+      throw ApiClient.mapError(e);
+    }
+  }
+
+  /// Customer: every unpicked slot offer for a schedule-mode job — one entry
+  /// per lawyer who proposed, each with its own `slots` list.
+  Future<List<Map<String, dynamic>>> listSlotOffers(String jobId) async {
+    try {
+      final res = await _client.get('/dispatch/jobs/$jobId/slot-offers');
+      return (res.data as List? ?? []).cast<Map<String, dynamic>>();
+    } catch (e) {
+      throw ApiClient.mapError(e);
+    }
+  }
+
+  /// Customer: pick one of a lawyer's proposed slots. Finalizes the
+  /// assignment and returns the freshly-created Google Meet link.
+  Future<Map<String, dynamic>> pickSlot(String jobId,
+      {required String providerId, required int slotIndex}) async {
+    try {
+      final res = await _client.post('/dispatch/jobs/$jobId/pick-slot', data: {
+        'providerId': providerId,
+        'slotIndex': slotIndex,
+      });
+      return res.data is Map ? Map<String, dynamic>.from(res.data as Map) : {};
+    } catch (e) {
+      throw ApiClient.mapError(e);
+    }
+  }
+
   // ── Live Sessions ─────────────────────────────────────────────────
 
-  Future<void> startSession({
+  /// Returns true if the go-online GPS position looked implausibly far from the provider's
+  /// registered address — a nudge for the caller to confirm with the provider, never a reason
+  /// the session itself failed to start (dispatch-service starts the session either way).
+  Future<bool> startSession({
     required String providerId,
     required List<String> serviceKinds,
     // Optional: a lawyer works remotely, so going online must not depend on GPS.
@@ -622,13 +864,14 @@ class DispatchService {
     List<String>? specializations,
   }) async {
     try {
-      await _client.post('/dispatch/sessions/start', data: {
+      final res = await _client.post('/dispatch/sessions/start', data: {
         'providerId': providerId,
         'serviceKinds': serviceKinds,
         // Backend contract is latitude/longitude (it also accepts the current* aliases).
         if (currentLatitude != null) 'latitude': currentLatitude,
         if (currentLongitude != null) 'longitude': currentLongitude,
-        if (providerNameSnapshot != null) 'providerNameSnapshot': providerNameSnapshot,
+        if (providerNameSnapshot != null)
+          'providerNameSnapshot': providerNameSnapshot,
         if (providerAvgRatingSnapshot != null)
           'providerAvgRatingSnapshot': providerAvgRatingSnapshot,
         if (providerLevel != null) 'providerLevel': providerLevel,
@@ -640,6 +883,8 @@ class DispatchService {
         if (consultationFee != null) 'consultationFee': consultationFee,
         if (specializations != null) 'specializations': specializations,
       });
+      final data = res.data;
+      return data is Map && data['locationMismatch'] == true;
     } catch (e) {
       throw ApiClient.mapError(e);
     }
@@ -647,7 +892,8 @@ class DispatchService {
 
   Future<void> endSession({required String providerId}) async {
     try {
-      await _client.post('/dispatch/sessions/end', data: {'providerId': providerId});
+      await _client
+          .post('/dispatch/sessions/end', data: {'providerId': providerId});
     } catch (e) {
       throw ApiClient.mapError(e);
     }
@@ -680,7 +926,8 @@ class DispatchService {
 
   // ── Location Tracking ─────────────────────────────────────────────
 
-  Future<void> updateLocation(String jobId, {
+  Future<void> updateLocation(
+    String jobId, {
     required double latitude,
     required double longitude,
   }) async {
@@ -712,7 +959,8 @@ class DispatchService {
     double? radiusKm,
   }) async {
     try {
-      final res = await _client.get('/dispatch/providers/search', queryParameters: {
+      final res =
+          await _client.get('/dispatch/providers/search', queryParameters: {
         if (serviceKind != null) 'serviceKind': serviceKind,
         if (lat != null) 'lat': lat.toString(),
         if (lon != null) 'lon': lon.toString(),
@@ -735,7 +983,9 @@ class DispatchService {
         if (serviceKind != null) 'serviceKind': serviceKind,
       });
       final list = res.data as List<dynamic>;
-      return list.map((e) => RateCardModel.fromJson(e as Map<String, dynamic>)).toList();
+      return list
+          .map((e) => RateCardModel.fromJson(e as Map<String, dynamic>))
+          .toList();
     } catch (e) {
       throw ApiClient.mapError(e);
     }
@@ -757,7 +1007,8 @@ class DispatchService {
   Future<Map<String, dynamic>> createBabySittingTask(
       Map<String, dynamic> data) async {
     try {
-      final res = await _client.post('/dispatch/task-runner/baby-sitting', data: data);
+      final res =
+          await _client.post('/dispatch/task-runner/baby-sitting', data: data);
       return res.data as Map<String, dynamic>;
     } catch (e) {
       throw ApiClient.mapError(e);
@@ -798,7 +1049,8 @@ class DispatchService {
     }
   }
 
-  Future<List<Map<String, dynamic>>> getActiveSurgeRules({String? serviceType}) async {
+  Future<List<Map<String, dynamic>>> getActiveSurgeRules(
+      {String? serviceType}) async {
     try {
       final res = await _client.get('/dispatch/surge', queryParameters: {
         if (serviceType != null) 'serviceType': serviceType,

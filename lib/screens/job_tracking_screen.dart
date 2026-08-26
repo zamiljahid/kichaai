@@ -1,7 +1,13 @@
 import 'dart:async';
+import 'dart:math';
 import 'package:flutter/material.dart';
+import 'package:flutter/services.dart';
 import 'package:flutter_animate/flutter_animate.dart';
 import 'package:google_maps_flutter/google_maps_flutter.dart';
+import 'package:provider/provider.dart';
+import '../core/network/api_client.dart';
+import '../core/utils/app_strings.dart';
+import '../core/utils/meet_link.dart';
 import '../models/dispatch_model.dart';
 import '../models/messaging_model.dart';
 import '../services/auth_service.dart';
@@ -9,8 +15,11 @@ import '../services/dispatch_service.dart';
 import '../services/messaging_service.dart';
 import '../theme/app_theme.dart';
 import '../widgets/animated_background.dart';
+import '../widgets/glass_button.dart';
 import '../widgets/glass_card.dart';
+import '../widgets/policy_agreement_checkbox.dart';
 import 'chat_screen.dart';
+import 'payment_waiting_screen.dart';
 import 'rating_screen.dart';
 
 class JobTrackingScreen extends StatefulWidget {
@@ -27,11 +36,13 @@ class _JobTrackingScreenState extends State<JobTrackingScreen> {
   Timer? _timer;
   bool _isConfirming = false;
   bool _isOpeningChat = false;
+  bool _isPayingOnline = false;
 
   // Platform rate for this job's task category — shown next to a CUSTOM quote so
   // the customer has a fair-price reference before approving (they otherwise have
   // no idea whether ৳4000 for a ৳800-class job is normal).
   TaskCategoryRate? _platformRate;
+  bool _isBn = true;
 
   @override
   void initState() {
@@ -105,7 +116,7 @@ class _JobTrackingScreenState extends State<JobTrackingScreen> {
     } catch (e) {
       if (mounted) {
         ScaffoldMessenger.of(context).showSnackBar(SnackBar(
-          content: Text('নিশ্চিত করা যায়নি — আবার চেষ্টা করুন', style: const TextStyle(color: Colors.white)),
+          content: Text(_isBn ? 'নিশ্চিত করা যায়নি — আবার চেষ্টা করুন' : 'Could not confirm — try again', style: const TextStyle(color: Colors.white)),
           backgroundColor: const Color(0xFFEF4444),
           behavior: SnackBarBehavior.floating,
         ));
@@ -129,9 +140,9 @@ class _JobTrackingScreenState extends State<JobTrackingScreen> {
       }
       if (!mounted) return;
       if (thread == null) {
-        ScaffoldMessenger.of(context).showSnackBar(const SnackBar(
-          content: Text('চ্যাট এখনো তৈরি হয়নি — একটু পরে আবার চেষ্টা করুন', style: TextStyle(color: Colors.white)),
-          backgroundColor: Color(0xFFF59E0B),
+        ScaffoldMessenger.of(context).showSnackBar(SnackBar(
+          content: Text(_isBn ? 'চ্যাট এখনো তৈরি হয়নি — একটু পরে আবার চেষ্টা করুন' : 'Chat not created yet — try again shortly', style: const TextStyle(color: Colors.white)),
+          backgroundColor: const Color(0xFFF59E0B),
           behavior: SnackBarBehavior.floating,
         ));
         return;
@@ -142,9 +153,9 @@ class _JobTrackingScreenState extends State<JobTrackingScreen> {
       ));
     } catch (_) {
       if (mounted) {
-        ScaffoldMessenger.of(context).showSnackBar(const SnackBar(
-          content: Text('চ্যাট খোলা যায়নি', style: TextStyle(color: Colors.white)),
-          backgroundColor: Color(0xFFEF4444),
+        ScaffoldMessenger.of(context).showSnackBar(SnackBar(
+          content: Text(_isBn ? 'চ্যাট খোলা যায়নি' : 'Could not open chat', style: const TextStyle(color: Colors.white)),
+          backgroundColor: const Color(0xFFEF4444),
           behavior: SnackBarBehavior.floating,
         ));
       }
@@ -155,6 +166,7 @@ class _JobTrackingScreenState extends State<JobTrackingScreen> {
 
   @override
   Widget build(BuildContext context) {
+    _isBn = context.watch<LanguageNotifier>().isBengali;
     return Scaffold(
       body: AnimatedBackground(
         child: SafeArea(
@@ -164,13 +176,17 @@ class _JobTrackingScreenState extends State<JobTrackingScreen> {
               if (_isLoading && _job == null)
                 const Expanded(child: Center(child: CircularProgressIndicator(color: AppColors.deepBlue)))
               else if (_job == null)
-                Expanded(child: Center(child: Text('তথ্য পাওয়া যাচ্ছে না', style: TextStyle(color: AppColors.textMuted))))
+                Expanded(child: Center(child: Text(_isBn ? 'তথ্য পাওয়া যাচ্ছে না' : 'Could not load information', style: const TextStyle(color: AppColors.textMuted))))
               else
                 Expanded(child: SingleChildScrollView(
                   padding: const EdgeInsets.fromLTRB(16, 0, 16, 24),
                   child: Column(children: [
                     _buildStatusCard(_job!),
                     const SizedBox(height: 16),
+                    if (_job!.isRide) ...[
+                      _buildRideSummaryCard(_job!),
+                      const SizedBox(height: 16),
+                    ],
                     if (_job!.assignedProviderId != null) ...[
                       _buildProviderCard(_job!),
                       const SizedBox(height: 16),
@@ -181,10 +197,18 @@ class _JobTrackingScreenState extends State<JobTrackingScreen> {
                       _buildLiveLocation(_job!),
                       const SizedBox(height: 16),
                     ],
+                    if (_job!.serviceKind == 'lawyer' && (_job!.meetLink ?? '').isNotEmpty) ...[
+                      _buildMeetLinkCard(_job!),
+                      const SizedBox(height: 16),
+                    ],
                     _buildJobDetails(_job!),
                     const SizedBox(height: 16),
                     if (_job!.awaitingQuoteApproval) ...[
                       _buildQuoteApprovalCard(_job!),
+                      const SizedBox(height: 16),
+                    ],
+                    if (_showOnlinePaymentCard(_job!)) ...[
+                      _buildOnlinePaymentCard(_job!),
                       const SizedBox(height: 16),
                     ],
                     if (_job!.status != 'cancelled' && _job!.status != 'completed')
@@ -213,8 +237,7 @@ class _JobTrackingScreenState extends State<JobTrackingScreen> {
           ),
           const SizedBox(width: 16),
           Column(crossAxisAlignment: CrossAxisAlignment.start, children: [
-            const Text('অনুরোধ ট্র্যাকিং', style: TextStyle(color: AppColors.textPrimary, fontSize: 18, fontWeight: FontWeight.w700)),
-            Text('Job Tracking', style: TextStyle(color: AppColors.textMuted, fontSize: 12)),
+            Text(_isBn ? 'অনুরোধ ট্র্যাকিং' : 'Job Tracking', style: const TextStyle(color: AppColors.textPrimary, fontSize: 18, fontWeight: FontWeight.w700)),
           ]),
           const Spacer(),
           _buildPulsingDot(),
@@ -261,13 +284,13 @@ class _JobTrackingScreenState extends State<JobTrackingScreen> {
 
   (String, Color, IconData) _statusInfo(String status) {
     switch (status) {
-      case 'searching': return ('কাছের provider খোঁজা হচ্ছে...', AppColors.deepBlue, Icons.search_rounded);
-      case 'assigned': return ('Provider পাওয়া গেছে, নিশ্চিত করার অপেক্ষায়', const Color(0xFFF59E0B), Icons.person_add_rounded);
-      case 'accepted': return ('Provider আসছেন', const Color(0xFF8B5CF6), Icons.directions_walk_rounded);
-      case 'arriving': return ('Provider কাছাকাছি!', const Color(0xFF06B6D4), Icons.near_me_rounded);
-      case 'in_progress': return ('কাজ চলছে', const Color(0xFF10B981), Icons.build_circle_rounded);
-      case 'completed': return ('কাজ সম্পন্ন! ⭐', const Color(0xFF22C55E), Icons.check_circle_rounded);
-      case 'cancelled': return ('অনুরোধ বাতিল হয়েছে', const Color(0xFFEF4444), Icons.cancel_rounded);
+      case 'searching': return (_isBn ? 'কাছের provider খোঁজা হচ্ছে...' : 'Finding a nearby provider...', AppColors.deepBlue, Icons.search_rounded);
+      case 'assigned': return (_isBn ? 'Provider পাওয়া গেছে, নিশ্চিত করার অপেক্ষায়' : 'Provider found, awaiting confirmation', const Color(0xFFF59E0B), Icons.person_add_rounded);
+      case 'accepted': return (_isBn ? 'Provider আসছেন' : 'Provider is on the way', const Color(0xFF8B5CF6), Icons.directions_walk_rounded);
+      case 'arriving': return (_isBn ? 'Provider কাছাকাছি!' : 'Provider is nearby!', const Color(0xFF06B6D4), Icons.near_me_rounded);
+      case 'in_progress': return (_isBn ? 'কাজ চলছে' : 'Job in progress', const Color(0xFF10B981), Icons.build_circle_rounded);
+      case 'completed': return (_isBn ? 'কাজ সম্পন্ন! ⭐' : 'Job complete! ⭐', const Color(0xFF22C55E), Icons.check_circle_rounded);
+      case 'cancelled': return (_isBn ? 'অনুরোধ বাতিল হয়েছে' : 'Request cancelled', const Color(0xFFEF4444), Icons.cancel_rounded);
       default: return (status, AppColors.textMuted, Icons.info_rounded);
     }
   }
@@ -288,8 +311,8 @@ class _JobTrackingScreenState extends State<JobTrackingScreen> {
           Row(children: [
             const Icon(Icons.my_location_rounded, color: AppColors.deepBlue, size: 18),
             const SizedBox(width: 6),
-            const Text('লাইভ লোকেশন',
-                style: TextStyle(color: AppColors.textSecondary, fontSize: 12, fontWeight: FontWeight.w700)),
+            Text(_isBn ? 'লাইভ লোকেশন' : 'Live location',
+                style: const TextStyle(color: AppColors.textSecondary, fontSize: 12, fontWeight: FontWeight.w700)),
           ]),
           const SizedBox(height: 10),
           if (latest == null)
@@ -301,16 +324,16 @@ class _JobTrackingScreenState extends State<JobTrackingScreen> {
                 borderRadius: BorderRadius.circular(12),
                 border: Border.all(color: AppColors.glassBorder),
               ),
-              child: const Padding(
-                padding: EdgeInsets.symmetric(horizontal: 16),
+              child: Padding(
+                padding: const EdgeInsets.symmetric(horizontal: 16),
                 child: Text(
-                  'প্রোভাইডার এখনো লোকেশন শেয়ার করেননি',
-                  style: TextStyle(color: AppColors.textMuted, fontSize: 13),
+                  _isBn ? 'প্রোভাইডার এখনো লোকেশন শেয়ার করেননি' : 'The provider hasn\'t shared their location yet',
+                  style: const TextStyle(color: AppColors.textMuted, fontSize: 13),
                   textAlign: TextAlign.center,
                 ),
               ),
             )
-          else
+          else ...[
             ClipRRect(
               borderRadius: BorderRadius.circular(12),
               child: SizedBox(
@@ -324,18 +347,77 @@ class _JobTrackingScreenState extends State<JobTrackingScreen> {
                     Marker(
                       markerId: MarkerId(latest.id),
                       position: LatLng(latest.latitude, latest.longitude),
-                      infoWindow: const InfoWindow(title: 'প্রোভাইডার'),
+                      infoWindow: InfoWindow(title: _isBn ? 'প্রোভাইডার' : 'Provider'),
                     ),
+                    Marker(
+                      markerId: const MarkerId('pickup'),
+                      position: LatLng(job.pickupLatitude, job.pickupLongitude),
+                      icon: BitmapDescriptor.defaultMarkerWithHue(BitmapDescriptor.hueGreen),
+                      infoWindow: InfoWindow(
+                          title: job.isRide
+                              ? (_isBn ? 'যেখান থেকে' : 'Pickup')
+                              : (_isBn ? 'আপনার অবস্থান' : 'Your location')),
+                    ),
+                    // A ride is the only kind with a destination — show where they're headed.
+                    if (job.isRide)
+                      Marker(
+                        markerId: const MarkerId('dropoff'),
+                        position: LatLng(job.dropoffLatitude!, job.dropoffLongitude!),
+                        icon: BitmapDescriptor.defaultMarkerWithHue(BitmapDescriptor.hueOrange),
+                        infoWindow: InfoWindow(
+                          title: _isBn ? 'গন্তব্য' : 'Destination',
+                          snippet: job.dropoffAddressSnapshot,
+                        ),
+                      ),
                   },
+                  // Straight line, not a routed path — we have no directions API wired, and a
+                  // fake road route would be misleading. It reads as "roughly this way".
+                  polylines: job.isRide
+                      ? {
+                          Polyline(
+                            polylineId: const PolylineId('route'),
+                            points: [
+                              LatLng(job.pickupLatitude, job.pickupLongitude),
+                              LatLng(job.dropoffLatitude!, job.dropoffLongitude!),
+                            ],
+                            color: AppColors.deepBlue,
+                            width: 3,
+                            patterns: [PatternItem.dash(18), PatternItem.gap(10)],
+                          ),
+                        }
+                      : const {},
                   myLocationButtonEnabled: false,
                   zoomControlsEnabled: false,
                   liteModeEnabled: false,
                 ),
               ),
             ),
+            const SizedBox(height: 8),
+            Row(children: [
+              const Icon(Icons.social_distance_rounded, color: AppColors.textMuted, size: 16),
+              const SizedBox(width: 6),
+              Text(
+                _isBn
+                    ? '~${_distanceKm(latest.latitude, latest.longitude, job.pickupLatitude, job.pickupLongitude).toStringAsFixed(1)} কিমি দূরে'
+                    : '~${_distanceKm(latest.latitude, latest.longitude, job.pickupLatitude, job.pickupLongitude).toStringAsFixed(1)} km away',
+                style: const TextStyle(color: AppColors.textSecondary, fontSize: 12.5, fontWeight: FontWeight.w600),
+              ),
+            ]),
+          ],
         ],
       ),
     ).animate(delay: 150.ms).fadeIn().slideY(begin: 0.1);
+  }
+
+  // Haversine — same formula dispatch-service uses server-side (see haversineKm in
+  // dispatch.service.ts) so the customer's readout matches what actually drives matching.
+  double _distanceKm(double lat1, double lon1, double lat2, double lon2) {
+    const r = 6371.0;
+    final dLat = (lat2 - lat1) * (3.141592653589793 / 180);
+    final dLon = (lon2 - lon1) * (3.141592653589793 / 180);
+    final a = (sin(dLat / 2) * sin(dLat / 2)) +
+        cos(lat1 * 3.141592653589793 / 180) * cos(lat2 * 3.141592653589793 / 180) * (sin(dLon / 2) * sin(dLon / 2));
+    return r * 2 * atan2(sqrt(a), sqrt(1 - a));
   }
 
   Widget _buildProviderCard(JobModel job) {
@@ -358,7 +440,7 @@ class _JobTrackingScreenState extends State<JobTrackingScreen> {
           const SizedBox(width: 14),
           Expanded(
             child: Column(crossAxisAlignment: CrossAxisAlignment.start, children: [
-              const Text('নির্ধারিত Provider', style: TextStyle(color: AppColors.textMuted, fontSize: 11)),
+              Text(_isBn ? 'নির্ধারিত Provider' : 'Assigned Provider', style: const TextStyle(color: AppColors.textMuted, fontSize: 11)),
               Text(name, style: const TextStyle(color: AppColors.textPrimary, fontSize: 14, fontWeight: FontWeight.w600)),
               if (phone != null) Text(phone, style: TextStyle(color: AppColors.textMuted, fontSize: 12)),
             ]),
@@ -394,10 +476,10 @@ class _JobTrackingScreenState extends State<JobTrackingScreen> {
           Row(children: [
             const Icon(Icons.shield_outlined, color: Color(0xFFF59E0B), size: 18),
             const SizedBox(width: 8),
-            const Expanded(
+            Expanded(
               child: Text(
-                'নম্বর দেখতে ও কল করতে আগে নিশ্চিত করুন — ততক্ষণ চ্যাটে কথা বলতে পারবেন',
-                style: TextStyle(color: AppColors.textSecondary, fontSize: 12.5, height: 1.4),
+                _isBn ? 'নম্বর দেখতে ও কল করতে আগে নিশ্চিত করুন — ততক্ষণ চ্যাটে কথা বলতে পারবেন' : 'Confirm to see the number and call — you can chat until then',
+                style: const TextStyle(color: AppColors.textSecondary, fontSize: 12.5, height: 1.4),
               ),
             ),
           ]),
@@ -414,7 +496,7 @@ class _JobTrackingScreenState extends State<JobTrackingScreen> {
                     borderRadius: BorderRadius.circular(12),
                     border: Border.all(color: AppColors.glassBorder, width: 1.5),
                   ),
-                  child: const Text('চ্যাট করুন', style: TextStyle(color: AppColors.textPrimary, fontSize: 13.5, fontWeight: FontWeight.w600)),
+                  child: Text(_isBn ? 'চ্যাট করুন' : 'Chat', style: const TextStyle(color: AppColors.textPrimary, fontSize: 13.5, fontWeight: FontWeight.w600)),
                 ),
               ),
             ),
@@ -428,7 +510,7 @@ class _JobTrackingScreenState extends State<JobTrackingScreen> {
                   decoration: BoxDecoration(gradient: AppColors.blueGradient, borderRadius: BorderRadius.circular(12)),
                   child: _isConfirming
                       ? const SizedBox(width: 16, height: 16, child: CircularProgressIndicator(strokeWidth: 2, color: Colors.white))
-                      : const Text('নিশ্চিত করুন', style: TextStyle(color: AppColors.ivory, fontSize: 13.5, fontWeight: FontWeight.w700)),
+                      : Text(_isBn ? 'নিশ্চিত করুন' : 'Confirm', style: const TextStyle(color: AppColors.ivory, fontSize: 13.5, fontWeight: FontWeight.w700)),
                 ),
               ),
             ),
@@ -444,12 +526,12 @@ class _JobTrackingScreenState extends State<JobTrackingScreen> {
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
-          const Text('অনুরোধের বিবরণ', style: TextStyle(color: AppColors.textSecondary, fontSize: 12, fontWeight: FontWeight.w600)),
+          Text(_isBn ? 'অনুরোধের বিবরণ' : 'Request details', style: const TextStyle(color: AppColors.textSecondary, fontSize: 12, fontWeight: FontWeight.w600)),
           const SizedBox(height: 12),
-          _detail('সেবার ধরন', job.serviceKind),
-          _detail('জরুরি মাত্রা', job.urgencyLevel ?? 'normal'),
-          if (job.description?.isNotEmpty ?? false) _detail('বিবরণ', job.description!),
-          if (job.estimatedAmount != null) _detail('আনুমানিক খরচ', '৳ ${job.estimatedAmount!.toStringAsFixed(0)}'),
+          _detail(_isBn ? 'সেবার ধরন' : 'Service type', job.serviceKind),
+          _detail(_isBn ? 'জরুরি মাত্রা' : 'Urgency', job.urgencyLevel ?? 'normal'),
+          if (job.description?.isNotEmpty ?? false) _detail(_isBn ? 'বিবরণ' : 'Description', job.description!),
+          if (job.estimatedAmount != null) _detail(_isBn ? 'আনুমানিক খরচ' : 'Estimated cost', '৳ ${job.estimatedAmount!.toStringAsFixed(0)}'),
         ],
       ),
     ).animate(delay: 200.ms).fadeIn().slideY(begin: 0.1);
@@ -478,7 +560,7 @@ class _JobTrackingScreenState extends State<JobTrackingScreen> {
             children: [
               const Icon(Icons.request_quote_rounded, color: Color(0xFFF59E0B), size: 20),
               const SizedBox(width: 8),
-              const Text('Provider-এর কোট', style: TextStyle(color: AppColors.textSecondary, fontSize: 12, fontWeight: FontWeight.w600)),
+              Text(_isBn ? 'Provider-এর কোট' : 'Provider\'s quote', style: const TextStyle(color: AppColors.textSecondary, fontSize: 12, fontWeight: FontWeight.w600)),
             ],
           ),
           const SizedBox(height: 12),
@@ -507,8 +589,8 @@ class _JobTrackingScreenState extends State<JobTrackingScreen> {
                     Expanded(
                       child: Text(
                         high
-                            ? 'প্ল্যাটফর্মের নির্ধারিত দাম ৳${rate.fixedPrice.toStringAsFixed(0)} — এই কোটটি তার চেয়ে অনেক বেশি'
-                            : 'প্ল্যাটফর্মের নির্ধারিত দাম: ৳${rate.fixedPrice.toStringAsFixed(0)}',
+                            ? (_isBn ? 'প্ল্যাটফর্মের নির্ধারিত দাম ৳${rate.fixedPrice.toStringAsFixed(0)} — এই কোটটি তার চেয়ে অনেক বেশি' : 'Platform rate is ৳${rate.fixedPrice.toStringAsFixed(0)} — this quote is much higher')
+                            : (_isBn ? 'প্ল্যাটফর্মের নির্ধারিত দাম: ৳${rate.fixedPrice.toStringAsFixed(0)}' : 'Platform rate: ৳${rate.fixedPrice.toStringAsFixed(0)}'),
                         style: TextStyle(
                             color: high ? const Color(0xFFEF4444) : const Color(0xFF10B981),
                             fontSize: 11, fontWeight: FontWeight.w600),
@@ -520,9 +602,9 @@ class _JobTrackingScreenState extends State<JobTrackingScreen> {
             }),
           ],
           const SizedBox(height: 4),
-          const Center(
-            child: Text('অনুমোদন না করলে শুধু ভিজিট ফি দিতে হবে, কাজ বাতিল হবে।',
-                textAlign: TextAlign.center, style: TextStyle(color: AppColors.textMuted, fontSize: 11)),
+          Center(
+            child: Text(_isBn ? 'অনুমোদন না করলে শুধু ভিজিট ফি দিতে হবে, কাজ বাতিল হবে।' : 'If you don\'t approve, only the visiting fee applies and the job is cancelled.',
+                textAlign: TextAlign.center, style: const TextStyle(color: AppColors.textMuted, fontSize: 11)),
           ),
           const SizedBox(height: 16),
           Row(
@@ -538,7 +620,7 @@ class _JobTrackingScreenState extends State<JobTrackingScreen> {
                       borderRadius: BorderRadius.circular(12),
                       border: Border.all(color: const Color(0xFFEF4444).withValues(alpha: 0.4), width: 1.5),
                     ),
-                    child: const Text('প্রত্যাখ্যান', style: TextStyle(color: Color(0xFFEF4444), fontSize: 14, fontWeight: FontWeight.w700)),
+                    child: Text(_isBn ? 'প্রত্যাখ্যান' : 'Reject', style: const TextStyle(color: Color(0xFFEF4444), fontSize: 14, fontWeight: FontWeight.w700)),
                   ),
                 ),
               ),
@@ -553,7 +635,7 @@ class _JobTrackingScreenState extends State<JobTrackingScreen> {
                       gradient: AppColors.blueGradient,
                       borderRadius: BorderRadius.circular(12),
                     ),
-                    child: const Text('অনুমোদন করুন', style: TextStyle(color: AppColors.ivory, fontSize: 14, fontWeight: FontWeight.w700)),
+                    child: Text(_isBn ? 'অনুমোদন করুন' : 'Approve', style: const TextStyle(color: AppColors.ivory, fontSize: 14, fontWeight: FontWeight.w700)),
                   ),
                 ),
               ),
@@ -564,6 +646,219 @@ class _JobTrackingScreenState extends State<JobTrackingScreen> {
     ).animate().fadeIn().slideY(begin: 0.1);
   }
 
+  // Lawyer consultations only ever surface their Meet link inside LawyerConsultationScreen's
+  // local widget state, which is lost the moment the customer navigates away — leaving them
+  // with no way to rejoin the call if they close the app or come back later. This screen
+  // (reachable any time via Orders → this job) is the durable, jobId-backed home for it.
+  Widget _buildMeetLinkCard(JobModel job) {
+    final link = job.meetLink!;
+    return GlassCard(
+      padding: const EdgeInsets.all(16),
+      child: Column(children: [
+        Row(mainAxisAlignment: MainAxisAlignment.center, children: [
+          const Icon(Icons.videocam_rounded, color: AppColors.deepBlue, size: 20),
+          const SizedBox(width: 8),
+          Text(_isBn ? 'ভিডিও কলের লিংক তৈরি হয়েছে' : 'Video call link created',
+              style: const TextStyle(color: AppColors.deepBlue, fontSize: 14, fontWeight: FontWeight.w700)),
+        ]),
+        const SizedBox(height: 8),
+        SelectableText(link, textAlign: TextAlign.center, style: const TextStyle(color: AppColors.textSecondary, fontSize: 12)),
+        const SizedBox(height: 10),
+        GlassButton(
+          label: _isBn ? 'মিটিং এ যোগ দিন' : 'Join meeting',
+          icon: Icons.videocam_rounded,
+          onPressed: () => openMeetLink(context, link),
+        ),
+        const SizedBox(height: 8),
+        GlassButton(
+          label: _isBn ? 'লিংক কপি করুন' : 'Copy link',
+          icon: Icons.copy_rounded,
+          isOutlined: true,
+          onPressed: () {
+            Clipboard.setData(ClipboardData(text: link));
+            ScaffoldMessenger.of(context).showSnackBar(SnackBar(
+              content: Text(_isBn ? 'লিংক কপি হয়েছে' : 'Link copied', style: const TextStyle(color: Colors.white)),
+              backgroundColor: const Color(0xFF10B981), behavior: SnackBarBehavior.floating,
+            ));
+          },
+        ),
+      ]),
+    ).animate().fadeIn().slideY(begin: 0.1);
+  }
+
+  /// Ride summary — route, vehicle and fare, shown from the moment the request is posted so
+  /// the customer can see what they asked for while it's still "searching".
+  Widget _buildRideSummaryCard(JobModel job) {
+    final vehicle = job.rideDetail?.vehicleType;
+    final vehicleLabel = vehicle == null
+        ? null
+        : (_isBn ? kRideVehicleLabelsBn[vehicle] : kRideVehicleLabelsEn[vehicle]) ?? vehicle;
+    return GlassCard(
+      padding: const EdgeInsets.all(16),
+      child: Column(crossAxisAlignment: CrossAxisAlignment.start, children: [
+        _rideRow(Icons.trip_origin_rounded, AppColors.deepBlue,
+            job.pickupAddressSnapshot ?? (_isBn ? 'আপনার অবস্থান' : 'Your location')),
+        Padding(
+          padding: const EdgeInsets.only(left: 8, top: 2, bottom: 2),
+          child: Container(width: 2, height: 14, color: AppColors.glassBorder),
+        ),
+        _rideRow(Icons.flag_rounded, AppColors.softAmber,
+            job.dropoffAddressSnapshot ?? (_isBn ? 'গন্তব্য' : 'Destination')),
+        const SizedBox(height: 12),
+        const Divider(height: 1, color: AppColors.glassBorder),
+        const SizedBox(height: 12),
+        Row(children: [
+          if (vehicleLabel != null) ...[
+            const Icon(Icons.two_wheeler_rounded, size: 16, color: AppColors.textMuted),
+            const SizedBox(width: 5),
+            Text(vehicleLabel,
+                style: const TextStyle(
+                    color: AppColors.textSecondary, fontSize: 12.5, fontWeight: FontWeight.w600)),
+            const SizedBox(width: 14),
+          ],
+          if (job.distanceKm != null) ...[
+            const Icon(Icons.social_distance_rounded, size: 16, color: AppColors.textMuted),
+            const SizedBox(width: 5),
+            Text('${job.distanceKm!.toStringAsFixed(1)} ${_isBn ? 'কিমি' : 'km'}',
+                style: const TextStyle(color: AppColors.textSecondary, fontSize: 12.5)),
+          ],
+          const Spacer(),
+          if (job.estimatedAmount != null)
+            Text('৳${job.estimatedAmount!.round()}',
+                style: const TextStyle(
+                    color: AppColors.deepBlue, fontSize: 17, fontWeight: FontWeight.w800)),
+        ]),
+        if (job.rideDetail?.hasSurge == true) ...[
+          const SizedBox(height: 6),
+          Text(
+            _isBn
+                ? 'এখন চাহিদা বেশি — ভাড়া কিছুটা বেশি'
+                : 'High demand right now — fare is slightly higher',
+            style: const TextStyle(color: AppColors.softAmber, fontSize: 11.5, fontWeight: FontWeight.w600),
+          ),
+        ],
+      ]),
+    ).animate(delay: 80.ms).fadeIn().slideY(begin: 0.1);
+  }
+
+  Widget _rideRow(IconData icon, Color color, String text) => Row(children: [
+        Icon(icon, size: 16, color: color),
+        const SizedBox(width: 10),
+        Expanded(
+          child: Text(text,
+              style: const TextStyle(color: AppColors.textPrimary, fontSize: 13),
+              maxLines: 2,
+              overflow: TextOverflow.ellipsis),
+        ),
+      ]);
+
+  // Cash-on-completion stays the default for every on-demand service — this is an opt-in
+  // alternative. Rides are included because paying a stranger driver in cash for a fare the
+  // app already computed is exactly the case online payment exists for.
+  static const _onlinePaymentKinds = {'technician', 'commute'};
+  bool _showOnlinePaymentCard(JobModel job) =>
+      _onlinePaymentKinds.contains(job.serviceKind) &&
+      job.assignedProviderId != null &&
+      !['completed', 'cancelled', 'expired'].contains(job.status) &&
+      !job.awaitingQuoteApproval &&
+      job.depositStatus != 'paid';
+
+  Widget _buildOnlinePaymentCard(JobModel job) {
+    final alreadyOptedIn = job.depositStatus == 'pending';
+    return GlassCard(
+      padding: const EdgeInsets.all(16),
+      child: Column(crossAxisAlignment: CrossAxisAlignment.stretch, children: [
+        Row(children: [
+          const Icon(Icons.payments_rounded, color: AppColors.deepBlue, size: 20),
+          const SizedBox(width: 8),
+          Expanded(
+            child: Text(
+              _isBn ? 'ক্যাশের বদলে অনলাইনে পরিশোধ করুন' : 'Pay online instead of cash',
+              style: const TextStyle(color: AppColors.textPrimary, fontSize: 13.5, fontWeight: FontWeight.w700),
+            ),
+          ),
+        ]),
+        const SizedBox(height: 6),
+        Text(
+          _isBn ? 'না করলে কাজ শেষে যথারীতি সরাসরি ক্যাশ দিতে হবে।' : 'If you skip this, pay the provider cash directly as usual when the job is done.',
+          style: const TextStyle(color: AppColors.textMuted, fontSize: 11.5),
+        ),
+        const SizedBox(height: 12),
+        GestureDetector(
+          onTap: _isPayingOnline ? null : _payOnline,
+          child: Container(
+            padding: const EdgeInsets.symmetric(vertical: 12),
+            alignment: Alignment.center,
+            decoration: BoxDecoration(gradient: AppColors.blueGradient, borderRadius: BorderRadius.circular(12)),
+            child: _isPayingOnline
+                ? const SizedBox(width: 18, height: 18, child: CircularProgressIndicator(strokeWidth: 2, color: Colors.white))
+                : Text(
+                    alreadyOptedIn
+                        ? (_isBn ? 'পেমেন্ট সম্পন্ন করুন' : 'Complete payment')
+                        : (_isBn ? 'অনলাইনে পরিশোধ করুন' : 'Pay online'),
+                    style: const TextStyle(color: AppColors.ivory, fontSize: 14, fontWeight: FontWeight.w700),
+                  ),
+          ),
+        ),
+      ]),
+    ).animate().fadeIn().slideY(begin: 0.1);
+  }
+
+  Future<void> _payOnline() async {
+    if (!await PolicyAgreementCheckbox.confirm(context, isBn: _isBn)) return;
+    setState(() => _isPayingOnline = true);
+    try {
+      // Idempotent to call again if the job was already opted in (e.g. app was
+      // backgrounded mid-payment last time) — optInOnlinePayment only blocks once paid.
+      double amount = _job?.depositAmount ?? 0;
+      if (_job?.depositStatus != 'pending') {
+        final optIn = await DispatchService.instance.optInOnlinePayment(widget.jobId);
+        amount = (optIn['amount'] as num?)?.toDouble() ?? amount;
+      }
+      final transaction = await DispatchService.instance.initiateDepositPayment(widget.jobId);
+      final gatewayPageUrl = transaction['gatewayPageUrl'] as String?;
+      if (!mounted) return;
+      if (gatewayPageUrl == null) {
+        ScaffoldMessenger.of(context).showSnackBar(SnackBar(
+          content: Text(_isBn ? 'পেমেন্ট শুরু করা যায়নি — আবার চেষ্টা করুন' : 'Could not start the payment — please try again', style: const TextStyle(color: Colors.white)),
+          backgroundColor: const Color(0xFFEF4444), behavior: SnackBarBehavior.floating,
+        ));
+        return;
+      }
+      await Navigator.of(context).push(MaterialPageRoute(
+        builder: (waitingContext) => PaymentWaitingScreen(
+          gatewayPageUrl: gatewayPageUrl,
+          title: _isBn ? 'সেবার মূল্য' : 'Service Payment',
+          titleEn: 'Service Payment',
+          amount: amount,
+          checkStatus: () async {
+            try {
+              await DispatchService.instance.confirmDepositPayment(widget.jobId);
+              return PaymentCheckStatus.completed;
+            } catch (_) {
+              return PaymentCheckStatus.pending;
+            }
+          },
+          onConfirmed: () => Navigator.of(waitingContext).pop(),
+          applyCoupon: (code) async {
+            final t = await DispatchService.instance.initiateDepositPayment(widget.jobId, couponCode: code);
+            return {'gatewayPageUrl': t['gatewayPageUrl'], 'amount': double.tryParse('${t['amount']}') ?? amount};
+          },
+        ),
+      ));
+      await _fetch();
+    } catch (e) {
+      if (mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(SnackBar(
+          content: Text(ApiClient.mapError(e).localized(_isBn), style: const TextStyle(color: Colors.white)),
+          backgroundColor: const Color(0xFFEF4444), behavior: SnackBarBehavior.floating,
+        ));
+      }
+    } finally {
+      if (mounted) setState(() => _isPayingOnline = false);
+    }
+  }
+
   Future<void> _respondQuote(bool approved) async {
     if (!approved) {
       final ok = await showDialog<bool>(
@@ -571,13 +866,13 @@ class _JobTrackingScreenState extends State<JobTrackingScreen> {
         builder: (ctx) => AlertDialog(
           backgroundColor: AppColors.bgMid,
           shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)),
-          title: const Text('কোট প্রত্যাখ্যান?', style: TextStyle(color: AppColors.textPrimary, fontSize: 16, fontWeight: FontWeight.w700)),
-          content: const Text('কাজটি বাতিল হয়ে যাবে এবং শুধু ভিজিট ফি প্রযোজ্য হবে।',
-              style: TextStyle(color: AppColors.textSecondary, fontSize: 14)),
+          title: Text(_isBn ? 'কোট প্রত্যাখ্যান?' : 'Reject quote?', style: const TextStyle(color: AppColors.textPrimary, fontSize: 16, fontWeight: FontWeight.w700)),
+          content: Text(_isBn ? 'কাজটি বাতিল হয়ে যাবে এবং শুধু ভিজিট ফি প্রযোজ্য হবে।' : 'The job will be cancelled and only the visiting fee will apply.',
+              style: const TextStyle(color: AppColors.textSecondary, fontSize: 14)),
           actions: [
-            TextButton(onPressed: () => Navigator.pop(ctx, false), child: Text('না', style: TextStyle(color: AppColors.textMuted))),
+            TextButton(onPressed: () => Navigator.pop(ctx, false), child: Text(_isBn ? 'না' : 'No', style: const TextStyle(color: AppColors.textMuted))),
             TextButton(onPressed: () => Navigator.pop(ctx, true),
-                child: const Text('হ্যাঁ, প্রত্যাখ্যান', style: TextStyle(color: Color(0xFFEF4444), fontWeight: FontWeight.w600))),
+                child: Text(_isBn ? 'হ্যাঁ, প্রত্যাখ্যান' : 'Yes, reject', style: const TextStyle(color: Color(0xFFEF4444), fontWeight: FontWeight.w600))),
           ],
         ),
       );
@@ -588,7 +883,10 @@ class _JobTrackingScreenState extends State<JobTrackingScreen> {
       if (mounted) setState(() => _job = updated);
       if (mounted) {
         ScaffoldMessenger.of(context).showSnackBar(SnackBar(
-          content: Text(approved ? 'কোট অনুমোদিত — কাজ শুরু হবে' : 'কোট প্রত্যাখ্যাত — কাজ বাতিল',
+          content: Text(
+              approved
+                  ? (_isBn ? 'কোট অনুমোদিত — কাজ শুরু হবে' : 'Quote approved — job will begin')
+                  : (_isBn ? 'কোট প্রত্যাখ্যাত — কাজ বাতিল' : 'Quote rejected — job cancelled'),
               style: const TextStyle(color: Colors.white)),
           backgroundColor: approved ? const Color(0xFF10B981) : const Color(0xFFEF4444),
           behavior: SnackBarBehavior.floating,
@@ -597,7 +895,7 @@ class _JobTrackingScreenState extends State<JobTrackingScreen> {
     } catch (e) {
       if (mounted) {
         ScaffoldMessenger.of(context).showSnackBar(SnackBar(
-          content: Text('কোট প্রক্রিয়া করতে সমস্যা হয়েছে', style: const TextStyle(color: Colors.white)),
+          content: Text(_isBn ? 'কোট প্রক্রিয়া করতে সমস্যা হয়েছে' : 'Could not process the quote', style: const TextStyle(color: Colors.white)),
           backgroundColor: const Color(0xFFEF4444),
           behavior: SnackBarBehavior.floating,
         ));
@@ -620,7 +918,7 @@ class _JobTrackingScreenState extends State<JobTrackingScreen> {
           borderRadius: BorderRadius.circular(16),
           border: Border.all(color: const Color(0xFFEF4444).withOpacity(0.4), width: 1.5),
         ),
-        child: const Center(child: Text('অনুরোধ বাতিল করুন', style: TextStyle(color: Color(0xFFEF4444), fontSize: 14, fontWeight: FontWeight.w600))),
+        child: Center(child: Text(_isBn ? 'অনুরোধ বাতিল করুন' : 'Cancel request', style: const TextStyle(color: Color(0xFFEF4444), fontSize: 14, fontWeight: FontWeight.w600))),
       ),
     ).animate(delay: 300.ms).fadeIn();
   }

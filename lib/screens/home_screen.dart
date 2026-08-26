@@ -4,17 +4,22 @@ import 'package:flutter_animate/flutter_animate.dart';
 import 'package:provider/provider.dart';
 import '../core/utils/app_strings.dart';
 import '../models/dispatch_model.dart';
+import '../services/catalog_service.dart';
 import '../services/dispatch_service.dart';
 import '../theme/app_theme.dart';
 import '../widgets/glass_card.dart';
 import 'courses_screen.dart';
 import 'grocery_screen.dart';
 import 'job_request_screen.dart';
+import 'laundry_screen.dart';
 import 'lawyer_consultation_screen.dart';
+import 'match_request_screen.dart';
+import 'meal_groups_list_screen.dart';
 import 'mess_screen.dart';
 import 'provider_browse_screen.dart';
 import 'provider_profile_screen.dart';
 import 'scrap_screen.dart';
+import 'service_mode_hub_screen.dart';
 import 'service_selection_screen.dart';
 import 'skill_share_screen.dart';
 
@@ -24,6 +29,7 @@ class _ServiceItem {
   final IconData icon;
   final String flow;
   final String? kind;
+  final String? imagePath;
 
   const _ServiceItem({
     required this.nameBn,
@@ -31,28 +37,42 @@ class _ServiceItem {
     required this.icon,
     required this.flow,
     this.kind,
+    this.imagePath,
   });
 }
+
+const _kServicesImageDir = 'assets/images/services';
 
 // Matches the backend catalog (GET /catalog/service-types) — the real service
 // kinds. Electrician/Plumber/AC/Cleaning are NOT separate kinds; they are task
 // categories under `technician`.
 const _kServices = [
-  _ServiceItem(nameBn: 'টেকনিশিয়ান', nameEn: 'Technician', icon: Icons.build_rounded, flow: 'dispatch', kind: 'technician'),
-  _ServiceItem(nameBn: 'কাজের লোক', nameEn: 'Quick Help', icon: Icons.handyman_rounded, flow: 'dispatch', kind: 'task_runner'),
-  _ServiceItem(nameBn: 'কেয়ারগিভার', nameEn: 'Caregiver', icon: Icons.health_and_safety_rounded, flow: 'dispatch', kind: 'caregiver'),
+  _ServiceItem(nameBn: 'টেকনিশিয়ান', nameEn: 'Technician', icon: Icons.build_rounded, flow: 'dispatch', kind: 'technician', imagePath: '$_kServicesImageDir/technician.png'),
+  _ServiceItem(nameBn: 'কাজের লোক', nameEn: 'Quick Help', icon: Icons.handyman_rounded, flow: 'dispatch', kind: 'task_runner', imagePath: '$_kServicesImageDir/task.png'),
+  _ServiceItem(nameBn: 'কেয়ারগিভার', nameEn: 'Caregiver', icon: Icons.health_and_safety_rounded, flow: 'dispatch', kind: 'caregiver', imagePath: '$_kServicesImageDir/care.png'),
   _ServiceItem(nameBn: 'আইনজীবী', nameEn: 'Lawyer', icon: Icons.gavel_rounded, flow: 'lawyer', kind: 'lawyer'),
-  _ServiceItem(nameBn: 'ফটোগ্রাফার', nameEn: 'Photographer', icon: Icons.camera_alt_rounded, flow: 'dispatch', kind: 'photographer'),
-  _ServiceItem(nameBn: 'সিনেমাটোগ্রাফার', nameEn: 'Cinematographer', icon: Icons.videocam_rounded, flow: 'dispatch', kind: 'cinematographer'),
-  _ServiceItem(nameBn: 'মেকআপ আর্টিস্ট', nameEn: 'Makeup Artist', icon: Icons.face_retouching_natural_rounded, flow: 'dispatch', kind: 'makeup_artist'),
-  _ServiceItem(nameBn: 'হোম টিউটর', nameEn: 'Home Tutor', icon: Icons.school_rounded, flow: 'matchmaking', kind: 'tutor'),
-  _ServiceItem(nameBn: 'পেট কেয়ার', nameEn: 'Pet Care', icon: Icons.pets_rounded, flow: 'matchmaking', kind: 'pet_care'),
-  _ServiceItem(nameBn: 'মেস / আবাসন', nameEn: 'Mess & Housing', icon: Icons.home_work_rounded, flow: 'mess', kind: 'mess_finder'),
-  _ServiceItem(nameBn: 'স্ক্র্যাপ', nameEn: 'Scrap', icon: Icons.recycling_rounded, flow: 'scrap', kind: 'scrap_collection'),
-  _ServiceItem(nameBn: 'স্কিল শেয়ার', nameEn: 'Skill Share', icon: Icons.auto_awesome_rounded, flow: 'skill_share', kind: 'skill_share'),
-  _ServiceItem(nameBn: 'মাইক্রো লার্নিং', nameEn: 'Micro Learning', icon: Icons.play_circle_outline_rounded, flow: 'learning', kind: 'micro_learning'),
-  _ServiceItem(nameBn: 'গ্রোসারি', nameEn: 'Grocery', icon: Icons.local_grocery_store_rounded, flow: 'grocery', kind: 'grocery'),
+  _ServiceItem(nameBn: 'ফটোগ্রাফার', nameEn: 'Photographer', icon: Icons.camera_alt_rounded, flow: 'dispatch', kind: 'photographer', imagePath: '$_kServicesImageDir/photographer.png'),
+  _ServiceItem(nameBn: 'সিনেমাটোগ্রাফার', nameEn: 'Cinematographer', icon: Icons.videocam_rounded, flow: 'dispatch', kind: 'cinematographer', imagePath: '$_kServicesImageDir/cinematographer.png'),
+  _ServiceItem(nameBn: 'মেকআপ আর্টিস্ট', nameEn: 'Makeup Artist', icon: Icons.face_retouching_natural_rounded, flow: 'dispatch', kind: 'makeup_artist', imagePath: '$_kServicesImageDir/makeup.png'),
+  _ServiceItem(nameBn: 'হোম টিউটর', nameEn: 'Home Tutor', icon: Icons.school_rounded, flow: 'matchmaking', kind: 'tutor', imagePath: '$_kServicesImageDir/tutor.png'),
+  _ServiceItem(nameBn: 'পেট কেয়ার', nameEn: 'Pet Care', icon: Icons.pets_rounded, flow: 'matchmaking', kind: 'pet_care', imagePath: '$_kServicesImageDir/petcare.png'),
+  _ServiceItem(nameBn: 'গৃহকর্মী সেবা', nameEn: 'Household Help', icon: Icons.cleaning_services_rounded, flow: 'matchmaking', kind: 'helping_hand'),
+  _ServiceItem(nameBn: 'মেস / আবাসন', nameEn: 'Mess & Housing', icon: Icons.home_work_rounded, flow: 'mess', kind: 'mess_finder', imagePath: '$_kServicesImageDir/mess.png'),
+  _ServiceItem(nameBn: 'স্ক্র্যাপ', nameEn: 'Scrap', icon: Icons.recycling_rounded, flow: 'scrap', kind: 'scrap_collection', imagePath: '$_kServicesImageDir/scrap.png'),
+  _ServiceItem(nameBn: 'স্কিল শেয়ার', nameEn: 'Skill Share', icon: Icons.auto_awesome_rounded, flow: 'skill_share', kind: 'skill_share', imagePath: '$_kServicesImageDir/skill_share.png'),
+  _ServiceItem(nameBn: 'মাইক্রো লার্নিং', nameEn: 'Micro Learning', icon: Icons.play_circle_outline_rounded, flow: 'learning', kind: 'micro_learning', imagePath: '$_kServicesImageDir/micro.png'),
+  _ServiceItem(nameBn: 'গ্রোসারি', nameEn: 'Grocery', icon: Icons.local_grocery_store_rounded, flow: 'grocery', kind: 'grocery', imagePath: '$_kServicesImageDir/groceries.png'),
+  _ServiceItem(nameBn: 'লন্ড্রি', nameEn: 'Laundry', icon: Icons.local_laundry_service_rounded, flow: 'laundry', kind: 'laundry'),
+  _ServiceItem(nameBn: 'রান্না অন-ডিমান্ড', nameEn: 'Cook On-Demand', icon: Icons.soup_kitchen_rounded, flow: 'cook', kind: 'cook'),
+  _ServiceItem(nameBn: 'কমিউট পার্টনার', nameEn: 'Commute Partner', icon: Icons.directions_car_filled_rounded, flow: 'commute', kind: 'commute'),
 ];
+
+// Most `_ServiceItem.kind` values are already the catalog's `ServiceType.code`
+// (technician, lawyer, photographer, …) — these two aren't, so the admin
+// kill switch (GET /catalog/service-types → isActive) needs the real code to
+// match against.
+const _kCatalogCodeOverrides = {'tutor': 'home_tutor', 'grocery': 'groceries_hub'};
+String _catalogCodeFor(String kind) => _kCatalogCodeOverrides[kind] ?? kind;
 
 class HomeScreen extends StatefulWidget {
   const HomeScreen({super.key});
@@ -66,6 +86,11 @@ class _HomeScreenState extends State<HomeScreen> {
 
   List<NearbyProviderModel> _providers = [];
   bool _isLoading = true;
+
+  // Codes admin has switched off (see catalog-service's ServiceType.isActive
+  // kill switch) — empty until loaded, so a slow/failed fetch never hides
+  // anything (fail-open, not fail-closed).
+  Set<String> _disabledCodes = {};
 
   static const _colorPalette = [
     Color(0xFF2563EB),
@@ -108,6 +133,19 @@ class _HomeScreenState extends State<HomeScreen> {
     } catch (_) {
       if (mounted) setState(() => _isLoading = false);
     }
+    _loadDisabledServices();
+  }
+
+  /// Independent of the providers load above — a catalog hiccup shouldn't
+  /// block the rest of the home screen, and vice versa.
+  Future<void> _loadDisabledServices() async {
+    try {
+      final types = await CatalogService.instance.getServiceTypes();
+      final disabled = {for (final t in types) if (!t.isActive) t.code};
+      if (mounted) setState(() => _disabledCodes = disabled);
+    } catch (_) {
+      // Fail-open — see _disabledCodes' doc comment.
+    }
   }
 
   Color _colorForIndex(int index) => _colorPalette[index % _colorPalette.length];
@@ -123,6 +161,7 @@ class _HomeScreenState extends State<HomeScreen> {
           _buildAppBar(context),
           SliverToBoxAdapter(child: _buildSearchBar(context)),
           SliverToBoxAdapter(child: _buildActiveRequest(context)),
+          SliverToBoxAdapter(child: _buildMealGroupBanner(context)),
           SliverToBoxAdapter(child: _buildSectionTitle(context)),
           SliverPadding(
             padding: const EdgeInsets.symmetric(horizontal: 16),
@@ -260,6 +299,57 @@ class _HomeScreenState extends State<HomeScreen> {
     ).animate(delay: 200.ms).fadeIn().slideX(begin: -0.1);
   }
 
+  // Deliberately styled distinctly from every other home-screen card (warm marigold
+  // gradient + a subtle shimmer sweep) — this is the daily-open retention feature, so
+  // it needs to catch the eye every single time, not blend into the category grid.
+  Widget _buildMealGroupBanner(BuildContext context) {
+    return Padding(
+      padding: const EdgeInsets.fromLTRB(16, 0, 16, 20),
+      child: GestureDetector(
+        onTap: () => Navigator.of(context).push(
+          MaterialPageRoute(builder: (_) => const MealGroupsListScreen()),
+        ),
+        child: Container(
+          padding: const EdgeInsets.all(16),
+          decoration: BoxDecoration(
+            gradient: AppColors.fuchsiaGradient,
+            borderRadius: BorderRadius.circular(20),
+            boxShadow: [BoxShadow(color: AppColors.fuchsia.withOpacity(0.35), blurRadius: 18, offset: const Offset(0, 8))],
+          ),
+          child: Row(
+            children: [
+              const Text('🍛', style: TextStyle(fontSize: 34))
+                  .animate(onPlay: (c) => c.repeat(reverse: true))
+                  .scaleXY(end: 1.15, duration: 900.ms, curve: Curves.easeInOut),
+              const SizedBox(width: 14),
+              const Expanded(
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    Text(
+                      'মিল গ্রুপ — বাসার মিল হিসাব',
+                      style: TextStyle(color: AppColors.ivory, fontSize: 15, fontWeight: FontWeight.w700),
+                    ),
+                    SizedBox(height: 2),
+                    Text(
+                      'প্রতিদিন লাঞ্চ-ডিনার টিক দিন, বাজার খরচ ভাগ করুন — ফ্রি',
+                      style: TextStyle(color: Colors.white70, fontSize: 12),
+                    ),
+                  ],
+                ),
+              ),
+              const Icon(Icons.arrow_forward_ios_rounded, color: AppColors.ivory, size: 16),
+            ],
+          ),
+        ),
+      ),
+    )
+        .animate(delay: 250.ms)
+        .fadeIn(duration: 400.ms)
+        .slideX(begin: -0.08)
+        .shimmer(duration: 1800.ms, delay: 1200.ms, color: Colors.white.withOpacity(0.35));
+  }
+
   Widget _buildSectionTitle(BuildContext context) {
     final strings = AppStrings.of(context);
     return Padding(
@@ -337,8 +427,12 @@ class _HomeScreenState extends State<HomeScreen> {
       case 'lawyer':
         nav.push(MaterialPageRoute(builder: (_) => const LawyerConsultationScreen()));
       case 'matchmaking':
+        // Home Tutor lands straight on the request form (open broadcast) — see
+        // service_selection_screen.dart's matching case for the full rationale.
         nav.push(MaterialPageRoute(
-          builder: (_) => ProviderBrowseScreen(kind: item.kind!, label: item.nameBn),
+          builder: (_) => item.kind == 'tutor'
+              ? const MatchRequestScreen(kind: 'tutor')
+              : ProviderBrowseScreen(kind: item.kind!, label: item.nameBn),
         ));
       case 'mess':
         nav.push(MaterialPageRoute(builder: (_) => const MessScreen()));
@@ -350,11 +444,22 @@ class _HomeScreenState extends State<HomeScreen> {
         nav.push(MaterialPageRoute(builder: (_) => const CoursesScreen()));
       case 'grocery':
         nav.push(MaterialPageRoute(builder: (_) => const GroceryScreen()));
+      case 'laundry':
+        nav.push(MaterialPageRoute(builder: (_) => const LaundryScreen()));
+      // Both kept two halves when they moved onto dispatch — the hub is the fork between
+      // "need one now" (broadcast) and the original scheduled/recurring flow.
+      case 'cook':
+        nav.push(MaterialPageRoute(builder: (_) => ServiceModeHubScreen.cook()));
+      case 'commute':
+        nav.push(MaterialPageRoute(builder: (_) => ServiceModeHubScreen.ride()));
     }
   }
 
   Widget _buildCategoryGrid() {
     final isBn = context.read<LanguageNotifier>().isBengali;
+    final visible = _disabledCodes.isEmpty
+        ? _kServices
+        : _kServices.where((s) => !_disabledCodes.contains(_catalogCodeFor(s.kind ?? ''))).toList();
     // Max-extent keeps tiles a sensible size on any width (fixed column count
     // made cells huge on wide screens, leaving big empty gaps).
     return SliverGrid(
@@ -365,8 +470,8 @@ class _HomeScreenState extends State<HomeScreen> {
         mainAxisSpacing: 12,
       ),
       delegate: SliverChildBuilderDelegate(
-        (context, index) => _buildCategoryItem(_kServices[index], index, isBn),
-        childCount: _kServices.length,
+        (context, index) => _buildCategoryItem(visible[index], index, isBn),
+        childCount: visible.length,
       ),
     );
   }
@@ -389,17 +494,26 @@ class _HomeScreenState extends State<HomeScreen> {
               width: 46,
               height: 46,
               decoration: BoxDecoration(
-                gradient: LinearGradient(
-                  colors: [color, Color.lerp(color, Colors.black, 0.22)!],
-                  begin: Alignment.topLeft,
-                  end: Alignment.bottomRight,
-                ),
+                gradient: item.imagePath == null
+                    ? LinearGradient(
+                        colors: [color, Color.lerp(color, Colors.black, 0.22)!],
+                        begin: Alignment.topLeft,
+                        end: Alignment.bottomRight,
+                      )
+                    : null,
+                color: item.imagePath != null ? AppColors.glassWhite : null,
                 borderRadius: BorderRadius.circular(14),
-                boxShadow: [
-                  BoxShadow(color: color.withValues(alpha: 0.4), blurRadius: 10, offset: const Offset(0, 4)),
-                ],
+                border: item.imagePath != null ? Border.all(color: AppColors.glassBorder) : null,
+                boxShadow: item.imagePath == null
+                    ? [BoxShadow(color: color.withValues(alpha: 0.4), blurRadius: 10, offset: const Offset(0, 4))]
+                    : null,
               ),
-              child: Icon(item.icon, color: Colors.white, size: 23),
+              child: item.imagePath != null
+                  ? ClipRRect(
+                      borderRadius: BorderRadius.circular(13),
+                      child: Image.asset(item.imagePath!, fit: BoxFit.cover),
+                    )
+                  : Icon(item.icon, color: Colors.white, size: 23),
             ),
             const SizedBox(height: 8),
             Text(

@@ -350,11 +350,13 @@ class _OrdersScreenState extends State<OrdersScreen> with SingleTickerProviderSt
       'technician': 'টেকনিশিয়ান', 'task_runner': 'কাজের লোক', 'caregiver': 'কেয়ারগিভার',
       'lawyer': 'আইনজীবী', 'photographer': 'ফটোগ্রাফার', 'cinematographer': 'সিনেমাটোগ্রাফার',
       'makeup_artist': 'মেকআপ আর্টিস্ট', 'scrap_collection': 'স্ক্র্যাপ',
+      'cook': 'রাঁধুনি', 'commute': 'রাইড',
     };
     const en = {
       'technician': 'Technician', 'task_runner': 'Task Runner', 'caregiver': 'Caregiver',
       'lawyer': 'Lawyer', 'photographer': 'Photographer', 'cinematographer': 'Cinematographer',
       'makeup_artist': 'Makeup Artist', 'scrap_collection': 'Scrap',
+      'cook': 'Cook', 'commute': 'Ride',
     };
     return (_isBn ? bn[kind] : en[kind]) ?? kind;
   }
