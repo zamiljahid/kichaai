@@ -27,6 +27,7 @@ import 'cinematographer_profile_screen.dart';
 import 'commission_screen.dart';
 import 'commute_screen.dart';
 import 'cook_provider_screen.dart';
+import 'driver_mode_screen.dart';
 import 'household_help_profile_screen.dart';
 import 'makeup_artist_profile_screen.dart';
 import 'micro_learning_profile_screen.dart';
@@ -1752,7 +1753,7 @@ class _ProviderDashboardScreenState extends State<ProviderDashboardScreen> {
               const SizedBox(height: 6),
               Row(
                 children: [
-                  const Icon(Icons.location_on_outlined,
+                  Icon(job.isRide ? Icons.trip_origin_rounded : Icons.location_on_outlined,
                       color: AppColors.textMuted, size: 14),
                   const SizedBox(width: 4),
                   Expanded(
@@ -1762,6 +1763,42 @@ class _ProviderDashboardScreenState extends State<ProviderDashboardScreen> {
                         style: const TextStyle(
                             color: AppColors.textMuted, fontSize: 12)),
                   ),
+                ],
+              ),
+            ],
+            // Where the ride GOES is the single fact a driver decides on, and it was missing
+            // from this card entirely — every ride was accepted or skipped blind. distanceKm is
+            // road km (see the dispatch-service ROAD_FACTOR fix), so it matches the fare shown.
+            if (job.isRide) ...[
+              const SizedBox(height: 4),
+              Row(
+                children: [
+                  const Icon(Icons.flag_rounded, color: AppColors.deepBlue, size: 14),
+                  const SizedBox(width: 4),
+                  Expanded(
+                    child: Text(
+                      job.dropoffAddressSnapshot ??
+                          (_isBn ? 'গন্তব্য ম্যাপে দেওয়া আছে' : 'Destination pinned on the map'),
+                      maxLines: 1,
+                      overflow: TextOverflow.ellipsis,
+                      style: const TextStyle(
+                          color: AppColors.textPrimary,
+                          fontSize: 12,
+                          fontWeight: FontWeight.w600),
+                    ),
+                  ),
+                  if (job.distanceKm != null) ...[
+                    const SizedBox(width: 6),
+                    Text(
+                      _isBn
+                          ? '${job.distanceKm!.toStringAsFixed(1)} কিমি'
+                          : '${job.distanceKm!.toStringAsFixed(1)} km',
+                      style: const TextStyle(
+                          color: AppColors.textMuted,
+                          fontSize: 11.5,
+                          fontWeight: FontWeight.w600),
+                    ),
+                  ],
                 ],
               ),
             ],
@@ -2058,13 +2095,21 @@ class _ProviderDashboardScreenState extends State<ProviderDashboardScreen> {
         // a driver could only reach it through the customer tab.
         Row(
           children: [
+            // Instant rides are a map-first job — a driver waiting for a fare needs to see
+            // where they are and judge a request by pickup distance, which a card list can't do.
             Expanded(
                 child: _buildMoreIncomeChip(
                     Icons.two_wheeler_outlined,
-                    _isBn ? 'রাইড ও কমিউট' : 'Ride & Commute',
-                    () => nav(const CommuteScreen()))),
+                    _isBn ? 'রাইড (ড্রাইভার)' : 'Drive',
+                    () => nav(const DriverModeScreen()))),
             const SizedBox(width: 8),
-            const Expanded(child: SizedBox()),
+            // The recurring cost-sharing arrangement is a different product from an instant
+            // fare, so it keeps its own entry. Tab 1 = "Offer a ride", not the passenger tab.
+            Expanded(
+                child: _buildMoreIncomeChip(
+                    Icons.groups_outlined,
+                    _isBn ? 'কমিউট পার্টনার' : 'Commute Partner',
+                    () => nav(const CommuteScreen(initialTab: 1)))),
           ],
         ),
       ],
