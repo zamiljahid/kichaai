@@ -2237,7 +2237,14 @@ class _ProviderDashboardScreenState extends State<ProviderDashboardScreen> {
           ),
         ),
         ..._myServices.map((svc) {
-          final name = svc['serviceType']?['name'] as String? ??
+          // GET /onboarding/my-services returns name/nameEn at the top level. This used to
+          // look for a nested serviceType object that the endpoint has never sent, so it
+          // always fell through to the raw id — every provider saw "st_commute" where the
+          // service name belongs.
+          final name = (_isBn
+                  ? svc['name'] as String?
+                  : svc['nameEn'] as String? ?? svc['name'] as String?) ??
+              svc['serviceType']?['name'] as String? ??
               svc['serviceTypeId'] as String? ??
               '—';
           final status = svc['status'] as String? ?? 'draft';

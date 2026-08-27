@@ -1,10 +1,10 @@
 import 'dart:ui';
-import 'package:flutter/foundation.dart';
 import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
 import '../core/network/api_client.dart';
 import '../core/utils/app_strings.dart';
 import '../services/auth_service.dart';
+import '../services/dispatch_service.dart';
 import '../theme/app_theme.dart';
 import '../widgets/animated_background.dart';
 import '../widgets/custom_bottom_nav.dart';
@@ -49,9 +49,12 @@ class _MainNavigationState extends State<MainNavigation> {
     // Provider tab shows only when login() explicitly wrote both keys.
     // Avoids /auth/me returning providerProfileId for accounts that were
     // providers in a past session or on a different device.
-    final isProvider = (cachedId != null && cachedId.isNotEmpty) && role == 'PROVIDER';
-    debugPrint('[Nav] providerProfileId=$cachedId role=$role → isProvider=$isProvider');
+    final isProvider =
+        (cachedId != null && cachedId.isNotEmpty) && role == 'PROVIDER';
+    debugPrint(
+        '[Nav] providerProfileId=$cachedId role=$role → isProvider=$isProvider');
     if (mounted) setState(() => _hasProviderProfile = isProvider);
+    if (isProvider) DispatchService.instance.syncOnlineStatus();
   }
 
   @override
@@ -123,14 +126,19 @@ class _MainNavigationState extends State<MainNavigation> {
 
   Future<void> _switchMode(bool toProvider) async {
     if (_isProviderMode == toProvider || _switchingRole) return;
-    setState(() { _isProviderMode = toProvider; _switchingRole = true; }); // optimistic
+    setState(() {
+      _isProviderMode = toProvider;
+      _switchingRole = true;
+    }); // optimistic
     try {
-      await AuthService.instance.switchRole(toProvider ? 'provider' : 'customer');
+      await AuthService.instance
+          .switchRole(toProvider ? 'provider' : 'customer');
     } catch (e) {
       if (mounted) {
         setState(() => _isProviderMode = !toProvider); // revert
         ScaffoldMessenger.of(context).showSnackBar(SnackBar(
-          content: Text(e.toString(), style: const TextStyle(color: Colors.white)),
+          content:
+              Text(e.toString(), style: const TextStyle(color: Colors.white)),
           backgroundColor: const Color(0xFFEF4444),
           behavior: SnackBarBehavior.floating,
         ));
@@ -142,6 +150,10 @@ class _MainNavigationState extends State<MainNavigation> {
 
   Widget _modeTab(String label, {required bool isProvider}) {
     final isSelected = _isProviderMode == isProvider;
+    // Only the প্রোভাইডার tab ever needs the online dot — going online is a provider-side
+    // concept. Lets a provider browsing the customer tab see at a glance that their provider
+    // side is still live, without switching over.
+    final showOnlineDot = isProvider;
     return Expanded(
       child: GestureDetector(
         onTap: () => _switchMode(isProvider),
@@ -153,13 +165,35 @@ class _MainNavigationState extends State<MainNavigation> {
             borderRadius: BorderRadius.circular(7),
           ),
           child: Center(
-            child: Text(
-              label,
-              style: TextStyle(
-                color: isSelected ? Colors.white : AppColors.textMuted,
-                fontSize: 12,
-                fontWeight: FontWeight.w600,
-              ),
+            child: Row(
+              mainAxisSize: MainAxisSize.min,
+              children: [
+                if (showOnlineDot)
+                  ValueListenableBuilder<bool>(
+                    valueListenable: DispatchService.instance.isOnlineNotifier,
+                    builder: (_, isOnline, __) => isOnline
+                        ? Padding(
+                            padding: const EdgeInsets.only(right: 5),
+                            child: Container(
+                              width: 7,
+                              height: 7,
+                              decoration: const BoxDecoration(
+                                color: Color(0xFF4ADE80),
+                                shape: BoxShape.circle,
+                              ),
+                            ),
+                          )
+                        : const SizedBox.shrink(),
+                  ),
+                Text(
+                  label,
+                  style: TextStyle(
+                    color: isSelected ? Colors.white : AppColors.textMuted,
+                    fontSize: 12,
+                    fontWeight: FontWeight.w600,
+                  ),
+                ),
+              ],
             ),
           ),
         ),

@@ -285,9 +285,9 @@ class _JobTrackingScreenState extends State<JobTrackingScreen> {
   (String, Color, IconData) _statusInfo(String status) {
     switch (status) {
       case 'searching': return (_isBn ? 'কাছের provider খোঁজা হচ্ছে...' : 'Finding a nearby provider...', AppColors.deepBlue, Icons.search_rounded);
-      case 'assigned': return (_isBn ? 'Provider পাওয়া গেছে, নিশ্চিত করার অপেক্ষায়' : 'Provider found, awaiting confirmation', const Color(0xFFF59E0B), Icons.person_add_rounded);
-      case 'accepted': return (_isBn ? 'Provider আসছেন' : 'Provider is on the way', const Color(0xFF8B5CF6), Icons.directions_walk_rounded);
-      case 'arriving': return (_isBn ? 'Provider কাছাকাছি!' : 'Provider is nearby!', const Color(0xFF06B6D4), Icons.near_me_rounded);
+      case 'assigned': return (_isBn ? 'সেবাদাতা পাওয়া গেছে, নিশ্চিত করার অপেক্ষায়' : 'Provider found, awaiting confirmation', const Color(0xFFF59E0B), Icons.person_add_rounded);
+      case 'accepted': return (_isBn ? 'সেবাদাতা আসছেন' : 'Provider is on the way', const Color(0xFF8B5CF6), Icons.directions_walk_rounded);
+      case 'arriving': return (_isBn ? 'সেবাদাতা কাছাকাছি!' : 'Provider is nearby!', const Color(0xFF06B6D4), Icons.near_me_rounded);
       case 'in_progress': return (_isBn ? 'কাজ চলছে' : 'Job in progress', const Color(0xFF10B981), Icons.build_circle_rounded);
       case 'completed': return (_isBn ? 'কাজ সম্পন্ন! ⭐' : 'Job complete! ⭐', const Color(0xFF22C55E), Icons.check_circle_rounded);
       case 'cancelled': return (_isBn ? 'অনুরোধ বাতিল হয়েছে' : 'Request cancelled', const Color(0xFFEF4444), Icons.cancel_rounded);
@@ -453,7 +453,7 @@ class _JobTrackingScreenState extends State<JobTrackingScreen> {
           const SizedBox(width: 14),
           Expanded(
             child: Column(crossAxisAlignment: CrossAxisAlignment.start, children: [
-              Text(_isBn ? 'নির্ধারিত Provider' : 'Assigned Provider', style: const TextStyle(color: AppColors.textMuted, fontSize: 11)),
+              Text(_isBn ? 'নির্ধারিত সেবাদাতা' : 'Assigned Provider', style: const TextStyle(color: AppColors.textMuted, fontSize: 11)),
               Text(name, style: const TextStyle(color: AppColors.textPrimary, fontSize: 14, fontWeight: FontWeight.w600)),
               if (phone != null) Text(phone, style: TextStyle(color: AppColors.textMuted, fontSize: 12)),
             ]),
@@ -573,7 +573,7 @@ class _JobTrackingScreenState extends State<JobTrackingScreen> {
             children: [
               const Icon(Icons.request_quote_rounded, color: Color(0xFFF59E0B), size: 20),
               const SizedBox(width: 8),
-              Text(_isBn ? 'Provider-এর কোট' : 'Provider\'s quote', style: const TextStyle(color: AppColors.textSecondary, fontSize: 12, fontWeight: FontWeight.w600)),
+              Text(_isBn ? 'সেবাদাতার কোট' : 'Provider\'s quote', style: const TextStyle(color: AppColors.textSecondary, fontSize: 12, fontWeight: FontWeight.w600)),
             ],
           ),
           const SizedBox(height: 12),
