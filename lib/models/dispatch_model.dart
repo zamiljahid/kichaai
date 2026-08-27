@@ -331,6 +331,10 @@ class RideDetail {
   final double? baseFare;
   final double? perKmRate;
   final double? surgeMultiplier;
+  /// Road-route facts from Google Directions, snapshotted at quote time. Null when Directions
+  /// was unavailable and the fare fell back to the straight-line estimate.
+  final int? durationMinutes;
+  final String? routePolyline;
 
   const RideDetail({
     required this.vehicleType,
@@ -338,6 +342,8 @@ class RideDetail {
     this.baseFare,
     this.perKmRate,
     this.surgeMultiplier,
+    this.durationMinutes,
+    this.routePolyline,
   });
 
   /// True when a surge multiplier above 1 was applied — worth telling the customer why
@@ -350,9 +356,45 @@ class RideDetail {
         baseFare: _asDoubleOrNull(json['baseFare']),
         perKmRate: _asDoubleOrNull(json['perKmRate']),
         surgeMultiplier: _asDoubleOrNull(json['surgeMultiplier']),
+        durationMinutes: (json['durationMinutes'] as num?)?.toInt(),
+        routePolyline: json['routePolyline'] as String?,
       );
 }
 
+/// Decodes a Google encoded-polyline string into [lat, lng] pairs.
+///
+/// The route comes from the backend already encoded (RideDetails.routePolyline) so the apps
+/// never need a Directions key of their own. Returns an empty list on malformed input rather
+/// than throwing — a bad polyline should degrade to no route line, never crash a live trip.
+List<List<double>> decodePolyline(String encoded) {
+  final points = <List<double>>[];
+  int index = 0, lat = 0, lng = 0;
+  try {
+    while (index < encoded.length) {
+      int result = 0, shift = 0, b;
+      do {
+        b = encoded.codeUnitAt(index++) - 63;
+        result |= (b & 0x1f) << shift;
+        shift += 5;
+      } while (b >= 0x20);
+      lat += (result & 1) != 0 ? ~(result >> 1) : (result >> 1);
+
+      result = 0;
+      shift = 0;
+      do {
+        b = encoded.codeUnitAt(index++) - 63;
+        result |= (b & 0x1f) << shift;
+        shift += 5;
+      } while (b >= 0x20);
+      lng += (result & 1) != 0 ? ~(result >> 1) : (result >> 1);
+
+      points.add([lat / 1e5, lng / 1e5]);
+    }
+  } catch (_) {
+    return points;
+  }
+  return points;
+}
 /// The three vehicle types a ride can request. Order is deliberate — cheapest first,
 /// matching how Pathao/Uber present options.
 const kRideVehicleTypes = ['motorcycle', 'cng', 'car'];
@@ -368,6 +410,73 @@ const kRideVehicleLabelsEn = {
   'cng': 'CNG',
   'car': 'Car',
 };
+
+/// One vehicle's line in a ride quote — what it costs and whether anyone actually drives it
+/// nearby. `fare` is the figure createJob will charge; `fareMin`/`fareMax` are the +/-12% band
+/// shown to the customer, because the distance behind it is a road-estimate, not a routed one.
+class RideVehicleQuote {
+  final String vehicleType;
+  final double? fare;
+  final double? fareMin;
+  final double? fareMax;
+  final int onlineCount;
+  final int? etaMinutes;
+
+  const RideVehicleQuote({
+    required this.vehicleType,
+    this.fare,
+    this.fareMin,
+    this.fareMax,
+    this.onlineCount = 0,
+    this.etaMinutes,
+  });
+
+  bool get hasDrivers => onlineCount > 0;
+
+  factory RideVehicleQuote.fromJson(Map<String, dynamic> json) => RideVehicleQuote(
+        vehicleType: json['vehicleType'] as String,
+        fare: _asDoubleOrNull(json['fare']),
+        fareMin: _asDoubleOrNull(json['fareMin']),
+        fareMax: _asDoubleOrNull(json['fareMax']),
+        onlineCount: (json['onlineCount'] as num?)?.toInt() ?? 0,
+        etaMinutes: (json['etaMinutes'] as num?)?.toInt(),
+      );
+}
+
+/// GET /dispatch/ride/quote — the server-side fare preview. The app deliberately does NOT do
+/// this arithmetic itself any more: it used to reimplement base + per-km locally and drop the
+/// surge multiplier, so the price shown before booking could disagree with the price charged.
+class RideQuoteModel {
+  final double distanceKm;
+  final double straightLineKm;
+  final double surgeMultiplier;
+  final List<RideVehicleQuote> vehicles;
+
+  const RideQuoteModel({
+    required this.distanceKm,
+    required this.straightLineKm,
+    required this.surgeMultiplier,
+    this.vehicles = const [],
+  });
+
+  bool get isSurging => surgeMultiplier > 1.0;
+
+  RideVehicleQuote? forVehicle(String type) {
+    for (final v in vehicles) {
+      if (v.vehicleType == type) return v;
+    }
+    return null;
+  }
+
+  factory RideQuoteModel.fromJson(Map<String, dynamic> json) => RideQuoteModel(
+        distanceKm: _asDouble(json['distanceKm']),
+        straightLineKm: _asDouble(json['straightLineKm']),
+        surgeMultiplier: _asDoubleOrNull(json['surgeMultiplier']) ?? 1.0,
+        vehicles: (json['vehicles'] as List<dynamic>? ?? [])
+            .map((e) => RideVehicleQuote.fromJson(e as Map<String, dynamic>))
+            .toList(),
+      );
+}
 
 class AssignmentModel {
   final String id;
@@ -464,6 +573,9 @@ class NearbyProviderModel {
   final String? phone;
   final double? rating;
   final double? distanceKm;
+  /// Minutes to reach the customer, road-adjusted server-side. Present whenever the search
+  /// was given lat/lon; the API has always returned it, the app just never read it.
+  final int? etaMinutes;
   final double latitude;
   final double longitude;
   final String? profileImageUrl;
@@ -476,6 +588,7 @@ class NearbyProviderModel {
     this.phone,
     this.rating,
     this.distanceKm,
+    this.etaMinutes,
     required this.latitude,
     required this.longitude,
     this.profileImageUrl,
@@ -492,6 +605,7 @@ class NearbyProviderModel {
         phone: json['phone'] as String?,
         rating: _asDoubleOrNull(json['rating']),
         distanceKm: _asDoubleOrNull(json['distanceKm']),
+        etaMinutes: (json['etaMinutes'] as num?)?.toInt(),
         latitude: _asDouble(json['latitude']),
         longitude: _asDouble(json['longitude']),
         profileImageUrl: json['profileImageUrl'] as String?,

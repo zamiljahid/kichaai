@@ -351,18 +351,24 @@ class _DriverModeScreenState extends State<DriverModeScreen> {
   Set<Polyline> _lines() {
     final job = _focusJob;
     if (job == null || !job.isRide) return const {};
-    // Straight line, not a routed path — no directions API is wired, and a fake road route
-    // would be misleading. It reads as "roughly this way".
+    // Prefer the real driving route Directions returned at quote time; fall back to a straight
+    // dashed line only when routing was unavailable, so the map never silently implies a road
+    // that doesn't exist.
+    final encoded = job.rideDetail?.routePolyline;
+    final decoded = (encoded != null && encoded.isNotEmpty) ? decodePolyline(encoded) : const <List<double>>[];
+    final hasRoute = decoded.length > 1;
     return {
       Polyline(
         polylineId: const PolylineId('route'),
-        points: [
-          LatLng(job.pickupLatitude, job.pickupLongitude),
-          LatLng(job.dropoffLatitude!, job.dropoffLongitude!),
-        ],
+        points: hasRoute
+            ? decoded.map((p) => LatLng(p[0], p[1])).toList()
+            : [
+                LatLng(job.pickupLatitude, job.pickupLongitude),
+                LatLng(job.dropoffLatitude!, job.dropoffLongitude!),
+              ],
         color: AppColors.deepBlue,
-        width: 4,
-        patterns: [PatternItem.dash(18), PatternItem.gap(10)],
+        width: hasRoute ? 5 : 4,
+        patterns: hasRoute ? const [] : [PatternItem.dash(18), PatternItem.gap(10)],
       ),
     };
   }
@@ -619,6 +625,17 @@ class _DriverModeScreenState extends State<DriverModeScreen> {
                   isBn
                       ? 'যাত্রা ${job.distanceKm!.toStringAsFixed(1)} কিমি'
                       : 'Trip ${job.distanceKm!.toStringAsFixed(1)} km',
+                  style: const TextStyle(
+                      color: AppColors.textSecondary, fontSize: 12.5),
+                ),
+              ],
+              if (job.rideDetail?.durationMinutes != null) ...[
+                const SizedBox(width: 14),
+                const Icon(Icons.schedule_rounded,
+                    size: 15, color: AppColors.textMuted),
+                const SizedBox(width: 4),
+                Text(
+                  '~${job.rideDetail!.durationMinutes} ${isBn ? 'মিনিট' : 'min'}',
                   style: const TextStyle(
                       color: AppColors.textSecondary, fontSize: 12.5),
                 ),

@@ -372,18 +372,31 @@ class _JobTrackingScreenState extends State<JobTrackingScreen> {
                   },
                   // Straight line, not a routed path — we have no directions API wired, and a
                   // fake road route would be misleading. It reads as "roughly this way".
+                  // Prefer the real driving route Directions returned at quote time; the
+                  // dashed straight line is only the fallback when routing was unavailable.
                   polylines: job.isRide
                       ? {
-                          Polyline(
-                            polylineId: const PolylineId('route'),
-                            points: [
-                              LatLng(job.pickupLatitude, job.pickupLongitude),
-                              LatLng(job.dropoffLatitude!, job.dropoffLongitude!),
-                            ],
-                            color: AppColors.deepBlue,
-                            width: 3,
-                            patterns: [PatternItem.dash(18), PatternItem.gap(10)],
-                          ),
+                          () {
+                            final enc = job.rideDetail?.routePolyline;
+                            final pts = (enc != null && enc.isNotEmpty)
+                                ? decodePolyline(enc)
+                                : const <List<double>>[];
+                            final hasRoute = pts.length > 1;
+                            return Polyline(
+                              polylineId: const PolylineId('route'),
+                              points: hasRoute
+                                  ? pts.map((p) => LatLng(p[0], p[1])).toList()
+                                  : [
+                                      LatLng(job.pickupLatitude, job.pickupLongitude),
+                                      LatLng(job.dropoffLatitude!, job.dropoffLongitude!),
+                                    ],
+                              color: AppColors.deepBlue,
+                              width: hasRoute ? 5 : 3,
+                              patterns: hasRoute
+                                  ? const []
+                                  : [PatternItem.dash(18), PatternItem.gap(10)],
+                            );
+                          }(),
                         }
                       : const {},
                   myLocationButtonEnabled: false,
@@ -722,6 +735,13 @@ class _JobTrackingScreenState extends State<JobTrackingScreen> {
             Text('${job.distanceKm!.toStringAsFixed(1)} ${_isBn ? 'কিমি' : 'km'}',
                 style: const TextStyle(color: AppColors.textSecondary, fontSize: 12.5)),
           ],
+          if (job.rideDetail?.durationMinutes != null) ...[
+            const SizedBox(width: 14),
+            const Icon(Icons.schedule_rounded, size: 16, color: AppColors.textMuted),
+            const SizedBox(width: 5),
+            Text('~${job.rideDetail!.durationMinutes} ${_isBn ? 'মিনিট' : 'min'}',
+                style: const TextStyle(color: AppColors.textSecondary, fontSize: 12.5)),
+          ],
           const Spacer(),
           if (job.estimatedAmount != null)
             Text('৳${job.estimatedAmount!.round()}',
@@ -773,14 +793,25 @@ class _JobTrackingScreenState extends State<JobTrackingScreen> {
           const SizedBox(width: 8),
           Expanded(
             child: Text(
-              _isBn ? 'ক্যাশের বদলে অনলাইনে পরিশোধ করুন' : 'Pay online instead of cash',
+              alreadyOptedIn
+                  ? (_isBn ? 'অনলাইন পেমেন্ট বাকি আছে' : 'Online payment is pending')
+                  : (_isBn ? 'ক্যাশের বদলে অনলাইনে পরিশোধ করুন' : 'Pay online instead of cash'),
               style: const TextStyle(color: AppColors.textPrimary, fontSize: 13.5, fontWeight: FontWeight.w700),
             ),
           ),
         ]),
         const SizedBox(height: 6),
         Text(
-          _isBn ? 'না করলে কাজ শেষে যথারীতি সরাসরি ক্যাশ দিতে হবে।' : 'If you skip this, pay the provider cash directly as usual when the job is done.',
+          // A ride booked with paymentMethod:online arrives here already opted in, so the
+          // "skip this and pay cash" line would be telling the customer the opposite of what
+          // they already chose.
+          alreadyOptedIn
+              ? (_isBn
+                  ? 'আপনি অনলাইনে পরিশোধ বেছে নিয়েছেন — বিকাশ / নগদ / কার্ডে সম্পন্ন করুন।'
+                  : 'You chose to pay online — finish it with bKash / Nagad / card.')
+              : (_isBn
+                  ? 'না করলে কাজ শেষে যথারীতি সরাসরি ক্যাশ দিতে হবে।'
+                  : 'If you skip this, pay the provider cash directly as usual when the job is done.'),
           style: const TextStyle(color: AppColors.textMuted, fontSize: 11.5),
         ),
         const SizedBox(height: 12),
