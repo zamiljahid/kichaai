@@ -31,6 +31,9 @@ import 'driver_mode_screen.dart';
 import 'household_help_profile_screen.dart';
 import 'makeup_artist_profile_screen.dart';
 import 'micro_learning_profile_screen.dart';
+import 'course_authoring_screen.dart';
+import '../models/micro_learning_model.dart';
+import '../services/micro_learning_service.dart';
 import 'pet_care_profile_screen.dart';
 import 'photographer_profile_screen.dart';
 import 'quick_help_profile_screen.dart';
@@ -97,6 +100,11 @@ class _ProviderDashboardScreenState extends State<ProviderDashboardScreen> {
 
   // My applied services
   List<Map<String, dynamic>> _myServices = [];
+
+  // An instructor's own courses, for the dashboard summary. Loaded only when this
+  // provider actually teaches — everyone else never pays for the request.
+  List<CourseModel> _myCourses = [];
+  bool _loadingCourses = false;
   bool _loadingMyServices = false;
 
   // Dispatch standing (red cards / temp-ban / unpaid dues)
@@ -706,6 +714,9 @@ class _ProviderDashboardScreenState extends State<ProviderDashboardScreen> {
       if (mounted) setState(() => _myServices = list);
     } catch (_) {}
     if (mounted) setState(() => _loadingMyServices = false);
+    // Same reasoning as the portfolio fetch below: _isInstructor reads _myServices, so the
+    // course summary can only be requested once that has resolved.
+    if (_isInstructor) _loadMyCourses();
     // Portfolio only exists for photography/cinema — fetch only when relevant, after
     // _myServices resolves (_isVisualProvider reads it), for the profile-completion check.
     if (_isVisualProvider) {
@@ -1581,6 +1592,109 @@ class _ProviderDashboardScreenState extends State<ProviderDashboardScreen> {
     );
   }
 
+  bool get _isInstructor =>
+      _myServices.any((s) => s['serviceTypeId'] == 'st_micro_learning' && s['status'] == 'approved');
+
+  Future<void> _loadMyCourses() async {
+    if (_userId == null || !_isInstructor) return;
+    setState(() => _loadingCourses = true);
+    try {
+      final list = await MicroLearningService.instance.listMyCourses(_userId!);
+      if (mounted) setState(() => _myCourses = list);
+    } catch (_) {
+      // The card just shows zeros; the rest of the dashboard is unaffected.
+    } finally {
+      if (mounted) setState(() => _loadingCourses = false);
+    }
+  }
+
+  /// An instructor's courses, on the dashboard they actually open. Reaching them used to
+  /// mean leaving the dashboard for Profile → "Teach a Course" — the authoring screen was
+  /// never linked from here at all, so nothing about teaching was visible on this screen.
+  Widget _buildMyCoursesCard() {
+    if (!_isInstructor) return const SizedBox.shrink();
+
+    final published = _myCourses.where((c) => c.status == 'published').length;
+    final pending = _myCourses.where((c) => c.status == 'pending_review').length;
+    final drafts = _myCourses.where((c) => c.status == 'draft').length;
+    final learners = _myCourses.fold<int>(0, (t, c) => t + (c.enrollmentCount ?? 0));
+
+    Widget stat(String value, String label) => Expanded(
+          child: Column(children: [
+            Text(value,
+                style: const TextStyle(
+                    color: AppColors.textPrimary,
+                    fontSize: 17,
+                    fontWeight: FontWeight.w800)),
+            const SizedBox(height: 2),
+            Text(label,
+                textAlign: TextAlign.center,
+                style: const TextStyle(color: AppColors.textMuted, fontSize: 11)),
+          ]),
+        );
+
+    return Padding(
+      padding: const EdgeInsets.only(bottom: 12),
+      child: GestureDetector(
+        onTap: () => Navigator.of(context)
+            .push(MaterialPageRoute(builder: (_) => const CourseAuthoringScreen()))
+            .then((_) => _loadMyCourses()),
+        child: GlassCard(
+          padding: const EdgeInsets.all(16),
+          child: Column(crossAxisAlignment: CrossAxisAlignment.start, children: [
+            Row(children: [
+              const Icon(Icons.cast_for_education_rounded,
+                  color: AppColors.deepBlue, size: 18),
+              const SizedBox(width: 8),
+              Expanded(
+                child: Text(_isBn ? 'আমার কোর্স' : 'My courses',
+                    style: const TextStyle(
+                        color: AppColors.textPrimary,
+                        fontSize: 14,
+                        fontWeight: FontWeight.w700)),
+              ),
+              if (_loadingCourses)
+                const SizedBox(
+                    width: 14,
+                    height: 14,
+                    child: CircularProgressIndicator(
+                        strokeWidth: 2, color: AppColors.textMuted))
+              else
+                const Icon(Icons.chevron_right_rounded,
+                    color: AppColors.textMuted, size: 18),
+            ]),
+            const SizedBox(height: 14),
+            if (_myCourses.isEmpty && !_loadingCourses)
+              Text(
+                _isBn
+                    ? 'এখনো কোনো কোর্স নেই — এখানে চেপে প্রথমটি বানান'
+                    : 'No courses yet — tap here to make your first',
+                style: const TextStyle(color: AppColors.textMuted, fontSize: 12.5),
+              )
+            else
+              Row(children: [
+                stat('$published', _isBn ? 'প্রকাশিত' : 'Published'),
+                stat('$pending', _isBn ? 'অপেক্ষায়' : 'In review'),
+                stat('$drafts', _isBn ? 'খসড়া' : 'Drafts'),
+                stat('$learners', _isBn ? 'শিক্ষার্থী' : 'Learners'),
+              ]),
+            // Anything still unpublished earns nothing, so say so rather than leaving a
+            // silent number the instructor has to interpret.
+            if (drafts > 0) ...[
+              const SizedBox(height: 10),
+              Text(
+                _isBn
+                    ? '$drafts টি খসড়া প্রকাশ করা হয়নি — শিক্ষার্থীরা এগুলো দেখতে পাচ্ছে না'
+                    : '$drafts draft(s) are unpublished — learners cannot see them',
+                style: const TextStyle(color: Color(0xFFF59E0B), fontSize: 11.5),
+              ),
+            ],
+          ]),
+        ),
+      ),
+    );
+  }
+
   Widget _buildDashboardTab() {
     return SingleChildScrollView(
       padding: const EdgeInsets.all(16),
@@ -1591,6 +1705,7 @@ class _ProviderDashboardScreenState extends State<ProviderDashboardScreen> {
           const SizedBox(height: 12),
           _buildProfileCompletion(),
           _buildTodayEarningsCard(),
+          _buildMyCoursesCard(),
           _buildStandingBanner(),
           if (_checkingOnlineStatus)
             const Padding(
@@ -2401,6 +2516,18 @@ class _ProviderDashboardScreenState extends State<ProviderDashboardScreen> {
                         const SizedBox(width: 6),
                       ],
                       if (isApprovedMicroLearning) ...[
+                        TextButton(
+                          onPressed: () => Navigator.of(context)
+                              .push(MaterialPageRoute(
+                                  builder: (_) => const CourseAuthoringScreen()))
+                              .then((_) => _loadMyCourses()),
+                          child: Text(_isBn ? 'আমার কোর্স' : 'My Courses',
+                              style: const TextStyle(
+                                  color: AppColors.deepBlue,
+                                  fontSize: 12.5,
+                                  fontWeight: FontWeight.w700)),
+                        ),
+                        const SizedBox(width: 6),
                         TextButton(
                           onPressed: () => Navigator.of(context).push(
                               MaterialPageRoute(
