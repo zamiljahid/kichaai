@@ -105,6 +105,9 @@ class _ProviderDashboardScreenState extends State<ProviderDashboardScreen> {
   // provider actually teaches — everyone else never pays for the request.
   List<CourseModel> _myCourses = [];
   bool _loadingCourses = false;
+
+  // The driver's live commission position — rate, why, and progress toward the free day.
+  Map<String, dynamic>? _rideCommission;
   bool _loadingMyServices = false;
 
   // Dispatch standing (red cards / temp-ban / unpaid dues)
@@ -717,6 +720,7 @@ class _ProviderDashboardScreenState extends State<ProviderDashboardScreen> {
     // Same reasoning as the portfolio fetch below: _isInstructor reads _myServices, so the
     // course summary can only be requested once that has resolved.
     if (_isInstructor) _loadMyCourses();
+    if (_isDriver) _loadRideCommission();
     // Portfolio only exists for photography/cinema — fetch only when relevant, after
     // _myServices resolves (_isVisualProvider reads it), for the profile-completion check.
     if (_isVisualProvider) {
@@ -1695,6 +1699,167 @@ class _ProviderDashboardScreenState extends State<ProviderDashboardScreen> {
     );
   }
 
+  bool get _isDriver =>
+      _myServices.any((s) => s['serviceTypeId'] == 'st_commute' && s['status'] == 'approved');
+
+  Future<void> _loadRideCommission() async {
+    final c = await DispatchService.instance.getMyRideCommission();
+    if (mounted) setState(() => _rideCommission = c);
+  }
+
+  Future<void> _redeemCoupon() async {
+    final ctrl = TextEditingController();
+    final code = await showDialog<String>(
+      context: context,
+      builder: (ctx) => AlertDialog(
+        backgroundColor: AppColors.bgMid,
+        title: Text(_isBn ? 'কুপন কোড' : 'Coupon code',
+            style: const TextStyle(color: AppColors.textPrimary, fontSize: 17)),
+        content: TextField(
+          controller: ctrl,
+          autofocus: true,
+          textCapitalization: TextCapitalization.characters,
+          style: const TextStyle(color: AppColors.textPrimary),
+          decoration: InputDecoration(
+            hintText: _isBn ? 'যেমন RIDE2026' : 'e.g. RIDE2026',
+            hintStyle: const TextStyle(color: AppColors.textMuted),
+          ),
+        ),
+        actions: [
+          TextButton(
+              onPressed: () => Navigator.pop(ctx),
+              child: Text(_isBn ? 'বাতিল' : 'Cancel',
+                  style: const TextStyle(color: AppColors.textMuted))),
+          TextButton(
+              onPressed: () => Navigator.pop(ctx, ctrl.text.trim()),
+              child: Text(_isBn ? 'প্রয়োগ করুন' : 'Apply',
+                  style: const TextStyle(
+                      color: AppColors.deepBlue, fontWeight: FontWeight.w700))),
+        ],
+      ),
+    );
+    if (code == null || code.isEmpty) return;
+    try {
+      await DispatchService.instance.redeemRideCoupon(code);
+      await _loadRideCommission();
+      if (mounted) _showInfo(_isBn ? 'কুপন প্রয়োগ হয়েছে' : 'Coupon applied');
+    } catch (e) {
+      if (mounted) _showError(ApiClient.mapError(e).localized(_isBn));
+    }
+  }
+
+  Future<void> _buyDayPass() async {
+    final fee = _rideCommission?['dayPassFee'];
+    final ok = await showDialog<bool>(
+      context: context,
+      builder: (ctx) => AlertDialog(
+        backgroundColor: AppColors.bgMid,
+        title: Text(_isBn ? 'আজকের পাস কিনবেন?' : 'Buy a day pass?',
+            style: const TextStyle(color: AppColors.textPrimary, fontSize: 17)),
+        content: Text(
+          _isBn
+              ? 'আজ সারাদিনের সব রাইডে কোনো কমিশন কাটা হবে না। খরচ ৳$fee।'
+              : 'No commission on any ride today. It costs ৳$fee.',
+          style: const TextStyle(color: AppColors.textSecondary, fontSize: 13),
+        ),
+        actions: [
+          TextButton(
+              onPressed: () => Navigator.pop(ctx, false),
+              child: Text(_isBn ? 'না' : 'No',
+                  style: const TextStyle(color: AppColors.textMuted))),
+          TextButton(
+              onPressed: () => Navigator.pop(ctx, true),
+              child: Text(_isBn ? 'কিনুন' : 'Buy',
+                  style: const TextStyle(
+                      color: AppColors.deepBlue, fontWeight: FontWeight.w700))),
+        ],
+      ),
+    );
+    if (ok != true) return;
+    try {
+      await DispatchService.instance.buyRideDayPass();
+      await _loadRideCommission();
+      if (mounted) _showInfo(_isBn ? 'আজকের পাস কেনা হয়েছে' : "Today's pass is active");
+    } catch (e) {
+      if (mounted) _showError(ApiClient.mapError(e).localized(_isBn));
+    }
+  }
+
+  /// A rule nobody can see is a rule nobody rides differently for, so this shows the rate,
+  /// the reason behind it, and exactly how far the next break is.
+  Widget _buildRideCommissionCard() {
+    final c = _rideCommission;
+    if (!_isDriver || c == null) return const SizedBox.shrink();
+
+    final rate = (c['rate'] as num?)?.toDouble() ?? 0;
+    final reason = (_isBn ? c['reasonBn'] : c['reason'])?.toString() ?? '';
+    final daysLeft = (c['daysUntilFreeDay'] as num?)?.toInt() ?? 0;
+    final hasCoupon = c['hasCoupon'] == true;
+    final hasPass = c['hasDayPassToday'] == true;
+    final fee = c['dayPassFee'];
+
+    return Padding(
+      padding: const EdgeInsets.only(bottom: 12),
+      child: GlassCard(
+        padding: const EdgeInsets.all(16),
+        child: Column(crossAxisAlignment: CrossAxisAlignment.start, children: [
+          Row(children: [
+            const Icon(Icons.percent_rounded, color: AppColors.deepBlue, size: 18),
+            const SizedBox(width: 8),
+            Expanded(
+              child: Text(_isBn ? 'আপনার রাইড কমিশন' : 'Your ride commission',
+                  style: const TextStyle(
+                      color: AppColors.textPrimary,
+                      fontSize: 14,
+                      fontWeight: FontWeight.w700)),
+            ),
+            Text('${rate.toStringAsFixed(rate % 1 == 0 ? 0 : 1)}%',
+                style: TextStyle(
+                    color: rate == 0 ? const Color(0xFF10B981) : AppColors.deepBlue,
+                    fontSize: 20,
+                    fontWeight: FontWeight.w800)),
+          ]),
+          const SizedBox(height: 4),
+          Text(reason, style: const TextStyle(color: AppColors.textMuted, fontSize: 12)),
+          if (!hasPass && daysLeft > 0) ...[
+            const SizedBox(height: 10),
+            Text(
+              _isBn
+                  ? 'আর $daysLeft দিন টানা রাইড করলে পরের দিন কোনো কমিশন লাগবে না'
+                  : 'Ride $daysLeft more day(s) in a row and the next day is commission-free',
+              style: const TextStyle(color: Color(0xFFF59E0B), fontSize: 11.5),
+            ),
+          ],
+          const SizedBox(height: 12),
+          Row(children: [
+            if (!hasCoupon)
+              Expanded(
+                child: OutlinedButton(
+                  onPressed: _redeemCoupon,
+                  style: OutlinedButton.styleFrom(
+                      side: const BorderSide(color: AppColors.deepBlue)),
+                  child: Text(_isBn ? 'কুপন আছে' : 'I have a coupon',
+                      style: const TextStyle(color: AppColors.deepBlue, fontSize: 12)),
+                ),
+              ),
+            if (!hasCoupon && !hasPass) const SizedBox(width: 8),
+            if (!hasPass)
+              Expanded(
+                child: OutlinedButton(
+                  onPressed: _buyDayPass,
+                  style: OutlinedButton.styleFrom(
+                      side: const BorderSide(color: AppColors.glassBorder)),
+                  child: Text(_isBn ? 'আজকের পাস ৳$fee' : 'Day pass ৳$fee',
+                      style: const TextStyle(
+                          color: AppColors.textSecondary, fontSize: 12)),
+                ),
+              ),
+          ]),
+        ]),
+      ),
+    );
+  }
+
   Widget _buildDashboardTab() {
     return SingleChildScrollView(
       padding: const EdgeInsets.all(16),
@@ -1705,6 +1870,7 @@ class _ProviderDashboardScreenState extends State<ProviderDashboardScreen> {
           const SizedBox(height: 12),
           _buildProfileCompletion(),
           _buildTodayEarningsCard(),
+          _buildRideCommissionCard(),
           _buildMyCoursesCard(),
           _buildStandingBanner(),
           if (_checkingOnlineStatus)

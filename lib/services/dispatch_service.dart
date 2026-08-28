@@ -107,6 +107,10 @@ class DispatchService {
     String? dropoffAddressSnapshot,
     String? vehicleType, // 'motorcycle' | 'car' | 'cng'
     int? passengerCount,
+    // 'cash' (default everywhere) | 'online'. Choosing 'online' up front means the job is
+    // already marked awaiting online payment the moment a provider accepts, so the customer
+    // gets the SSLCommerz pay screen straight away instead of hunting for the opt-in card.
+    String? paymentMethod,
   }) async {
     try {
       final res = await _client.post('/dispatch/jobs', data: {
@@ -150,6 +154,7 @@ class DispatchService {
           'dropoffAddressSnapshot': dropoffAddressSnapshot,
         if (vehicleType != null) 'vehicleType': vehicleType,
         if (passengerCount != null) 'passengerCount': passengerCount,
+        if (paymentMethod != null) 'paymentMethod': paymentMethod,
       });
       return JobModel.fromJson(res.data as Map<String, dynamic>);
     } catch (e) {
@@ -507,6 +512,33 @@ class DispatchService {
     try {
       final res = await _client.get('/dispatch/me/standing');
       return ProviderStanding.fromJson(res.data as Map<String, dynamic>);
+    } catch (e) {
+      throw ApiClient.mapError(e);
+    }
+  }
+
+  /// What this driver pays on their next ride, why, and how close the next break is.
+  /// Returns null rather than throwing — the dashboard shows the rest either way.
+  Future<Map<String, dynamic>?> getMyRideCommission() async {
+    try {
+      final res = await _client.get('/dispatch/ride-commission/me');
+      return res.data is Map ? Map<String, dynamic>.from(res.data as Map) : null;
+    } catch (_) {
+      return null;
+    }
+  }
+
+  Future<void> redeemRideCoupon(String code) async {
+    try {
+      await _client.post('/dispatch/ride-commission/redeem-coupon', data: {'code': code});
+    } catch (e) {
+      throw ApiClient.mapError(e);
+    }
+  }
+
+  Future<void> buyRideDayPass() async {
+    try {
+      await _client.post('/dispatch/ride-commission/day-pass', data: {});
     } catch (e) {
       throw ApiClient.mapError(e);
     }
@@ -957,6 +989,7 @@ class DispatchService {
     double? lat,
     double? lon,
     double? radiusKm,
+    String? specialization,
   }) async {
     try {
       final res =
@@ -965,6 +998,7 @@ class DispatchService {
         if (lat != null) 'lat': lat.toString(),
         if (lon != null) 'lon': lon.toString(),
         if (radiusKm != null) 'radiusKm': radiusKm.toString(),
+        if (specialization != null) 'specialization': specialization,
       });
       final list = res.data as List<dynamic>;
       return list
@@ -972,6 +1006,30 @@ class DispatchService {
           .toList();
     } catch (e) {
       throw ApiClient.mapError(e);
+    }
+  }
+
+  /// Server-computed fare preview for a ride, per vehicle type, before the job exists.
+  /// Returns null on any failure — a quote that cannot be fetched must never block the
+  /// request, the backend prices the ride authoritatively at createJob either way.
+  Future<RideQuoteModel?> getRideQuote({
+    required double pickupLat,
+    required double pickupLon,
+    required double dropLat,
+    required double dropLon,
+  }) async {
+    try {
+      final res = await _client.get('/dispatch/ride/quote', queryParameters: {
+        'pickupLat': pickupLat.toString(),
+        'pickupLon': pickupLon.toString(),
+        'dropLat': dropLat.toString(),
+        'dropLon': dropLon.toString(),
+      });
+      final data = res.data;
+      if (data is Map<String, dynamic>) return RideQuoteModel.fromJson(data);
+      return null;
+    } catch (_) {
+      return null;
     }
   }
 
