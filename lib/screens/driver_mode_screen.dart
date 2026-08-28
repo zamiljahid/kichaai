@@ -190,14 +190,31 @@ class _DriverModeScreenState extends State<DriverModeScreen> {
               : 'Rides only reach drivers with the vehicle the passenger asked for.',
           style: const TextStyle(color: AppColors.textSecondary, fontSize: 13),
         ),
+        // A dialog action per class was fine with three; with six it needs the
+        // requirement spelled out, or a driver cannot tell Bike from Bike Plus.
         actions: [
           for (final t in kRideVehicleTypes)
             TextButton(
               onPressed: () => Navigator.pop(ctx, t),
-              child: Text(
-                _isBn ? kRideVehicleLabelsBn[t]! : kRideVehicleLabelsEn[t]!,
-                style: const TextStyle(
-                    color: AppColors.deepBlue, fontWeight: FontWeight.w700),
+              child: Align(
+                alignment: Alignment.centerLeft,
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  mainAxisSize: MainAxisSize.min,
+                  children: [
+                    Text(
+                      _isBn ? kRideVehicleLabelsBn[t]! : kRideVehicleLabelsEn[t]!,
+                      style: const TextStyle(
+                          color: AppColors.deepBlue, fontWeight: FontWeight.w700),
+                    ),
+                    if (_isBn && kRideVehicleHintBn[t] != null)
+                      Text(
+                        kRideVehicleHintBn[t]!,
+                        style: const TextStyle(
+                            color: AppColors.textMuted, fontSize: 11.5),
+                      ),
+                  ],
+                ),
               ),
             ),
         ],

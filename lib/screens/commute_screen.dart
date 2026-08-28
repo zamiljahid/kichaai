@@ -1060,8 +1060,8 @@ class _ProfileTabState extends State<_ProfileTab> {
                     children: [
                       Icon(
                         switch (type) {
-                          'motorcycle' => Icons.two_wheeler_rounded,
-                          'cng' => Icons.electric_rickshaw_rounded,
+                          'motorcycle' || 'motorcycle_plus' => Icons.two_wheeler_rounded,
+                          'cng' || 'cng_plus' => Icons.electric_rickshaw_rounded,
                           _ => Icons.directions_car_filled_rounded,
                         },
                         size: 20,

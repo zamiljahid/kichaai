@@ -54,6 +54,17 @@ class _JobRequestScreenState extends State<JobRequestScreen> {
   // These are NOT the priced TaskCategory enum, so the pick goes into the job TITLE, not taskCategory.
   List<Map<String, dynamic>> _runnerCategories = [];
   String? _selectedRunnerCode;
+
+  // Baby sitting is a Quick Help errand, but the backend needs a BabySittingDetails row
+  // alongside the job — it marks those categories with requiresBabySittingDetails and
+  // exposes a separate create endpoint. The picker used to ignore that flag, so choosing
+  // "বেবি সিটিং" made an ordinary job with no child details attached at all.
+  final _childAgeCtrl = TextEditingController();
+  final _childCountCtrl = TextEditingController(text: '1');
+  final _allergiesCtrl = TextEditingController();
+  final _sittingNotesCtrl = TextEditingController();
+  int _sittingHours = 4;
+  String _sittingLocation = 'AT_HOME';
   bool _isSubmitting = false;
   bool _isLoadingIssues = true;
 
@@ -93,6 +104,17 @@ class _JobRequestScreenState extends State<JobRequestScreen> {
   /// কাজের লোক (task runner) picks an errand type — routed into the job title.
   bool get _needsRunnerCategory => widget.serviceKind == 'task_runner';
 
+  /// True when the chosen errand is one the backend flags as needing child details.
+  bool get _needsBabySittingDetails {
+    if (_selectedRunnerCode == null) return false;
+    for (final c in _runnerCategories) {
+      if (c['code'] == _selectedRunnerCode) {
+        return c['requiresBabySittingDetails'] == true;
+      }
+    }
+    return false;
+  }
+
   /// Photographer/cinematographer/makeup_artist jobs are scheduled in advance
   /// (browse-and-confirm), not nearest-first. Sending eventDate flips the
   /// backend to the advance flow, and the app then routes to the browse screen.
@@ -116,10 +138,20 @@ class _JobRequestScreenState extends State<JobRequestScreen> {
   double? _dropLongitude;
   String? _dropAddress;
   String _vehicleType = kRideVehicleTypes.first;
-  /// Rate cards keyed by vehicle type, so the fare can be previewed BEFORE submitting —
-  /// otherwise the customer only learns the price after the job already exists.
-  final Map<String, RateCardModel> _rideRates = {};
-  bool _loadingRideRates = false;
+
+  /// Server-computed fare + availability preview, refreshed whenever pickup or destination
+  /// moves. The app used to do this arithmetic itself and silently omit the surge multiplier,
+  /// so a surging ride was quoted below what createJob then charged — now there is exactly one
+  /// pricing implementation, on the server, and this only displays it.
+  RideQuoteModel? _rideQuote;
+  bool _loadingRideQuote = false;
+  int _quoteSeq = 0; // guards against out-of-order quote responses
+
+  GoogleMapController? _rideMapController;
+
+  /// 'cash' | 'online'. Cash stays the default — it is how most rides will actually be paid —
+  /// but the choice is now made before the request rather than after a driver accepts.
+  String _paymentMethod = 'cash';
 
   // Advance-booking picker state.
   DateTime? _eventDate;
@@ -173,7 +205,8 @@ class _JobRequestScreenState extends State<JobRequestScreen> {
     if (_needsCategory) _loadRates();
     if (_needsRunnerCategory) _loadRunnerCategories();
     if (_needsSpecialization) _loadSpecTaxonomy();
-    if (_isRide) _loadRideRates();
+    // Nothing ride-specific to preload: the fare quote needs a destination, which does not
+    // exist yet, and the nearby-driver fetch below already runs for every kind.
   }
 
   Future<void> _loadSpecTaxonomy() async {
@@ -215,6 +248,55 @@ class _JobRequestScreenState extends State<JobRequestScreen> {
     setState(() => _onlineTechCount = count);
   }
 
+  /// Quick Help baby sitting goes to its own endpoint so a BabySittingDetails row is
+  /// created with the job; everything else about the flow (broadcast, tracking) is identical.
+  Future<void> _submitBabySitting(int childAge) async {
+    final lat = _latitude;
+    final lng = _longitude;
+    if (lat == null || lng == null) {
+      _showError(_isBn ? 'অবস্থান নির্ধারণ করুন — ম্যাপে দেখিয়ে দিন' : 'Set your location — pick it on the map');
+      return;
+    }
+    final token = await ApiClient.getAccessToken();
+    final customerId = token != null ? decodeJwtSub(token) : null;
+    if (customerId == null) {
+      _showError(_isBn ? 'লগইন তথ্য পাওয়া যায়নি' : 'Login information not found');
+      return;
+    }
+
+    setState(() => _isSubmitting = true);
+    try {
+      final res = await DispatchService.instance.createBabySittingTask({
+        'serviceTypeId': 'default',
+        'title': _selectedRunnerLabel ?? (_isBn ? 'বেবি সিটিং' : 'Baby sitting'),
+        'description': _customController.text.trim(),
+        'pickupLatitude': lat,
+        'pickupLongitude': lng,
+        'pickupAddressSnapshot': _address,
+        'childAgeYears': childAge,
+        'durationHours': _sittingHours,
+        'numberOfChildren': int.tryParse(_childCountCtrl.text.trim()) ?? 1,
+        'locationType': _sittingLocation,
+        if (_allergiesCtrl.text.trim().isNotEmpty) 'allergies': _allergiesCtrl.text.trim(),
+        if (_sittingNotesCtrl.text.trim().isNotEmpty)
+          'specialInstructions': _sittingNotesCtrl.text.trim(),
+      });
+      if (!mounted) return;
+      final jobId = (res['id'] ?? res['jobId'])?.toString();
+      if (jobId == null) {
+        _showError(_isBn ? 'অনুরোধ তৈরি হয়নি' : 'The request was not created');
+        return;
+      }
+      Navigator.of(context).pushReplacement(
+        MaterialPageRoute(builder: (_) => JobTrackingScreen(jobId: jobId)),
+      );
+    } catch (e) {
+      if (mounted) _showError(ApiClient.mapError(e).localized(_isBn));
+    } finally {
+      if (mounted) setState(() => _isSubmitting = false);
+    }
+  }
+
   Future<void> _loadRunnerCategories() async {
     try {
       final cats = await DispatchService.instance.getTaskRunnerCategories();
@@ -236,51 +318,42 @@ class _JobRequestScreenState extends State<JobRequestScreen> {
     }
   }
 
-  /// Ride rate cards, keyed by vehicle type. The backend prices the ride itself at
-  /// createJob; this is purely so the customer sees the fare BEFORE committing, the way
-  /// every ride-hailing app does. If the fetch fails we simply show no estimate rather
-  /// than blocking the request — the real price is still computed server-side.
-  Future<void> _loadRideRates() async {
-    setState(() => _loadingRideRates = true);
-    try {
-      final cards = await DispatchService.instance.getRateCards(serviceKind: 'commute');
-      if (!mounted) return;
-      setState(() {
-        _rideRates
-          ..clear()
-          ..addEntries(cards.where((c) => c.isActive).map((c) => MapEntry(c.rateName, c)));
-        _loadingRideRates = false;
-      });
-    } catch (_) {
-      if (mounted) setState(() => _loadingRideRates = false);
-    }
-  }
-
-  /// Straight-line pickup→dropoff km, mirroring the backend's haversine so the previewed
-  /// fare matches what createJob will actually charge.
-  double? get _rideDistanceKm {
+  /// Refresh the fare/availability quote. Needs both ends of the trip, so it is a no-op until
+  /// pickup and destination are both known, and it clears any stale quote when they aren't.
+  /// A failed fetch leaves the quote null rather than blocking the request — the backend still
+  /// prices the ride authoritatively at createJob.
+  Future<void> _refreshRideQuote() async {
+    if (!_isRide) return;
     if (_latitude == null || _longitude == null || _dropLatitude == null || _dropLongitude == null) {
-      return null;
+      if (mounted) setState(() => _rideQuote = null);
+      return;
     }
-    const r = 6371.0;
-    final dLat = (_dropLatitude! - _latitude!) * math.pi / 180;
-    final dLon = (_dropLongitude! - _longitude!) * math.pi / 180;
-    final a = math.sin(dLat / 2) * math.sin(dLat / 2) +
-        math.cos(_latitude! * math.pi / 180) *
-            math.cos(_dropLatitude! * math.pi / 180) *
-            math.sin(dLon / 2) *
-            math.sin(dLon / 2);
-    return r * 2 * math.atan2(math.sqrt(a), math.sqrt(1 - a));
+    if (!mounted) return;
+    final seq = ++_quoteSeq;
+    setState(() => _loadingRideQuote = true);
+    final quote = await DispatchService.instance.getRideQuote(
+      pickupLat: _latitude!,
+      pickupLon: _longitude!,
+      dropLat: _dropLatitude!,
+      dropLon: _dropLongitude!,
+    );
+    if (!mounted || seq != _quoteSeq) return;
+    setState(() {
+      _rideQuote = quote;
+      _loadingRideQuote = false;
+    });
   }
 
-  /// Estimated fare for [type]. Null when the distance or rate card isn't known yet.
-  /// Surge is deliberately NOT applied here — it's evaluated server-side at createJob,
-  /// so quoting it client-side could show a number the backend then disagrees with.
-  double? _fareFor(String type) {
-    final km = _rideDistanceKm;
-    final card = _rideRates[type];
-    if (km == null || card == null) return null;
-    return card.baseCharge + (card.perKmRate ?? 0) * km;
+  /// Road-adjusted trip distance, straight from the quote — the same number the fare is
+  /// computed from, so the two can never disagree on screen.
+  double? get _rideDistanceKm => _rideQuote?.distanceKm;
+
+  /// Switching vehicle re-fetches the driver pins, because the nearby list is scoped to the
+  /// chosen vehicle — showing car pins under a bike fare would promise the wrong drivers.
+  void _selectVehicle(String type) {
+    if (_vehicleType == type) return;
+    setState(() => _vehicleType = type);
+    _loadNearbyProviders();
   }
 
   Future<void> _pickDestination() async {
@@ -294,6 +367,10 @@ class _JobRequestScreenState extends State<JobRequestScreen> {
       _dropLongitude = pin.longitude;
       _dropAddress = null;
     });
+    // Fare and map both depend on the destination — update them before the address lookup,
+    // which is slower and purely cosmetic.
+    _refreshRideQuote();
+    _fitRideBounds();
     try {
       final addr = await DispatchService.instance.reverseGeocode(pin.latitude, pin.longitude);
       if (mounted && addr != null) setState(() => _dropAddress = addr);
@@ -312,6 +389,10 @@ class _JobRequestScreenState extends State<JobRequestScreen> {
         lat: _latitude,
         lon: _longitude,
         radiusKm: 15,
+        // vehicleType is stored in the provider's specializationsSnapshot and is what the
+        // broadcast filters on, so scoping the pins by it shows exactly the drivers who would
+        // actually receive this ride — not every commute provider in the area.
+        specialization: _isRide ? _vehicleType : null,
       );
       if (!mounted) return;
       setState(() {
@@ -328,7 +409,12 @@ class _JobRequestScreenState extends State<JobRequestScreen> {
     _customController.dispose();
     _patientConditionCtrl.dispose();
     _patientAgeCtrl.dispose();
+    _childAgeCtrl.dispose();
+    _childCountCtrl.dispose();
+    _allergiesCtrl.dispose();
+    _sittingNotesCtrl.dispose();
     _debounce?.cancel();
+    _rideMapController?.dispose();
     super.dispose();
   }
 
@@ -390,6 +476,10 @@ class _JobRequestScreenState extends State<JobRequestScreen> {
       _scheduleCountRefresh();
     }
     _loadNearbyProviders();
+    if (_isRide) {
+      _refreshRideQuote();
+      _fitRideBounds();
+    }
     final addr = await DispatchService.instance.reverseGeocode(lat, lng);
     if (mounted && addr != null) setState(() => _address = addr);
   }
@@ -438,6 +528,16 @@ class _JobRequestScreenState extends State<JobRequestScreen> {
       return;
     }
 
+    if (_needsBabySittingDetails) {
+      final age = int.tryParse(_childAgeCtrl.text.trim());
+      if (age == null || age < 0) {
+        _showError(_isBn ? 'শিশুর বয়স লিখুন' : "Enter the child's age");
+        return;
+      }
+      await _submitBabySitting(age);
+      return;
+    }
+
     if (_isAdvanceBooking) {
       if (_isCaregiver) {
         // Caregiver pre-booking is a date RANGE, not a single event moment — no duration-hours field.
@@ -461,6 +561,23 @@ class _JobRequestScreenState extends State<JobRequestScreen> {
     if (_isRide && (_dropLatitude == null || _dropLongitude == null)) {
       _showError(_isBn ? 'কোথায় যাবেন সেটা বেছে নিন' : 'Choose where you are going');
       return;
+    }
+
+    // Same courtesy the specialization flow gives: never fire a request at a vehicle class
+    // with nobody online without saying so first. Falls back to the pin list when the quote
+    // failed to load, so a dead quote endpoint doesn't suppress the warning entirely.
+    if (_isRide) {
+      final quoted = _rideQuote?.forVehicle(_vehicleType);
+      final nobodyOnline = quoted != null ? !quoted.hasDrivers : _nearbyProviders.isEmpty;
+      if (nobodyOnline) {
+        final vehicle = _isBn ? kRideVehicleLabelsBn[_vehicleType]! : kRideVehicleLabelsEn[_vehicleType]!;
+        final proceed = await _confirmNoOneOnline(
+          _isBn
+              ? 'এই মুহূর্তে আশেপাশে কোনো $vehicle চালক অনলাইন নেই — অনুরোধ পাঠালে অপেক্ষা করতে হতে পারে।'
+              : 'No $vehicle driver is online nearby right now — sending the request may mean a wait.',
+        );
+        if (proceed != true) return;
+      }
     }
 
     // Every other kind describes a problem; a ride's "description" is just the route, which
@@ -514,6 +631,7 @@ class _JobRequestScreenState extends State<JobRequestScreen> {
         dropoffLongitude: _isRide ? _dropLongitude : null,
         dropoffAddressSnapshot: _isRide ? _dropAddress : null,
         vehicleType: _isRide ? _vehicleType : null,
+        paymentMethod: _isRide ? _paymentMethod : null,
       );
       if (!mounted) return;
 
@@ -558,7 +676,7 @@ class _JobRequestScreenState extends State<JobRequestScreen> {
     }
   }
 
-  Future<bool?> _confirmNoOneOnline() {
+  Future<bool?> _confirmNoOneOnline([String? message]) {
     return showDialog<bool>(
       context: context,
       builder: (ctx) => AlertDialog(
@@ -569,9 +687,10 @@ class _JobRequestScreenState extends State<JobRequestScreen> {
           style: const TextStyle(color: AppColors.textPrimary, fontSize: 16, fontWeight: FontWeight.w700),
         ),
         content: Text(
-          _isBn
-              ? 'এই মুহূর্তে এই কাজের কোনো টেকনিশিয়ান অনলাইন নেই — অনুরোধ পাঠালে অপেক্ষা করতে হতে পারে।'
-              : 'No technician for this job is online right now — sending the request may mean a wait.',
+          message ??
+              (_isBn
+                  ? 'এই মুহূর্তে এই কাজের কোনো টেকনিশিয়ান অনলাইন নেই — অনুরোধ পাঠালে অপেক্ষা করতে হতে পারে।'
+                  : 'No technician for this job is online right now — sending the request may mean a wait.'),
           style: const TextStyle(color: AppColors.textSecondary, fontSize: 13.5, height: 1.5),
         ),
         actions: [
@@ -603,6 +722,10 @@ class _JobRequestScreenState extends State<JobRequestScreen> {
   @override
   Widget build(BuildContext context) {
     _isBn = context.watch<LanguageNotifier>().isBengali;
+    // A ride is the one request that is fundamentally about a ROUTE, so it gets a map-first
+    // shell (full-bleed map + a control sheet pinned over it) instead of the shared scrolling
+    // form. Same state and same _submit path — only the shell differs.
+    if (_isRide) return _buildRideScaffold(context);
     return Scaffold(
       body: AnimatedBackground(
         child: SafeArea(
@@ -640,6 +763,7 @@ class _JobRequestScreenState extends State<JobRequestScreen> {
                           _sectionLabel(_isBn ? 'কাজের ধরন' : 'Job type'),
                           const SizedBox(height: 10),
                           _buildRunnerCategorySection(),
+                          if (_needsBabySittingDetails) _buildBabySittingSection(),
                           const SizedBox(height: 20),
                         ],
                         if (_isCaregiver) ...[
@@ -676,16 +800,10 @@ class _JobRequestScreenState extends State<JobRequestScreen> {
                           _buildDurationPicker(),
                           const SizedBox(height: 20),
                         ],
-                        if (_isRide) ...[
-                          _sectionLabel(_isBn ? 'কোথায় যাবেন?' : 'Where are you going?'),
-                          const SizedBox(height: 10),
-                          _buildDestinationCard(),
-                          const SizedBox(height: 20),
-                          _sectionLabel(_isBn ? 'বাহন' : 'Vehicle'),
-                          const SizedBox(height: 10),
-                          _buildVehicleTypeSelector(),
-                          const SizedBox(height: 20),
-                        ],
+                        // Destination/vehicle live in the ride sheet now (_buildRideScaffold),
+                        // which is why no _isRide branch appears in this form any more — a ride
+                        // never reaches this widget at all, urgency section included. Urgency is
+                        // meaningless for a ride: "how urgent?" has one answer, now.
                         // A ride's route already says everything a driver needs — no free-text
                         // description step (see the matching skip in _submit's validation).
                         if (!_isRide) ...[
@@ -1069,27 +1187,346 @@ class _JobRequestScreenState extends State<JobRequestScreen> {
     );
   }
 
+  // ── Ride: map-first shell ────────────────────────────────────────
+  // Everything below belongs to the ride flow only. The rest of this screen keeps the shared
+  // scrolling-form layout; a ride never renders it (see the branch in build()).
+
+  IconData _vehicleIcon(String type) => switch (type) {
+        'motorcycle' || 'motorcycle_plus' => Icons.two_wheeler_rounded,
+        'cng' || 'cng_plus' => Icons.electric_rickshaw_rounded,
+        _ => Icons.directions_car_filled_rounded,
+      };
+
+  /// Digits in the reader's own script — ৳১২০ reads as a price to a Bengali user, ৳120 reads
+  /// as a foreign string sitting inside a Bengali sentence.
+  String _num(num n) => _isBn ? _bnDigits(n.round()) : n.round().toString();
+
+  /// Google's default map is full of hospital/park/transit pins that have nothing to do with
+  /// booking a ride, and they compete with the pins that DO matter (pickup, destination,
+  /// drivers). Strip the noise, keep the roads.
+  static const _rideMapStyle = '''
+[
+  {"featureType": "poi", "stylers": [{"visibility": "off"}]},
+  {"featureType": "transit", "stylers": [{"visibility": "off"}]},
+  {"featureType": "road", "elementType": "labels.icon", "stylers": [{"visibility": "off"}]},
+  {"featureType": "administrative.land_parcel", "stylers": [{"visibility": "off"}]}
+]
+''';
+
+  Widget _buildRideScaffold(BuildContext context) {
+    final size = MediaQuery.of(context).size;
+    return Scaffold(
+      backgroundColor: AppColors.bgDark,
+      body: Stack(
+        children: [
+          // The map fills the screen; the sheet floats over its lower half. Camera padding
+          // keeps the pins in the strip that is actually visible between header and sheet.
+          Positioned.fill(child: _buildRideMap(bottomPadding: size.height * 0.42)),
+          SafeArea(bottom: false, child: _buildRideHeader(context)),
+          Align(
+            alignment: Alignment.bottomCenter,
+            child: ConstrainedBox(
+              constraints: BoxConstraints(maxHeight: size.height * 0.66),
+              child: _buildRideSheet(),
+            ),
+          ),
+        ],
+      ),
+    );
+  }
+
+  /// The shared header assumes an opaque page behind it. Over a live map it needs its own
+  /// scrim, or the title disappears against pale roads.
+  Widget _buildRideHeader(BuildContext context) {
+    return Container(
+      decoration: BoxDecoration(
+        gradient: LinearGradient(
+          begin: Alignment.topCenter,
+          end: Alignment.bottomCenter,
+          colors: [AppColors.bgDark, AppColors.bgDark.withOpacity(0.0)],
+        ),
+      ),
+      child: _buildHeader(context),
+    );
+  }
+
+  Widget _buildRideMap({required double bottomPadding}) {
+    final pickup = _latitude != null && _longitude != null ? LatLng(_latitude!, _longitude!) : null;
+    final drop = _dropLatitude != null && _dropLongitude != null
+        ? LatLng(_dropLatitude!, _dropLongitude!)
+        : null;
+
+    final markers = <Marker>{
+      if (pickup != null)
+        Marker(
+          markerId: const MarkerId('pickup'),
+          position: pickup,
+          icon: BitmapDescriptor.defaultMarkerWithHue(BitmapDescriptor.hueGreen),
+          infoWindow: InfoWindow(title: _isBn ? 'যাত্রা শুরু' : 'Pickup', snippet: _address),
+        ),
+      if (drop != null)
+        Marker(
+          markerId: const MarkerId('drop'),
+          position: drop,
+          icon: BitmapDescriptor.defaultMarkerWithHue(BitmapDescriptor.hueOrange),
+          infoWindow: InfoWindow(title: _isBn ? 'গন্তব্য' : 'Destination', snippet: _dropAddress),
+        ),
+      // Drivers of the SELECTED vehicle only — _loadNearbyProviders scopes the fetch by it.
+      for (final driver in _nearbyProviders)
+        Marker(
+          markerId: MarkerId(driver.id),
+          position: LatLng(driver.latitude, driver.longitude),
+          icon: BitmapDescriptor.defaultMarkerWithHue(BitmapDescriptor.hueAzure),
+          infoWindow: InfoWindow(
+            title: _isBn ? kRideVehicleLabelsBn[_vehicleType]! : kRideVehicleLabelsEn[_vehicleType]!,
+            snippet: driver.etaMinutes != null
+                ? (_isBn ? '${_num(driver.etaMinutes!)} মিনিট দূরে' : '${driver.etaMinutes} min away')
+                : null,
+          ),
+        ),
+    };
+
+    return GoogleMap(
+      initialCameraPosition: CameraPosition(
+        target: pickup ?? const LatLng(23.8103, 90.4125), // fallback: Dhaka
+        zoom: 14,
+      ),
+      style: _rideMapStyle,
+      markers: markers,
+      polylines: {
+        if (pickup != null && drop != null)
+          Polyline(
+            polylineId: const PolylineId('route'),
+            points: [pickup, drop],
+            color: AppColors.deepBlue,
+            width: 4,
+            // Dashed deliberately: there is no routing API behind this, so a solid line would
+            // claim a road-accurate route nobody computed. The fare is the same kind of
+            // estimate — straight-line distance scaled to an approximate road distance.
+            // (google_maps_flutter_web ignores patterns and draws it solid; Android/iOS, the
+            // platforms that actually ship, honour it.)
+            patterns: [PatternItem.dash(24), PatternItem.gap(12)],
+          ),
+      },
+      padding: EdgeInsets.only(top: 88, bottom: bottomPadding),
+      myLocationEnabled: _latitude != null,
+      myLocationButtonEnabled: false,
+      zoomControlsEnabled: false,
+      mapToolbarEnabled: false,
+      onMapCreated: (c) {
+        _rideMapController = c;
+        _fitRideBounds();
+      },
+    );
+  }
+
+  /// Frame both ends of the trip at once. Without this the camera sits on the pickup and the
+  /// destination is off-screen, which is exactly when a customer wants to sanity-check the route.
+  Future<void> _fitRideBounds() async {
+    final controller = _rideMapController;
+    if (controller == null) return;
+    if (_latitude == null || _longitude == null) return;
+    if (_dropLatitude == null || _dropLongitude == null) {
+      await controller.animateCamera(CameraUpdate.newLatLngZoom(LatLng(_latitude!, _longitude!), 14));
+      return;
+    }
+    // A zero-area box (destination pinned essentially on top of the pickup) makes
+    // newLatLngBounds misbehave, so pad the box out to a minimum span first.
+    const minSpan = 0.002; // ~200m
+    final latPad = math.max(0.0, (minSpan - (_dropLatitude! - _latitude!).abs()) / 2);
+    final lonPad = math.max(0.0, (minSpan - (_dropLongitude! - _longitude!).abs()) / 2);
+    final bounds = LatLngBounds(
+      southwest: LatLng(
+        math.min(_latitude!, _dropLatitude!) - latPad,
+        math.min(_longitude!, _dropLongitude!) - lonPad,
+      ),
+      northeast: LatLng(
+        math.max(_latitude!, _dropLatitude!) + latPad,
+        math.max(_longitude!, _dropLongitude!) + lonPad,
+      ),
+    );
+    await controller.animateCamera(CameraUpdate.newLatLngBounds(bounds, 56));
+  }
+
+  Widget _buildRideSheet() {
+    return Container(
+      decoration: BoxDecoration(
+        color: AppColors.bgMid,
+        borderRadius: const BorderRadius.vertical(top: Radius.circular(24)),
+        border: Border.all(color: AppColors.glassBorder, width: 1),
+        boxShadow: [
+          BoxShadow(color: Colors.black.withOpacity(0.08), blurRadius: 24, offset: const Offset(0, -6)),
+        ],
+      ),
+      child: SafeArea(
+        top: false,
+        child: Column(
+          mainAxisSize: MainAxisSize.min,
+          children: [
+            const SizedBox(height: 10),
+            Container(
+              width: 40,
+              height: 4,
+              decoration: BoxDecoration(
+                color: AppColors.glassBorder,
+                borderRadius: BorderRadius.circular(2),
+              ),
+            ),
+            Flexible(
+              child: SingleChildScrollView(
+                padding: const EdgeInsets.fromLTRB(16, 14, 16, 6),
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.stretch,
+                  children: [
+                    _buildRideAvailabilityLine(),
+                    const SizedBox(height: 12),
+                    _buildRidePickupCard(),
+                    const SizedBox(height: 8),
+                    _buildDestinationCard(),
+                    const SizedBox(height: 18),
+                    _sectionLabel(_isBn ? 'বাহন' : 'Vehicle'),
+                    const SizedBox(height: 10),
+                    _buildVehicleTypeSelector(),
+                    const SizedBox(height: 18),
+                    _sectionLabel(_isBn ? 'পেমেন্ট' : 'Payment'),
+                    const SizedBox(height: 10),
+                    _buildRidePaymentSelector(),
+                  ],
+                ),
+              ),
+            ),
+            // Pinned: the fare and the action must never scroll out of reach.
+            _buildRideBottomBar(),
+          ],
+        ),
+      ),
+    );
+  }
+
+  /// "Is anyone even out there" — scoped to the chosen vehicle once a quote exists, and to the
+  /// (already vehicle-filtered) pin list before that.
+  Widget _buildRideAvailabilityLine() {
+    final quoted = _rideQuote?.forVehicle(_vehicleType);
+    final count = quoted?.onlineCount ?? _nearbyProviders.length;
+    final vehicle = _isBn ? kRideVehicleLabelsBn[_vehicleType]! : kRideVehicleLabelsEn[_vehicleType]!;
+    final surging = _rideQuote?.isSurging ?? false;
+
+    return Row(
+      children: [
+        Icon(Icons.circle, size: 9, color: count > 0 ? const Color(0xFF22C55E) : AppColors.textMuted),
+        const SizedBox(width: 7),
+        Expanded(
+          child: Text(
+            count > 0
+                ? (_isBn
+                    ? '${_num(count)} জন $vehicle চালক কাছাকাছি আছেন'
+                    : '$count $vehicle drivers nearby')
+                : (_isBn
+                    ? 'এই মুহূর্তে কোনো $vehicle চালক অনলাইন নেই'
+                    : 'No $vehicle driver is online right now'),
+            style: TextStyle(
+              color: count > 0 ? const Color(0xFF067A57) : AppColors.textMuted,
+              fontSize: 12.5,
+              fontWeight: FontWeight.w600,
+            ),
+          ),
+        ),
+        // Surge is the customer's business — it is already inside every fare shown below, so
+        // hiding it would make the prices look arbitrary.
+        if (surging)
+          Container(
+            padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 3),
+            decoration: BoxDecoration(
+              color: AppColors.softAmber.withOpacity(0.12),
+              borderRadius: BorderRadius.circular(20),
+              border: Border.all(color: AppColors.softAmber.withOpacity(0.4)),
+            ),
+            child: Text(
+              _isBn ? 'চাহিদা বেশি' : 'High demand',
+              style: const TextStyle(color: AppColors.softAmber, fontSize: 10.5, fontWeight: FontWeight.w700),
+            ),
+          ),
+      ],
+    );
+  }
+
+  /// Compact pickup row. The shared _buildLocationWidget is a full section with its own labels;
+  /// inside the sheet the pickup is one line of a two-line route, so it reads as the first stop.
+  Widget _buildRidePickupCard() {
+    final detected = _locationDetected && _latitude != null && _longitude != null;
+    return GestureDetector(
+      onTap: _pickOnMap,
+      child: Container(
+        padding: const EdgeInsets.all(14),
+        decoration: BoxDecoration(
+          color: AppColors.glassWhite,
+          borderRadius: BorderRadius.circular(14),
+          border: Border.all(
+            color: detected ? const Color(0xFF22C55E).withOpacity(0.5) : AppColors.glassBorder,
+            width: detected ? 1.5 : 1,
+          ),
+        ),
+        child: Row(
+          children: [
+            Icon(
+              detected ? Icons.trip_origin_rounded : Icons.location_off_rounded,
+              color: detected ? const Color(0xFF22C55E) : AppColors.textMuted,
+              size: 20,
+            ),
+            const SizedBox(width: 12),
+            Expanded(
+              child: Text(
+                _isLocating
+                    ? (_isBn ? 'অবস্থান নেওয়া হচ্ছে...' : 'Getting your location...')
+                    : detected
+                        ? (_address ?? '${_latitude!.toStringAsFixed(4)}, ${_longitude!.toStringAsFixed(4)}')
+                        : (_isBn ? 'যাত্রা শুরুর জায়গা দেখিয়ে দিন' : 'Set your pickup point'),
+                style: TextStyle(
+                  color: detected ? AppColors.textPrimary : AppColors.textMuted,
+                  fontSize: 13.5,
+                  fontWeight: detected ? FontWeight.w600 : FontWeight.w400,
+                ),
+                maxLines: 2,
+                overflow: TextOverflow.ellipsis,
+              ),
+            ),
+            GestureDetector(
+              onTap: _detectLocation,
+              child: const Icon(Icons.my_location_rounded, color: AppColors.deepBlue, size: 18),
+            ),
+          ],
+        ),
+      ),
+    );
+  }
+
   Widget _buildVehicleTypeSelector() {
+    // Three per row. With six classes a single row leaves each chip too narrow to read
+    // the fare, which is the whole point of showing them side by side.
+    const perRow = 3;
+    final rows = <List<String>>[];
+    for (var i = 0; i < kRideVehicleTypes.length; i += perRow) {
+      rows.add(kRideVehicleTypes.sublist(
+          i, (i + perRow).clamp(0, kRideVehicleTypes.length)));
+    }
+
     return Column(
       crossAxisAlignment: CrossAxisAlignment.stretch,
       children: [
+        for (final row in rows) ...[
         Row(
-          children: kRideVehicleTypes.map((type) {
+          children: row.map((type) {
             final isSelected = _vehicleType == type;
-            final fare = _fareFor(type);
-            final icon = switch (type) {
-              'motorcycle' => Icons.two_wheeler_rounded,
-              'cng' => Icons.electric_rickshaw_rounded,
-              _ => Icons.directions_car_filled_rounded,
-            };
+            final quoted = _rideQuote?.forVehicle(type);
+            final unavailable = quoted != null && !quoted.hasDrivers;
             return Expanded(
               child: Padding(
                 padding: const EdgeInsets.only(right: 8),
                 child: GestureDetector(
-                  onTap: () => setState(() => _vehicleType = type),
+                  onTap: () => _selectVehicle(type),
                   child: AnimatedContainer(
                     duration: const Duration(milliseconds: 160),
-                    padding: const EdgeInsets.symmetric(vertical: 12, horizontal: 6),
+                    padding: const EdgeInsets.symmetric(vertical: 11, horizontal: 6),
                     decoration: BoxDecoration(
                       gradient: isSelected ? AppColors.blueGradient : null,
                       color: isSelected ? null : AppColors.glassWhite,
@@ -1099,29 +1536,65 @@ class _JobRequestScreenState extends State<JobRequestScreen> {
                         width: isSelected ? 1.5 : 1,
                       ),
                     ),
-                    child: Column(
-                      children: [
-                        Icon(icon,
-                            color: isSelected ? AppColors.ivory : AppColors.textSecondary, size: 22),
-                        const SizedBox(height: 5),
-                        Text(
-                          _isBn ? kRideVehicleLabelsBn[type]! : kRideVehicleLabelsEn[type]!,
-                          style: TextStyle(
-                            color: isSelected ? AppColors.ivory : AppColors.textPrimary,
-                            fontSize: 12,
-                            fontWeight: FontWeight.w700,
+                    child: Opacity(
+                      // Still tappable when nobody drives it — the request is allowed, it just
+                      // means waiting — but it should not look like an equal choice.
+                      opacity: unavailable && !isSelected ? 0.5 : 1,
+                      child: Column(
+                        children: [
+                          Icon(_vehicleIcon(type),
+                              color: isSelected ? AppColors.ivory : AppColors.textSecondary, size: 22),
+                          const SizedBox(height: 5),
+                          Text(
+                            _isBn ? kRideVehicleLabelsBn[type]! : kRideVehicleLabelsEn[type]!,
+                            style: TextStyle(
+                              color: isSelected ? AppColors.ivory : AppColors.textPrimary,
+                              fontSize: 12,
+                              fontWeight: FontWeight.w700,
+                            ),
                           ),
-                        ),
-                        const SizedBox(height: 2),
-                        Text(
-                          fare != null ? '৳${fare.round()}' : '—',
-                          style: TextStyle(
-                            color: isSelected ? AppColors.ivory : AppColors.textMuted,
-                            fontSize: 11.5,
-                            fontWeight: FontWeight.w600,
-                          ),
-                        ),
-                      ],
+                          // The fare line only exists once there IS a fare. The old placeholder
+                          // em-dash under every vehicle just read as broken UI.
+                          if (quoted?.fareMin != null && quoted?.fareMax != null) ...[
+                            const SizedBox(height: 3),
+                            Text(
+                              '৳${_num(quoted!.fareMin!)}–${_num(quoted.fareMax!)}',
+                              style: TextStyle(
+                                color: isSelected ? AppColors.ivory : AppColors.textPrimary,
+                                fontSize: 11.5,
+                                fontWeight: FontWeight.w700,
+                              ),
+                            ),
+                          ] else if (_loadingRideQuote) ...[
+                            const SizedBox(height: 6),
+                            SizedBox(
+                              width: 11,
+                              height: 11,
+                              child: CircularProgressIndicator(
+                                strokeWidth: 1.6,
+                                color: isSelected ? AppColors.ivory : AppColors.textMuted,
+                              ),
+                            ),
+                            const SizedBox(height: 3),
+                          ],
+                          // A ride app sells minutes as much as taka.
+                          if (quoted != null) ...[
+                            const SizedBox(height: 2),
+                            Text(
+                              quoted.hasDrivers && quoted.etaMinutes != null
+                                  ? (_isBn ? '${_num(quoted.etaMinutes!)} মিনিট' : '${quoted.etaMinutes} min')
+                                  : (_isBn ? 'কেউ নেই' : 'None nearby'),
+                              style: TextStyle(
+                                color: isSelected
+                                    ? AppColors.ivory.withOpacity(0.85)
+                                    : (quoted.hasDrivers ? AppColors.textMuted : AppColors.softAmber),
+                                fontSize: 10.5,
+                                fontWeight: FontWeight.w600,
+                              ),
+                            ),
+                          ],
+                        ],
+                      ),
                     ),
                   ),
                 ),
@@ -1129,27 +1602,151 @@ class _JobRequestScreenState extends State<JobRequestScreen> {
             );
           }).toList(),
         ),
-        if (_loadingRideRates) ...[
-          const SizedBox(height: 8),
-          const Text('...', style: TextStyle(color: AppColors.textMuted, fontSize: 11)),
-        ] else if (_rideDistanceKm == null) ...[
-          const SizedBox(height: 8),
-          Text(
-            _isBn
-                ? 'গন্তব্য বেছে নিলে ভাড়া দেখা যাবে'
-                : 'Pick a destination to see the fare',
-            style: const TextStyle(color: AppColors.textMuted, fontSize: 11.5),
+        const SizedBox(height: 8),
+        ],
+        Text(
+          _rideQuote == null
+              ? (_isBn ? 'গন্তব্য বেছে নিলে ভাড়া দেখা যাবে' : 'Pick a destination to see the fare')
+              : (_isBn
+                  ? 'আনুমানিক ভাড়া ও সময় — রাস্তার অবস্থাভেদে কিছুটা বদলাতে পারে'
+                  : 'Estimated fare and time — road conditions can shift both a little'),
+          style: const TextStyle(color: AppColors.textMuted, fontSize: 11.5),
+        ),
+      ],
+    );
+  }
+
+  /// Both options are real. Cash is the default and unchanged. Picking online records the
+  /// choice on the job, and the moment a driver accepts, the backend puts the job straight into
+  /// the existing SSLCommerz flow (bKash / Nagad / card) — the customer just taps pay on the
+  /// tracking screen instead of having to find the opt-in card there first.
+  Widget _buildRidePaymentSelector() {
+    return Row(
+      children: [
+        Expanded(
+          child: _paymentOption(
+            value: 'cash',
+            icon: Icons.payments_rounded,
+            label: _isBn ? 'নগদ' : 'Cash',
+            hint: _isBn ? 'রাইড শেষে চালককে' : 'To the driver, after',
           ),
-        ] else ...[
-          const SizedBox(height: 8),
-          Text(
-            _isBn
-                ? 'আনুমানিক ভাড়া — চাহিদা বেশি থাকলে সামান্য বাড়তে পারে'
-                : 'Estimated fare — may rise slightly during high demand',
-            style: const TextStyle(color: AppColors.textMuted, fontSize: 11.5),
+        ),
+        const SizedBox(width: 8),
+        Expanded(
+          child: _paymentOption(
+            value: 'online',
+            icon: Icons.account_balance_wallet_rounded,
+            label: _isBn ? 'অনলাইন' : 'Online',
+            hint: _isBn ? 'বিকাশ / নগদ / কার্ড' : 'bKash / Nagad / card',
+          ),
+        ),
+      ],
+    );
+  }
+
+  Widget _paymentOption({
+    required String value,
+    required IconData icon,
+    required String label,
+    required String hint,
+  }) {
+    final isSelected = _paymentMethod == value;
+    return GestureDetector(
+      onTap: () => setState(() => _paymentMethod = value),
+      child: AnimatedContainer(
+        duration: const Duration(milliseconds: 160),
+        padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 10),
+        decoration: BoxDecoration(
+          color: isSelected ? AppColors.glassBlue : AppColors.glassWhite,
+          borderRadius: BorderRadius.circular(12),
+          border: Border.all(
+            color: isSelected ? AppColors.deepBlue : AppColors.glassBorder,
+            width: isSelected ? 1.5 : 1,
+          ),
+        ),
+        child: Row(
+          children: [
+            Icon(icon, size: 18, color: isSelected ? AppColors.deepBlue : AppColors.textMuted),
+            const SizedBox(width: 9),
+            Expanded(
+              child: Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                mainAxisSize: MainAxisSize.min,
+                children: [
+                  Text(
+                    label,
+                    style: TextStyle(
+                      color: isSelected ? AppColors.deepBlue : AppColors.textPrimary,
+                      fontSize: 12.5,
+                      fontWeight: FontWeight.w700,
+                    ),
+                  ),
+                  Text(
+                    hint,
+                    style: const TextStyle(color: AppColors.textMuted, fontSize: 10.5),
+                    maxLines: 1,
+                    overflow: TextOverflow.ellipsis,
+                  ),
+                ],
+              ),
+            ),
+          ],
+        ),
+      ),
+    );
+  }
+
+  Widget _buildRideBottomBar() {
+    final hasPickup = _latitude != null && _longitude != null;
+    final hasDrop = _dropLatitude != null && _dropLongitude != null;
+    final ready = hasPickup && hasDrop;
+    final quoted = _rideQuote?.forVehicle(_vehicleType);
+    final distance = _rideDistanceKm;
+
+    return Container(
+      padding: const EdgeInsets.fromLTRB(16, 10, 16, 10),
+      decoration: const BoxDecoration(
+        border: Border(top: BorderSide(color: AppColors.glassBorder)),
+      ),
+      child: Column(
+        mainAxisSize: MainAxisSize.min,
+        children: [
+          if (ready && quoted?.fare != null && distance != null) ...[
+            Row(
+              children: [
+                Icon(_vehicleIcon(_vehicleType), color: AppColors.textMuted, size: 16),
+                const SizedBox(width: 6),
+                Expanded(
+                  child: Text(
+                    _isBn
+                        ? '${_num(distance)} কিমি • প্রায় ৳${_num(quoted!.fare!)}'
+                        : '${distance.toStringAsFixed(1)} km • about ৳${_num(quoted!.fare!)}',
+                    style: const TextStyle(
+                        color: AppColors.textPrimary, fontSize: 13, fontWeight: FontWeight.w700),
+                  ),
+                ),
+              ],
+            ),
+            const SizedBox(height: 8),
+          ],
+          // The button is never a dead grey rectangle: when the request isn't ready it becomes
+          // the step that WOULD make it ready, so a tap always does something.
+          GlassButton(
+            label: !hasPickup
+                ? (_isBn ? 'যাত্রা শুরুর জায়গা দিন' : 'Set your pickup')
+                : !hasDrop
+                    ? (_isBn ? 'গন্তব্য বেছে নিন' : 'Choose a destination')
+                    : (_isBn ? 'অনুরোধ পাঠান' : 'Send request'),
+            isLoading: _isSubmitting,
+            color: ready ? null : AppColors.textMuted,
+            onPressed: ready
+                ? _submit
+                : hasPickup
+                    ? _pickDestination
+                    : _pickOnMap,
           ),
         ],
-      ],
+      ),
     );
   }
 
@@ -1769,6 +2366,136 @@ class _JobRequestScreenState extends State<JobRequestScreen> {
           ),
         );
       }).toList(),
+    );
+  }
+
+  /// Child details, revealed only for an errand the backend flags as baby sitting.
+  Widget _buildBabySittingSection() {
+    InputDecoration deco(String hint) => InputDecoration(
+          hintText: hint,
+          hintStyle: const TextStyle(color: AppColors.textMuted, fontSize: 13),
+          filled: true,
+          fillColor: AppColors.glassWhite,
+          border: OutlineInputBorder(
+            borderRadius: BorderRadius.circular(12),
+            borderSide: const BorderSide(color: AppColors.glassBorder),
+          ),
+          enabledBorder: OutlineInputBorder(
+            borderRadius: BorderRadius.circular(12),
+            borderSide: const BorderSide(color: AppColors.glassBorder),
+          ),
+          contentPadding: const EdgeInsets.symmetric(horizontal: 14, vertical: 12),
+        );
+
+    return Column(
+      crossAxisAlignment: CrossAxisAlignment.start,
+      children: [
+        const SizedBox(height: 14),
+        Text(_isBn ? 'শিশুর তথ্য' : "Child details",
+            style: const TextStyle(
+                color: AppColors.textPrimary, fontSize: 13.5, fontWeight: FontWeight.w700)),
+        const SizedBox(height: 8),
+        Row(children: [
+          Expanded(
+            child: TextField(
+              controller: _childAgeCtrl,
+              keyboardType: TextInputType.number,
+              style: const TextStyle(color: AppColors.textPrimary, fontSize: 14),
+              decoration: deco(_isBn ? 'বয়স (বছর) *' : 'Age in years *'),
+            ),
+          ),
+          const SizedBox(width: 10),
+          Expanded(
+            child: TextField(
+              controller: _childCountCtrl,
+              keyboardType: TextInputType.number,
+              style: const TextStyle(color: AppColors.textPrimary, fontSize: 14),
+              decoration: deco(_isBn ? 'কতজন শিশু' : 'How many children'),
+            ),
+          ),
+        ]),
+        const SizedBox(height: 10),
+        Text(_isBn ? 'কত ঘণ্টা' : 'For how many hours',
+            style: const TextStyle(color: AppColors.textSecondary, fontSize: 12.5)),
+        const SizedBox(height: 6),
+        Wrap(
+          spacing: 8,
+          children: [2, 4, 6, 8].map((h) {
+            final sel = _sittingHours == h;
+            return GestureDetector(
+              onTap: () => setState(() => _sittingHours = h),
+              child: Container(
+                padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
+                decoration: BoxDecoration(
+                  gradient: sel ? AppColors.blueGradient : null,
+                  color: sel ? null : AppColors.glassWhite,
+                  borderRadius: BorderRadius.circular(20),
+                  border: Border.all(
+                      color: sel ? AppColors.deepBlue : AppColors.glassBorder, width: 1.5),
+                ),
+                child: Text('$h ' + (_isBn ? 'ঘণ্টা' : 'hr'),
+                    style: TextStyle(
+                        color: sel ? AppColors.ivory : AppColors.textSecondary,
+                        fontSize: 12.5,
+                        fontWeight: FontWeight.w600)),
+              ),
+            );
+          }).toList(),
+        ),
+        const SizedBox(height: 12),
+        Text(_isBn ? 'কোথায়' : 'Where',
+            style: const TextStyle(color: AppColors.textSecondary, fontSize: 12.5)),
+        const SizedBox(height: 6),
+        Row(children: [
+          for (final opt in const [
+            ('AT_HOME', 'আমার বাসায়', 'At my home'),
+            ('AT_SITTER', 'সিটারের বাসায়', "At the sitter's"),
+          ]) ...[
+            Expanded(
+              child: GestureDetector(
+                onTap: () => setState(() => _sittingLocation = opt.$1),
+                child: Container(
+                  padding: const EdgeInsets.symmetric(vertical: 10),
+                  alignment: Alignment.center,
+                  margin: const EdgeInsets.only(right: 8),
+                  decoration: BoxDecoration(
+                    gradient: _sittingLocation == opt.$1 ? AppColors.blueGradient : null,
+                    color: _sittingLocation == opt.$1 ? null : AppColors.glassWhite,
+                    borderRadius: BorderRadius.circular(12),
+                    border: Border.all(
+                        color: _sittingLocation == opt.$1
+                            ? AppColors.deepBlue
+                            : AppColors.glassBorder,
+                        width: 1.5),
+                  ),
+                  child: Text(_isBn ? opt.$2 : opt.$3,
+                      style: TextStyle(
+                          color: _sittingLocation == opt.$1
+                              ? AppColors.ivory
+                              : AppColors.textSecondary,
+                          fontSize: 12.5,
+                          fontWeight: FontWeight.w600)),
+                ),
+              ),
+            ),
+          ],
+        ]),
+        const SizedBox(height: 10),
+        TextField(
+          controller: _allergiesCtrl,
+          style: const TextStyle(color: AppColors.textPrimary, fontSize: 14),
+          decoration: deco(_isBn ? 'অ্যালার্জি (থাকলে)' : 'Allergies, if any'),
+        ),
+        const SizedBox(height: 10),
+        TextField(
+          controller: _sittingNotesCtrl,
+          maxLines: 2,
+          style: const TextStyle(color: AppColors.textPrimary, fontSize: 14),
+          decoration: deco(_isBn
+              ? 'বিশেষ নির্দেশনা (খাওয়ানো, ঘুম, ওষুধ…)'
+              : 'Special instructions (food, nap, medicine…)'),
+        ),
+      ],
     );
   }
 

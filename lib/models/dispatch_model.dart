@@ -395,20 +395,50 @@ List<List<double>> decodePolyline(String encoded) {
   }
   return points;
 }
-/// The three vehicle types a ride can request. Order is deliberate — cheapest first,
-/// matching how Pathao/Uber present options.
-const kRideVehicleTypes = ['motorcycle', 'cng', 'car'];
+/// The vehicle classes a ride can be requested in. Order is deliberate — cheapest first,
+/// each base class followed by its Plus tier, matching how Pathao/Uber present options.
+///
+/// The Plus tiers exist because a bigger engine burns more fuel and an air-conditioned
+/// sedan is a different product. Pricing by engine size itself cannot work: the passenger
+/// has to see a fare before any driver is matched, and the thirstiest vehicles would never
+/// be picked. A class the passenger chooses keeps one predictable price per class and still
+/// pays the better vehicle more.
+///
+/// Every value here must have a matching RateCard row on the server (serviceKind=commute,
+/// rateName=this code) or the class quotes as unavailable.
+const kRideVehicleTypes = [
+  'motorcycle', 'motorcycle_plus',
+  'cng', 'cng_plus',
+  'car', 'car_plus',
+];
 
 const kRideVehicleLabelsBn = {
   'motorcycle': 'বাইক',
+  'motorcycle_plus': 'বাইক প্লাস',
   'cng': 'সিএনজি',
+  'cng_plus': 'সিএনজি প্লাস',
   'car': 'কার',
+  'car_plus': 'কার প্লাস',
 };
 
 const kRideVehicleLabelsEn = {
   'motorcycle': 'Bike',
+  'motorcycle_plus': 'Bike Plus',
   'cng': 'CNG',
+  'cng_plus': 'CNG Plus',
   'car': 'Car',
+  'car_plus': 'Car Plus',
+};
+
+/// What a driver has to have to go online in each class. Shown when they pick, so the
+/// choice is not a guess.
+const kRideVehicleHintBn = {
+  'motorcycle': '১০০-১২৫ সিসি',
+  'motorcycle_plus': '১৩৫ সিসি বা তার বেশি',
+  'cng': 'সাধারণ সিএনজি',
+  'cng_plus': 'ভালো অবস্থার সিএনজি',
+  'car': 'ছোট গাড়ি / হ্যাচব্যাক',
+  'car_plus': 'এসি সেডান',
 };
 
 /// One vehicle's line in a ride quote — what it costs and whether anyone actually drives it
