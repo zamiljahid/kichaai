@@ -11,6 +11,7 @@ import '../theme/app_theme.dart';
 import '../widgets/animated_background.dart';
 import '../widgets/glass_card.dart';
 import 'course_detail_screen.dart';
+import 'instructor_profile_screen.dart';
 
 class CoursesScreen extends StatefulWidget {
   const CoursesScreen({super.key});
@@ -295,7 +296,36 @@ class _CoursesScreenState extends State<CoursesScreen> {
                 Text(c.title, style: const TextStyle(color: AppColors.textPrimary, fontSize: 15, fontWeight: FontWeight.w700), maxLines: 2, overflow: TextOverflow.ellipsis),
                 if (c.providerName != null) ...[
                   const SizedBox(height: 3),
-                  Text(c.providerName!, style: TextStyle(color: AppColors.textMuted, fontSize: 12), maxLines: 1, overflow: TextOverflow.ellipsis),
+                  // The instructor's name opens everything else they teach. It used to be
+                  // plain text, so a learner who liked one course had no way through.
+                  GestureDetector(
+                    onTap: c.providerId == null
+                        ? null
+                        : () => Navigator.of(context).push(MaterialPageRoute(
+                              builder: (_) => InstructorProfileScreen(
+                                providerId: c.providerId!,
+                                providerName: c.providerName,
+                              ),
+                            )),
+                    child: Row(children: [
+                      Flexible(
+                        child: Text(c.providerName!,
+                            style: TextStyle(
+                                color: c.providerId == null
+                                    ? AppColors.textMuted
+                                    : AppColors.deepBlue,
+                                fontSize: 12,
+                                fontWeight: FontWeight.w600),
+                            maxLines: 1,
+                            overflow: TextOverflow.ellipsis),
+                      ),
+                      if (c.providerId != null) ...[
+                        const SizedBox(width: 2),
+                        const Icon(Icons.chevron_right_rounded,
+                            color: AppColors.deepBlue, size: 14),
+                      ],
+                    ]),
+                  ),
                 ],
                 const SizedBox(height: 8),
                 Wrap(spacing: 12, runSpacing: 4, children: [
