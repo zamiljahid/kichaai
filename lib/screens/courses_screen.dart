@@ -1,5 +1,10 @@
+import 'dart:async';
+
 import 'package:flutter/material.dart';
 import 'package:flutter_animate/flutter_animate.dart';
+import 'package:provider/provider.dart';
+import '../core/network/api_client.dart';
+import '../core/utils/app_strings.dart';
 import '../models/micro_learning_model.dart';
 import '../services/micro_learning_service.dart';
 import '../theme/app_theme.dart';
@@ -14,30 +19,25 @@ class CoursesScreen extends StatefulWidget {
   State<CoursesScreen> createState() => _CoursesScreenState();
 }
 
-const _categories = [
-  ['all', 'সব'],
-  ['tech', 'প্রযুক্তি'],
-  ['language', 'ভাষা'],
-  ['business', 'ব্যবসা'],
-  ['arts', 'কলা ও নকশা'],
-  ['lifestyle', 'লাইফস্টাইল'],
-  ['other', 'অন্যান্য'],
-];
-
-const _categoryLabelsBn = {
-  'tech': 'প্রযুক্তি', 'language': 'ভাষা', 'business': 'ব্যবসা',
-  'arts': 'কলা ও নকশা', 'lifestyle': 'লাইফস্টাইল', 'other': 'অন্যান্য',
-};
+// Categories come from GET /micro-learning/categories now. Keeping a copy here is what
+// broke the filter before: the app said tech/arts/lifestyle while the data said
+// Technology/Business/Design/Language, so every chip returned nothing.
 
 class _CoursesScreenState extends State<CoursesScreen> {
   List<CourseModel> _courses = [];
   bool _isLoading = true;
   String? _error;
   String _category = 'all';
+  bool _isBn = true;
+
+  List<Map<String, String>> _categories = [];
+  final _searchCtrl = TextEditingController();
+  Timer? _searchDebounce;
 
   @override
   void initState() {
     super.initState();
+    _loadCategories();
     _load();
   }
 
@@ -46,22 +46,95 @@ class _CoursesScreenState extends State<CoursesScreen> {
     try {
       final list = await MicroLearningService.instance.listCourses(
         category: _category == 'all' ? null : _category,
+        search: _searchCtrl.text.trim(),
       );
       if (mounted) setState(() { _courses = list; _isLoading = false; });
     } catch (e) {
-      if (mounted) setState(() { _error = e.toString(); _isLoading = false; });
+      if (mounted) setState(() { _error = ApiClient.mapError(e).localized(_isBn); _isLoading = false; });
     }
+  }
+
+  /// Bengali label for a stored category code, falling back to the code itself.
+  String _categoryLabel(String code) {
+    for (final c in _categories) {
+      if (c['code'] == code) return _isBn ? c['bn']! : c['en']!;
+    }
+    return code;
+  }
+
+  Future<void> _loadCategories() async {
+    try {
+      final cats = await MicroLearningService.instance.listCategories();
+      if (mounted) setState(() => _categories = cats);
+    } catch (_) {
+      // The chips just stay hidden; the course list below still loads.
+    }
+  }
+
+  /// Search fires a little after typing stops, so a five-letter word is one request.
+  void _onSearchChanged(String _) {
+    _searchDebounce?.cancel();
+    _searchDebounce = Timer(const Duration(milliseconds: 400), _load);
+  }
+
+  @override
+  void dispose() {
+    _searchDebounce?.cancel();
+    _searchCtrl.dispose();
+    super.dispose();
+  }
+
+  Widget _buildSearch() {
+    return Padding(
+      padding: const EdgeInsets.fromLTRB(20, 4, 20, 10),
+      child: TextField(
+        controller: _searchCtrl,
+        onChanged: _onSearchChanged,
+        style: const TextStyle(color: AppColors.textPrimary, fontSize: 14),
+        decoration: InputDecoration(
+          hintText: _isBn ? 'কোর্স খুঁজুন…' : 'Search courses…',
+          hintStyle: const TextStyle(color: AppColors.textMuted, fontSize: 13.5),
+          prefixIcon: const Icon(Icons.search_rounded, color: AppColors.textMuted, size: 20),
+          suffixIcon: _searchCtrl.text.isEmpty
+              ? null
+              : IconButton(
+                  icon: const Icon(Icons.close_rounded, color: AppColors.textMuted, size: 18),
+                  onPressed: () {
+                    _searchCtrl.clear();
+                    _load();
+                  },
+                ),
+          filled: true,
+          fillColor: AppColors.glassWhite,
+          contentPadding: const EdgeInsets.symmetric(horizontal: 14, vertical: 12),
+          border: OutlineInputBorder(
+            borderRadius: BorderRadius.circular(14),
+            borderSide: const BorderSide(color: AppColors.glassBorder),
+          ),
+          enabledBorder: OutlineInputBorder(
+            borderRadius: BorderRadius.circular(14),
+            borderSide: const BorderSide(color: AppColors.glassBorder),
+          ),
+          focusedBorder: OutlineInputBorder(
+            borderRadius: BorderRadius.circular(14),
+            borderSide: const BorderSide(color: AppColors.deepBlue, width: 1.4),
+          ),
+        ),
+      ),
+    );
   }
 
   @override
   Widget build(BuildContext context) {
+    _isBn = context.watch<LanguageNotifier>().isBengali;
     return Scaffold(
       body: AnimatedBackground(
         child: SafeArea(
           child: Column(
             children: [
               _buildHeader(context),
-              _buildCategoryFilter(),
+              _buildSearch(),
+              if (_categories.isNotEmpty) _buildCategoryFilter(),
               const SizedBox(height: 4),
               Expanded(
                 child: _isLoading
@@ -93,15 +166,19 @@ class _CoursesScreenState extends State<CoursesScreen> {
       child: ListView.separated(
         scrollDirection: Axis.horizontal,
         padding: const EdgeInsets.symmetric(horizontal: 20),
-        itemCount: _categories.length,
+        itemCount: _categories.length + 1,
         separatorBuilder: (_, __) => const SizedBox(width: 8),
         itemBuilder: (_, i) {
-          final cat = _categories[i];
-          final sel = _category == cat[0];
+          // index 0 is the "all" chip; the rest come straight from the backend list.
+          final code = i == 0 ? 'all' : _categories[i - 1]['code']!;
+          final label = i == 0
+              ? (_isBn ? 'সব' : 'All')
+              : (_isBn ? _categories[i - 1]['bn']! : _categories[i - 1]['en']!);
+          final sel = _category == code;
           return GestureDetector(
             onTap: () {
               if (sel) return;
-              setState(() => _category = cat[0]);
+              setState(() => _category = code);
               _load();
             },
             child: Container(
@@ -113,7 +190,7 @@ class _CoursesScreenState extends State<CoursesScreen> {
                 borderRadius: BorderRadius.circular(100),
                 border: Border.all(color: sel ? Colors.transparent : AppColors.glassBorder),
               ),
-              child: Text(cat[1], style: TextStyle(color: sel ? AppColors.ivory : AppColors.textSecondary, fontSize: 13, fontWeight: FontWeight.w600)),
+              child: Text(label, style: TextStyle(color: sel ? AppColors.ivory : AppColors.textSecondary, fontSize: 13, fontWeight: FontWeight.w600)),
             ),
           );
         },
@@ -139,10 +216,7 @@ class _CoursesScreenState extends State<CoursesScreen> {
           // viewport the two lines of text had nothing stopping them from overflowing the
           // available width (RenderFlex overflow, separate from the price-parsing crash below).
           Expanded(
-            child: Column(crossAxisAlignment: CrossAxisAlignment.start, children: [
-              const Text('মাইক্রো লার্নিং', style: TextStyle(color: AppColors.textPrimary, fontSize: 18, fontWeight: FontWeight.w700), overflow: TextOverflow.ellipsis),
-              Text('Micro Learning Courses', style: TextStyle(color: AppColors.textMuted, fontSize: 12), overflow: TextOverflow.ellipsis),
-            ]),
+            child: Text(_isBn ? 'মাইক্রো লার্নিং' : 'Micro Learning', style: const TextStyle(color: AppColors.textPrimary, fontSize: 18, fontWeight: FontWeight.w700), overflow: TextOverflow.ellipsis),
           ),
         ],
       ),
@@ -150,10 +224,16 @@ class _CoursesScreenState extends State<CoursesScreen> {
   }
 
   String _formatDuration(int mins) {
-    if (mins < 60) return '$mins মিনিট';
+    if (_isBn) {
+      if (mins < 60) return '$mins মিনিট';
+      final h = mins ~/ 60;
+      final m = mins % 60;
+      return m == 0 ? '$h ঘণ্টা' : '$h ঘণ্টা $m মিনিট';
+    }
+    if (mins < 60) return '$mins min';
     final h = mins ~/ 60;
     final m = mins % 60;
-    return m == 0 ? '$h ঘণ্টা' : '$h ঘণ্টা $m মিনিট';
+    return m == 0 ? '${h}h' : '${h}h ${m}m';
   }
 
   Widget _pill(String label, Color color) => Container(
@@ -197,9 +277,13 @@ class _CoursesScreenState extends State<CoursesScreen> {
                   Positioned(
                     left: 10, top: 10,
                     child: Wrap(spacing: 6, children: [
-                      if (c.category != null) _pill(_categoryLabelsBn[c.category] ?? c.category!, AppColors.deepBlue),
+                      if (c.category != null) _pill(_categoryLabel(c.category!), AppColors.deepBlue),
                       if (c.deliveryMode != null)
-                        _pill(c.deliveryMode == 'live_cohort' ? 'লাইভ কোহোর্ট' : 'রেকর্ডেড', AppColors.fuchsia),
+                        _pill(
+                            c.deliveryMode == 'live_cohort'
+                                ? (_isBn ? 'লাইভ কোহোর্ট' : 'Live Cohort')
+                                : (_isBn ? 'রেকর্ডেড' : 'Recorded'),
+                            AppColors.fuchsia),
                     ]),
                   ),
                 ]),
@@ -225,7 +309,7 @@ class _CoursesScreenState extends State<CoursesScreen> {
                     Row(mainAxisSize: MainAxisSize.min, children: [
                       const Icon(Icons.menu_book_rounded, color: AppColors.textMuted, size: 13),
                       const SizedBox(width: 3),
-                      Text('${c.totalLessons} পাঠ', style: TextStyle(color: AppColors.textMuted, fontSize: 11)),
+                      Text(_isBn ? '${c.totalLessons} পাঠ' : '${c.totalLessons} lessons', style: TextStyle(color: AppColors.textMuted, fontSize: 11)),
                     ]),
                   if (c.totalDurationMins != null && c.totalDurationMins! > 0)
                     Row(mainAxisSize: MainAxisSize.min, children: [
@@ -237,7 +321,7 @@ class _CoursesScreenState extends State<CoursesScreen> {
                     Row(mainAxisSize: MainAxisSize.min, children: [
                       const Icon(Icons.people_alt_rounded, color: AppColors.textMuted, size: 13),
                       const SizedBox(width: 3),
-                      Text('${c.enrollmentCount} জন ভর্তি', style: TextStyle(color: AppColors.textMuted, fontSize: 11)),
+                      Text(_isBn ? '${c.enrollmentCount} জন ভর্তি' : '${c.enrollmentCount} enrolled', style: TextStyle(color: AppColors.textMuted, fontSize: 11)),
                     ]),
                 ]),
                 const SizedBox(height: 10),
@@ -282,12 +366,12 @@ class _CoursesScreenState extends State<CoursesScreen> {
         const Icon(Icons.wifi_off_rounded, color: AppColors.textMuted, size: 48),
         const SizedBox(height: 12),
         Text(
-          _error ?? 'কোর্স লোড হয়নি',
+          _error ?? (_isBn ? 'কোর্স লোড হয়নি' : 'Could not load courses'),
           textAlign: TextAlign.center,
           style: const TextStyle(color: AppColors.textSecondary, fontSize: 14),
         ),
         const SizedBox(height: 16),
-        GestureDetector(onTap: _load, child: const Text('আবার চেষ্টা করুন', style: TextStyle(color: AppColors.deepBlue))),
+        GestureDetector(onTap: _load, child: Text(_isBn ? 'আবার চেষ্টা করুন' : 'Try again', style: const TextStyle(color: AppColors.deepBlue))),
       ]),
     ),
   );
@@ -296,7 +380,7 @@ class _CoursesScreenState extends State<CoursesScreen> {
     child: Column(mainAxisSize: MainAxisSize.min, children: [
       const Icon(Icons.school_rounded, color: AppColors.textMuted, size: 56),
       const SizedBox(height: 12),
-      Text('কোনো কোর্স পাওয়া যায়নি', style: TextStyle(color: AppColors.textMuted, fontSize: 14)),
+      Text(_isBn ? 'কোনো কোর্স পাওয়া যায়নি' : 'No courses found', style: TextStyle(color: AppColors.textMuted, fontSize: 14)),
     ]),
   );
 }

@@ -9,11 +9,26 @@ class MicroLearningService {
 
   final _client = ApiClient.instance.dio;
 
-  Future<List<CourseModel>> listCourses({int limit = 20, String? category}) async {
+  /// The categories the backend actually files courses under. The screen used to carry its
+  /// own hardcoded list (tech / arts / lifestyle) which never matched the stored values
+  /// (Technology / Business / Design / Language), so every chip returned an empty list.
+  Future<List<Map<String, String>>> listCategories() async {
+    try {
+      final res = await _client.get('/micro-learning/categories');
+      return (res.data as List<dynamic>)
+          .map((e) => (e as Map<String, dynamic>).map((k, v) => MapEntry(k, '$v')))
+          .toList();
+    } catch (e) {
+      throw ApiClient.mapError(e);
+    }
+  }
+
+  Future<List<CourseModel>> listCourses({int limit = 20, String? category, String? search}) async {
     try {
       final res = await _client.get('/micro-learning/courses', queryParameters: {
         'limit': limit.toString(),
         if (category != null) 'category': category,
+        if (search != null && search.isNotEmpty) 'search': search,
       });
       final list = res.data as List<dynamic>;
       return list.map((e) => CourseModel.fromJson(e as Map<String, dynamic>)).toList();
@@ -48,18 +63,25 @@ class MicroLearningService {
     return course.lessons;
   }
 
-  Future<EnrollmentModel> enroll({
-    required String userId,
-    required String courseId,
-    double paidAmount = 0,
-  }) async {
+  /// Starts enrollment. Free courses come back already enrolled (`enrollment` set,
+  /// `gatewayPageUrl` null); paid courses come back with a real SSLCommerz checkout URL to
+  /// send the customer to — call [confirmEnrollment] once they've paid.
+  Future<EnrollmentInitiation> initiateEnrollment({required String courseId}) async {
     try {
-      final res = await _client.post('/micro-learning/enrollments', data: {
-        'userId': userId,
-        'courseId': courseId,
-        'paidAmount': paidAmount,
-      });
-      return EnrollmentModel.fromJson(res.data as Map<String, dynamic>);
+      final res = await _client.post('/micro-learning/enrollments/initiate', data: {'courseId': courseId});
+      return EnrollmentInitiation.fromJson(res.data as Map<String, dynamic>);
+    } catch (e) {
+      throw ApiClient.mapError(e);
+    }
+  }
+
+  /// Only grants access once the backend has independently verified a completed payment —
+  /// throws (via ApiClient.mapError) if the payment hasn't landed yet.
+  Future<EnrollmentModel> confirmEnrollment({required String courseId}) async {
+    try {
+      final res = await _client.post('/micro-learning/enrollments/confirm', data: {'courseId': courseId});
+      final data = res.data as Map<String, dynamic>;
+      return EnrollmentModel.fromJson(data['enrollment'] as Map<String, dynamic>);
     } catch (e) {
       throw ApiClient.mapError(e);
     }
