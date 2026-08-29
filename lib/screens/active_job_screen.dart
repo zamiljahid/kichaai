@@ -105,19 +105,45 @@ class _ActiveJobScreenState extends State<ActiveJobScreen> {
       for (final t in threads) {
         if (t.dispatchJobId == _job.id) { thread = t; break; }
       }
-      if (!mounted) return;
+
       if (thread == null) {
-        ScaffoldMessenger.of(context).showSnackBar(SnackBar(
-          content: Text(_isBn ? 'চ্যাট এখনো তৈরি হয়নি — একটু পরে আবার চেষ্টা করুন' : 'Chat not created yet — try again shortly', style: const TextStyle(color: Colors.white)),
-          backgroundColor: const Color(0xFFF59E0B),
-          behavior: SnackBarBehavior.floating,
-        ));
-        return;
+        // An advance booking (photographer, cinematographer, makeup) has no thread on
+        // purpose until the customer picks one of the interested providers — telling
+        // someone to "try again shortly" there is a lie, nothing is coming.
+        final awaitingSelection =
+            _job.isAdvanceBooking && (_job.status == 'searching' || _job.status == 'pending_selection');
+        if (awaitingSelection) {
+          if (!mounted) return;
+          ScaffoldMessenger.of(context).showSnackBar(SnackBar(
+            content: Text(
+                _isBn
+                    ? 'গ্রাহক আপনাকে বেছে নেওয়ার পর চ্যাট চালু হবে'
+                    : 'Chat opens once the customer picks you for this booking',
+                style: const TextStyle(color: Colors.white)),
+            backgroundColor: const Color(0xFFF59E0B),
+            behavior: SnackBarBehavior.floating,
+          ));
+          return;
+        }
+
+        // Otherwise the pairing is real and a thread should exist. The server creates it
+        // fire-and-forget on confirm, so a dropped RMQ message left both sides staring at
+        // "try again shortly" forever — retrying only ever re-read the same empty list.
+        // createThread is idempotent for a dispatch job (it returns the existing thread for
+        // the same dispatchJobId), so asking for one here is safe and self-healing.
+        thread = await MessagingService.instance.createThread(
+          participantUserIds: [_job.customerId, user.id],
+          contextChunk: 'dispatch',
+          dispatchJobId: _job.id,
+        );
       }
+
+      if (!mounted) return;
       final otherName = thread.otherParticipantName(user.id);
       Navigator.push(context, MaterialPageRoute(
         builder: (_) => ChatScreen(threadId: thread!.id, currentUserId: user.id, participantName: otherName),
       ));
+
     } catch (_) {
       if (mounted) {
         ScaffoldMessenger.of(context).showSnackBar(SnackBar(

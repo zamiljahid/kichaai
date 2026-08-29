@@ -55,6 +55,10 @@ class JobModel {
   final String? endPhotoUrl;
   final int?
       notifiedProviderCount; // createJob response only — how many providers the broadcast reached
+  // Photographer/cinematographer/makeup: the customer picks from several interested
+  // providers, so "accepted" means interest, not an engagement. The backend has always sent
+  // this; the model never read it, so the app could not tell the two flows apart.
+  final bool isAdvanceBooking;
   final DateTime? eventDate; // advance-booking jobs — scheduled start time
   final int? estimatedDurationHours; // advance-booking jobs — planned duration
   final double?
@@ -125,6 +129,7 @@ class JobModel {
     this.startPhotoUrl,
     this.endPhotoUrl,
     this.notifiedProviderCount,
+    this.isAdvanceBooking = false,
     this.eventDate,
     this.estimatedDurationHours,
     this.depositAmount,
@@ -194,6 +199,7 @@ class JobModel {
         startPhotoUrl: json['startPhotoUrl'] as String?,
         endPhotoUrl: json['endPhotoUrl'] as String?,
         notifiedProviderCount: (json['notifiedProviderCount'] as num?)?.toInt(),
+        isAdvanceBooking: json['isAdvanceBooking'] == true,
         eventDate: json['eventDate'] != null
             ? DateTime.tryParse(json['eventDate'] as String)
             : null,
