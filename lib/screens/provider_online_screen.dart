@@ -1,13 +1,16 @@
-import 'dart:async';
 import 'dart:ui';
 import 'package:flutter/material.dart';
 import 'package:flutter_animate/flutter_animate.dart';
 import 'package:geolocator/geolocator.dart';
+import 'package:provider/provider.dart';
 import '../core/network/api_client.dart';
+import '../core/utils/app_strings.dart';
 import '../services/auth_service.dart';
 import '../services/dispatch_service.dart';
 import '../services/onboarding_service.dart';
 import '../theme/app_theme.dart';
+import '../widgets/provider_completeness_gate.dart';
+import 'gender_screen.dart';
 
 class ProviderOnlineScreen extends StatefulWidget {
   const ProviderOnlineScreen({super.key});
@@ -21,8 +24,10 @@ class _ProviderOnlineScreenState extends State<ProviderOnlineScreen> {
   bool _isOnline = false;
   bool _isLoading = false;
   String _selectedServiceKind = 'technician';
+  // All kinds the live session is currently online for — may be more than just
+  // _selectedServiceKind for a master provider (e.g. technician + lawyer at once).
+  List<String> _activeServiceKinds = [];
   Map<String, dynamic>? _sessionSummary;
-  Timer? _locationTimer;
   Position? _lastPosition;
 
   // Loaded from /onboarding/my-services (approved only) — this used to be a hardcoded list
@@ -30,6 +35,7 @@ class _ProviderOnlineScreenState extends State<ProviderOnlineScreen> {
   // they were never approved for. The backend now rejects that too; this keeps the UI honest.
   List<String> _serviceKinds = [];
   bool _loadingServices = true;
+  bool _isBn = true;
 
   @override
   void initState() {
@@ -59,26 +65,30 @@ class _ProviderOnlineScreenState extends State<ProviderOnlineScreen> {
     }
   }
 
-  @override
-  void dispose() {
-    _locationTimer?.cancel();
-    super.dispose();
-  }
+  // Intentionally no dispose() override here — the location timer lives on
+  // DispatchService.instance (an app-lifetime singleton), not on this screen's State, precisely
+  // so navigating away from this screen doesn't stop it. Only _goOffline() stops it.
 
   Future<void> _checkExistingSession() async {
     try {
-      final res = await _client.get('/dispatch/sessions/me');
-      final data = res.data as Map<String, dynamic>?;
+      final session = await DispatchService.instance.getMySession();
       // The session ROW survives going offline (endSession only flips isOnline=false),
       // so "row exists" is not "online" — that mistake made this screen show অনলাইন
       // even after the provider had gone offline elsewhere.
-      if (data != null && data['id'] != null && data['isOnline'] == true) {
+      if (session.isActive) {
         if (mounted) {
           setState(() {
             _isOnline = true;
-            _selectedServiceKind = data['serviceKind'] as String? ?? _selectedServiceKind;
+            // The backend has always stored `serviceKinds` (an array — a master provider can be
+            // online for more than one kind at once); reading a singular `serviceKind` here
+            // never matched anything and left this label stuck on the dropdown's default after
+            // a cold restart while already online.
+            if (session.serviceKinds.isNotEmpty) {
+              _selectedServiceKind = session.serviceKinds.first;
+              _activeServiceKinds = session.serviceKinds;
+            }
           });
-          _startLocationUpdates();
+          DispatchService.instance.startLocationTracking();
         }
       }
     } catch (_) {}
@@ -98,9 +108,11 @@ class _ProviderOnlineScreenState extends State<ProviderOnlineScreen> {
   }
 
   Future<void> _goOnline() async {
+    final complete = await ensureProviderCompleteness(context, _isBn);
+    if (!complete || !mounted) return;
     if (_serviceKinds.isEmpty) {
       ScaffoldMessenger.of(context).showSnackBar(
-        const SnackBar(content: Text('কোনো অনুমোদিত সার্ভিস নেই — আগে অনবোর্ডিং সম্পন্ন করুন', style: TextStyle(color: Colors.white)), backgroundColor: Color(0xFFF59E0B), behavior: SnackBarBehavior.floating),
+        SnackBar(content: Text(_isBn ? 'কোনো অনুমোদিত সার্ভিস নেই — আগে অনবোর্ডিং সম্পন্ন করুন' : 'No approved service — complete onboarding first', style: const TextStyle(color: Colors.white)), backgroundColor: const Color(0xFFF59E0B), behavior: SnackBarBehavior.floating),
       );
       return;
     }
@@ -110,7 +122,7 @@ class _ProviderOnlineScreenState extends State<ProviderOnlineScreen> {
       setState(() => _isLoading = false);
       if (mounted) {
         ScaffoldMessenger.of(context).showSnackBar(
-          const SnackBar(content: Text('লোকেশন অ্যাক্সেস প্রয়োজন', style: TextStyle(color: Colors.white)), backgroundColor: Color(0xFFF59E0B), behavior: SnackBarBehavior.floating),
+          SnackBar(content: Text(_isBn ? 'লোকেশন অ্যাক্সেস প্রয়োজন' : 'Location access required', style: const TextStyle(color: Colors.white)), backgroundColor: const Color(0xFFF59E0B), behavior: SnackBarBehavior.floating),
         );
       }
       return;
@@ -135,9 +147,15 @@ class _ProviderOnlineScreenState extends State<ProviderOnlineScreen> {
           if (specs != null && specs.isNotEmpty) specializations = specs;
         }
       } catch (_) {}
-      await DispatchService.instance.startSession(
+      // startSession REPLACES the session's kind set, it doesn't add to it — sending only the
+      // newly picked kind here used to silently drop a master provider's OTHER already-online
+      // kinds (e.g. going online for "lawyer" from this screen while a "technician" session was
+      // already live elsewhere would quietly take the technician session down too). Merge with
+      // whatever's already active first.
+      final kinds = {..._activeServiceKinds, _selectedServiceKind}.toList();
+      final locationMismatch = await DispatchService.instance.startSession(
         providerId: userId,
-        serviceKinds: [_selectedServiceKind],
+        serviceKinds: kinds,
         currentLatitude: pos.latitude,
         currentLongitude: pos.longitude,
         providerNameSnapshot: name,
@@ -148,18 +166,61 @@ class _ProviderOnlineScreenState extends State<ProviderOnlineScreen> {
           _isOnline = true;
           _lastPosition = pos;
           _isLoading = false;
+          _activeServiceKinds = kinds;
         });
-        _startLocationUpdates();
+        if (locationMismatch) _showLocationMismatchNotice();
+        DispatchService.instance.startLocationTracking();
       }
     } catch (e) {
       final ex = ApiClient.mapError(e);
       if (mounted) {
         setState(() => _isLoading = false);
-        ScaffoldMessenger.of(context).showSnackBar(
-          SnackBar(content: Text(ex.messageBn, style: const TextStyle(color: Colors.white)), backgroundColor: const Color(0xFFEF4444), behavior: SnackBarBehavior.floating),
-        );
+        // dispatch-service's startLiveSession 400s with this exact bilingual message for a
+        // caregiver/photographer/cinematographer/makeup_artist provider with no gender set on
+        // their profile — give a direct way to fix it instead of just a red toast.
+        if (ex.statusCode == 400 && (ex.messageBn.contains('Gender') || ex.message.contains('Gender'))) {
+          ScaffoldMessenger.of(context).showSnackBar(
+            SnackBar(
+              content: Text(ex.localized(_isBn), style: const TextStyle(color: Colors.white)),
+              backgroundColor: const Color(0xFFF59E0B),
+              behavior: SnackBarBehavior.floating,
+              duration: const Duration(seconds: 6),
+              action: SnackBarAction(
+                label: _isBn ? 'সেট করুন' : 'Set it',
+                textColor: Colors.white,
+                onPressed: () => Navigator.push(context, MaterialPageRoute(builder: (_) => const GenderScreen())),
+              ),
+            ),
+          );
+        } else {
+          ScaffoldMessenger.of(context).showSnackBar(
+            SnackBar(content: Text(ex.localized(_isBn), style: const TextStyle(color: Colors.white)), backgroundColor: const Color(0xFFEF4444), behavior: SnackBarBehavior.floating),
+          );
+        }
       }
     }
+  }
+
+  void _showLocationMismatchNotice() {
+    showDialog<void>(
+      context: context,
+      builder: (ctx) => AlertDialog(
+        backgroundColor: AppColors.bgMid,
+        title: Text(_isBn ? 'অবস্থান নিশ্চিত করুন' : 'Confirm your location', style: const TextStyle(color: AppColors.textPrimary)),
+        content: Text(
+          _isBn
+              ? 'আপনার বর্তমান অবস্থান আপনার রেজিস্টার্ড ঠিকানা থেকে অনেক দূরে মনে হচ্ছে। আপনি কি নিশ্চিত আপনি এখন এখানে আছেন?'
+              : 'Your current location looks far from your registered address. Are you sure you\'re here right now?',
+          style: const TextStyle(color: AppColors.textMuted),
+        ),
+        actions: [
+          TextButton(
+            onPressed: () => Navigator.pop(ctx),
+            child: Text(_isBn ? 'হ্যাঁ, ঠিক আছে' : 'Yes, that\'s correct', style: const TextStyle(color: AppColors.deepBlue)),
+          ),
+        ],
+      ),
+    );
   }
 
   Future<void> _goOffline() async {
@@ -167,23 +228,24 @@ class _ProviderOnlineScreenState extends State<ProviderOnlineScreen> {
       context: context,
       builder: (ctx) => AlertDialog(
         backgroundColor: AppColors.bgMid,
-        title: const Text('অফলাইন হবেন?', style: TextStyle(color: AppColors.textPrimary)),
-        content: const Text('অফলাইনে গেলে নতুন জব পাবেন না।', style: TextStyle(color: AppColors.textMuted)),
+        title: Text(_isBn ? 'অফলাইন হবেন?' : 'Go offline?', style: const TextStyle(color: AppColors.textPrimary)),
+        content: Text(_isBn ? 'অফলাইনে গেলে নতুন জব পাবেন না।' : 'You won\'t receive new jobs while offline.', style: const TextStyle(color: AppColors.textMuted)),
         actions: [
-          TextButton(onPressed: () => Navigator.pop(ctx, false), child: const Text('বাতিল', style: TextStyle(color: AppColors.textMuted))),
-          TextButton(onPressed: () => Navigator.pop(ctx, true), child: const Text('অফলাইন', style: TextStyle(color: Color(0xFFEF4444)))),
+          TextButton(onPressed: () => Navigator.pop(ctx, false), child: Text(_isBn ? 'বাতিল' : 'Cancel', style: const TextStyle(color: AppColors.textMuted))),
+          TextButton(onPressed: () => Navigator.pop(ctx, true), child: Text(_isBn ? 'অফলাইন' : 'Offline', style: const TextStyle(color: Color(0xFFEF4444)))),
         ],
       ),
     );
     if (confirm != true) return;
 
     setState(() => _isLoading = true);
-    _locationTimer?.cancel();
+    DispatchService.instance.stopLocationTracking();
     try {
       final res = await _client.post('/dispatch/sessions/end');
       if (mounted) {
         setState(() {
           _isOnline = false;
+          _activeServiceKinds = [];
           _sessionSummary = res.data as Map<String, dynamic>?;
           _isLoading = false;
         });
@@ -193,29 +255,15 @@ class _ProviderOnlineScreenState extends State<ProviderOnlineScreen> {
     }
   }
 
-  void _startLocationUpdates() {
-    _locationTimer = Timer.periodic(const Duration(seconds: 30), (_) async {
-      final pos = await _getLocation();
-      if (pos != null) {
-        _lastPosition = pos;
-        try {
-          await _client.post('/dispatch/sessions/location', data: {
-            'latitude': pos.latitude,
-            'longitude': pos.longitude,
-          });
-        } catch (_) {}
-      }
-    });
-  }
-
   @override
   Widget build(BuildContext context) {
+    _isBn = context.watch<LanguageNotifier>().isBengali;
     return Scaffold(
       backgroundColor: AppColors.bgDark,
       appBar: AppBar(
         backgroundColor: Colors.transparent,
         elevation: 0,
-        title: const Text('অনলাইন স্ট্যাটাস', style: TextStyle(color: AppColors.textPrimary, fontSize: 18, fontWeight: FontWeight.w700)),
+        title: Text(_isBn ? 'অনলাইন স্ট্যাটাস' : 'Online Status', style: const TextStyle(color: AppColors.textPrimary, fontSize: 18, fontWeight: FontWeight.w700)),
         leading: IconButton(
           icon: const Icon(Icons.arrow_back_ios_new_rounded, color: AppColors.textPrimary, size: 18),
           onPressed: () => Navigator.pop(context),
@@ -275,7 +323,7 @@ class _ProviderOnlineScreenState extends State<ProviderOnlineScreen> {
                         Icon(_isOnline ? Icons.wifi_rounded : Icons.wifi_off_rounded, color: Colors.white, size: 40),
                         const SizedBox(height: 8),
                         Text(
-                          _isOnline ? 'অনলাইন' : 'অফলাইন',
+                          _isOnline ? (_isBn ? 'অনলাইন' : 'Online') : (_isBn ? 'অফলাইন' : 'Offline'),
                           style: const TextStyle(color: Colors.white, fontSize: 16, fontWeight: FontWeight.w700),
                         ),
                       ]),
@@ -285,7 +333,7 @@ class _ProviderOnlineScreenState extends State<ProviderOnlineScreen> {
         ).animate().scale(duration: 400.ms),
         const SizedBox(height: 16),
         Text(
-          _isOnline ? 'নতুন জব পাচ্ছেন' : 'ট্যাপ করে অনলাইন হন',
+          _isOnline ? (_isBn ? 'নতুন জব পাচ্ছেন' : 'Receiving new jobs') : (_isBn ? 'ট্যাপ করে অনলাইন হন' : 'Tap to go online'),
           style: const TextStyle(color: AppColors.textMuted, fontSize: 13),
         ),
       ],
@@ -303,7 +351,7 @@ class _ProviderOnlineScreenState extends State<ProviderOnlineScreen> {
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
-          const Text('সার্ভিস বিভাগ', style: TextStyle(color: AppColors.textMuted, fontSize: 12, fontWeight: FontWeight.w600)),
+          Text(_isBn ? 'সার্ভিস বিভাগ' : 'Service Category', style: const TextStyle(color: AppColors.textMuted, fontSize: 12, fontWeight: FontWeight.w600)),
           const SizedBox(height: 10),
           if (_loadingServices)
             const Padding(
@@ -311,10 +359,11 @@ class _ProviderOnlineScreenState extends State<ProviderOnlineScreen> {
               child: Center(child: SizedBox(width: 20, height: 20, child: CircularProgressIndicator(color: AppColors.deepBlue, strokeWidth: 2))),
             )
           else if (_serviceKinds.isEmpty)
-            const Padding(
-              padding: EdgeInsets.symmetric(vertical: 8),
-              child: Text('আপনার কোনো অনুমোদিত সার্ভিস নেই — আগে অনবোর্ডিং সম্পন্ন করুন',
-                  style: TextStyle(color: AppColors.textMuted, fontSize: 13)),
+            Padding(
+              padding: const EdgeInsets.symmetric(vertical: 8),
+              child: Text(
+                  _isBn ? 'আপনার কোনো অনুমোদিত সার্ভিস নেই — আগে অনবোর্ডিং সম্পন্ন করুন' : 'You have no approved service — complete onboarding first',
+                  style: const TextStyle(color: AppColors.textMuted, fontSize: 13)),
             )
           else
             DropdownButtonFormField<String>(
@@ -352,10 +401,13 @@ class _ProviderOnlineScreenState extends State<ProviderOnlineScreen> {
         ),
         const SizedBox(width: 12),
         Column(crossAxisAlignment: CrossAxisAlignment.start, children: [
-          const Text('সেশন সক্রিয়', style: TextStyle(color: Color(0xFF10B981), fontSize: 14, fontWeight: FontWeight.w700)),
-          Text('সার্ভিস: $_selectedServiceKind', style: const TextStyle(color: AppColors.textMuted, fontSize: 12)),
+          Text(_isBn ? 'সেশন সক্রিয়' : 'Session Active', style: const TextStyle(color: Color(0xFF10B981), fontSize: 14, fontWeight: FontWeight.w700)),
+          Text(
+            '${_isBn ? 'সার্ভিস' : 'Service'}: ${_activeServiceKinds.isNotEmpty ? _activeServiceKinds.join(', ') : _selectedServiceKind}',
+            style: const TextStyle(color: AppColors.textMuted, fontSize: 12),
+          ),
           if (_lastPosition != null)
-            Text('লোকেশন: ${_lastPosition!.latitude.toStringAsFixed(4)}, ${_lastPosition!.longitude.toStringAsFixed(4)}', style: const TextStyle(color: AppColors.textMuted, fontSize: 11)),
+            Text('${_isBn ? 'লোকেশন' : 'Location'}: ${_lastPosition!.latitude.toStringAsFixed(4)}, ${_lastPosition!.longitude.toStringAsFixed(4)}', style: const TextStyle(color: AppColors.textMuted, fontSize: 11)),
         ]),
       ]),
     );
@@ -370,14 +422,14 @@ class _ProviderOnlineScreenState extends State<ProviderOnlineScreen> {
         border: Border.all(color: AppColors.glassBorder),
       ),
       child: Column(crossAxisAlignment: CrossAxisAlignment.start, children: [
-        const Text('সেশন সারাংশ', style: TextStyle(color: AppColors.textMuted, fontSize: 12, fontWeight: FontWeight.w600)),
+        Text(_isBn ? 'সেশন সারাংশ' : 'Session Summary', style: const TextStyle(color: AppColors.textMuted, fontSize: 12, fontWeight: FontWeight.w600)),
         const SizedBox(height: 12),
         Row(children: [
-          _summaryCard('সময়', '${_sessionSummary!['duration'] ?? 0} মি'),
+          _summaryCard(_isBn ? 'সময়' : 'Time', '${_sessionSummary!['duration'] ?? 0} ${_isBn ? 'মি' : 'min'}'),
           const SizedBox(width: 12),
-          _summaryCard('আয়', '৳${_sessionSummary!['earnings'] ?? 0}'),
+          _summaryCard(_isBn ? 'আয়' : 'Earnings', '৳${_sessionSummary!['earnings'] ?? 0}'),
           const SizedBox(width: 12),
-          _summaryCard('জব', '${_sessionSummary!['jobsCompleted'] ?? 0}'),
+          _summaryCard(_isBn ? 'জব' : 'Jobs', '${_sessionSummary!['jobsCompleted'] ?? 0}'),
         ]),
       ]),
     );

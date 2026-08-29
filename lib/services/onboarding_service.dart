@@ -11,10 +11,23 @@ class OnboardingService {
 
   Future<List<Map<String, dynamic>>> getServiceTypes() async {
     try {
-      final res = await _client.get('/onboarding/service-types');
+      final res = await _client.get('/onboarding/service-types',
+          queryParameters: {'onboardable': 'true'});
       return (res.data as List<dynamic>).cast<Map<String, dynamic>>();
     } catch (e) {
       throw ApiClient.mapError(e);
+    }
+  }
+
+  /// NID verification status — 'not_submitted' | 'pending' | 'verified' | 'rejected'.
+  /// Used by the dashboard's profile-completion indicator; NidScreen itself has its own
+  /// richer status fetch for the full submit form.
+  Future<String?> getNidStatus() async {
+    try {
+      final res = await _client.get('/onboarding/nid/status');
+      return (res.data as Map)['status'] as String?;
+    } catch (_) {
+      return null; // non-fatal — profile completion just treats unknown as "not done"
     }
   }
 
@@ -106,7 +119,8 @@ class OnboardingService {
     try {
       final res = await _client.get(
         '/legal/options',
-        queryParameters: (role != null && role.isNotEmpty) ? {'role': role} : null,
+        queryParameters:
+            (role != null && role.isNotEmpty) ? {'role': role} : null,
       );
       return Map<String, dynamic>.from(res.data as Map);
     } catch (e) {
@@ -124,6 +138,10 @@ class OnboardingService {
     int? casesWon,
     String? barCertificateUrl,
     String? barEnrollmentNumber,
+    String? hscCertificateUrl,
+    String? bachelorCertificateUrl,
+    String? instituteFromYear,
+    String? instituteToYear,
     List<String>? courtJurisdiction,
     String? llbUniversity,
     String? llbStatus,
@@ -138,11 +156,91 @@ class OnboardingService {
         if (proposedFee != null) 'proposedFee': proposedFee,
         if (casesWon != null) 'casesWon': casesWon,
         if (barCertificateUrl != null) 'barCertificateUrl': barCertificateUrl,
-        if (barEnrollmentNumber != null) 'barEnrollmentNumber': barEnrollmentNumber,
+        if (barEnrollmentNumber != null)
+          'barEnrollmentNumber': barEnrollmentNumber,
+        if (hscCertificateUrl != null) 'hscCertificateUrl': hscCertificateUrl,
+        if (bachelorCertificateUrl != null)
+          'bachelorCertificateUrl': bachelorCertificateUrl,
+        if (instituteFromYear != null) 'instituteFromYear': instituteFromYear,
+        if (instituteToYear != null) 'instituteToYear': instituteToYear,
         if (courtJurisdiction != null) 'courtJurisdiction': courtJurisdiction,
         if (llbUniversity != null) 'llbUniversity': llbUniversity,
         if (llbStatus != null) 'llbStatus': llbStatus,
       });
+    } catch (e) {
+      throw ApiClient.mapError(e);
+    }
+  }
+
+  /// Group + specializations + group-specific hard-stop gate. Throws (400) if the
+  /// group's minimum bar isn't met — e.g. Automotive requires hasWorkshop: true.
+  Future<void> submitTechnicianDetails({
+    required String group,
+    required List<String> specializationCodes,
+    required double experienceYears,
+    String? workSamplePhotoUrl,
+    String? garageAddress,
+    double? garageLatitude,
+    double? garageLongitude,
+    String? garagePhotoUrl,
+    bool? hasWorkshop,
+    String? tradeLicenseUrl,
+    int? garageWorkerCount,
+    bool? hasRecoveryVan,
+    int? recoveryVanRadiusKm,
+    bool? hasFuelSupply,
+    String? certificateUrl,
+    bool? hasShop,
+    String? shopAddress,
+    double? shopLatitude,
+    double? shopLongitude,
+    String? shopTradeLicenseUrl,
+    bool? canVisitCustomerHome,
+    String? safetyCertificateUrl,
+    bool? hasSafetyTraining,
+  }) async {
+    try {
+      await _client.post('/onboarding/technician-details', data: {
+        'group': group,
+        'specializationCodes': specializationCodes,
+        'experienceYears': experienceYears,
+        if (workSamplePhotoUrl != null)
+          'workSamplePhotoUrl': workSamplePhotoUrl,
+        if (garageAddress != null) 'garageAddress': garageAddress,
+        if (garageLatitude != null) 'garageLatitude': garageLatitude,
+        if (garageLongitude != null) 'garageLongitude': garageLongitude,
+        if (garagePhotoUrl != null) 'garagePhotoUrl': garagePhotoUrl,
+        if (hasWorkshop != null) 'hasWorkshop': hasWorkshop,
+        if (tradeLicenseUrl != null) 'tradeLicenseUrl': tradeLicenseUrl,
+        if (garageWorkerCount != null) 'garageWorkerCount': garageWorkerCount,
+        if (hasRecoveryVan != null) 'hasRecoveryVan': hasRecoveryVan,
+        if (recoveryVanRadiusKm != null)
+          'recoveryVanRadiusKm': recoveryVanRadiusKm,
+        if (hasFuelSupply != null) 'hasFuelSupply': hasFuelSupply,
+        if (certificateUrl != null) 'certificateUrl': certificateUrl,
+        if (hasShop != null) 'hasShop': hasShop,
+        if (shopAddress != null) 'shopAddress': shopAddress,
+        if (shopLatitude != null) 'shopLatitude': shopLatitude,
+        if (shopLongitude != null) 'shopLongitude': shopLongitude,
+        if (shopTradeLicenseUrl != null)
+          'shopTradeLicenseUrl': shopTradeLicenseUrl,
+        if (canVisitCustomerHome != null)
+          'canVisitCustomerHome': canVisitCustomerHome,
+        if (safetyCertificateUrl != null)
+          'safetyCertificateUrl': safetyCertificateUrl,
+        if (hasSafetyTraining != null) 'hasSafetyTraining': hasSafetyTraining,
+      });
+    } catch (e) {
+      throw ApiClient.mapError(e);
+    }
+  }
+
+  Future<Map<String, dynamic>?> getTechnicianDetails() async {
+    try {
+      final res = await _client.get('/onboarding/technician-details');
+      return res.data is Map
+          ? Map<String, dynamic>.from(res.data as Map)
+          : null;
     } catch (e) {
       throw ApiClient.mapError(e);
     }
@@ -156,6 +254,20 @@ class OnboardingService {
     required String achievements,
     required List<Map<String, String>> lenses,
     required List<String> equipment,
+    required int experienceYears,
+    required List<String> workLocations,
+    required List<String> shootTypes,
+    String? teamExperienceFrom,
+    String? teamExperienceTo,
+    String? teamName,
+    String? teamFacebookUrl,
+    String? certificateUrl,
+    required bool pricingHourly,
+    required bool pricingPackage,
+    double? hourlyRateMin,
+    double? hourlyRateMax,
+    double? packageRateMin,
+    double? packageRateMax,
   }) async {
     try {
       await _client.post('/onboarding/provider-profile', data: {
@@ -167,6 +279,24 @@ class OnboardingService {
         'achievements': achievements,
         'lenses': lenses,
         'equipment': equipment,
+        'experienceYears': experienceYears,
+        'workLocations': workLocations,
+        'shootTypes': shootTypes,
+        if (teamExperienceFrom != null && teamExperienceFrom.isNotEmpty)
+          'teamExperienceFrom': teamExperienceFrom,
+        if (teamExperienceTo != null && teamExperienceTo.isNotEmpty)
+          'teamExperienceTo': teamExperienceTo,
+        if (teamName != null && teamName.isNotEmpty) 'teamName': teamName,
+        if (teamFacebookUrl != null && teamFacebookUrl.isNotEmpty)
+          'teamFacebookUrl': teamFacebookUrl,
+        if (certificateUrl != null && certificateUrl.isNotEmpty)
+          'certificateUrl': certificateUrl,
+        'pricingHourly': pricingHourly,
+        'pricingPackage': pricingPackage,
+        if (hourlyRateMin != null) 'hourlyRateMin': hourlyRateMin,
+        if (hourlyRateMax != null) 'hourlyRateMax': hourlyRateMax,
+        if (packageRateMin != null) 'packageRateMin': packageRateMin,
+        if (packageRateMax != null) 'packageRateMax': packageRateMax,
       });
     } catch (e) {
       throw ApiClient.mapError(e);
@@ -185,6 +315,21 @@ class OnboardingService {
     required List<String> editingSoftware,
     required List<Map<String, String>> lenses,
     required List<String> equipment,
+    String? achievements,
+    required int experienceYears,
+    required List<String> workLocations,
+    required List<String> shootTypes,
+    String? teamExperienceFrom,
+    String? teamExperienceTo,
+    String? teamName,
+    String? teamFacebookUrl,
+    String? certificateUrl,
+    required bool pricingHourly,
+    required bool pricingPackage,
+    double? hourlyRateMin,
+    double? hourlyRateMax,
+    double? packageRateMin,
+    double? packageRateMax,
   }) async {
     try {
       await _client.post('/onboarding/provider-profile', data: {
@@ -200,6 +345,26 @@ class OnboardingService {
         'editingSoftware': editingSoftware,
         'lenses': lenses,
         'equipment': equipment,
+        if (achievements != null && achievements.isNotEmpty)
+          'achievements': achievements,
+        'experienceYears': experienceYears,
+        'workLocations': workLocations,
+        'shootTypes': shootTypes,
+        if (teamExperienceFrom != null && teamExperienceFrom.isNotEmpty)
+          'teamExperienceFrom': teamExperienceFrom,
+        if (teamExperienceTo != null && teamExperienceTo.isNotEmpty)
+          'teamExperienceTo': teamExperienceTo,
+        if (teamName != null && teamName.isNotEmpty) 'teamName': teamName,
+        if (teamFacebookUrl != null && teamFacebookUrl.isNotEmpty)
+          'teamFacebookUrl': teamFacebookUrl,
+        if (certificateUrl != null && certificateUrl.isNotEmpty)
+          'certificateUrl': certificateUrl,
+        'pricingHourly': pricingHourly,
+        'pricingPackage': pricingPackage,
+        if (hourlyRateMin != null) 'hourlyRateMin': hourlyRateMin,
+        if (hourlyRateMax != null) 'hourlyRateMax': hourlyRateMax,
+        if (packageRateMin != null) 'packageRateMin': packageRateMin,
+        if (packageRateMax != null) 'packageRateMax': packageRateMax,
       });
     } catch (e) {
       throw ApiClient.mapError(e);
@@ -242,6 +407,82 @@ class OnboardingService {
     }
   }
 
+  Future<void> submitSkillShareProfile({
+    required String universityIdUrl,
+    required List<String> certificatesUrls,
+  }) async {
+    try {
+      await _client.post('/onboarding/provider-profile', data: {
+        'serviceType': 'skill_share',
+        'universityIdUrl': universityIdUrl,
+        'certificatesUrls': certificatesUrls,
+      });
+    } catch (e) {
+      throw ApiClient.mapError(e);
+    }
+  }
+
+  Future<void> submitMicroLearningProfile({
+    required String universityIdUrl,
+    required List<String> certificatesUrls,
+    required List<String> expertiseTopics,
+    String? instituteEmail,
+    required String contentFormat, // 'live' | 'recorded'
+    bool recordedFeeConsent = false,
+  }) async {
+    try {
+      await _client.post('/onboarding/provider-profile', data: {
+        'serviceType': 'micro_learning',
+        'universityIdUrl': universityIdUrl,
+        'certificatesUrls': certificatesUrls,
+        'expertiseTopics': expertiseTopics,
+        if (instituteEmail != null && instituteEmail.isNotEmpty)
+          'instituteEmail': instituteEmail,
+        'contentFormat': contentFormat,
+        'recordedFeeConsent': recordedFeeConsent,
+      });
+    } catch (e) {
+      throw ApiClient.mapError(e);
+    }
+  }
+
+  Future<void> submitMakeupArtistProfile({
+    required String sampleDriveUrl,
+    required List<String> specializations,
+    String? certificateUrl,
+    required int experienceYears,
+    String? achievements,
+    String? socialPageUrl,
+    required bool pricingHourly,
+    required bool pricingPackage,
+    double? hourlyRateMin,
+    double? hourlyRateMax,
+    double? packageRateMin,
+    double? packageRateMax,
+  }) async {
+    try {
+      await _client.post('/onboarding/provider-profile', data: {
+        'serviceType': 'makeup_artist',
+        'sampleDriveUrl': sampleDriveUrl,
+        'specializations': specializations,
+        if (certificateUrl != null) 'certificateUrl': certificateUrl,
+        'experienceYears': experienceYears,
+        if (achievements != null && achievements.isNotEmpty)
+          'achievements': achievements,
+        if (socialPageUrl != null && socialPageUrl.isNotEmpty)
+          'socialPageUrl': socialPageUrl,
+        'pricingHourly': pricingHourly,
+        'pricingPackage': pricingPackage,
+        if (hourlyRateMin != null) 'hourlyRateMin': hourlyRateMin,
+        if (hourlyRateMax != null) 'hourlyRateMax': hourlyRateMax,
+        if (packageRateMin != null) 'packageRateMin': packageRateMin,
+        if (packageRateMax != null) 'packageRateMax': packageRateMax,
+      });
+    } catch (e) {
+      throw ApiClient.mapError(e);
+    }
+  }
+
   Future<void> submitPortfolioImages({required List<String> images}) async {
     try {
       await _client.post('/onboarding/portfolio', data: {'images': images});
@@ -252,15 +493,64 @@ class OnboardingService {
 
   Future<void> submitPetCareProfile({
     required List<String> petTypes,
-    required int experienceYears,
+    required List<String> services,
+    required double hourlyRateMin,
+    required double hourlyRateMax,
+    required int experienceYears, // days of experience
     required String bio,
   }) async {
     try {
       await _client.post('/onboarding/provider-profile', data: {
         'serviceType': 'pet_care',
         'petTypes': petTypes,
+        'services': services,
+        'hourlyRateMin': hourlyRateMin,
+        'hourlyRateMax': hourlyRateMax,
         'experienceYears': experienceYears,
         'bio': bio,
+      });
+    } catch (e) {
+      throw ApiClient.mapError(e);
+    }
+  }
+
+  Future<void> submitQuickHelpProfile({
+    String? institution,
+    required List<String> tasks,
+  }) async {
+    try {
+      await _client.post('/onboarding/provider-profile', data: {
+        'serviceType': 'quick_help',
+        if (institution != null && institution.isNotEmpty)
+          'institution': institution,
+        'tasks': tasks,
+      });
+    } catch (e) {
+      throw ApiClient.mapError(e);
+    }
+  }
+
+  Future<void> submitHelpingHandProfile({
+    required String guardianNidUrl,
+    required String guardianName,
+    required String guardianPhone,
+    required String ownAddress,
+    required String ownPhone,
+    required List<String> workAreas,
+    required double ratePerTask,
+    required bool liabilityAccepted,
+  }) async {
+    try {
+      await _client.post('/onboarding/provider-profile', data: {
+        'serviceType': 'helping_hand',
+        'guardianNidUrl': guardianNidUrl,
+        'guardianName': guardianName,
+        'guardianPhone': guardianPhone,
+        'ownAddress': ownAddress,
+        'ownPhone': ownPhone,
+        'workAreas': workAreas,
+        'ratePerTask': ratePerTask,
+        'liabilityAccepted': liabilityAccepted,
       });
     } catch (e) {
       throw ApiClient.mapError(e);
@@ -299,9 +589,11 @@ class OnboardingService {
   // ── Document requirements flow ────────────────────────────────────
   /// Backend response: List<{documentTypeId, documentType: {code, name, ...}}>.
   /// `code` drives the UI (NID → image picker, PORTFOLIO → images-or-link).
-  Future<List<Map<String, dynamic>>> getServiceTypeRequirements(String serviceTypeId) async {
+  Future<List<Map<String, dynamic>>> getServiceTypeRequirements(
+      String serviceTypeId) async {
     try {
-      final res = await _client.get('/onboarding/service-type-requirements/$serviceTypeId');
+      final res = await _client
+          .get('/onboarding/service-type-requirements/$serviceTypeId');
       return (res.data as List<dynamic>).cast<Map<String, dynamic>>();
     } catch (e) {
       throw ApiClient.mapError(e);
@@ -332,11 +624,14 @@ class OnboardingService {
   // what its docs used to say, so every call built on the old contract just
   // failed with a missing-field error from onboarding-service.
 
-  Future<List<Map<String, dynamic>>> listPortfolioImages({String? serviceType}) async {
+  Future<List<Map<String, dynamic>>> listPortfolioImages(
+      {String? serviceType}) async {
     try {
       final userId = await ApiClient.getUserId();
       final res = await _client.get('/onboarding/portfolio',
-          queryParameters: {if (serviceType != null) 'serviceType': serviceType},
+          queryParameters: {
+            if (serviceType != null) 'serviceType': serviceType
+          },
           options: Options(headers: {'x-user-id': userId}));
       final data = res.data;
       final list = data is List ? data : (data['items'] ?? data['data'] ?? []);
@@ -354,7 +649,11 @@ class OnboardingService {
     try {
       final userId = await ApiClient.getUserId();
       final res = await _client.post('/onboarding/portfolio',
-          data: {'imageUrl': imageUrl, 'serviceType': serviceType, if (caption != null && caption.isNotEmpty) 'caption': caption},
+          data: {
+            'imageUrl': imageUrl,
+            'serviceType': serviceType,
+            if (caption != null && caption.isNotEmpty) 'caption': caption
+          },
           options: Options(headers: {'x-user-id': userId}));
       return Map<String, dynamic>.from(res.data as Map);
     } catch (e) {
@@ -365,7 +664,8 @@ class OnboardingService {
   Future<void> setCoverPortfolioImage(String imageId) async {
     try {
       final userId = await ApiClient.getUserId();
-      await _client.put('/onboarding/portfolio/$imageId/cover', options: Options(headers: {'x-user-id': userId}));
+      await _client.put('/onboarding/portfolio/$imageId/cover',
+          options: Options(headers: {'x-user-id': userId}));
     } catch (e) {
       throw ApiClient.mapError(e);
     }
@@ -374,7 +674,8 @@ class OnboardingService {
   Future<void> deletePortfolioImage(String imageId) async {
     try {
       final userId = await ApiClient.getUserId();
-      await _client.delete('/onboarding/portfolio/$imageId', options: Options(headers: {'x-user-id': userId}));
+      await _client.delete('/onboarding/portfolio/$imageId',
+          options: Options(headers: {'x-user-id': userId}));
     } catch (e) {
       throw ApiClient.mapError(e);
     }
@@ -422,7 +723,8 @@ class OnboardingService {
 
   Future<void> attachDocument(String applicationId, String documentId) async {
     try {
-      await _client.post('/onboarding/applications/$applicationId/documents', data: {
+      await _client
+          .post('/onboarding/applications/$applicationId/documents', data: {
         'documentId': documentId,
       });
     } catch (e) {

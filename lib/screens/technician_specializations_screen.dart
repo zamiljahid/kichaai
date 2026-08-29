@@ -1,4 +1,7 @@
 import 'package:flutter/material.dart';
+import 'package:provider/provider.dart';
+import '../core/network/api_client.dart';
+import '../core/utils/app_strings.dart';
 import '../services/auth_service.dart';
 import '../services/catalog_service.dart';
 import '../theme/app_theme.dart';
@@ -28,6 +31,7 @@ class _TechnicianSpecializationsScreenState
   bool _loading = true;
   bool _saving = false;
   String? _error;
+  bool _isBn = true;
 
   @override
   void initState() {
@@ -74,7 +78,7 @@ class _TechnicianSpecializationsScreenState
       if (mounted) {
         setState(() {
           _loading = false;
-          _error = e.toString();
+          _error = ApiClient.mapError(e).localized(_isBn);
         });
       }
     }
@@ -95,12 +99,12 @@ class _TechnicianSpecializationsScreenState
       });
       _snack(
         persisted.isEmpty
-            ? 'কোনো বিশেষত্ব যুক্ত হয়নি'
-            : 'সংরক্ষিত হয়েছে — ${persisted.length} টি বিশেষত্ব',
+            ? (_isBn ? 'কোনো বিশেষত্ব যুক্ত হয়নি' : 'No specializations added')
+            : (_isBn ? 'সংরক্ষিত হয়েছে — ${persisted.length} টি বিশেষত্ব' : 'Saved — ${persisted.length} specialization(s)'),
       );
     } catch (e) {
       if (mounted) setState(() => _saving = false);
-      _snack('সংরক্ষণ ব্যর্থ: $e', error: true);
+      _snack(_isBn ? 'সংরক্ষণ ব্যর্থ: ${ApiClient.mapError(e).localized(_isBn)}' : 'Save failed: ${ApiClient.mapError(e).localized(_isBn)}', error: true);
     }
   }
 
@@ -118,6 +122,7 @@ class _TechnicianSpecializationsScreenState
 
   @override
   Widget build(BuildContext context) {
+    _isBn = context.watch<LanguageNotifier>().isBengali;
     return Scaffold(
       body: AnimatedBackground(
         child: SafeArea(
@@ -142,10 +147,10 @@ class _TechnicianSpecializationsScreenState
                 color: AppColors.textPrimary),
             onPressed: () => Navigator.of(context).pop(),
           ),
-          const Expanded(
+          Expanded(
             child: Text(
-              'আমি কোন কোন কাজ পারি?',
-              style: TextStyle(
+              _isBn ? 'আমি কোন কোন কাজ পারি?' : 'What jobs can I do?',
+              style: const TextStyle(
                   color: AppColors.textPrimary,
                   fontSize: 18,
                   fontWeight: FontWeight.w700),
@@ -192,7 +197,7 @@ class _TechnicianSpecializationsScreenState
                   style: const TextStyle(color: AppColors.textSecondary)),
               const SizedBox(height: 16),
               GlassButton(
-                  label: 'আবার চেষ্টা করুন',
+                  label: _isBn ? 'আবার চেষ্টা করুন' : 'Try again',
                   isOutlined: true,
                   onPressed: _load),
             ],
@@ -220,10 +225,12 @@ class _TechnicianSpecializationsScreenState
                       color: AppColors.deepBlue, size: 20),
                 ),
                 const SizedBox(width: 12),
-                const Expanded(
+                Expanded(
                   child: Text(
-                    'যেসব কাজ পারেন সেগুলো টিক দিন — শুধু এই কাজের অনুরোধই আপনার কাছে যাবে।',
-                    style: TextStyle(
+                    _isBn
+                        ? 'যেসব কাজ পারেন সেগুলো টিক দিন — শুধু এই কাজের অনুরোধই আপনার কাছে যাবে।'
+                        : 'Tick the jobs you can do — only requests for these will reach you.',
+                    style: const TextStyle(
                         color: AppColors.textSecondary,
                         fontSize: 12.5,
                         height: 1.4),
@@ -243,7 +250,7 @@ class _TechnicianSpecializationsScreenState
         Padding(
           padding: const EdgeInsets.fromLTRB(20, 6, 20, 16),
           child: GlassButton(
-            label: 'সংরক্ষণ করুন',
+            label: _isBn ? 'সংরক্ষণ করুন' : 'Save',
             icon: Icons.check_rounded,
             isLoading: _saving,
             onPressed: _save,
@@ -294,7 +301,7 @@ class _TechnicianSpecializationsScreenState
                         crossAxisAlignment: CrossAxisAlignment.start,
                         children: [
                           Text(
-                            node.group.bn,
+                            _isBn ? node.group.bn : node.group.en,
                             style: const TextStyle(
                                 color: AppColors.textPrimary,
                                 fontSize: 15,
@@ -303,8 +310,8 @@ class _TechnicianSpecializationsScreenState
                           const SizedBox(height: 2),
                           Text(
                             selectedInGroup > 0
-                                ? '$selectedInGroup / ${node.types.length} নির্বাচিত'
-                                : '${node.types.length} টি বিকল্প',
+                                ? (_isBn ? '$selectedInGroup / ${node.types.length} নির্বাচিত' : '$selectedInGroup / ${node.types.length} selected')
+                                : (_isBn ? '${node.types.length} টি বিকল্প' : '${node.types.length} options'),
                             style: TextStyle(
                               color: selectedInGroup > 0
                                   ? AppColors.deepBlue
@@ -370,7 +377,7 @@ class _TechnicianSpecializationsScreenState
                               const SizedBox(width: 5),
                             ],
                             Text(
-                              t.bn,
+                              _isBn ? t.bn : t.en,
                               style: TextStyle(
                                 color: isSelected
                                     ? Colors.white
