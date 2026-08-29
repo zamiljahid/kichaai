@@ -720,6 +720,7 @@ class _ProviderDashboardScreenState extends State<ProviderDashboardScreen> {
     // Same reasoning as the portfolio fetch below: _isInstructor reads _myServices, so the
     // course summary can only be requested once that has resolved.
     if (_isInstructor) _loadMyCourses();
+    _loadMyAvailability();
     if (_isDriver) _loadRideCommission();
     // Portfolio only exists for photography/cinema — fetch only when relevant, after
     // _myServices resolves (_isVisualProvider reads it), for the profile-completion check.
@@ -2003,6 +2004,64 @@ class _ProviderDashboardScreenState extends State<ProviderDashboardScreen> {
     );
   }
 
+  // The provider's own booked days and days-off, loaded once so an offer card can say
+  // "you're already booked that day" instead of sending them off to a separate calendar.
+  Set<String> _busyDates = {};
+
+  static String _dayKey(DateTime d) =>
+      '${d.year.toString().padLeft(4, '0')}-${d.month.toString().padLeft(2, '0')}-${d.day.toString().padLeft(2, '0')}';
+
+  Future<void> _loadMyAvailability() async {
+    final me = await ApiClient.getUserId();
+    if (me == null) return;
+    try {
+      final now = DateTime.now();
+      final data = await DispatchService.instance.getProviderAvailability(
+        me,
+        from: now.subtract(const Duration(days: 1)),
+        to: now.add(const Duration(days: 365)),
+      );
+      final busy = <String>{};
+      for (final raw in (data['blockedDates'] as List<dynamic>? ?? [])) {
+        final d = DateTime.tryParse(raw is Map ? '${raw['date']}' : '$raw');
+        if (d != null) busy.add(_dayKey(d.toLocal()));
+      }
+      for (final raw in (data['bookedSlots'] as List<dynamic>? ?? [])) {
+        final d = DateTime.tryParse(raw is Map ? '${raw['eventDate'] ?? raw['date']}' : '$raw');
+        if (d != null) busy.add(_dayKey(d.toLocal()));
+      }
+      if (mounted) setState(() => _busyDates = busy);
+    } catch (_) {
+      // Availability is an extra warning on the card, never a reason to hide the offer.
+    }
+  }
+
+  /// Why this date is a problem, or null when it is free.
+  String? _dateClash(DateTime eventDate) {
+    if (!_busyDates.contains(_dayKey(eventDate.toLocal()))) return null;
+    return _isBn
+        ? 'সতর্কতা: ওই দিন আপনার আরেকটি বুকিং বা ছুটি আছে'
+        : 'Careful: you already have a booking or a day off then';
+  }
+
+  static const _monthsBn = [
+    'জানুয়ারি', 'ফেব্রুয়ারি', 'মার্চ', 'এপ্রিল', 'মে', 'জুন',
+    'জুলাই', 'আগস্ট', 'সেপ্টেম্বর', 'অক্টোবর', 'নভেম্বর', 'ডিসেম্বর',
+  ];
+  static const _monthsEn = [
+    'Jan', 'Feb', 'Mar', 'Apr', 'May', 'Jun', 'Jul', 'Aug', 'Sep', 'Oct', 'Nov', 'Dec',
+  ];
+
+  String _formatEventDate(DateTime d) {
+    final l = d.toLocal();
+    final hh = l.hour.toString().padLeft(2, '0');
+    final mm = l.minute.toString().padLeft(2, '0');
+    final month = _isBn ? _monthsBn[l.month - 1] : _monthsEn[l.month - 1];
+    return _isBn
+        ? '${l.day} $month ${l.year}, $hh:$mm'
+        : '${l.day} $month ${l.year}, $hh:$mm';
+  }
+
   Widget _buildOfferCard(JobOffer offer) {
     final job = offer.job;
     final amount = job.finalAmount ?? job.quotedAmount ?? job.estimatedAmount;
@@ -2030,6 +2089,61 @@ class _ProviderDashboardScreenState extends State<ProviderDashboardScreen> {
                           fontWeight: FontWeight.w800)),
               ],
             ),
+            // An advance booking is decided on two facts the card never carried: which day it
+            // is, and what the customer actually wants. A photographer was accepting or
+            // skipping a wedding blind — the title alone ("ফটোগ্রাফার প্রয়োজন") says nothing.
+            if (job.eventDate != null) ...[
+              const SizedBox(height: 8),
+              Builder(builder: (_) {
+                final clash = _dateClash(job.eventDate!);
+                final tone = clash == null ? AppColors.deepBlue : const Color(0xFFEF4444);
+                return Container(
+                  padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 8),
+                  decoration: BoxDecoration(
+                    color: tone.withOpacity(0.10),
+                    borderRadius: BorderRadius.circular(10),
+                    border: Border.all(color: tone.withOpacity(0.35)),
+                  ),
+                  child: Row(children: [
+                    Icon(clash == null ? Icons.event_available_rounded : Icons.event_busy_rounded,
+                        color: tone, size: 16),
+                    const SizedBox(width: 8),
+                    Expanded(
+                      child: Column(
+                        crossAxisAlignment: CrossAxisAlignment.start,
+                        children: [
+                          Text(
+                            _formatEventDate(job.eventDate!),
+                            style: TextStyle(
+                                color: tone, fontSize: 13, fontWeight: FontWeight.w700),
+                          ),
+                          // Saying "you are already booked" is the whole reason a provider
+                          // opens this card; making them go and check a separate calendar is
+                          // how a double booking happens.
+                          Text(
+                            clash ??
+                                (_isBn ? 'ওই দিন আপনি ফাঁকা আছেন' : "You're free that day"),
+                            style: TextStyle(
+                                color: clash == null ? AppColors.textMuted : tone,
+                                fontSize: 11.5),
+                          ),
+                        ],
+                      ),
+                    ),
+                  ]),
+                );
+              }),
+            ],
+            if ((job.description ?? '').trim().isNotEmpty) ...[
+              const SizedBox(height: 8),
+              Text(
+                job.description!.trim(),
+                maxLines: 4,
+                overflow: TextOverflow.ellipsis,
+                style: const TextStyle(
+                    color: AppColors.textSecondary, fontSize: 12.5, height: 1.45),
+              ),
+            ],
             if ((job.pickupAddressSnapshot ?? '').isNotEmpty) ...[
               const SizedBox(height: 6),
               Row(

@@ -150,7 +150,14 @@ class PushService {
         // read-only screen with no way to accept. Route those to the
         // dashboard instead, whose existing poll loop picks up the pending
         // assignment and shows the real accept/reject dialog.
-        if (job.status == 'searching' || job.status == 'assigned') {
+        // pending_selection matters for advance bookings (photographer, cinematographer,
+        // makeup): the job flips to it the moment ANY provider registers interest, so every
+        // other invited provider tapping their notification was landing on ActiveJobScreen —
+        // a post-accept tracking view with no accept button, no event date and no
+        // requirements. From their side the notification simply opened nothing.
+        if (job.status == 'searching' ||
+            job.status == 'assigned' ||
+            job.status == 'pending_selection') {
           await navigator.push(MaterialPageRoute(
               builder: (_) => const ProviderDashboardScreen()));
         } else {
