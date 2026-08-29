@@ -72,6 +72,15 @@
 	<array>
 		<string>remote-notification</string>
 	</array>
+	<!-- iOS crashes the app outright if a permission is requested without its purpose
+	     string, and App Store review rejects a build that is missing one. Written so a
+	     reviewer and a Bengali user both understand why it is being asked. -->
+	<key>NSLocationWhenInUseUsageDescription</key>
+	<string>আপনার কাছের সেবাদাতা খুঁজতে, রাইডের পিক-আপ ঠিক করতে আর চলতি কাজ ট্র্যাক করতে লোকেশন লাগে। — KiChaai uses your location to find nearby providers, set your ride pickup and track a job in progress.</string>
+	<key>NSCameraUsageDescription</key>
+	<string>কাজের ছবি, এনআইডি আর পোর্টফোলিও তুলতে ক্যামেরা লাগে। — KiChaai uses the camera to take job photos, NID pictures and portfolio images.</string>
+	<key>NSPhotoLibraryUsageDescription</key>
+	<string>গ্যালারি থেকে কাজের ছবি, এনআইডি বা পোর্টফোলিও বেছে নিতে অ্যাক্সেস লাগে। — KiChaai needs access to pick job photos, NID pictures or portfolio images from your gallery.</string>
 	<key>NSMicrophoneUsageDescription</key>
 	<string>KiChaai uses your microphone so you can speak your legal issue to the AI assistant instead of typing.</string>
 	<key>NSSpeechRecognitionUsageDescription</key>

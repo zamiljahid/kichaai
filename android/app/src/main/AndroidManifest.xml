@@ -3,6 +3,14 @@
          tray alert can show at all on Android 13+, USE_FULL_SCREEN_INTENT so it can surface like
          an incoming call over the lock screen instead of a normal heads-up banner, VIBRATE/
          WAKE_LOCK so the buzz pattern and the ringing loop still fire when the screen is asleep. -->
+    <!-- Location. geolocator deliberately declares nothing itself, because only the app
+         can say whether it needs fine or coarse — so without these two the release build
+         gets permission denied every time and every map, ride and live track is dead.
+         Not ACCESS_BACKGROUND_LOCATION: tracking only runs while a job screen is open,
+         and asking for background would earn a much harder Play review for nothing. -->
+    <uses-permission android:name="android.permission.ACCESS_FINE_LOCATION"/>
+    <uses-permission android:name="android.permission.ACCESS_COARSE_LOCATION"/>
+
     <uses-permission android:name="android.permission.POST_NOTIFICATIONS"/>
     <uses-permission android:name="android.permission.USE_FULL_SCREEN_INTENT"/>
     <uses-permission android:name="android.permission.VIBRATE"/>
