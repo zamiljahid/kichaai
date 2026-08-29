@@ -7,6 +7,10 @@ class GroceriesService {
 
   final _client = ApiClient.instance.dio;
 
+  // Remembered for the app session so the customer only picks a hub once —
+  // reset only if they explicitly tap "change" on the grocery screen.
+  static GroceryHubModel? selectedHub;
+
   // ── Hubs ──────────────────────────────────────────────────────────
   // Every order is filled through exactly one admin-run hub — pass the
   // customer's location to get nearest-first results with distanceKm attached.
@@ -42,6 +46,7 @@ class GroceriesService {
 
   Future<List<GroceryProductModel>> listProducts({
     String? categoryId,
+    String? hubId,
     String? providerId,
     int offset = 0,
     int limit = 20,
@@ -52,6 +57,7 @@ class GroceriesService {
       // just mislead callers into thinking search narrowed the results.
       final res = await _client.get('/groceries/products', queryParameters: {
         if (categoryId != null) 'categoryId': categoryId,
+        if (hubId != null) 'hubId': hubId,
         if (providerId != null) 'providerId': providerId,
         'offset': offset.toString(),
         'limit': limit.toString(),
@@ -171,6 +177,27 @@ class GroceriesService {
   Future<GroceryOrderModel> getOrder(String id) async {
     try {
       final res = await _client.get('/groceries/orders/$id');
+      return GroceryOrderModel.fromJson(res.data as Map<String, dynamic>);
+    } catch (e) {
+      throw ApiClient.mapError(e);
+    }
+  }
+
+  /// Only valid for a bkash/nagad order — routes through SSLCommerz's hosted page,
+  /// same initiate → open gateway → poll → confirm pattern as cook/laundry/commute.
+  Future<Map<String, dynamic>> initiatePayment(String orderId) async {
+    try {
+      final res = await _client.post('/groceries/orders/$orderId/pay/initiate');
+      final data = res.data as Map<String, dynamic>;
+      return (data['transaction'] as Map<String, dynamic>?) ?? data;
+    } catch (e) {
+      throw ApiClient.mapError(e);
+    }
+  }
+
+  Future<GroceryOrderModel> confirmPayment(String orderId) async {
+    try {
+      final res = await _client.post('/groceries/orders/$orderId/pay/confirm');
       return GroceryOrderModel.fromJson(res.data as Map<String, dynamic>);
     } catch (e) {
       throw ApiClient.mapError(e);

@@ -60,6 +60,8 @@ class GroceryProductModel {
   final String name;
   final String? categoryId;
   final String? categoryName;
+  final String? hubId;
+  final String? hubName;
   final String? providerId;
   final String? providerName;
   final double price;
@@ -74,6 +76,8 @@ class GroceryProductModel {
     required this.name,
     this.categoryId,
     this.categoryName,
+    this.hubId,
+    this.hubName,
     this.providerId,
     this.providerName,
     required this.price,
@@ -86,11 +90,14 @@ class GroceryProductModel {
 
   factory GroceryProductModel.fromJson(Map<String, dynamic> json) {
     final category = json['category'] as Map<String, dynamic>?;
+    final hub = json['hub'] as Map<String, dynamic>?;
     return GroceryProductModel(
       id: json['id'] as String,
       name: json['name'] as String? ?? '',
       categoryId: json['categoryId'] as String?,
       categoryName: category?['name'] as String?,
+      hubId: json['hubId'] as String?,
+      hubName: hub?['name'] as String?,
       providerId: json['providerId'] as String?,
       providerName: json['providerName'] as String?,
       // Backend field is `pricePerUnit` (Decimal → string).

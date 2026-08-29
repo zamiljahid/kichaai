@@ -1,6 +1,9 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_animate/flutter_animate.dart';
+import 'package:geolocator/geolocator.dart';
+import 'package:provider/provider.dart';
 import '../core/network/api_client.dart';
+import '../core/utils/app_strings.dart';
 import '../models/groceries_model.dart';
 import '../services/groceries_service.dart';
 import '../theme/app_theme.dart';
@@ -19,10 +22,14 @@ class GroceryScreen extends StatefulWidget {
 class _GroceryScreenState extends State<GroceryScreen> {
   List<GroceryCategoryModel> _categories = [];
   List<GroceryProductModel> _products = [];
+  List<GroceryHubModel> _hubs = [];
+  GroceryHubModel? _selectedHub;
   GroceryCartModel? _cart;
   String? _selectedCategoryId;
   bool _isLoading = true;
+  bool _isLoadingHubs = true;
   String? _userId;
+  bool _isBn = true;
 
   // Product ids with an in-flight cart request — disables their buttons so a
   // fast double-tap can't fire two overlapping increments.
@@ -35,43 +42,90 @@ class _GroceryScreenState extends State<GroceryScreen> {
   }
 
   Future<void> _load() async {
-    setState(() => _isLoading = true);
+    setState(() {
+      _isLoading = true;
+      _isLoadingHubs = true;
+    });
     try {
+      double? lat, lon;
+      try {
+        final pos = await Geolocator.getCurrentPosition(
+          locationSettings: const LocationSettings(accuracy: LocationAccuracy.medium),
+        );
+        lat = pos.latitude;
+        lon = pos.longitude;
+      } catch (_) {
+        // No permission/GPS — hub list still loads, just not sorted by distance.
+      }
       final userId = await ApiClient.getUserId();
       final results = await Future.wait([
         GroceriesService.instance.getCategories(),
-        GroceriesService.instance.listProducts(
-          categoryId: _selectedCategoryId,
-          limit: 50,
-        ),
+        GroceriesService.instance.listHubs(lat: lat, lon: lon),
         if (userId != null && userId.isNotEmpty)
           GroceriesService.instance.getCart(userId)
         else
           Future.value(null),
       ]);
+      if (!mounted) return;
+      final hubs = results[1] as List<GroceryHubModel>;
+      // Carry over the customer's previous pick for this app session, if it's
+      // still an active hub — otherwise fall back to nearest (list is already
+      // distance-sorted when geo worked).
+      final remembered = GroceriesService.selectedHub;
+      final stillValid = remembered != null && hubs.any((h) => h.id == remembered.id);
+      final hub = stillValid ? remembered : null;
+      setState(() {
+        _categories = results[0] as List<GroceryCategoryModel>;
+        _hubs = hubs;
+        _selectedHub = hub;
+        _cart = results[2] as GroceryCartModel?;
+        _userId = userId;
+        _isLoadingHubs = false;
+        _isLoading = hub == null; // no hub yet → nothing to load, show picker instead
+      });
+      if (hub != null) await _loadProducts();
+    } catch (_) {
       if (mounted) {
         setState(() {
-          _categories = results[0] as List<GroceryCategoryModel>;
-          _products = results[1] as List<GroceryProductModel>;
-          _cart = results[2] as GroceryCartModel?;
-          _userId = userId;
           _isLoading = false;
+          _isLoadingHubs = false;
         });
       }
+    }
+  }
+
+  Future<void> _loadProducts() async {
+    if (_selectedHub == null) return;
+    setState(() => _isLoading = true);
+    try {
+      final products = await GroceriesService.instance.listProducts(
+        categoryId: _selectedCategoryId,
+        hubId: _selectedHub!.id,
+        limit: 50,
+      );
+      if (mounted) setState(() { _products = products; _isLoading = false; });
     } catch (_) {
       if (mounted) setState(() => _isLoading = false);
     }
   }
 
+  void _pickHub(GroceryHubModel hub) {
+    GroceriesService.selectedHub = hub;
+    setState(() => _selectedHub = hub);
+    _loadProducts();
+  }
+
+  void _changeHub() {
+    setState(() {
+      _selectedHub = null;
+      GroceriesService.selectedHub = null;
+      _products = [];
+    });
+  }
+
   Future<void> _selectCategory(String? categoryId) async {
     setState(() => _selectedCategoryId = categoryId);
-    try {
-      final products = await GroceriesService.instance.listProducts(
-        categoryId: categoryId,
-        limit: 50,
-      );
-      if (mounted) setState(() => _products = products);
-    } catch (_) {}
+    await _loadProducts();
   }
 
   int _qtyOf(String productId) {
@@ -81,7 +135,7 @@ class _GroceryScreenState extends State<GroceryScreen> {
 
   Future<void> _addToCart(String productId) async {
     if (_userId == null) {
-      _showError('লগইন তথ্য পাওয়া যায়নি');
+      _showError(_isBn ? 'লগইন তথ্য পাওয়া যায়নি' : 'Login information not found');
       return;
     }
     setState(() => _busyProductIds.add(productId));
@@ -90,7 +144,7 @@ class _GroceryScreenState extends State<GroceryScreen> {
           .addToCart(userId: _userId!, productId: productId, quantity: 1);
       if (mounted) setState(() => _cart = cart);
     } catch (e) {
-      if (mounted) _showError(ApiClient.mapError(e).messageBn);
+      if (mounted) _showError(ApiClient.mapError(e).localized(_isBn));
     } finally {
       if (mounted) setState(() => _busyProductIds.remove(productId));
     }
@@ -108,7 +162,7 @@ class _GroceryScreenState extends State<GroceryScreen> {
       );
       if (mounted) setState(() => _cart = cart);
     } catch (e) {
-      if (mounted) _showError(ApiClient.mapError(e).messageBn);
+      if (mounted) _showError(ApiClient.mapError(e).localized(_isBn));
     } finally {
       if (mounted) setState(() => _busyProductIds.remove(productId));
     }
@@ -127,6 +181,7 @@ class _GroceryScreenState extends State<GroceryScreen> {
 
   @override
   Widget build(BuildContext context) {
+    _isBn = context.watch<LanguageNotifier>().isBengali;
     final itemCount = _cart?.itemCount ?? 0;
     final total = _cart?.totalAmount ?? 0;
     return Scaffold(
@@ -135,24 +190,31 @@ class _GroceryScreenState extends State<GroceryScreen> {
           child: Column(
             children: [
               _buildHeader(context, itemCount),
-              if (_categories.isNotEmpty) _buildCategoryChips(),
+              if (_selectedHub != null) ...[
+                _buildHubBar(),
+                if (_categories.isNotEmpty) _buildCategoryChips(),
+              ],
               Expanded(
-                child: _isLoading
+                child: _isLoadingHubs
                     ? const Center(child: CircularProgressIndicator(color: AppColors.deepBlue))
-                    : _products.isEmpty
-                        ? _buildEmpty()
-                        : RefreshIndicator(
-                            onRefresh: _load,
-                            color: AppColors.deepBlue,
-                            child: GridView.builder(
-                              padding: const EdgeInsets.fromLTRB(16, 0, 16, 100),
-                              itemCount: _products.length,
-                              gridDelegate: const SliverGridDelegateWithFixedCrossAxisCount(
-                                crossAxisCount: 2, crossAxisSpacing: 12, mainAxisSpacing: 12, childAspectRatio: 0.72,
-                              ),
-                              itemBuilder: (_, i) => _buildProductCard(_products[i], i),
-                            ),
-                          ),
+                    : _selectedHub == null
+                        ? _buildHubPicker()
+                        : _isLoading
+                            ? const Center(child: CircularProgressIndicator(color: AppColors.deepBlue))
+                            : _products.isEmpty
+                                ? _buildEmpty()
+                                : RefreshIndicator(
+                                    onRefresh: _loadProducts,
+                                    color: AppColors.deepBlue,
+                                    child: GridView.builder(
+                                      padding: const EdgeInsets.fromLTRB(16, 0, 16, 100),
+                                      itemCount: _products.length,
+                                      gridDelegate: const SliverGridDelegateWithFixedCrossAxisCount(
+                                        crossAxisCount: 2, crossAxisSpacing: 12, mainAxisSpacing: 12, childAspectRatio: 0.72,
+                                      ),
+                                      itemBuilder: (_, i) => _buildProductCard(_products[i], i),
+                                    ),
+                                  ),
               ),
             ],
           ),
@@ -162,7 +224,7 @@ class _GroceryScreenState extends State<GroceryScreen> {
           ? Padding(
               padding: const EdgeInsets.symmetric(horizontal: 16),
               child: GlassButton(
-                label: 'চেকআউট ($itemCount পণ্য) — ৳ ${total.toStringAsFixed(0)}',
+                label: _isBn ? 'চেকআউট ($itemCount পণ্য) — ৳ ${total.toStringAsFixed(0)}' : 'Checkout ($itemCount items) — ৳ ${total.toStringAsFixed(0)}',
                 onPressed: () => Navigator.of(context)
                     .push(MaterialPageRoute(
                       builder: (_) => GroceryCheckoutScreen(userId: _userId!),
@@ -189,10 +251,7 @@ class _GroceryScreenState extends State<GroceryScreen> {
             ),
           ),
           const SizedBox(width: 16),
-          const Column(crossAxisAlignment: CrossAxisAlignment.start, children: [
-            Text('গ্রোসারি', style: TextStyle(color: AppColors.textPrimary, fontSize: 18, fontWeight: FontWeight.w700)),
-            Text('Fresh Groceries', style: TextStyle(color: AppColors.textMuted, fontSize: 12)),
-          ]),
+          Text(_isBn ? 'গ্রোসারি' : 'Groceries', style: const TextStyle(color: AppColors.textPrimary, fontSize: 18, fontWeight: FontWeight.w700)),
           const Spacer(),
           Stack(
             clipBehavior: Clip.none,
@@ -209,9 +268,150 @@ class _GroceryScreenState extends State<GroceryScreen> {
                 ),
             ],
           ),
+          if (itemCount > 0) ...[
+            const SizedBox(width: 10),
+            GestureDetector(
+              onTap: _confirmClearCart,
+              child: Container(
+                width: 38,
+                height: 38,
+                decoration: BoxDecoration(
+                  color: AppColors.glassWhite,
+                  borderRadius: BorderRadius.circular(12),
+                  border: Border.all(color: AppColors.glassBorder),
+                ),
+                child: const Icon(Icons.delete_sweep_rounded,
+                    color: Color(0xFFEF4444), size: 19),
+              ),
+            ),
+          ],
         ],
       ),
     ).animate().fadeIn(duration: 400.ms).slideY(begin: -0.1);
+  }
+
+  /// Empty the whole cart. Without this the only way out of a wrong cart was to
+  /// decrement every line to zero one at a time.
+  Future<void> _confirmClearCart() async {
+    if (_userId == null) return;
+    final ok = await showDialog<bool>(
+      context: context,
+      builder: (ctx) => AlertDialog(
+        backgroundColor: AppColors.bgMid,
+        title: Text(_isBn ? 'কার্ট খালি করবেন?' : 'Clear the cart?',
+            style: const TextStyle(
+                color: AppColors.textPrimary, fontSize: 17, fontWeight: FontWeight.w700)),
+        content: Text(
+          _isBn ? 'কার্টের সব পণ্য সরিয়ে ফেলা হবে।' : 'Every item will be removed.',
+          style: const TextStyle(color: AppColors.textSecondary, fontSize: 13),
+        ),
+        actions: [
+          TextButton(
+            onPressed: () => Navigator.pop(ctx, false),
+            child: Text(_isBn ? 'বাতিল' : 'Cancel',
+                style: const TextStyle(color: AppColors.textMuted)),
+          ),
+          TextButton(
+            onPressed: () => Navigator.pop(ctx, true),
+            child: Text(_isBn ? 'খালি করুন' : 'Clear',
+                style: const TextStyle(
+                    color: Color(0xFFEF4444), fontWeight: FontWeight.w700)),
+          ),
+        ],
+      ),
+    );
+    if (ok != true) return;
+    try {
+      await GroceriesService.instance.clearCart(_userId!);
+      final cart = await GroceriesService.instance.getCart(_userId!);
+      if (mounted) setState(() => _cart = cart);
+    } catch (_) {
+      // Nothing destructive happened locally — the cart just stays as it was.
+    }
+  }
+
+  Widget _buildHubBar() {
+    final hub = _selectedHub!;
+    return Padding(
+      padding: const EdgeInsets.fromLTRB(20, 0, 20, 12),
+      child: GestureDetector(
+        onTap: _changeHub,
+        child: Container(
+          padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 10),
+          decoration: BoxDecoration(
+            color: AppColors.glassWhite,
+            borderRadius: BorderRadius.circular(12),
+            border: Border.all(color: AppColors.glassBorder),
+          ),
+          child: Row(
+            children: [
+              const Icon(Icons.storefront_rounded, color: AppColors.deepBlue, size: 18),
+              const SizedBox(width: 8),
+              Expanded(
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    Text(hub.name, style: const TextStyle(color: AppColors.textPrimary, fontSize: 13, fontWeight: FontWeight.w700)),
+                    Text(_isBn ? 'এই হাব থেকে পণ্য দেখানো হচ্ছে' : 'Showing products from this hub', style: const TextStyle(color: AppColors.textMuted, fontSize: 10.5)),
+                  ],
+                ),
+              ),
+              Text(_isBn ? 'পরিবর্তন' : 'Change', style: const TextStyle(color: AppColors.deepBlue, fontSize: 12, fontWeight: FontWeight.w700)),
+              const SizedBox(width: 2),
+              const Icon(Icons.chevron_right_rounded, color: AppColors.deepBlue, size: 16),
+            ],
+          ),
+        ),
+      ),
+    );
+  }
+
+  Widget _buildHubPicker() {
+    if (_hubs.isEmpty) {
+      return Center(
+        child: Padding(
+          padding: const EdgeInsets.all(24),
+          child: Text(_isBn ? 'কোনো হাব পাওয়া যায়নি' : 'No hub found', style: const TextStyle(color: AppColors.textMuted, fontSize: 14)),
+        ),
+      );
+    }
+    return ListView(
+      padding: const EdgeInsets.fromLTRB(20, 8, 20, 100),
+      children: [
+        Text(_isBn ? 'আপনার হাব বেছে নিন' : 'Choose your hub', style: const TextStyle(color: AppColors.textPrimary, fontSize: 17, fontWeight: FontWeight.w700)),
+        const SizedBox(height: 4),
+        Text(_isBn ? 'যে হাব থেকে পণ্য সংগ্রহ/ডেলিভারি হবে, সেটা আগে বেছে নিন' : 'Choose which hub your order will be fulfilled/delivered from', style: const TextStyle(color: AppColors.textMuted, fontSize: 12.5)),
+        const SizedBox(height: 16),
+        ..._hubs.map((h) => Padding(
+              padding: const EdgeInsets.only(bottom: 10),
+              child: GestureDetector(
+                onTap: () => _pickHub(h),
+                child: GlassCard(
+                  padding: const EdgeInsets.all(14),
+                  child: Row(
+                    children: [
+                      const Icon(Icons.storefront_rounded, color: AppColors.deepBlue, size: 22),
+                      const SizedBox(width: 12),
+                      Expanded(
+                        child: Column(
+                          crossAxisAlignment: CrossAxisAlignment.start,
+                          children: [
+                            Text(h.name, style: const TextStyle(color: AppColors.textPrimary, fontSize: 14, fontWeight: FontWeight.w700)),
+                            Text(h.address, style: const TextStyle(color: AppColors.textMuted, fontSize: 11.5), maxLines: 1, overflow: TextOverflow.ellipsis),
+                          ],
+                        ),
+                      ),
+                      if (h.distanceKm != null)
+                        Text(_isBn ? '${h.distanceKm!.toStringAsFixed(1)} কিমি' : '${h.distanceKm!.toStringAsFixed(1)} km', style: const TextStyle(color: AppColors.deepBlue, fontSize: 12, fontWeight: FontWeight.w700))
+                      else
+                        const Icon(Icons.chevron_right_rounded, color: AppColors.textMuted, size: 18),
+                    ],
+                  ),
+                ),
+              ),
+            )),
+      ],
+    );
   }
 
   Widget _buildCategoryChips() {
@@ -221,7 +421,7 @@ class _GroceryScreenState extends State<GroceryScreen> {
         scrollDirection: Axis.horizontal,
         padding: const EdgeInsets.symmetric(horizontal: 16),
         children: [
-          _categoryChip(null, 'সব'),
+          _categoryChip(null, _isBn ? 'সব' : 'All'),
           ..._categories.map((c) => _categoryChip(c.id, c.name)),
         ],
       ),
@@ -276,9 +476,11 @@ class _GroceryScreenState extends State<GroceryScreen> {
           Text(p.name, style: const TextStyle(color: AppColors.textPrimary, fontSize: 13, fontWeight: FontWeight.w600), maxLines: 2, overflow: TextOverflow.ellipsis),
           const SizedBox(height: 4),
           Text('৳ ${p.price.toStringAsFixed(0)}/${p.unit}', style: const TextStyle(color: AppColors.deepBlue, fontSize: 13, fontWeight: FontWeight.w700)),
+          if (p.hubName?.isNotEmpty ?? false)
+            Text(p.hubName!, style: const TextStyle(color: AppColors.textMuted, fontSize: 10.5), maxLines: 1, overflow: TextOverflow.ellipsis),
           if (!p.inStock) ...[
             const SizedBox(height: 4),
-            const Text('স্টক নেই', style: TextStyle(color: Color(0xFFEF4444), fontSize: 11, fontWeight: FontWeight.w600)),
+            Text(_isBn ? 'স্টক নেই' : 'Out of stock', style: const TextStyle(color: Color(0xFFEF4444), fontSize: 11, fontWeight: FontWeight.w600)),
           ],
           const SizedBox(height: 8),
           if (!p.inStock)
@@ -330,7 +532,7 @@ class _GroceryScreenState extends State<GroceryScreen> {
     child: Column(mainAxisSize: MainAxisSize.min, children: [
       const Icon(Icons.shopping_basket_outlined, color: AppColors.textMuted, size: 56),
       const SizedBox(height: 12),
-      const Text('কোনো পণ্য পাওয়া যায়নি', style: TextStyle(color: AppColors.textMuted, fontSize: 14)),
+      Text(_isBn ? 'কোনো পণ্য পাওয়া যায়নি' : 'No products found', style: const TextStyle(color: AppColors.textMuted, fontSize: 14)),
     ]),
   );
 }
