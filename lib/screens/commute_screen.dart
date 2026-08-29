@@ -1011,6 +1011,13 @@ class _MyTripsTabState extends State<_MyTripsTab> {
             }
           },
           onConfirmed: () => _loadMoney(pairingId),
+          applyCoupon: (code) async {
+            final res = await CommuteService.instance.initiateTripPayment(tripId, couponCode: code);
+            // The route answers {transaction: {...}}; older ones answered the transaction
+            // itself. Unwrap once — calling initiate twice would open two payment sessions.
+            final t = (res['transaction'] as Map?)?.cast<String, dynamic>() ?? res;
+            return {'gatewayPageUrl': t['gatewayPageUrl'], 'amount': double.tryParse('${t['amount']}') ?? amount};
+          },
         ),
       ));
     } catch (e) {
@@ -1537,6 +1544,11 @@ class _OneOffTripSheetState extends State<_OneOffTripSheet> {
             }
           },
           onConfirmed: () => Navigator.of(waitingContext).pop(),
+          applyCoupon: (code) async {
+            final res = await CommuteService.instance.initiateOneOffPayment(_tripId, couponCode: code);
+            final t = (res['transaction'] as Map?)?.cast<String, dynamic>() ?? res;
+            return {'gatewayPageUrl': t['gatewayPageUrl'], 'amount': double.tryParse('${t['amount']}') ?? amount};
+          },
         ),
       ));
       if (mounted) setState(() { _busy = false; _trip = {..._trip, 'paymentStatus': 'paid'}; });

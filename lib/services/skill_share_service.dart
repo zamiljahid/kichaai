@@ -162,9 +162,10 @@ class SkillShareService {
   /// Starts a real SSLCommerz session for the caller's ৳100 platform fee on
   /// this exchange. Returns the raw transaction map — read `gatewayPageUrl`
   /// and hand it to [PaymentWaitingScreen].
-  Future<Map<String, dynamic>> initiateFeePayment(String exchangeId) async {
+  Future<Map<String, dynamic>> initiateFeePayment(String exchangeId, {String? couponCode}) async {
     try {
-      final res = await _client.post('/skill-share/exchanges/$exchangeId/fee/initiate');
+      final res = await _client.post('/skill-share/exchanges/$exchangeId/fee/initiate',
+          data: couponCode != null ? {'couponCode': couponCode} : null);
       return Map<String, dynamic>.from(res.data as Map);
     } catch (e) {
       throw ApiClient.mapError(e);

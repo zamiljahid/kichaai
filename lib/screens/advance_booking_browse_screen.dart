@@ -455,6 +455,10 @@ class _ProviderDetailScreenState extends State<_ProviderDetailScreen> {
             }
           },
           onConfirmed: () => Navigator.of(waitingContext).pop(),
+          applyCoupon: (code) async {
+            final t = await DispatchService.instance.initiateDepositPayment(job.id, couponCode: code);
+            return {'gatewayPageUrl': t['gatewayPageUrl'], 'amount': double.tryParse('${t['amount']}') ?? (job.depositAmount ?? 0)};
+          },
         ),
       ));
 

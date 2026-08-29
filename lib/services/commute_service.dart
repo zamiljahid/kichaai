@@ -248,9 +248,10 @@ class CommuteService {
     }
   }
 
-  Future<Map<String, dynamic>> initiatePairingPayment(String pairingId) async {
+  Future<Map<String, dynamic>> initiatePairingPayment(String pairingId, {String? couponCode}) async {
     try {
-      final res = await _client.post('/commute/pairings/$pairingId/payment/initiate');
+      final res = await _client.post('/commute/pairings/$pairingId/payment/initiate',
+          data: couponCode != null ? {'couponCode': couponCode} : null);
       final data = res.data as Map<String, dynamic>;
       return (data['transaction'] as Map<String, dynamic>?) ?? data;
     } catch (e) {
@@ -266,9 +267,10 @@ class CommuteService {
     }
   }
 
-  Future<Map<String, dynamic>> initiateTripPayment(String tripId) async {
+  Future<Map<String, dynamic>> initiateTripPayment(String tripId, {String? couponCode}) async {
     try {
-      final res = await _client.post('/commute/trips/$tripId/pay');
+      final res = await _client.post('/commute/trips/$tripId/pay',
+          data: couponCode != null ? {'couponCode': couponCode} : null);
       return Map<String, dynamic>.from(res.data as Map);
     } catch (e) {
       throw ApiClient.mapError(e);
@@ -341,9 +343,10 @@ class CommuteService {
     }
   }
 
-  Future<Map<String, dynamic>> initiateOneOffPayment(String tripId) async {
+  Future<Map<String, dynamic>> initiateOneOffPayment(String tripId, {String? couponCode}) async {
     try {
-      final res = await _client.post('/commute/one-off-trips/$tripId/payment/initiate');
+      final res = await _client.post('/commute/one-off-trips/$tripId/payment/initiate',
+          data: couponCode != null ? {'couponCode': couponCode} : null);
       final data = res.data as Map<String, dynamic>;
       return (data['transaction'] as Map<String, dynamic>?) ?? data;
     } catch (e) {

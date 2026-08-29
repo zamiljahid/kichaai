@@ -170,6 +170,10 @@ class _MyMatchRequestsScreenState extends State<MyMatchRequestsScreen> {
             }
           },
           onConfirmed: () => Navigator.of(waitingContext).pop(true),
+          applyCoupon: (code) async {
+            final t = await _matchmaking.initiateAwardPayment(requestId, couponCode: code);
+            return {'gatewayPageUrl': t['gatewayPageUrl'], 'amount': double.tryParse('${t['amount']}') ?? amount};
+          },
         ),
       ));
       if (mounted && result == true) _showSuccess(_isBn ? 'পেমেন্ট সম্পন্ন হয়েছে — চ্যাট এখন খোলা!' : 'Payment complete — chat is now open!');
@@ -225,6 +229,10 @@ class _MyMatchRequestsScreenState extends State<MyMatchRequestsScreen> {
             }
           },
           onConfirmed: () => Navigator.of(waitingContext).pop(),
+          applyCoupon: (code) async {
+            final t = await _matchmaking.initiateMeetFeePayment(responseId, couponCode: code);
+            return {'gatewayPageUrl': t['gatewayPageUrl'], 'amount': double.tryParse('${t['amount']}') ?? _kMeetFeeAmount};
+          },
         ),
       ));
       await _loadResponses(requestId);

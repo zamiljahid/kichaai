@@ -193,6 +193,10 @@ class _LaundryScreenState extends State<LaundryScreen> with SingleTickerProvider
             }
           },
           onConfirmed: () => _loadMyBookings(),
+          applyCoupon: (code) async {
+            final t = await LaundryService.instance.initiatePayment(b.id, couponCode: code);
+            return {'gatewayPageUrl': t['gatewayPageUrl'], 'amount': double.tryParse('${t['amount']}') ?? b.displayAmount};
+          },
         ),
       ));
     } catch (e) {

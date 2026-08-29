@@ -250,6 +250,15 @@ class _PostPropertyScreenState extends State<PostPropertyScreen> {
           onConfirmed: () {
             if (mounted) _snack(_isBn ? 'ফি পরিশোধ হয়েছে — বিজ্ঞাপনটি এখন সবাই দেখতে পারবে' : 'Fee paid — the listing is now visible in search');
           },
+          applyCoupon: (code) async {
+            final r = await _dio.post('/auth/properties/$listingId/fee/initiate',
+                data: {'couponCode': code});
+            final t = (r.data is Map ? (r.data as Map)['transaction'] : null) as Map?;
+            return {
+              'gatewayPageUrl': t?['gatewayPageUrl'],
+              'amount': double.tryParse('${t?['amount']}') ?? amount,
+            };
+          },
         ),
       ));
     } catch (e) {

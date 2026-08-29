@@ -233,9 +233,10 @@ class CookService {
     }
   }
 
-  Future<Map<String, dynamic>> initiatePayment(String id) async {
+  Future<Map<String, dynamic>> initiatePayment(String id, {String? couponCode}) async {
     try {
-      final res = await _client.post('/cook/requests/$id/payment/initiate');
+      final res = await _client.post('/cook/requests/$id/payment/initiate',
+          data: couponCode != null ? {'couponCode': couponCode} : null);
       final data = res.data as Map<String, dynamic>;
       return (data['transaction'] as Map<String, dynamic>?) ?? data;
     } catch (e) {

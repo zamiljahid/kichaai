@@ -66,9 +66,10 @@ class MicroLearningService {
   /// Starts enrollment. Free courses come back already enrolled (`enrollment` set,
   /// `gatewayPageUrl` null); paid courses come back with a real SSLCommerz checkout URL to
   /// send the customer to — call [confirmEnrollment] once they've paid.
-  Future<EnrollmentInitiation> initiateEnrollment({required String courseId}) async {
+  Future<EnrollmentInitiation> initiateEnrollment({required String courseId, String? couponCode}) async {
     try {
-      final res = await _client.post('/micro-learning/enrollments/initiate', data: {'courseId': courseId});
+      final res = await _client.post('/micro-learning/enrollments/initiate',
+          data: {'courseId': courseId, if (couponCode != null) 'couponCode': couponCode});
       return EnrollmentInitiation.fromJson(res.data as Map<String, dynamic>);
     } catch (e) {
       throw ApiClient.mapError(e);

@@ -128,6 +128,15 @@ class _SubscriptionScreenState extends State<SubscriptionScreen> {
             }
           },
           onConfirmed: () => Navigator.of(waitingContext).pop(),
+          applyCoupon: (code) async {
+            final r = await _client.post('/auth/subscriptions/pay/initiate',
+                data: {'couponCode': code});
+            final t = (r.data as Map)['transaction'] as Map?;
+            return {
+              'gatewayPageUrl': t?['gatewayPageUrl'],
+              'amount': double.tryParse('${t?['amount']}') ?? amount,
+            };
+          },
         ),
       ));
       await _load();

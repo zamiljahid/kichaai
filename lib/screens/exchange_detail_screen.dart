@@ -213,6 +213,10 @@ class _ExchangeDetailScreenState extends State<ExchangeDetailScreen> {
             }
           },
           onConfirmed: () => Navigator.of(waitingContext).pop(),
+          applyCoupon: (code) async {
+            final t = await _svc.initiateFeePayment(widget.exchangeId, couponCode: code);
+            return {'gatewayPageUrl': t['gatewayPageUrl'], 'amount': double.tryParse('${t['amount']}') ?? 100};
+          },
         ),
       ));
       await _load();

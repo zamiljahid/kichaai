@@ -416,6 +416,10 @@ class _RequestDetailSheetState extends State<_RequestDetailSheet> {
             }
           },
           onConfirmed: widget.onChanged,
+          applyCoupon: (code) async {
+            final t = await CookService.instance.initiatePayment(widget.request.id, couponCode: code);
+            return {'gatewayPageUrl': t['gatewayPageUrl'], 'amount': double.tryParse('${t['amount']}') ?? (amountOverride ?? widget.request.paymentAmount ?? widget.request.budgetAmount ?? 0)};
+          },
         ),
       ));
     } catch (e) {

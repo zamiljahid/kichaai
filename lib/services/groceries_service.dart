@@ -185,9 +185,10 @@ class GroceriesService {
 
   /// Only valid for a bkash/nagad order — routes through SSLCommerz's hosted page,
   /// same initiate → open gateway → poll → confirm pattern as cook/laundry/commute.
-  Future<Map<String, dynamic>> initiatePayment(String orderId) async {
+  Future<Map<String, dynamic>> initiatePayment(String orderId, {String? couponCode}) async {
     try {
-      final res = await _client.post('/groceries/orders/$orderId/pay/initiate');
+      final res = await _client.post('/groceries/orders/$orderId/pay/initiate',
+          data: couponCode != null ? {'couponCode': couponCode} : null);
       final data = res.data as Map<String, dynamic>;
       return (data['transaction'] as Map<String, dynamic>?) ?? data;
     } catch (e) {

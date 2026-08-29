@@ -98,6 +98,11 @@ class _CourseDetailScreenState extends State<CourseDetailScreen> {
             }
           },
           onConfirmed: () => Navigator.of(waitingContext).pop(),
+          applyCoupon: (code) async {
+            final i = await MicroLearningService.instance
+                .initiateEnrollment(courseId: widget.courseId, couponCode: code);
+            return {'gatewayPageUrl': i.gatewayPageUrl, 'amount': i.amount ?? 0};
+          },
         ),
       ));
 

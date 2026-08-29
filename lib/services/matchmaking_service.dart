@@ -191,9 +191,10 @@ class MatchmakingService {
 
   /// Starts the real SSLCommerz session for an awarded quote. Returns the raw transaction map
   /// (has `gatewayPageUrl`) — nothing is credited/unlocked until [confirmAwardPayment] verifies it.
-  Future<Map<String, dynamic>> initiateAwardPayment(String requestId) async {
+  Future<Map<String, dynamic>> initiateAwardPayment(String requestId, {String? couponCode}) async {
     try {
-      final res = await _client.post('/matchmaking/requests/$requestId/award-payment/initiate');
+      final res = await _client.post('/matchmaking/requests/$requestId/award-payment/initiate',
+          data: couponCode != null ? {'couponCode': couponCode} : null);
       final data = res.data as Map<String, dynamic>;
       return (data['transaction'] as Map<String, dynamic>?) ?? data;
     } catch (e) {
@@ -230,9 +231,10 @@ class MatchmakingService {
     }
   }
 
-  Future<Map<String, dynamic>> initiateMeetFeePayment(String responseId) async {
+  Future<Map<String, dynamic>> initiateMeetFeePayment(String responseId, {String? couponCode}) async {
     try {
-      final res = await _client.post('/matchmaking/responses/$responseId/meet-fee/initiate');
+      final res = await _client.post('/matchmaking/responses/$responseId/meet-fee/initiate',
+          data: couponCode != null ? {'couponCode': couponCode} : null);
       final data = res.data as Map<String, dynamic>;
       return (data['transaction'] as Map<String, dynamic>?) ?? data;
     } catch (e) {

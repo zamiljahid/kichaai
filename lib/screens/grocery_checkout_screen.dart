@@ -205,6 +205,10 @@ class _GroceryCheckoutScreenState extends State<GroceryCheckoutScreen> {
               }
             },
             onConfirmed: () => Navigator.of(waitingContext).pop(),
+            applyCoupon: (code) async {
+              final t = await GroceriesService.instance.initiatePayment(order.id, couponCode: code);
+              return {'gatewayPageUrl': t['gatewayPageUrl'], 'amount': double.tryParse('${t['amount']}') ?? order.totalAmount};
+            },
           ),
         ));
         if (!mounted) return;
