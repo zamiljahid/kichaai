@@ -24,9 +24,6 @@ void main() async {
       systemNavigationBarIconBrightness: Brightness.light,
     ),
   );
-
-  // Firebase is Android-only for now. iOS plist ships but the Xcode target
-  // hasn't been wired to APNs yet — skipping there avoids a boot crash.
   if (!kIsWeb && defaultTargetPlatform == TargetPlatform.android) {
     try {
       await Firebase.initializeApp();
