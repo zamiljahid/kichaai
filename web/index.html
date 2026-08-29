@@ -37,9 +37,12 @@
   <title>kichaai</title>
   <link rel="manifest" href="manifest.json">
 
-  <!-- Google Maps JavaScript API (for the mess/housing map on web).
-       Key must have "Maps JavaScript API" enabled + be restricted by HTTP referrer. -->
-  <script src="https://maps.googleapis.com/maps/api/js?key=AIzaSyCzeNzj1Xz9B6NpHLHOIdAnEN7FvdwtVZg"></script>
+  <!-- No Google Maps here on purpose.
+       KiChaai ships on Android and iOS; this web build exists only to drive the app in a
+       browser for testing. Loading the Maps JavaScript API would need a fourth API key that
+       nothing in production uses, and an unrestricted one is exactly how a Maps bill runs
+       away. Map widgets simply do not render in this build — that is expected.
+       The real keys live in AndroidManifest.xml and AppDelegate.swift. -->
 </head>
 <body>
   <!--
