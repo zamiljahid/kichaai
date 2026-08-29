@@ -2,7 +2,9 @@ import 'package:flutter/material.dart';
 import 'package:flutter_animate/flutter_animate.dart';
 import 'package:geolocator/geolocator.dart';
 import 'package:google_maps_flutter/google_maps_flutter.dart';
+import 'package:provider/provider.dart';
 import '../core/network/api_client.dart';
+import '../core/utils/app_strings.dart';
 import '../services/dispatch_service.dart';
 import '../services/scrap_service.dart';
 import '../theme/app_theme.dart';
@@ -42,6 +44,7 @@ class _ScrapScreenState extends State<ScrapScreen>
   bool _isSubmitting = false;
   bool _isLocating = false;
   String? _userId;
+  bool _isBn = true;
 
   double get _estimatedPrice {
     final weight = double.tryParse(_weightCtrl.text.trim()) ?? 0.0;
@@ -110,7 +113,7 @@ class _ScrapScreenState extends State<ScrapScreen>
     try {
       bool serviceEnabled = await Geolocator.isLocationServiceEnabled();
       if (!serviceEnabled) {
-        _showError('লোকেশন সার্ভিস চালু নেই — সেটিংস থেকে চালু করুন।');
+        _showError(_isBn ? 'লোকেশন সার্ভিস চালু নেই — সেটিংস থেকে চালু করুন।' : 'Location service is off — turn it on in settings.');
         setState(() => _isLocating = false);
         return;
       }
@@ -120,7 +123,7 @@ class _ScrapScreenState extends State<ScrapScreen>
         if (permission == LocationPermission.denied) { setState(() => _isLocating = false); return; }
       }
       if (permission == LocationPermission.deniedForever) {
-        _showError('লোকেশন অনুমতি বন্ধ আছে — অ্যাপ সেটিংস থেকে চালু করুন।');
+        _showError(_isBn ? 'লোকেশন অনুমতি বন্ধ আছে — অ্যাপ সেটিংস থেকে চালু করুন।' : 'Location permission is off — turn it on in app settings.');
         setState(() => _isLocating = false);
         return;
       }
@@ -132,12 +135,12 @@ class _ScrapScreenState extends State<ScrapScreen>
       if (addr != null) {
         _addressCtrl.text = addr;
       } else {
-        _showError('ঠিকানা খুঁজে পাওয়া যায়নি — ম্যাপে সরাসরি দেখিয়ে দিন।');
+        _showError(_isBn ? 'ঠিকানা খুঁজে পাওয়া যায়নি — ম্যাপে সরাসরি দেখিয়ে দিন।' : 'Could not find the address — pick it directly on the map.');
       }
       setState(() => _isLocating = false);
     } catch (_) {
       if (mounted) {
-        _showError('বর্তমান অবস্থান পাওয়া যায়নি।');
+        _showError(_isBn ? 'বর্তমান অবস্থান পাওয়া যায়নি।' : 'Could not get your current location.');
         setState(() => _isLocating = false);
       }
     }
@@ -165,15 +168,15 @@ class _ScrapScreenState extends State<ScrapScreen>
   Future<void> _submitRequest() async {
     if (!(_formKey.currentState?.validate() ?? false)) return;
     if (_selectedType == null) {
-      _showError('অনুগ্রহ করে একটি ক্যাটাগরি বেছে নিন।');
+      _showError(_isBn ? 'অনুগ্রহ করে একটি ক্যাটাগরি বেছে নিন।' : 'Please choose a category.');
       return;
     }
     if (_preferredDate == null) {
-      _showError('পছন্দের তারিখ বেছে নিন।');
+      _showError(_isBn ? 'পছন্দের তারিখ বেছে নিন।' : 'Choose a preferred date.');
       return;
     }
     if (_userId == null) {
-      _showError('লগইন তথ্য পাওয়া যায়নি।');
+      _showError(_isBn ? 'লগইন তথ্য পাওয়া যায়নি।' : 'Login information not found.');
       return;
     }
 
@@ -199,12 +202,12 @@ class _ScrapScreenState extends State<ScrapScreen>
       });
 
       ScaffoldMessenger.of(context).showSnackBar(
-        const SnackBar(
-          content: Text('আপনার অনুরোধ সফলভাবে পাঠানো হয়েছে।', style: TextStyle(color: Colors.white)),
-          backgroundColor: Color(0xFF10B981),
+        SnackBar(
+          content: Text(_isBn ? 'আপনার অনুরোধ সফলভাবে পাঠানো হয়েছে।' : 'Your request was sent successfully.', style: const TextStyle(color: Colors.white)),
+          backgroundColor: const Color(0xFF10B981),
           behavior: SnackBarBehavior.floating,
-          shape: RoundedRectangleBorder(borderRadius: BorderRadius.all(Radius.circular(12))),
-          margin: EdgeInsets.all(16),
+          shape: const RoundedRectangleBorder(borderRadius: BorderRadius.all(Radius.circular(12))),
+          margin: const EdgeInsets.all(16),
         ),
       );
 
@@ -214,7 +217,7 @@ class _ScrapScreenState extends State<ScrapScreen>
       if (!mounted) return;
       setState(() => _isSubmitting = false);
       final ex = ApiClient.mapError(e);
-      _showError(ex.messageBn);
+      _showError(ex.localized(_isBn));
     }
   }
 
@@ -236,6 +239,7 @@ class _ScrapScreenState extends State<ScrapScreen>
 
   @override
   Widget build(BuildContext context) {
+    _isBn = context.watch<LanguageNotifier>().isBengali;
     return Scaffold(
       backgroundColor: AppColors.bgDark,
       appBar: AppBar(
@@ -245,7 +249,7 @@ class _ScrapScreenState extends State<ScrapScreen>
           icon: const Icon(Icons.arrow_back_ios_new_rounded, color: AppColors.textPrimary, size: 18),
           onPressed: () => Navigator.of(context).pop(),
         ),
-        title: const Text('স্ক্র্যাপ সংগ্রহ', style: TextStyle(color: AppColors.textPrimary, fontSize: 18, fontWeight: FontWeight.w700)),
+        title: Text(_isBn ? 'স্ক্র্যাপ সংগ্রহ' : 'Scrap Collection', style: const TextStyle(color: AppColors.textPrimary, fontSize: 18, fontWeight: FontWeight.w700)),
         bottom: TabBar(
           controller: _tabController,
           labelColor: AppColors.deepBlue,
@@ -254,7 +258,7 @@ class _ScrapScreenState extends State<ScrapScreen>
           indicatorWeight: 2.5,
           labelStyle: const TextStyle(fontSize: 14, fontWeight: FontWeight.w600),
           unselectedLabelStyle: const TextStyle(fontSize: 14, fontWeight: FontWeight.w400),
-          tabs: const [Tab(text: 'নতুন অনুরোধ'), Tab(text: 'আমার অনুরোধ')],
+          tabs: [Tab(text: _isBn ? 'নতুন অনুরোধ' : 'New Request'), Tab(text: _isBn ? 'আমার অনুরোধ' : 'My Requests')],
         ),
       ),
       body: TabBarView(
@@ -276,7 +280,7 @@ class _ScrapScreenState extends State<ScrapScreen>
         child: Column(
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
-            _buildSectionLabel('ক্যাটাগরি', Icons.category_outlined),
+            _buildSectionLabel(_isBn ? 'ক্যাটাগরি' : 'Category', Icons.category_outlined),
             const SizedBox(height: 8),
             _buildCategoryDropdown(),
             if (_selectedType != null) ...[
@@ -284,20 +288,20 @@ class _ScrapScreenState extends State<ScrapScreen>
               _buildPriceHint(),
             ],
             const SizedBox(height: 20),
-            _buildSectionLabel('আনুমানিক ওজন (কেজি, ন্যূনতম ১০)', Icons.scale_outlined),
+            _buildSectionLabel(_isBn ? 'আনুমানিক ওজন (কেজি, ন্যূনতম ১০)' : 'Estimated weight (kg, min 10)', Icons.scale_outlined),
             const SizedBox(height: 8),
             _buildWeightField(),
             const SizedBox(height: 20),
-            _buildSectionLabel('ঠিকানা', Icons.location_on_outlined),
+            _buildSectionLabel(_isBn ? 'ঠিকানা' : 'Address', Icons.location_on_outlined),
             const SizedBox(height: 8),
             _buildAddressField(),
             const SizedBox(height: 20),
-            _buildSectionLabel('পছন্দের তারিখ', Icons.calendar_today_outlined),
+            _buildSectionLabel(_isBn ? 'পছন্দের তারিখ' : 'Preferred date', Icons.calendar_today_outlined),
             const SizedBox(height: 8),
             _buildDatePicker(),
             const SizedBox(height: 32),
             GlassButton(
-              label: _isSubmitting ? 'পাঠানো হচ্ছে...' : 'অনুরোধ পাঠান',
+              label: _isSubmitting ? (_isBn ? 'পাঠানো হচ্ছে...' : 'Sending...') : (_isBn ? 'অনুরোধ পাঠান' : 'Send request'),
               onPressed: _isSubmitting ? null : _submitRequest,
             ).animate().fadeIn(duration: 400.ms).slideY(begin: 0.1),
           ],
@@ -345,19 +349,19 @@ class _ScrapScreenState extends State<ScrapScreen>
       return Container(
         padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 16),
         decoration: BoxDecoration(color: AppColors.glassWhite, borderRadius: BorderRadius.circular(16), border: Border.all(color: AppColors.glassBorder)),
-        child: const Text('কোনো ক্যাটাগরি পাওয়া যায়নি', style: TextStyle(color: AppColors.textMuted, fontSize: 14)),
+        child: Text(_isBn ? 'কোনো ক্যাটাগরি পাওয়া যায়নি' : 'No category found', style: const TextStyle(color: AppColors.textMuted, fontSize: 14)),
       );
     }
 
     return DropdownButtonFormField<ScrapRateModel>(
       value: _selectedType,
-      decoration: _fieldDeco(hint: 'একটি ক্যাটাগরি বেছে নিন'),
+      decoration: _fieldDeco(hint: _isBn ? 'একটি ক্যাটাগরি বেছে নিন' : 'Choose a category'),
       dropdownColor: AppColors.bgMid,
       iconEnabledColor: AppColors.textMuted,
       style: const TextStyle(color: AppColors.textPrimary, fontSize: 14, fontWeight: FontWeight.w500),
       items: _rates.map((r) => DropdownMenuItem(value: r, child: Text(r.labelBn, style: const TextStyle(color: AppColors.textPrimary, fontSize: 14)))).toList(),
       onChanged: (val) => setState(() => _selectedType = val),
-      validator: (val) => val == null ? 'একটি ক্যাটাগরি বেছে নিন' : null,
+      validator: (val) => val == null ? (_isBn ? 'একটি ক্যাটাগরি বেছে নিন' : 'Choose a category') : null,
     );
   }
 
@@ -374,9 +378,9 @@ class _ScrapScreenState extends State<ScrapScreen>
         children: [
           const Icon(Icons.info_outline_rounded, color: AppColors.deepBlue, size: 16),
           const SizedBox(width: 8),
-          Text('আনুমানিক মূল্য: ৳${price.toStringAsFixed(0)}', style: const TextStyle(color: AppColors.deepBlue, fontSize: 13, fontWeight: FontWeight.w600)),
+          Text(_isBn ? 'আনুমানিক মূল্য: ৳${price.toStringAsFixed(0)}' : 'Estimated price: ৳${price.toStringAsFixed(0)}', style: const TextStyle(color: AppColors.deepBlue, fontSize: 13, fontWeight: FontWeight.w600)),
           const SizedBox(width: 4),
-          Text('(৳${_selectedType!.ratePerKg.toStringAsFixed(0)}/কেজি)', style: const TextStyle(color: AppColors.textMuted, fontSize: 11)),
+          Text(_isBn ? '(৳${_selectedType!.ratePerKg.toStringAsFixed(0)}/কেজি)' : '(৳${_selectedType!.ratePerKg.toStringAsFixed(0)}/kg)', style: const TextStyle(color: AppColors.textMuted, fontSize: 11)),
         ],
       ),
     ).animate().fadeIn(duration: 250.ms).scale(begin: const Offset(0.97, 0.97));
@@ -387,12 +391,12 @@ class _ScrapScreenState extends State<ScrapScreen>
       controller: _weightCtrl,
       keyboardType: const TextInputType.numberWithOptions(decimal: true),
       style: const TextStyle(color: AppColors.textPrimary, fontSize: 14),
-      decoration: _fieldDeco(hint: 'যেমন: ১৫', suffixText: 'কেজি'),
+      decoration: _fieldDeco(hint: _isBn ? 'যেমন: ১৫' : 'e.g. 15', suffixText: _isBn ? 'কেজি' : 'kg'),
       validator: (val) {
-        if (val == null || val.trim().isEmpty) return 'ওজন লিখুন';
+        if (val == null || val.trim().isEmpty) return _isBn ? 'ওজন লিখুন' : 'Enter the weight';
         final parsed = double.tryParse(val.trim());
-        if (parsed == null || parsed <= 0) return 'সঠিক ওজন লিখুন';
-        if (parsed < _kMinWeightKg) return 'ন্যূনতম $_kMinWeightKg কেজি লাগবে';
+        if (parsed == null || parsed <= 0) return _isBn ? 'সঠিক ওজন লিখুন' : 'Enter a valid weight';
+        if (parsed < _kMinWeightKg) return _isBn ? 'ন্যূনতম $_kMinWeightKg কেজি লাগবে' : 'Minimum $_kMinWeightKg kg required';
         return null;
       },
     );
@@ -405,8 +409,8 @@ class _ScrapScreenState extends State<ScrapScreen>
         TextFormField(
           controller: _addressCtrl,
           style: const TextStyle(color: AppColors.textPrimary, fontSize: 14),
-          decoration: _fieldDeco(hint: 'সম্পূর্ণ ঠিকানা লিখুন'),
-          validator: (val) => (val == null || val.trim().isEmpty) ? 'ঠিকানা লিখুন' : null,
+          decoration: _fieldDeco(hint: _isBn ? 'সম্পূর্ণ ঠিকানা লিখুন' : 'Enter the full address'),
+          validator: (val) => (val == null || val.trim().isEmpty) ? (_isBn ? 'ঠিকানা লিখুন' : 'Enter an address') : null,
         ),
         const SizedBox(height: 8),
         Row(children: [
@@ -416,7 +420,7 @@ class _ScrapScreenState extends State<ScrapScreen>
               icon: _isLocating
                   ? const SizedBox(width: 14, height: 14, child: CircularProgressIndicator(strokeWidth: 2, color: AppColors.deepBlue))
                   : const Icon(Icons.my_location_rounded, size: 16, color: AppColors.deepBlue),
-              label: const Text('বর্তমান অবস্থান', style: TextStyle(color: AppColors.deepBlue, fontSize: 12, fontWeight: FontWeight.w600)),
+              label: Text(_isBn ? 'বর্তমান অবস্থান' : 'Current location', style: const TextStyle(color: AppColors.deepBlue, fontSize: 12, fontWeight: FontWeight.w600)),
               style: OutlinedButton.styleFrom(
                 side: const BorderSide(color: AppColors.glassBorder),
                 padding: const EdgeInsets.symmetric(vertical: 10),
@@ -429,7 +433,7 @@ class _ScrapScreenState extends State<ScrapScreen>
             child: OutlinedButton.icon(
               onPressed: _isLocating ? null : _pickOnMap,
               icon: const Icon(Icons.map_outlined, size: 16, color: AppColors.deepBlue),
-              label: const Text('ম্যাপে দেখান', style: TextStyle(color: AppColors.deepBlue, fontSize: 12, fontWeight: FontWeight.w600)),
+              label: Text(_isBn ? 'ম্যাপে দেখান' : 'Show on map', style: const TextStyle(color: AppColors.deepBlue, fontSize: 12, fontWeight: FontWeight.w600)),
               style: OutlinedButton.styleFrom(
                 side: const BorderSide(color: AppColors.glassBorder),
                 padding: const EdgeInsets.symmetric(vertical: 10),
@@ -457,7 +461,7 @@ class _ScrapScreenState extends State<ScrapScreen>
             const Icon(Icons.calendar_today_outlined, color: AppColors.textMuted, size: 16),
             const SizedBox(width: 10),
             Text(
-              _preferredDate == null ? 'তারিখ বেছে নিন' : _formatDate(_preferredDate!),
+              _preferredDate == null ? (_isBn ? 'তারিখ বেছে নিন' : 'Choose a date') : _formatDate(_preferredDate!),
               style: TextStyle(
                 color: _preferredDate == null ? AppColors.textMuted : AppColors.textPrimary,
                 fontSize: 14,
@@ -504,9 +508,9 @@ class _ScrapScreenState extends State<ScrapScreen>
             child: const Icon(Icons.recycling_rounded, color: AppColors.textMuted, size: 36),
           ),
           const SizedBox(height: 16),
-          const Text('কোনো অনুরোধ নেই', style: TextStyle(color: AppColors.textMuted, fontSize: 15, fontWeight: FontWeight.w500)),
+          Text(_isBn ? 'কোনো অনুরোধ নেই' : 'No requests yet', style: const TextStyle(color: AppColors.textMuted, fontSize: 15, fontWeight: FontWeight.w500)),
           const SizedBox(height: 6),
-          const Text('নতুন অনুরোধ ট্যাবে যান এবং স্ক্র্যাপ সংগ্রহের জন্য অনুরোধ করুন।', textAlign: TextAlign.center, style: TextStyle(color: AppColors.textMuted, fontSize: 12)),
+          Text(_isBn ? 'নতুন অনুরোধ ট্যাবে যান এবং স্ক্র্যাপ সংগ্রহের জন্য অনুরোধ করুন।' : 'Go to the New Request tab and request a scrap pickup.', textAlign: TextAlign.center, style: const TextStyle(color: AppColors.textMuted, fontSize: 12)),
         ],
       ),
     ).animate().fadeIn(duration: 400.ms).scale(begin: const Offset(0.95, 0.95));
@@ -537,7 +541,7 @@ class _ScrapScreenState extends State<ScrapScreen>
                   children: [
                     Text(req.scrapTypesLabelBn, style: const TextStyle(color: AppColors.textPrimary, fontSize: 14, fontWeight: FontWeight.w700)),
                     const SizedBox(height: 2),
-                    Text('${req.estimatedWeightKg.toStringAsFixed(1)} কেজি', style: const TextStyle(color: AppColors.textMuted, fontSize: 12)),
+                    Text(_isBn ? '${req.estimatedWeightKg.toStringAsFixed(1)} কেজি' : '${req.estimatedWeightKg.toStringAsFixed(1)} kg', style: const TextStyle(color: AppColors.textMuted, fontSize: 12)),
                   ],
                 ),
               ),
@@ -547,14 +551,14 @@ class _ScrapScreenState extends State<ScrapScreen>
           const SizedBox(height: 12),
           _buildInfoRow(Icons.location_on_outlined, req.pickupAddress),
           const SizedBox(height: 6),
-          _buildInfoRow(Icons.event_outlined, 'পছন্দের তারিখ: ${_formatDate(req.preferredDate)}'),
+          _buildInfoRow(Icons.event_outlined, _isBn ? 'পছন্দের তারিখ: ${_formatDate(req.preferredDate)}' : 'Preferred date: ${_formatDate(req.preferredDate)}'),
           if (req.adminNote != null && req.adminNote!.isNotEmpty) ...[
             const SizedBox(height: 6),
             _buildInfoRow(Icons.notes_outlined, req.adminNote!),
           ],
           if (req.status == 'COLLECTED' && req.amountPaidToUser != null) ...[
             const SizedBox(height: 6),
-            _buildInfoRow(Icons.payments_outlined, 'প্রদান করা হয়েছে: ৳${req.amountPaidToUser!.toStringAsFixed(0)}'),
+            _buildInfoRow(Icons.payments_outlined, _isBn ? 'প্রদান করা হয়েছে: ৳${req.amountPaidToUser!.toStringAsFixed(0)}' : 'Paid: ৳${req.amountPaidToUser!.toStringAsFixed(0)}'),
           ],
         ],
       ),
@@ -581,15 +585,27 @@ class _ScrapScreenState extends State<ScrapScreen>
   }
 
   ({String label, Color color}) _statusConfig(String status) {
+    if (_isBn) {
+      switch (status) {
+        case 'COLLECTED':
+          return (label: 'সংগৃহীত', color: const Color(0xFF10B981));
+        case 'CANCELLED':
+          return (label: 'বাতিল', color: const Color(0xFFEF4444));
+        case 'SCHEDULED':
+          return (label: 'সময়সূচি নির্ধারিত', color: AppColors.deepBlue);
+        default:
+          return (label: 'অপেক্ষমাণ', color: const Color(0xFFF59E0B));
+      }
+    }
     switch (status) {
       case 'COLLECTED':
-        return (label: 'সংগৃহীত', color: const Color(0xFF10B981));
+        return (label: 'Collected', color: const Color(0xFF10B981));
       case 'CANCELLED':
-        return (label: 'বাতিল', color: const Color(0xFFEF4444));
+        return (label: 'Cancelled', color: const Color(0xFFEF4444));
       case 'SCHEDULED':
-        return (label: 'সময়সূচি নির্ধারিত', color: AppColors.deepBlue);
+        return (label: 'Scheduled', color: AppColors.deepBlue);
       default:
-        return (label: 'অপেক্ষমাণ', color: const Color(0xFFF59E0B));
+        return (label: 'Pending', color: const Color(0xFFF59E0B));
     }
   }
 }
@@ -607,15 +623,17 @@ class _ScrapPinPickerScreen extends StatefulWidget {
 class _ScrapPinPickerScreenState extends State<_ScrapPinPickerScreen> {
   static const _dhaka = LatLng(23.8103, 90.4125);
   LatLng? _pin;
+  bool _isBn = true;
 
   @override
   Widget build(BuildContext context) {
+    _isBn = context.watch<LanguageNotifier>().isBengali;
     return Scaffold(
       backgroundColor: AppColors.bgDark,
       appBar: AppBar(
         backgroundColor: AppColors.bgMid,
         elevation: 0,
-        title: const Text('ম্যাপে দেখান', style: TextStyle(color: AppColors.textPrimary, fontSize: 17, fontWeight: FontWeight.w700)),
+        title: Text(_isBn ? 'ম্যাপে দেখান' : 'Show on Map', style: const TextStyle(color: AppColors.textPrimary, fontSize: 17, fontWeight: FontWeight.w700)),
         leading: IconButton(
           icon: const Icon(Icons.arrow_back_ios_new_rounded, color: AppColors.textPrimary, size: 18),
           onPressed: () => Navigator.pop(context),
@@ -644,7 +662,9 @@ class _ScrapPinPickerScreenState extends State<_ScrapPinPickerScreen> {
               ),
               child: Center(
                 child: Text(
-                  _pin == null ? 'ম্যাপে ট্যাপ করে জায়গাটি দেখান' : 'এই জায়গাটিই ঠিক আছে',
+                  _pin == null
+                      ? (_isBn ? 'ম্যাপে ট্যাপ করে জায়গাটি দেখান' : 'Tap the map to mark the place')
+                      : (_isBn ? 'এই জায়গাটিই ঠিক আছে' : 'Confirm this location'),
                   style: const TextStyle(color: Colors.white, fontSize: 15, fontWeight: FontWeight.w700),
                 ),
               ),

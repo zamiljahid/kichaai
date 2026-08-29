@@ -2,7 +2,9 @@ import 'dart:ui';
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:flutter_animate/flutter_animate.dart';
+import 'package:provider/provider.dart';
 import '../core/network/api_client.dart';
+import '../core/utils/app_strings.dart';
 import '../theme/app_theme.dart';
 import '../widgets/glass_button.dart';
 
@@ -105,6 +107,7 @@ class _AgentScreenState extends State<AgentScreen> {
   bool _isRegistering = false;
   bool _isLoadingCrew = false;
   String? _errorMessage;
+  bool _isBn = true;
 
   @override
   void initState() {
@@ -145,7 +148,7 @@ class _AgentScreenState extends State<AgentScreen> {
         } else {
           setState(() {
             _screenState = _ScreenState.notAgent;
-            _errorMessage = ex.messageBn;
+            _errorMessage = ex.localized(_isBn);
           });
         }
       }
@@ -183,18 +186,20 @@ class _AgentScreenState extends State<AgentScreen> {
     final phoneCtrl = TextEditingController(text: existing?.phone ?? '');
     final nidCtrl = TextEditingController(text: existing?.nidNumber ?? '');
     final saved = await _showFormSheet(
-      title: existing == null ? 'নতুন টেকনিশিয়ান' : 'টেকনিশিয়ান সম্পাদনা',
+      title: existing == null
+          ? (_isBn ? 'নতুন টেকনিশিয়ান' : 'New Technician')
+          : (_isBn ? 'টেকনিশিয়ান সম্পাদনা' : 'Edit Technician'),
       fields: [
-        (nameCtrl, 'নাম', TextInputType.text),
-        (phoneCtrl, 'ফোন নম্বর', TextInputType.phone),
-        (nidCtrl, 'NID নম্বর', TextInputType.number),
+        (nameCtrl, _isBn ? 'নাম' : 'Name', TextInputType.text),
+        (phoneCtrl, _isBn ? 'ফোন নম্বর' : 'Phone number', TextInputType.phone),
+        (nidCtrl, _isBn ? 'NID নম্বর' : 'NID number', TextInputType.number),
       ],
       onSubmit: () async {
         final name = nameCtrl.text.trim();
         final phone = phoneCtrl.text.trim();
         final nid = nidCtrl.text.trim();
         if (name.isEmpty || phone.isEmpty || nid.isEmpty) {
-          throw 'নাম, ফোন ও NID দিন';
+          throw _isBn ? 'নাম, ফোন ও NID দিন' : 'Enter name, phone and NID';
         }
         if (existing == null) {
           await _client.post('/auth/agents/me/technicians',
@@ -205,7 +210,7 @@ class _AgentScreenState extends State<AgentScreen> {
         }
       },
     );
-    if (saved) { _showSnackBar(existing == null ? 'টেকনিশিয়ান যোগ হয়েছে' : 'আপডেট হয়েছে', const Color(0xFF10B981)); _loadCrew(); }
+    if (saved) { _showSnackBar(existing == null ? (_isBn ? 'টেকনিশিয়ান যোগ হয়েছে' : 'Technician added') : (_isBn ? 'আপডেট হয়েছে' : 'Updated'), const Color(0xFF10B981)); _loadCrew(); }
   }
 
   Future<void> _deleteTechnician(_Technician t) async {
@@ -214,21 +219,21 @@ class _AgentScreenState extends State<AgentScreen> {
       builder: (ctx) => AlertDialog(
         backgroundColor: AppColors.bgMid,
         shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)),
-        title: const Text('মুছবেন?', style: TextStyle(color: AppColors.textPrimary, fontSize: 16, fontWeight: FontWeight.w700)),
-        content: Text('“${t.technicianName}” সরানো হবে।', style: const TextStyle(color: AppColors.textSecondary, fontSize: 14)),
+        title: Text(_isBn ? 'মুছবেন?' : 'Delete?', style: const TextStyle(color: AppColors.textPrimary, fontSize: 16, fontWeight: FontWeight.w700)),
+        content: Text(_isBn ? '"${t.technicianName}" সরানো হবে।' : '"${t.technicianName}" will be removed.', style: const TextStyle(color: AppColors.textSecondary, fontSize: 14)),
         actions: [
-          TextButton(onPressed: () => Navigator.pop(ctx, false), child: const Text('বাতিল', style: TextStyle(color: AppColors.textMuted))),
-          TextButton(onPressed: () => Navigator.pop(ctx, true), child: const Text('মুছুন', style: TextStyle(color: Color(0xFFEF4444), fontWeight: FontWeight.w700))),
+          TextButton(onPressed: () => Navigator.pop(ctx, false), child: Text(_isBn ? 'বাতিল' : 'Cancel', style: const TextStyle(color: AppColors.textMuted))),
+          TextButton(onPressed: () => Navigator.pop(ctx, true), child: Text(_isBn ? 'মুছুন' : 'Delete', style: const TextStyle(color: Color(0xFFEF4444), fontWeight: FontWeight.w700))),
         ],
       ),
     );
     if (ok != true) return;
     try {
       await _client.delete('/auth/agents/me/technicians/${t.id}');
-      _showSnackBar('মুছে ফেলা হয়েছে', const Color(0xFF10B981));
+      _showSnackBar(_isBn ? 'মুছে ফেলা হয়েছে' : 'Deleted', const Color(0xFF10B981));
       _loadCrew();
     } catch (e) {
-      _showSnackBar(ApiClient.mapError(e).messageBn, const Color(0xFFEF4444));
+      _showSnackBar(ApiClient.mapError(e).localized(_isBn), const Color(0xFFEF4444));
     }
   }
 
@@ -237,18 +242,18 @@ class _AgentScreenState extends State<AgentScreen> {
     final addressCtrl = TextEditingController();
     final seatsCtrl = TextEditingController();
     final saved = await _showFormSheet(
-      title: 'নতুন মেস প্রপার্টি',
+      title: _isBn ? 'নতুন মেস প্রপার্টি' : 'New Mess Property',
       fields: [
-        (nameCtrl, 'মেসের নাম', TextInputType.text),
-        (addressCtrl, 'ঠিকানা', TextInputType.text),
-        (seatsCtrl, 'মোট আসন', TextInputType.number),
+        (nameCtrl, _isBn ? 'মেসের নাম' : 'Mess name', TextInputType.text),
+        (addressCtrl, _isBn ? 'ঠিকানা' : 'Address', TextInputType.text),
+        (seatsCtrl, _isBn ? 'মোট আসন' : 'Total seats', TextInputType.number),
       ],
       onSubmit: () async {
         final name = nameCtrl.text.trim();
         final address = addressCtrl.text.trim();
         final seats = int.tryParse(seatsCtrl.text.trim());
         if (name.isEmpty || address.isEmpty || seats == null) {
-          throw 'নাম, ঠিকানা ও আসন সংখ্যা দিন';
+          throw _isBn ? 'নাম, ঠিকানা ও আসন সংখ্যা দিন' : 'Enter name, address and seat count';
         }
         await _client.post('/auth/agents/me/properties', data: {
           'messName': name,
@@ -258,7 +263,7 @@ class _AgentScreenState extends State<AgentScreen> {
         });
       },
     );
-    if (saved) { _showSnackBar('প্রপার্টি যোগ হয়েছে', const Color(0xFF10B981)); _loadCrew(); }
+    if (saved) { _showSnackBar(_isBn ? 'প্রপার্টি যোগ হয়েছে' : 'Property added', const Color(0xFF10B981)); _loadCrew(); }
   }
 
   /// Generic bottom-sheet form. Returns true if onSubmit succeeded.
@@ -302,7 +307,7 @@ class _AgentScreenState extends State<AgentScreen> {
                   )),
               const SizedBox(height: 10),
               GlassButton(
-                label: 'সংরক্ষণ করুন',
+                label: _isBn ? 'সংরক্ষণ করুন' : 'Save',
                 isLoading: saving,
                 onPressed: saving ? null : () async {
                   setS(() => saving = true);
@@ -311,7 +316,7 @@ class _AgentScreenState extends State<AgentScreen> {
                     if (ctx.mounted) Navigator.pop(ctx, true);
                   } catch (e) {
                     setS(() => saving = false);
-                    _showSnackBar(e is String ? e : ApiClient.mapError(e).messageBn, const Color(0xFFEF4444));
+                    _showSnackBar(e is String ? e : ApiClient.mapError(e).localized(_isBn), const Color(0xFFEF4444));
                   }
                 },
               ),
@@ -346,13 +351,13 @@ class _AgentScreenState extends State<AgentScreen> {
           _isRegistering = false;
         });
         _loadCrew();
-        _showSnackBar('এজেন্ট হিসেবে সফলভাবে নিবন্ধিত হয়েছেন!', const Color(0xFF10B981));
+        _showSnackBar(_isBn ? 'এজেন্ট হিসেবে সফলভাবে নিবন্ধিত হয়েছেন!' : 'Successfully registered as an agent!', const Color(0xFF10B981));
       }
     } catch (e) {
       final ex = ApiClient.mapError(e);
       if (mounted) {
         setState(() {
-          _errorMessage = ex.messageBn;
+          _errorMessage = ex.localized(_isBn);
           _isRegistering = false;
         });
       }
@@ -363,7 +368,7 @@ class _AgentScreenState extends State<AgentScreen> {
     final code = _agentInfo?.code ?? '';
     if (code.isEmpty) return;
     Clipboard.setData(ClipboardData(text: code));
-    _showSnackBar('এজেন্ট কোড কপি হয়েছে', const Color(0xFF10B981));
+    _showSnackBar(_isBn ? 'এজেন্ট কোড কপি হয়েছে' : 'Agent code copied', const Color(0xFF10B981));
   }
 
   void _showSnackBar(String message, Color color) {
@@ -383,14 +388,15 @@ class _AgentScreenState extends State<AgentScreen> {
 
   @override
   Widget build(BuildContext context) {
+    _isBn = context.watch<LanguageNotifier>().isBengali;
     return Scaffold(
       backgroundColor: AppColors.bgDark,
       appBar: AppBar(
         backgroundColor: Colors.transparent,
         elevation: 0,
-        title: const Text(
-          'এজেন্ট',
-          style: TextStyle(
+        title: Text(
+          _isBn ? 'এজেন্ট' : 'Agent',
+          style: const TextStyle(
             color: AppColors.textPrimary,
             fontSize: 18,
             fontWeight: FontWeight.w700,
@@ -433,10 +439,10 @@ class _AgentScreenState extends State<AgentScreen> {
           const SizedBox(height: 16),
           _buildIllustration(),
           const SizedBox(height: 28),
-          const Text(
-            'এজেন্ট হয়ে আয় করুন',
+          Text(
+            _isBn ? 'এজেন্ট হয়ে আয় করুন' : 'Earn as an Agent',
             textAlign: TextAlign.center,
-            style: TextStyle(
+            style: const TextStyle(
               color: AppColors.textPrimary,
               fontSize: 26,
               fontWeight: FontWeight.w800,
@@ -444,10 +450,12 @@ class _AgentScreenState extends State<AgentScreen> {
             ),
           ).animate().fadeIn(delay: 100.ms).slideY(begin: 0.1, end: 0),
           const SizedBox(height: 10),
-          const Text(
-            'সার্ভিস প্রদানকারীদের নিয়োগ করুন এবং প্রতিটি সফল রেফারেলে কমিশন উপার্জন করুন।',
+          Text(
+            _isBn
+                ? 'সার্ভিস প্রদানকারীদের নিয়োগ করুন এবং প্রতিটি সফল রেফারেলে কমিশন উপার্জন করুন।'
+                : 'Recruit service providers and earn commission on every successful referral.',
             textAlign: TextAlign.center,
-            style: TextStyle(
+            style: const TextStyle(
               color: AppColors.textMuted,
               fontSize: 14,
               height: 1.6,
@@ -463,7 +471,7 @@ class _AgentScreenState extends State<AgentScreen> {
             const SizedBox(height: 12),
           ],
           GlassButton(
-            label: 'এজেন্ট হিসেবে নিবন্ধন করুন',
+            label: _isBn ? 'এজেন্ট হিসেবে নিবন্ধন করুন' : 'Register as Agent',
             isLoading: _isRegistering,
             onPressed: _isRegistering ? null : _registerAsAgent,
           ).animate().fadeIn(delay: 300.ms).slideY(begin: 0.1, end: 0),
@@ -499,11 +507,17 @@ class _AgentScreenState extends State<AgentScreen> {
   }
 
   Widget _buildBenefitChips() {
-    const chips = [
-      (Icons.percent_rounded, 'কমিশন আয়', Color(0xFF2563EB)),
-      (Icons.card_giftcard_rounded, 'রেফারেল বোনাস', Color(0xFF10B981)),
-      (Icons.hub_rounded, 'নেটওয়ার্ক তৈরি', Color(0xFFF59E0B)),
-    ];
+    final chips = _isBn
+        ? const [
+            (Icons.percent_rounded, 'কমিশন আয়', Color(0xFF2563EB)),
+            (Icons.card_giftcard_rounded, 'রেফারেল বোনাস', Color(0xFF10B981)),
+            (Icons.hub_rounded, 'নেটওয়ার্ক তৈরি', Color(0xFFF59E0B)),
+          ]
+        : const [
+            (Icons.percent_rounded, 'Commission Earnings', Color(0xFF2563EB)),
+            (Icons.card_giftcard_rounded, 'Referral Bonus', Color(0xFF10B981)),
+            (Icons.hub_rounded, 'Build Network', Color(0xFFF59E0B)),
+          ];
 
     return Wrap(
       spacing: 10,
@@ -525,9 +539,9 @@ class _AgentScreenState extends State<AgentScreen> {
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
-        const Text(
-          'আপনার উদ্দেশ্য (ঐচ্ছিক)',
-          style: TextStyle(
+        Text(
+          _isBn ? 'আপনার উদ্দেশ্য (ঐচ্ছিক)' : 'Your Motivation (optional)',
+          style: const TextStyle(
             color: AppColors.textMuted,
             fontSize: 12,
             fontWeight: FontWeight.w600,
@@ -544,7 +558,7 @@ class _AgentScreenState extends State<AgentScreen> {
               maxLines: 3,
               style: const TextStyle(color: AppColors.textPrimary, fontSize: 14),
               decoration: InputDecoration(
-                hintText: 'আপনি কেন এজেন্ট হতে চান তা লিখুন...',
+                hintText: _isBn ? 'আপনি কেন এজেন্ট হতে চান তা লিখুন...' : 'Write why you want to become an agent...',
                 hintStyle: const TextStyle(color: AppColors.textMuted, fontSize: 13),
                 filled: true,
                 fillColor: AppColors.glassWhite,
@@ -604,11 +618,11 @@ class _AgentScreenState extends State<AgentScreen> {
         children: [
           _buildAgentCard(),
           const SizedBox(height: 24),
-          _sectionHeader('আমার টেকনিশিয়ান', Icons.engineering_rounded, () => _addOrEditTechnician()),
+          _sectionHeader(_isBn ? 'আমার টেকনিশিয়ান' : 'My Technicians', Icons.engineering_rounded, () => _addOrEditTechnician()),
           const SizedBox(height: 12),
           _buildTechnicianList(),
           const SizedBox(height: 24),
-          _sectionHeader('মেস প্রপার্টি', Icons.home_work_rounded, _addProperty),
+          _sectionHeader(_isBn ? 'মেস প্রপার্টি' : 'Mess Properties', Icons.home_work_rounded, _addProperty),
           const SizedBox(height: 12),
           _buildPropertyList(),
         ],
@@ -628,10 +642,10 @@ class _AgentScreenState extends State<AgentScreen> {
           child: Container(
             padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 6),
             decoration: BoxDecoration(gradient: AppColors.blueGradient, borderRadius: BorderRadius.circular(20)),
-            child: const Row(mainAxisSize: MainAxisSize.min, children: [
-              Icon(Icons.add_rounded, color: AppColors.ivory, size: 15),
-              SizedBox(width: 3),
-              Text('যোগ', style: TextStyle(color: AppColors.ivory, fontSize: 12, fontWeight: FontWeight.w700)),
+            child: Row(mainAxisSize: MainAxisSize.min, children: [
+              const Icon(Icons.add_rounded, color: AppColors.ivory, size: 15),
+              const SizedBox(width: 3),
+              Text(_isBn ? 'যোগ' : 'Add', style: const TextStyle(color: AppColors.ivory, fontSize: 12, fontWeight: FontWeight.w700)),
             ]),
           ),
         ),
@@ -643,7 +657,7 @@ class _AgentScreenState extends State<AgentScreen> {
     if (_isLoadingCrew) {
       return const Padding(padding: EdgeInsets.symmetric(vertical: 24), child: Center(child: CircularProgressIndicator(color: AppColors.deepBlue)));
     }
-    if (_technicians.isEmpty) return _emptyBox('এখনো কোনো টেকনিশিয়ান যোগ করা হয়নি');
+    if (_technicians.isEmpty) return _emptyBox(_isBn ? 'এখনো কোনো টেকনিশিয়ান যোগ করা হয়নি' : 'No technicians added yet');
     return Column(
       children: _technicians.asMap().entries.map((e) {
         final t = e.value;
@@ -673,7 +687,7 @@ class _AgentScreenState extends State<AgentScreen> {
 
   Widget _buildPropertyList() {
     if (_isLoadingCrew) return const SizedBox.shrink();
-    if (_properties.isEmpty) return _emptyBox('এখনো কোনো মেস প্রপার্টি যোগ করা হয়নি');
+    if (_properties.isEmpty) return _emptyBox(_isBn ? 'এখনো কোনো মেস প্রপার্টি যোগ করা হয়নি' : 'No mess properties added yet');
     return Column(
       children: _properties.asMap().entries.map((e) {
         final p = e.value;
@@ -693,7 +707,7 @@ class _AgentScreenState extends State<AgentScreen> {
               const SizedBox(height: 3),
               Text(p.address, maxLines: 1, overflow: TextOverflow.ellipsis, style: const TextStyle(color: AppColors.textMuted, fontSize: 11)),
             ])),
-            Text('${p.totalSeats} আসন', style: const TextStyle(color: AppColors.textSecondary, fontSize: 12, fontWeight: FontWeight.w600)),
+            Text(_isBn ? '${p.totalSeats} আসন' : '${p.totalSeats} seats', style: const TextStyle(color: AppColors.textSecondary, fontSize: 12, fontWeight: FontWeight.w600)),
           ]),
         ).animate(delay: Duration(milliseconds: e.key * 50)).fadeIn().slideX(begin: 0.05, end: 0);
       }).toList(),
@@ -730,9 +744,9 @@ class _AgentScreenState extends State<AgentScreen> {
           Row(
             mainAxisAlignment: MainAxisAlignment.spaceBetween,
             children: [
-              const Text(
-                'এজেন্ট কোড',
-                style: TextStyle(
+              Text(
+                _isBn ? 'এজেন্ট কোড' : 'Agent Code',
+                style: const TextStyle(
                   color: Colors.white70,
                   fontSize: 12,
                   fontWeight: FontWeight.w500,
@@ -777,9 +791,9 @@ class _AgentScreenState extends State<AgentScreen> {
           const SizedBox(height: 20),
           Row(
             children: [
-              Expanded(child: _buildEarningTile('মোট আয়', agent.totalEarnings, Icons.account_balance_wallet_outlined)),
+              Expanded(child: _buildEarningTile(_isBn ? 'মোট আয়' : 'Total Earnings', agent.totalEarnings, Icons.account_balance_wallet_outlined)),
               const SizedBox(width: 12),
-              Expanded(child: _buildEarningTile('বকেয়া আয়', agent.pendingEarnings, Icons.schedule_rounded)),
+              Expanded(child: _buildEarningTile(_isBn ? 'বকেয়া আয়' : 'Pending Earnings', agent.pendingEarnings, Icons.schedule_rounded)),
             ],
           ),
           const SizedBox(height: 16),
@@ -788,7 +802,7 @@ class _AgentScreenState extends State<AgentScreen> {
               const Icon(Icons.people_outline_rounded, color: Colors.white60, size: 16),
               const SizedBox(width: 6),
               Text(
-                'মোট রেফারেল: ${agent.totalReferrals}',
+                _isBn ? 'মোট রেফারেল: ${agent.totalReferrals}' : 'Total Referrals: ${agent.totalReferrals}',
                 style: const TextStyle(
                   color: Colors.white70,
                   fontSize: 13,
@@ -844,15 +858,15 @@ class _AgentScreenState extends State<AgentScreen> {
     switch (status.toLowerCase()) {
       case 'active':
         color = const Color(0xFF10B981);
-        label = 'সক্রিয়';
+        label = _isBn ? 'সক্রিয়' : 'Active';
         break;
       case 'suspended':
         color = const Color(0xFFEF4444);
-        label = 'স্থগিত';
+        label = _isBn ? 'স্থগিত' : 'Suspended';
         break;
       default:
         color = const Color(0xFFF59E0B);
-        label = 'অপেক্ষমাণ';
+        label = _isBn ? 'অপেক্ষমাণ' : 'Pending';
     }
 
     return Container(

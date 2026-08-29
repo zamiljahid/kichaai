@@ -1,5 +1,8 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_animate/flutter_animate.dart';
+import 'package:provider/provider.dart';
+import '../core/network/api_client.dart';
+import '../core/utils/app_strings.dart';
 import '../services/dispatch_service.dart';
 import '../theme/app_theme.dart';
 import '../widgets/animated_background.dart';
@@ -18,6 +21,7 @@ class _RatingScreenState extends State<RatingScreen> {
   int _rating = 5;
   final _reviewController = TextEditingController();
   bool _isSubmitting = false;
+  bool _isBn = true;
 
   @override
   void dispose() {
@@ -35,7 +39,7 @@ class _RatingScreenState extends State<RatingScreen> {
       );
       if (!mounted) return;
       ScaffoldMessenger.of(context).showSnackBar(SnackBar(
-        content: const Text('রিভিউ দেওয়ার জন্য ধন্যবাদ!', style: TextStyle(color: AppColors.ivory)),
+        content: Text(_isBn ? 'রিভিউ দেওয়ার জন্য ধন্যবাদ!' : 'Thanks for your review!', style: const TextStyle(color: AppColors.ivory)),
         backgroundColor: const Color(0xFF22C55E),
         behavior: SnackBarBehavior.floating,
         shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
@@ -45,7 +49,7 @@ class _RatingScreenState extends State<RatingScreen> {
     } catch (e) {
       if (mounted) {
         ScaffoldMessenger.of(context).showSnackBar(SnackBar(
-          content: Text(e.toString(), style: const TextStyle(color: AppColors.ivory)),
+          content: Text(ApiClient.mapError(e).localized(_isBn), style: const TextStyle(color: AppColors.ivory)),
           backgroundColor: const Color(0xFFEF4444),
           behavior: SnackBarBehavior.floating,
           shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
@@ -59,6 +63,7 @@ class _RatingScreenState extends State<RatingScreen> {
 
   @override
   Widget build(BuildContext context) {
+    _isBn = context.watch<LanguageNotifier>().isBengali;
     return Scaffold(
       body: AnimatedBackground(
         child: SafeArea(
@@ -77,17 +82,17 @@ class _RatingScreenState extends State<RatingScreen> {
                   child: const Icon(Icons.check_circle_rounded, color: AppColors.ivory, size: 48),
                 ).animate().scale(duration: 500.ms, curve: Curves.elasticOut),
                 const SizedBox(height: 24),
-                const Text('কাজ সম্পন্ন হয়েছে!', style: TextStyle(color: AppColors.textPrimary, fontSize: 24, fontWeight: FontWeight.w800))
+                Text(_isBn ? 'কাজ সম্পন্ন হয়েছে!' : 'Job Completed!', style: const TextStyle(color: AppColors.textPrimary, fontSize: 24, fontWeight: FontWeight.w800))
                     .animate(delay: 200.ms).fadeIn().slideY(begin: 0.1),
                 const SizedBox(height: 8),
-                Text('Provider-কে রেটিং দিন', style: TextStyle(color: AppColors.textMuted, fontSize: 14))
+                Text(_isBn ? 'Provider-কে রেটিং দিন' : 'Rate the Provider', style: const TextStyle(color: AppColors.textMuted, fontSize: 14))
                     .animate(delay: 300.ms).fadeIn(),
                 const SizedBox(height: 32),
                 GlassCard(
                   child: Column(
                     crossAxisAlignment: CrossAxisAlignment.stretch,
                     children: [
-                      const Text('আপনার অভিজ্ঞতা কেমন ছিল?', style: TextStyle(color: AppColors.textSecondary, fontSize: 13, fontWeight: FontWeight.w600)),
+                      Text(_isBn ? 'আপনার অভিজ্ঞতা কেমন ছিল?' : 'How was your experience?', style: const TextStyle(color: AppColors.textSecondary, fontSize: 13, fontWeight: FontWeight.w600)),
                       const SizedBox(height: 16),
                       Row(
                         mainAxisAlignment: MainAxisAlignment.center,
@@ -113,19 +118,19 @@ class _RatingScreenState extends State<RatingScreen> {
                         controller: _reviewController,
                         maxLines: 3,
                         style: const TextStyle(color: AppColors.textPrimary, fontSize: 14),
-                        decoration: const InputDecoration(
-                          hintText: 'রিভিউ লিখুন (ঐচ্ছিক)...',
-                          prefixIcon: Padding(
+                        decoration: InputDecoration(
+                          hintText: _isBn ? 'রিভিউ লিখুন (ঐচ্ছিক)...' : 'Write a review (optional)...',
+                          prefixIcon: const Padding(
                             padding: EdgeInsets.only(bottom: 40),
                             child: Icon(Icons.rate_review_rounded, color: AppColors.textMuted, size: 20),
                           ),
                         ),
                       ),
                       const SizedBox(height: 24),
-                      GlassButton(label: 'রিভিউ জমা দিন', isLoading: _isSubmitting, onPressed: _submit),
+                      GlassButton(label: _isBn ? 'রিভিউ জমা দিন' : 'Submit Review', isLoading: _isSubmitting, onPressed: _submit),
                       const SizedBox(height: 10),
                       GlassButton(
-                        label: 'এড়িয়ে যান',
+                        label: _isBn ? 'এড়িয়ে যান' : 'Skip',
                         isOutlined: true,
                         onPressed: () => Navigator.of(context).popUntil((r) => r.isFirst),
                       ),
@@ -141,12 +146,22 @@ class _RatingScreenState extends State<RatingScreen> {
   }
 
   String _ratingLabel(int r) {
+    if (_isBn) {
+      switch (r) {
+        case 1: return 'খুব খারাপ';
+        case 2: return 'খারাপ';
+        case 3: return 'ঠিক আছে';
+        case 4: return 'ভালো';
+        case 5: return 'চমৎকার!';
+        default: return '';
+      }
+    }
     switch (r) {
-      case 1: return 'খুব খারাপ';
-      case 2: return 'খারাপ';
-      case 3: return 'ঠিক আছে';
-      case 4: return 'ভালো';
-      case 5: return 'চমৎকার!';
+      case 1: return 'Very Bad';
+      case 2: return 'Bad';
+      case 3: return 'Okay';
+      case 4: return 'Good';
+      case 5: return 'Excellent!';
       default: return '';
     }
   }
