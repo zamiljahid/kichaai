@@ -52,7 +52,7 @@ class _ReferralScreenState extends State<ReferralScreen> {
   }
 
   void _copyCode() {
-    final code = _referral?['code'] as String? ?? '';
+    final code = _referral?['referralCode'] as String? ?? '';
     if (code.isEmpty) return;
     Clipboard.setData(ClipboardData(text: code));
     ScaffoldMessenger.of(context).showSnackBar(
@@ -109,8 +109,8 @@ class _ReferralScreenState extends State<ReferralScreen> {
   }
 
   Widget _buildCodeCard() {
-    final code = _referral?['code'] as String? ?? '------';
-    final earnings = (_referral?['totalEarnings'] ?? 0.0);
+    final code = _referral?['referralCode'] as String? ?? '------';
+    final earnings = ((_referral?['creditsEarned'] ?? 0) as num).toDouble();
 
     return Container(
       padding: const EdgeInsets.all(24),
@@ -212,22 +212,16 @@ class _ReferralScreenState extends State<ReferralScreen> {
         const SizedBox(width: 12),
         Expanded(
           child: Column(crossAxisAlignment: CrossAxisAlignment.start, children: [
-            Text(r['referredName'] ?? r['referredEmail'] ?? (_isBn ? 'ব্যবহারকারী' : 'User'), style: const TextStyle(color: AppColors.textPrimary, fontSize: 13, fontWeight: FontWeight.w600)),
+            Text(r['fullName'] ?? (_isBn ? 'ব্যবহারকারী' : 'User'), style: const TextStyle(color: AppColors.textPrimary, fontSize: 13, fontWeight: FontWeight.w600)),
             const SizedBox(height: 2),
             Text(r['createdAt']?.toString().substring(0, 10) ?? '', style: const TextStyle(color: AppColors.textMuted, fontSize: 11)),
           ]),
         ),
-        Column(crossAxisAlignment: CrossAxisAlignment.end, children: [
-          Container(
-            padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 3),
-            decoration: BoxDecoration(color: statusColor.withValues(alpha: 0.1), borderRadius: BorderRadius.circular(6)),
-            child: Text(statusLabel, style: TextStyle(color: statusColor, fontSize: 10, fontWeight: FontWeight.w600)),
-          ),
-          if (r['bonus'] != null) ...[
-            const SizedBox(height: 4),
-            Text('+৳${r['bonus']}', style: const TextStyle(color: Color(0xFF10B981), fontSize: 12, fontWeight: FontWeight.w700)),
-          ],
-        ]),
+        Container(
+          padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 3),
+          decoration: BoxDecoration(color: statusColor.withValues(alpha: 0.1), borderRadius: BorderRadius.circular(6)),
+          child: Text(statusLabel, style: TextStyle(color: statusColor, fontSize: 10, fontWeight: FontWeight.w600)),
+        ),
       ]),
     ).animate(delay: Duration(milliseconds: index * 50)).fadeIn().slideX(begin: 0.05, end: 0);
   }

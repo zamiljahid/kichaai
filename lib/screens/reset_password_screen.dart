@@ -1,7 +1,9 @@
 import 'dart:ui';
 import 'package:flutter/material.dart';
 import 'package:flutter_animate/flutter_animate.dart';
+import 'package:provider/provider.dart';
 import '../core/network/api_client.dart';
+import '../core/utils/app_strings.dart';
 import '../theme/app_theme.dart';
 import '../widgets/glass_button.dart';
 import '../widgets/glass_card.dart';
@@ -33,12 +35,13 @@ class _ResetPasswordScreenState extends State<ResetPasswordScreen> {
   }
 
   Future<void> _submit() async {
+    final isBn = context.read<LanguageNotifier>().isBengali;
     final otp = _otpController.text.trim();
     final password = _passwordController.text;
     final confirm = _confirmController.text;
-    if (otp.length < 4) { setState(() => _error = 'সঠিক OTP দিন'); return; }
-    if (password.length < 8) { setState(() => _error = 'পাসওয়ার্ড কমপক্ষে ৮ অক্ষরের হতে হবে'); return; }
-    if (password != confirm) { setState(() => _error = 'পাসওয়ার্ড মিলছে না'); return; }
+    if (otp.length < 4) { setState(() => _error = isBn ? 'সঠিক OTP দিন' : 'Enter a valid OTP'); return; }
+    if (password.length < 8) { setState(() => _error = isBn ? 'পাসওয়ার্ড কমপক্ষে ৮ অক্ষরের হতে হবে' : 'Password must be at least 8 characters'); return; }
+    if (password != confirm) { setState(() => _error = isBn ? 'পাসওয়ার্ড মিলছে না' : 'Passwords do not match'); return; }
 
     setState(() { _isLoading = true; _error = null; });
     try {
@@ -49,9 +52,9 @@ class _ResetPasswordScreenState extends State<ResetPasswordScreen> {
       });
       if (mounted) {
         ScaffoldMessenger.of(context).showSnackBar(
-          const SnackBar(
-            content: Text('পাসওয়ার্ড সফলভাবে পরিবর্তিত হয়েছে', style: TextStyle(color: Colors.white)),
-            backgroundColor: Color(0xFF10B981),
+          SnackBar(
+            content: Text(isBn ? 'পাসওয়ার্ড সফলভাবে পরিবর্তিত হয়েছে' : 'Password changed successfully', style: const TextStyle(color: Colors.white)),
+            backgroundColor: const Color(0xFF10B981),
             behavior: SnackBarBehavior.floating,
           ),
         );
@@ -63,13 +66,14 @@ class _ResetPasswordScreenState extends State<ResetPasswordScreen> {
       }
     } catch (e) {
       final ex = ApiClient.mapError(e);
-      if (mounted) setState(() => _error = ex.messageBn);
+      if (mounted) setState(() => _error = ex.localized(isBn));
     } finally {
       if (mounted) setState(() => _isLoading = false);
     }
   }
 
   Future<void> _resendOtp() async {
+    final isBn = context.read<LanguageNotifier>().isBengali;
     try {
       await ApiClient.instance.dio.post('/auth/resend-otp', data: {
         'targetValue': widget.email,
@@ -78,9 +82,9 @@ class _ResetPasswordScreenState extends State<ResetPasswordScreen> {
       });
       if (mounted) {
         ScaffoldMessenger.of(context).showSnackBar(
-          const SnackBar(
-            content: Text('OTP পুনরায় পাঠানো হয়েছে', style: TextStyle(color: Colors.white)),
-            backgroundColor: Color(0xFF3B82F6),
+          SnackBar(
+            content: Text(isBn ? 'OTP পুনরায় পাঠানো হয়েছে' : 'OTP resent', style: const TextStyle(color: Colors.white)),
+            backgroundColor: const Color(0xFF3B82F6),
             behavior: SnackBarBehavior.floating,
           ),
         );
@@ -90,12 +94,13 @@ class _ResetPasswordScreenState extends State<ResetPasswordScreen> {
 
   @override
   Widget build(BuildContext context) {
+    final isBn = context.watch<LanguageNotifier>().isBengali;
     return Scaffold(
       backgroundColor: AppColors.bgDark,
       appBar: AppBar(
         backgroundColor: Colors.transparent,
         elevation: 0,
-        title: const Text('পাসওয়ার্ড রিসেট', style: TextStyle(color: AppColors.textPrimary, fontSize: 18, fontWeight: FontWeight.w700)),
+        title: Text(isBn ? 'পাসওয়ার্ড রিসেট' : 'Reset password', style: const TextStyle(color: AppColors.textPrimary, fontSize: 18, fontWeight: FontWeight.w700)),
         leading: IconButton(
           icon: const Icon(Icons.arrow_back_ios_new_rounded, color: AppColors.textPrimary, size: 18),
           onPressed: () => Navigator.pop(context),
@@ -108,7 +113,7 @@ class _ResetPasswordScreenState extends State<ResetPasswordScreen> {
             crossAxisAlignment: CrossAxisAlignment.start,
             children: [
               Text(
-                '${widget.email} এ OTP পাঠানো হয়েছে',
+                isBn ? '${widget.email} এ OTP পাঠানো হয়েছে' : 'An OTP has been sent to ${widget.email}',
                 style: const TextStyle(color: AppColors.textMuted, fontSize: 13),
               ),
               const SizedBox(height: 24),
@@ -116,10 +121,10 @@ class _ResetPasswordScreenState extends State<ResetPasswordScreen> {
                 child: Column(
                   crossAxisAlignment: CrossAxisAlignment.start,
                   children: [
-                    _label('OTP কোড'),
+                    _label(isBn ? 'OTP কোড' : 'OTP code'),
                     _field(
                       controller: _otpController,
-                      hint: '6-সংখ্যার OTP',
+                      hint: isBn ? '6-সংখ্যার OTP' : '6-digit OTP',
                       icon: Icons.key_rounded,
                       keyboardType: TextInputType.number,
                     ),
@@ -127,22 +132,22 @@ class _ResetPasswordScreenState extends State<ResetPasswordScreen> {
                       alignment: Alignment.centerRight,
                       child: TextButton(
                         onPressed: _resendOtp,
-                        child: const Text('পুনরায় পাঠান', style: TextStyle(color: AppColors.deepBlue, fontSize: 12)),
+                        child: Text(isBn ? 'পুনরায় পাঠান' : 'Resend', style: const TextStyle(color: AppColors.deepBlue, fontSize: 12)),
                       ),
                     ),
-                    _label('নতুন পাসওয়ার্ড'),
+                    _label(isBn ? 'নতুন পাসওয়ার্ড' : 'New password'),
                     _field(
                       controller: _passwordController,
-                      hint: 'কমপক্ষে ৮ অক্ষর',
+                      hint: isBn ? 'কমপক্ষে ৮ অক্ষর' : 'At least 8 characters',
                       icon: Icons.lock_outline_rounded,
                       obscure: _obscurePass,
                       toggleObscure: () => setState(() => _obscurePass = !_obscurePass),
                     ),
                     const SizedBox(height: 16),
-                    _label('পাসওয়ার্ড নিশ্চিত করুন'),
+                    _label(isBn ? 'পাসওয়ার্ড নিশ্চিত করুন' : 'Confirm password'),
                     _field(
                       controller: _confirmController,
-                      hint: 'পাসওয়ার্ড পুনরায় দিন',
+                      hint: isBn ? 'পাসওয়ার্ড পুনরায় দিন' : 'Re-enter password',
                       icon: Icons.lock_outline_rounded,
                       obscure: _obscureConfirm,
                       toggleObscure: () => setState(() => _obscureConfirm = !_obscureConfirm),
@@ -153,9 +158,11 @@ class _ResetPasswordScreenState extends State<ResetPasswordScreen> {
                     ],
                     const SizedBox(height: 24),
                     GlassButton(
-                      label: _isLoading ? 'পরিবর্তন হচ্ছে...' : 'পাসওয়ার্ড পরিবর্তন করুন',
+                      label: _isLoading
+                          ? (isBn ? 'পরিবর্তন হচ্ছে...' : 'Changing...')
+                          : (isBn ? 'পাসওয়ার্ড পরিবর্তন করুন' : 'Change password'),
                       onPressed: _isLoading ? null : _submit,
-                                          ),
+                    ),
                   ],
                 ),
               ).animate().fadeIn().slideY(begin: 0.2, end: 0),

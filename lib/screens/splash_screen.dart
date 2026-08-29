@@ -30,6 +30,7 @@ class _SplashScreenState extends State<SplashScreen> {
     final token = await ApiClient.getAccessToken();
     final seenIntro = await ApiClient.getOnboardingSeen();
     if (token != null && token.isNotEmpty) {
+      ApiClient.isLoggedIn.value = true;
       // Register/refresh the FCM token whenever the app starts logged in —
       // the last-known device may have gone through a token rotation.
       PushService.instance.registerCurrentToken();

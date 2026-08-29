@@ -1,6 +1,8 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_animate/flutter_animate.dart';
+import 'package:provider/provider.dart';
 import '../core/network/api_client.dart';
+import '../core/utils/app_strings.dart';
 import '../theme/app_theme.dart';
 import '../widgets/animated_background.dart';
 import '../widgets/glass_button.dart';
@@ -37,9 +39,10 @@ class _OtpScreenState extends State<OtpScreen> {
   }
 
   Future<void> _verify() async {
+    final isBn = context.read<LanguageNotifier>().isBengali;
     final otp = _otpController.text.trim();
     if (otp.length < 4) {
-      _showError('সঠিক OTP কোড দিন');
+      _showError(isBn ? 'সঠিক OTP কোড দিন' : 'Enter a valid OTP code');
       return;
     }
     setState(() => _isLoading = true);
@@ -60,7 +63,7 @@ class _OtpScreenState extends State<OtpScreen> {
         }
       });
     } catch (e) {
-      _showError(ApiClient.mapError(e).messageBn);
+      _showError(ApiClient.mapError(e).localized(isBn));
     } finally {
       if (mounted) setState(() => _isLoading = false);
     }
@@ -68,6 +71,7 @@ class _OtpScreenState extends State<OtpScreen> {
 
   @override
   Widget build(BuildContext context) {
+    final isBn = context.watch<LanguageNotifier>().isBengali;
     return Scaffold(
       body: AnimatedBackground(
         child: SafeArea(
@@ -94,13 +98,13 @@ class _OtpScreenState extends State<OtpScreen> {
                   child: const Icon(Icons.mark_email_read_rounded, color: AppColors.ivory, size: 36),
                 ).animate().fadeIn(duration: 500.ms).scale(begin: const Offset(0.8, 0.8)),
                 const SizedBox(height: 20),
-                const Text(
-                  'ইমেইল যাচাই করুন',
-                  style: TextStyle(color: AppColors.textPrimary, fontSize: 24, fontWeight: FontWeight.w700),
+                Text(
+                  isBn ? 'ইমেইল যাচাই করুন' : 'Verify your email',
+                  style: const TextStyle(color: AppColors.textPrimary, fontSize: 24, fontWeight: FontWeight.w700),
                 ).animate().fadeIn(duration: 400.ms, delay: 100.ms),
                 const SizedBox(height: 8),
                 Text(
-                  '${widget.email} ঠিকানায় পাঠানো OTP কোডটি দিন',
+                  isBn ? '${widget.email} ঠিকানায় পাঠানো OTP কোডটি দিন' : 'Enter the OTP code sent to ${widget.email}',
                   style: const TextStyle(color: AppColors.textSecondary, fontSize: 14),
                   textAlign: TextAlign.center,
                 ).animate().fadeIn(duration: 400.ms, delay: 150.ms),
@@ -109,9 +113,9 @@ class _OtpScreenState extends State<OtpScreen> {
                   child: Column(
                     crossAxisAlignment: CrossAxisAlignment.start,
                     children: [
-                      const Text(
-                        'OTP কোড',
-                        style: TextStyle(color: AppColors.textSecondary, fontSize: 13, fontWeight: FontWeight.w500),
+                      Text(
+                        isBn ? 'OTP কোড' : 'OTP code',
+                        style: const TextStyle(color: AppColors.textSecondary, fontSize: 13, fontWeight: FontWeight.w500),
                       ),
                       const SizedBox(height: 8),
                       TextField(
@@ -133,7 +137,7 @@ class _OtpScreenState extends State<OtpScreen> {
                       ),
                       const SizedBox(height: 24),
                       GlassButton(
-                        label: 'যাচাই করুন',
+                        label: isBn ? 'যাচাই করুন' : 'Verify',
                         isLoading: _isLoading,
                         onPressed: _verify,
                       ),
@@ -143,9 +147,9 @@ class _OtpScreenState extends State<OtpScreen> {
                 const SizedBox(height: 16),
                 TextButton(
                   onPressed: () => Navigator.of(context).pop(),
-                  child: const Text(
-                    'ফিরে যান',
-                    style: TextStyle(color: AppColors.textMuted, fontSize: 14),
+                  child: Text(
+                    isBn ? 'ফিরে যান' : 'Go back',
+                    style: const TextStyle(color: AppColors.textMuted, fontSize: 14),
                   ),
                 ),
               ],

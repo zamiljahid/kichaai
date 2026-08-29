@@ -1,6 +1,9 @@
+import 'dart:convert';
 import 'dart:ui';
 import 'package:flutter/material.dart';
+import 'package:image_picker/image_picker.dart';
 import 'package:flutter_animate/flutter_animate.dart';
+import 'package:geolocator/geolocator.dart';
 import 'package:provider/provider.dart';
 import '../core/network/api_client.dart';
 import '../core/utils/app_strings.dart';
@@ -12,6 +15,7 @@ import '../widgets/glass_card.dart';
 import '../widgets/glass_button.dart';
 import 'auth_screen.dart';
 import 'background_check_screen.dart';
+import 'bundles_screen.dart';
 import 'commission_screen.dart';
 import 'course_authoring_screen.dart';
 import 'lawyer_areas_screen.dart';
@@ -45,6 +49,19 @@ class _ProfileScreenState extends State<ProfileScreen> {
   // serviceTypeIds this provider offers (e.g. st_lawyer, st_technician) — drives
   // which provider tools show, so a lawyer never sees photographer/course tools.
   Set<String> _serviceTypeIds = {};
+  // Account avatar (GET /auth/me -> avatarUrl). Held separately from _user because the
+  // profile header is built from the cached session values, not from a /auth/me round trip.
+  String? _avatarUrl;
+  bool _uploadingAvatar = false;
+  // Loyalty tier. Provider-only server-side: /auth/tiers/me 404s for an account with no
+  // tier record, which is normal, so the badge simply stays hidden.
+  String? _tier;
+  // Real verification state comes from /auth/me (emailVerifiedAt / phoneVerifiedAt). The
+  // header is otherwise built from cached session values, which never carried these — so the
+  // "Verified" badge could never appear, and there was no way to start verification either.
+  bool _emailVerified = false;
+  bool _phoneVerified = false;
+  bool _sendingVerify = false;
 
   bool get _isProvider => _user?.role == 'provider' || _user?.role == 'PROVIDER';
   bool _offers(List<String> keys) => _serviceTypeIds.any((id) => keys.any(id.contains));
@@ -85,9 +102,98 @@ class _ProfileScreenState extends State<ProfileScreen> {
           _isLoading = false;
         });
         if (_isProvider) _loadProviderServices();
+        _loadAvatarAndTier();
       }
     } catch (_) {
       if (mounted) setState(() => _isLoading = false);
+    }
+  }
+
+  /// Best-effort extras for the header — neither should ever block the screen.
+  Future<void> _loadAvatarAndTier() async {
+    try {
+      final me = await AuthService.instance.getCurrentUser();
+      if (mounted) {
+        setState(() {
+          _avatarUrl = me.profileImageUrl;
+          _emailVerified = me.isEmailVerified;
+          _phoneVerified = me.isPhoneVerified;
+        });
+      }
+    } catch (_) {
+      // Offline or a transient failure — the initial-letter avatar still renders.
+    }
+    try {
+      final t = await AuthService.instance.getMyTier();
+      final name = (t['tier'] ?? t['name'] ?? t['currentTier'])?.toString();
+      if (mounted && name != null && name.isNotEmpty) setState(() => _tier = name);
+    } catch (_) {
+      // 404 "Provider not found" is the normal case for a customer — no badge.
+    }
+  }
+
+  /// Sends a verification code to the account's phone or email.
+  Future<void> _startVerification({required bool phone}) async {
+    if (_sendingVerify) return;
+    final isBn = context.read<LanguageNotifier>().isBengali;
+    setState(() => _sendingVerify = true);
+    try {
+      if (phone) {
+        await AuthService.instance.startPhoneVerification();
+      } else {
+        await AuthService.instance.startEmailVerification();
+      }
+      if (!mounted) return;
+      _showSuccess(isBn
+          ? 'কোড পাঠানো হয়েছে — যাচাই করে আবার এই স্ক্রিনে আসুন'
+          : 'Code sent — verify it, then reopen this screen');
+    } catch (e) {
+      _showError(e.toString());
+    } finally {
+      if (mounted) setState(() => _sendingVerify = false);
+    }
+  }
+
+  /// Tappable "Verify" chip shown next to an unverified email/phone.
+  Widget _verifyChip(bool isBn, {required bool phone}) {
+    return GestureDetector(
+      onTap: _sendingVerify ? null : () => _startVerification(phone: phone),
+      child: Container(
+        padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 3),
+        decoration: BoxDecoration(
+          color: const Color(0x33F59E0B),
+          borderRadius: BorderRadius.circular(20),
+          border: Border.all(color: const Color(0x66F59E0B), width: 1),
+        ),
+        child: Text(
+          isBn ? 'যাচাই করুন' : 'Verify',
+          style: const TextStyle(
+              color: Color(0xFFF59E0B), fontSize: 10, fontWeight: FontWeight.w600),
+        ),
+      ),
+    );
+  }
+
+  /// Pick a photo and set it as the account avatar (POST /auth/me/profile-photo).
+  /// This is the everyday account picture, not the provider verification selfie.
+  Future<void> _pickAndUploadAvatar() async {
+    final isBn = context.read<LanguageNotifier>().isBengali;
+    try {
+      final picked = await ImagePicker()
+          .pickImage(source: ImageSource.gallery, imageQuality: 80, maxWidth: 1024);
+      if (picked == null) return;
+      setState(() => _uploadingAvatar = true);
+      final bytes = await picked.readAsBytes();
+      final url = await AuthService.instance.uploadProfilePhoto(base64Encode(bytes));
+      if (!mounted) return;
+      setState(() {
+        _avatarUrl = url ?? _avatarUrl;
+        _uploadingAvatar = false;
+      });
+      _showSuccess(isBn ? 'ছবি আপডেট হয়েছে' : 'Photo updated');
+    } catch (e) {
+      if (mounted) setState(() => _uploadingAvatar = false);
+      _showError(e.toString());
     }
   }
 
@@ -165,6 +271,7 @@ class _ProfileScreenState extends State<ProfileScreen> {
                 ),
               ),
             ),
+            SliverToBoxAdapter(child: _buildDeleteAccount()),
             const SliverToBoxAdapter(child: SizedBox(height: 100)),
           ],
         ],
@@ -249,19 +356,39 @@ class _ProfileScreenState extends State<ProfileScreen> {
                     ),
                   ],
                 ),
-                child: Center(
-                  child: Text(
-                    initial,
-                    style: const TextStyle(
-                      color: AppColors.ivory,
-                      fontSize: 36,
-                      fontWeight: FontWeight.w700,
-                    ),
-                  ),
+                child: ClipOval(
+                  child: (_avatarUrl != null && _avatarUrl!.isNotEmpty)
+                      ? Image.network(
+                          _avatarUrl!,
+                          width: 86,
+                          height: 86,
+                          fit: BoxFit.cover,
+                          // A broken/expired URL must never leave an empty circle.
+                          errorBuilder: (_, __, ___) => Center(
+                            child: Text(
+                              initial,
+                              style: const TextStyle(
+                                color: AppColors.ivory,
+                                fontSize: 36,
+                                fontWeight: FontWeight.w700,
+                              ),
+                            ),
+                          ),
+                        )
+                      : Center(
+                          child: Text(
+                            initial,
+                            style: const TextStyle(
+                              color: AppColors.ivory,
+                              fontSize: 36,
+                              fontWeight: FontWeight.w700,
+                            ),
+                          ),
+                        ),
                 ),
               ),
               GestureDetector(
-                onTap: () => _showEditProfileSheet(strings),
+                onTap: _uploadingAvatar ? null : _pickAndUploadAvatar,
                 child: Container(
                   width: 28,
                   height: 28,
@@ -270,7 +397,14 @@ class _ProfileScreenState extends State<ProfileScreen> {
                     shape: BoxShape.circle,
                     border: Border.all(color: AppColors.bgDark, width: 2),
                   ),
-                  child: const Icon(Icons.edit_rounded, color: AppColors.ivory, size: 13),
+                  child: _uploadingAvatar
+                      ? const Padding(
+                          padding: EdgeInsets.all(6),
+                          child: CircularProgressIndicator(
+                              strokeWidth: 2, color: AppColors.ivory),
+                        )
+                      : const Icon(Icons.photo_camera_rounded,
+                          color: AppColors.ivory, size: 13),
                 ),
               ),
             ],
@@ -293,10 +427,8 @@ class _ProfileScreenState extends State<ProfileScreen> {
                 const SizedBox(width: 6),
                 Text(user.email!,
                     style: const TextStyle(color: AppColors.textSecondary, fontSize: 13)),
-                if (user.isEmailVerified) ...[
-                  const SizedBox(width: 8),
-                  _verifiedBadge(isBn),
-                ],
+                const SizedBox(width: 8),
+                if (_emailVerified) _verifiedBadge(isBn) else _verifyChip(isBn, phone: false),
               ],
             ),
             const SizedBox(height: 4),
@@ -309,10 +441,8 @@ class _ProfileScreenState extends State<ProfileScreen> {
                 const SizedBox(width: 6),
                 Text(user.phone!,
                     style: const TextStyle(color: AppColors.textSecondary, fontSize: 13)),
-                if (user.isPhoneVerified) ...[
-                  const SizedBox(width: 8),
-                  _verifiedBadge(isBn),
-                ],
+                const SizedBox(width: 8),
+                if (_phoneVerified) _verifiedBadge(isBn) else _verifyChip(isBn, phone: true),
               ],
             ),
             const SizedBox(height: 4),
@@ -322,9 +452,9 @@ class _ProfileScreenState extends State<ProfileScreen> {
             mainAxisAlignment: MainAxisAlignment.center,
             children: [
               _roleBadge(user.role, isBn),
-              if (user.tier != null) ...[
+              if (_tier != null) ...[
                 const SizedBox(width: 8),
-                _tierBadge(user.tier!),
+                _tierBadge(_tier!),
               ],
             ],
           ),
@@ -656,6 +786,10 @@ class _ProfileScreenState extends State<ProfileScreen> {
       // FIXED/CUSTOM per task-category pricing only applies to technician jobs.
       if (isTechnician)
         _profileTile(Icons.price_change_rounded, isBn ? 'মূল্য নির্ধারণ' : 'Pricing', () => nav(const ProviderPricingScreen()), color: const Color(0xFF14B8A6)),
+      // Multi-service discount packages. The catalog has always had these endpoints;
+      // no screen ever reached them, so a provider could not make or see a bundle.
+      _profileTile(Icons.inventory_2_rounded, isBn ? 'আমার প্যাকেজ' : 'My Bundles', () => nav(const BundlesScreen()), color: const Color(0xFF8B5CF6),
+          subtitle: isBn ? 'কয়েকটা সেবা একসাথে ছাড়ে' : 'Several services together, at a discount'),
       // Course authoring is for micro-learning / skill instructors only.
       if (isInstructor)
         _profileTile(Icons.cast_for_education_rounded, isBn ? 'কোর্স তৈরি' : 'Teach a Course', () => nav(const CourseAuthoringScreen()), color: const Color(0xFFAD1457)),
@@ -721,6 +855,75 @@ class _ProfileScreenState extends State<ProfileScreen> {
     );
   }
 
+  // ── Delete account ────────────────────────────────────────────────
+
+  // Google Play requires an in-app route to account deletion for any app with accounts.
+  // The endpoint existed from the start but nothing ever reached it.
+  Widget _buildDeleteAccount() {
+    final isBn = context.read<LanguageNotifier>().isBengali;
+    return Padding(
+      padding: const EdgeInsets.fromLTRB(16, 12, 16, 0),
+      child: Center(
+        child: TextButton(
+          onPressed: _confirmDeleteAccount,
+          child: Text(
+            isBn ? 'অ্যাকাউন্ট মুছে ফেলুন' : 'Delete my account',
+            style: const TextStyle(
+                color: Color(0xFFEF4444),
+                fontSize: 13,
+                fontWeight: FontWeight.w600),
+          ),
+        ),
+      ),
+    );
+  }
+
+  Future<void> _confirmDeleteAccount() async {
+    final isBn = context.read<LanguageNotifier>().isBengali;
+    final confirmed = await showDialog<bool>(
+      context: context,
+      builder: (ctx) => AlertDialog(
+        backgroundColor: AppColors.bgMid,
+        title: Text(
+          isBn ? 'অ্যাকাউন্ট মুছে ফেলবেন?' : 'Delete your account?',
+          style: const TextStyle(
+              color: AppColors.textPrimary, fontSize: 17, fontWeight: FontWeight.w700),
+        ),
+        content: Text(
+          isBn
+              ? 'আপনার প্রোফাইল, ঠিকানা ও ইতিহাস মুছে যাবে এবং সব ডিভাইস থেকে লগআউট হবে। এটি ফেরানো যাবে না।'
+              : 'Your profile, addresses and history will be removed and every session signed out. This cannot be undone.',
+          style: const TextStyle(color: AppColors.textSecondary, fontSize: 13),
+        ),
+        actions: [
+          TextButton(
+            onPressed: () => Navigator.pop(ctx, false),
+            child: Text(isBn ? 'বাতিল' : 'Cancel',
+                style: const TextStyle(color: AppColors.textMuted)),
+          ),
+          TextButton(
+            onPressed: () => Navigator.pop(ctx, true),
+            child: Text(isBn ? 'মুছে ফেলুন' : 'Delete',
+                style: const TextStyle(
+                    color: Color(0xFFEF4444), fontWeight: FontWeight.w700)),
+          ),
+        ],
+      ),
+    );
+    if (confirmed != true) return;
+    try {
+      await AuthService.instance.deleteAccount();
+      if (!mounted) return;
+      Navigator.of(context).pushAndRemoveUntil(
+        MaterialPageRoute(builder: (_) => const AuthScreen()),
+        (_) => false,
+      );
+    } catch (e) {
+      // The session is deliberately kept on failure so the user can retry.
+      _showError(e.toString());
+    }
+  }
+
   // ── Logout ────────────────────────────────────────────────────────
 
   Future<void> _handleLogout(AppStrings strings) async {
@@ -771,9 +974,20 @@ class _ProfileScreenState extends State<ProfileScreen> {
 
   // ── Edit Profile sheet ────────────────────────────────────────────
 
-  void _showEditProfileSheet(AppStrings strings) {
+  Future<void> _showEditProfileSheet(AppStrings strings) async {
     final nameCtrl = TextEditingController(text: _user?.fullName ?? '');
     final phoneCtrl = TextEditingController(text: _user?.phone ?? '');
+    final isProvider = _user?.providerProfileId != null;
+    String initialSpecialNote = '';
+    if (isProvider) {
+      try {
+        final me = await AuthService.instance.getMeRaw();
+        final pp = me['providerProfile'];
+        if (pp is Map) initialSpecialNote = (pp['specialNote'] as String?) ?? '';
+      } catch (_) {}
+    }
+    final specialNoteCtrl = TextEditingController(text: initialSpecialNote);
+    if (!mounted) return;
     final isBn = context.read<LanguageNotifier>().isBengali;
 
     showModalBottomSheet(
@@ -800,6 +1014,15 @@ class _ProfileScreenState extends State<ProfileScreen> {
                   icon: Icons.phone_android_rounded,
                   keyboardType: TextInputType.phone,
                 ),
+                if (isProvider) ...[
+                  const SizedBox(height: 14),
+                  _sheetTextField(
+                    controller: specialNoteCtrl,
+                    hint: isBn ? 'বিশেষ নোট — আপনি কিসে বেশি পারদর্শী? (ঐচ্ছিক)' : 'Special note — what are you especially good at? (optional)',
+                    icon: Icons.star_rounded,
+                    maxLines: 2,
+                  ),
+                ],
                 const SizedBox(height: 24),
                 _SheetSaveButton(
                   label: strings.saveChanges,
@@ -814,6 +1037,9 @@ class _ProfileScreenState extends State<ProfileScreen> {
                             ? phoneCtrl.text.trim()
                             : null,
                       );
+                      if (isProvider) {
+                        await AuthService.instance.updateSpecialNote(specialNoteCtrl.text.trim());
+                      }
                       if (mounted) setState(() => _user = updated);
                       if (ctx.mounted) Navigator.pop(ctx);
                       _showSuccess(isBn ? 'প্রোফাইল আপডেট হয়েছে' : 'Profile updated');
@@ -961,7 +1187,7 @@ class _ProfileScreenState extends State<ProfileScreen> {
                       GestureDetector(
                         onTap: () async {
                           Navigator.pop(ctx);
-                          await _showAddAddressSheet(strings);
+                          await _showAddressSheet(strings);
                           if (mounted) _showAddressesSheet(strings);
                         },
                         child: Container(
@@ -1115,6 +1341,23 @@ class _ProfileScreenState extends State<ProfileScreen> {
                                           ),
                                         GestureDetector(
                                           onTap: () async {
+                                            Navigator.pop(ctx);
+                                            await _showAddressSheet(strings,
+                                                existing: addr);
+                                            if (mounted) {
+                                              _showAddressesSheet(strings);
+                                            }
+                                          },
+                                          child: const Padding(
+                                            padding:
+                                                EdgeInsets.only(bottom: 8),
+                                            child: Icon(Icons.edit_rounded,
+                                                color: AppColors.textMuted,
+                                                size: 18),
+                                          ),
+                                        ),
+                                        GestureDetector(
+                                          onTap: () async {
                                             try {
                                               await AuthService.instance
                                                   .deleteAddress(addr.id);
@@ -1155,13 +1398,22 @@ class _ProfileScreenState extends State<ProfileScreen> {
 
   // ── Add Address sheet ─────────────────────────────────────────────
 
-  Future<void> _showAddAddressSheet(AppStrings strings) async {
-    final labelCtrl = TextEditingController();
-    final line1Ctrl = TextEditingController();
-    final areaCtrl = TextEditingController();
-    final cityCtrl = TextEditingController();
-    final districtCtrl = TextEditingController();
+  /// Add sheet when [existing] is null, edit sheet when it isn't. Editing was missing
+  /// entirely — a wrong address could only be deleted and retyped from scratch.
+  Future<void> _showAddressSheet(AppStrings strings, {AddressModel? existing}) async {
+    final editing = existing != null;
+    final labelCtrl = TextEditingController(text: existing?.label ?? '');
+    final line1Ctrl = TextEditingController(text: existing?.line1 ?? '');
+    final areaCtrl = TextEditingController(text: existing?.area ?? '');
+    final cityCtrl = TextEditingController(text: existing?.city ?? '');
+    final districtCtrl = TextEditingController(text: existing?.district ?? '');
     final isBn = context.read<LanguageNotifier>().isBengali;
+    // Captured via "use my current location" below — powers the go-online location-mismatch
+    // nudge in dispatch-service (comparing live GPS against this address). A plain text
+    // address with no pin still saves fine, it just skips that check.
+    double? capturedLat;
+    double? capturedLng;
+    bool capturingLocation = false;
 
     await showModalBottomSheet(
       context: context,
@@ -1172,7 +1424,9 @@ class _ProfileScreenState extends State<ProfileScreen> {
           padding:
               EdgeInsets.only(bottom: MediaQuery.of(ctx).viewInsets.bottom),
           child: _bottomSheet(
-            title: strings.addAddress,
+            title: editing
+                ? (isBn ? 'ঠিকানা সম্পাদনা' : 'Edit address')
+                : strings.addAddress,
             child: SingleChildScrollView(
               child: Column(
                 mainAxisSize: MainAxisSize.min,
@@ -1203,9 +1457,47 @@ class _ProfileScreenState extends State<ProfileScreen> {
                       controller: districtCtrl,
                       hint: isBn ? 'জেলা' : 'District',
                       icon: Icons.map_rounded),
-                  const SizedBox(height: 24),
+                  const SizedBox(height: 12),
+                  OutlinedButton.icon(
+                    onPressed: capturingLocation
+                        ? null
+                        : () async {
+                            setSheet(() => capturingLocation = true);
+                            try {
+                              final serviceEnabled = await Geolocator.isLocationServiceEnabled();
+                              var permission = await Geolocator.checkPermission();
+                              if (permission == LocationPermission.denied) {
+                                permission = await Geolocator.requestPermission();
+                              }
+                              final denied = permission == LocationPermission.denied ||
+                                  permission == LocationPermission.deniedForever;
+                              if (!serviceEnabled || denied) {
+                                _showError(isBn ? 'লোকেশন অনুমতি প্রয়োজন' : 'Location permission required');
+                              } else {
+                                final pos = await Geolocator.getCurrentPosition(
+                                    timeLimit: const Duration(seconds: 15));
+                                capturedLat = pos.latitude;
+                                capturedLng = pos.longitude;
+                              }
+                            } catch (_) {
+                              _showError(isBn ? 'অবস্থান পাওয়া যায়নি' : 'Could not get location');
+                            } finally {
+                              setSheet(() => capturingLocation = false);
+                            }
+                          },
+                    icon: capturingLocation
+                        ? const SizedBox(width: 16, height: 16, child: CircularProgressIndicator(strokeWidth: 2))
+                        : Icon(capturedLat != null ? Icons.check_circle_rounded : Icons.my_location_rounded,
+                            color: capturedLat != null ? const Color(0xFF10B981) : null, size: 18),
+                    label: Text(capturedLat != null
+                        ? (isBn ? 'অবস্থান যুক্ত হয়েছে' : 'Location captured')
+                        : (isBn ? 'বর্তমান অবস্থান ব্যবহার করুন' : 'Use my current location')),
+                  ),
+                  const SizedBox(height: 12),
                   _SheetSaveButton(
-                    label: strings.addAddress,
+                    label: editing
+                        ? (isBn ? 'আপডেট করুন' : 'Update')
+                        : strings.addAddress,
                     onPressed: (setSaving) async {
                       if (line1Ctrl.text.trim().isEmpty) {
                         _showError(isBn
@@ -1215,27 +1507,45 @@ class _ProfileScreenState extends State<ProfileScreen> {
                       }
                       setSaving(true);
                       try {
-                        await AuthService.instance.createAddress(
-                          line1: line1Ctrl.text.trim(),
-                          label: labelCtrl.text.trim().isNotEmpty
-                              ? labelCtrl.text.trim()
-                              : null,
-                          area: areaCtrl.text.trim().isNotEmpty
-                              ? areaCtrl.text.trim()
-                              : null,
-                          city: cityCtrl.text.trim().isNotEmpty
-                              ? cityCtrl.text.trim()
-                              : null,
-                          district: districtCtrl.text.trim().isNotEmpty
-                              ? districtCtrl.text.trim()
-                              : null,
-                        );
+                        final label = labelCtrl.text.trim().isNotEmpty
+                            ? labelCtrl.text.trim()
+                            : null;
+                        final area = areaCtrl.text.trim().isNotEmpty
+                            ? areaCtrl.text.trim()
+                            : null;
+                        final city = cityCtrl.text.trim().isNotEmpty
+                            ? cityCtrl.text.trim()
+                            : null;
+                        final district = districtCtrl.text.trim().isNotEmpty
+                            ? districtCtrl.text.trim()
+                            : null;
+                        if (editing) {
+                          await AuthService.instance.updateAddress(
+                            existing.id,
+                            line1: line1Ctrl.text.trim(),
+                            label: label,
+                            area: area,
+                            city: city,
+                            district: district,
+                          );
+                        } else {
+                          await AuthService.instance.createAddress(
+                            line1: line1Ctrl.text.trim(),
+                            label: label,
+                            area: area,
+                            city: city,
+                            district: district,
+                            latitude: capturedLat,
+                            longitude: capturedLng,
+                          );
+                        }
                         final updated =
                             await AuthService.instance.listAddresses();
                         if (mounted) setState(() => _addresses = updated);
                         if (ctx.mounted) Navigator.pop(ctx);
-                        _showSuccess(
-                            isBn ? 'ঠিকানা যোগ হয়েছে' : 'Address added');
+                        _showSuccess(editing
+                            ? (isBn ? 'ঠিকানা আপডেট হয়েছে' : 'Address updated')
+                            : (isBn ? 'ঠিকানা যোগ হয়েছে' : 'Address added'));
                       } catch (e) {
                         _showError(e.toString());
                       } finally {
@@ -1296,11 +1606,13 @@ class _ProfileScreenState extends State<ProfileScreen> {
     required IconData icon,
     TextInputType? keyboardType,
     bool obscure = false,
+    int maxLines = 1,
   }) {
     return TextFormField(
       controller: controller,
       obscureText: obscure,
       keyboardType: keyboardType,
+      maxLines: maxLines,
       style: const TextStyle(color: AppColors.textPrimary, fontSize: 14),
       decoration: InputDecoration(
         hintText: hint,

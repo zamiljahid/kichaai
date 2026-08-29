@@ -4,7 +4,9 @@ import 'dart:ui';
 import 'package:flutter/material.dart';
 import 'package:flutter_animate/flutter_animate.dart';
 import 'package:image_picker/image_picker.dart';
+import 'package:provider/provider.dart';
 import '../core/network/api_client.dart';
+import '../core/utils/app_strings.dart';
 import '../theme/app_theme.dart';
 import '../widgets/glass_button.dart';
 import '../widgets/glass_card.dart';
@@ -26,6 +28,7 @@ class _NidScreenState extends State<NidScreen> {
   bool _isLoading = true;
   bool _isSaving = false;
   final _picker = ImagePicker();
+  bool _isBn = true;
 
   @override
   void initState() {
@@ -63,10 +66,10 @@ class _NidScreenState extends State<NidScreen> {
   }
 
   Future<void> _submit() async {
-    if (_nidNumCtrl.text.isEmpty) { _showError('NID নম্বর দিন'); return; }
-    if (_nameCtrl.text.isEmpty) { _showError('নামে তথ্য দিন'); return; }
-    if (_frontImage == null) { _showError('NID সামনের ছবি যোগ করুন'); return; }
-    if (_backImage == null) { _showError('NID পিছনের ছবি যোগ করুন'); return; }
+    if (_nidNumCtrl.text.isEmpty) { _showError(_isBn ? 'NID নম্বর দিন' : 'Enter NID number'); return; }
+    if (_nameCtrl.text.isEmpty) { _showError(_isBn ? 'নামে তথ্য দিন' : 'Enter the name'); return; }
+    if (_frontImage == null) { _showError(_isBn ? 'NID সামনের ছবি যোগ করুন' : 'Add NID front image'); return; }
+    if (_backImage == null) { _showError(_isBn ? 'NID পিছনের ছবি যোগ করুন' : 'Add NID back image'); return; }
 
     setState(() => _isSaving = true);
     try {
@@ -87,12 +90,12 @@ class _NidScreenState extends State<NidScreen> {
       await _loadStatus();
       if (mounted) {
         ScaffoldMessenger.of(context).showSnackBar(
-          const SnackBar(content: Text('NID জমা দেওয়া হয়েছে, যাচাই হচ্ছে', style: TextStyle(color: Colors.white)), backgroundColor: Color(0xFF10B981), behavior: SnackBarBehavior.floating),
+          SnackBar(content: Text(_isBn ? 'NID জমা দেওয়া হয়েছে, যাচাই হচ্ছে' : 'NID submitted, verifying', style: const TextStyle(color: Colors.white)), backgroundColor: const Color(0xFF10B981), behavior: SnackBarBehavior.floating),
         );
       }
     } catch (e) {
       final ex = ApiClient.mapError(e);
-      _showError(ex.messageBn);
+      _showError(ex.localized(_isBn));
     } finally {
       if (mounted) setState(() => _isSaving = false);
     }
@@ -106,6 +109,7 @@ class _NidScreenState extends State<NidScreen> {
 
   @override
   Widget build(BuildContext context) {
+    _isBn = context.watch<LanguageNotifier>().isBengali;
     final nidStatus = _status?['status'] as String?;
 
     return Scaffold(
@@ -113,7 +117,7 @@ class _NidScreenState extends State<NidScreen> {
       appBar: AppBar(
         backgroundColor: Colors.transparent,
         elevation: 0,
-        title: const Text('NID যাচাইকরণ', style: TextStyle(color: AppColors.textPrimary, fontSize: 18, fontWeight: FontWeight.w700)),
+        title: Text(_isBn ? 'NID যাচাইকরণ' : 'NID Verification', style: const TextStyle(color: AppColors.textPrimary, fontSize: 18, fontWeight: FontWeight.w700)),
         leading: IconButton(
           icon: const Icon(Icons.arrow_back_ios_new_rounded, color: AppColors.textPrimary, size: 18),
           onPressed: () => Navigator.pop(context),
@@ -133,28 +137,28 @@ class _NidScreenState extends State<NidScreen> {
                       child: Column(
                         crossAxisAlignment: CrossAxisAlignment.start,
                         children: [
-                          _label('NID নম্বর'),
+                          _label(_isBn ? 'NID নম্বর' : 'NID Number'),
                           TextField(
                             controller: _nidNumCtrl,
                             keyboardType: TextInputType.number,
                             style: const TextStyle(color: AppColors.textPrimary),
-                            decoration: _inputDeco('১০/১৩/১৭ সংখ্যার NID', Icons.credit_card_outlined),
+                            decoration: _inputDeco(_isBn ? '১০/১৩/১৭ সংখ্যার NID' : '10/13/17 digit NID', Icons.credit_card_outlined),
                           ),
-                          _label('NID-তে নাম'),
+                          _label(_isBn ? 'NID-তে নাম' : 'Name on NID'),
                           TextField(
                             controller: _nameCtrl,
                             style: const TextStyle(color: AppColors.textPrimary),
-                            decoration: _inputDeco('NID তে যেভাবে আছে', Icons.person_outline_rounded),
+                            decoration: _inputDeco(_isBn ? 'NID তে যেভাবে আছে' : 'As it appears on the NID', Icons.person_outline_rounded),
                           ),
                           const SizedBox(height: 20),
                           Row(children: [
-                            Expanded(child: _imagePicker('সামনের দিক', _frontImage, () => _pickImage(true))),
+                            Expanded(child: _imagePicker(_isBn ? 'সামনের দিক' : 'Front side', _frontImage, () => _pickImage(true))),
                             const SizedBox(width: 12),
-                            Expanded(child: _imagePicker('পিছনের দিক', _backImage, () => _pickImage(false))),
+                            Expanded(child: _imagePicker(_isBn ? 'পিছনের দিক' : 'Back side', _backImage, () => _pickImage(false))),
                           ]),
                           const SizedBox(height: 20),
                           GlassButton(
-                            label: _isSaving ? 'জমা হচ্ছে...' : 'NID জমা দিন',
+                            label: _isSaving ? (_isBn ? 'জমা হচ্ছে...' : 'Submitting...') : (_isBn ? 'NID জমা দিন' : 'Submit NID'),
                             onPressed: _isSaving ? null : _submit,
                                                       ),
                         ],
@@ -173,8 +177,10 @@ class _NidScreenState extends State<NidScreen> {
     final isRejected = status == 'REJECTED';
     final color = isVerified ? const Color(0xFF10B981) : isPending ? const Color(0xFFF59E0B) : const Color(0xFFEF4444);
     final icon = isVerified ? Icons.verified_rounded : isPending ? Icons.schedule_rounded : Icons.cancel_rounded;
-    final text = isVerified ? 'NID যাচাই সম্পন্ন' : isPending ? 'যাচাই প্রক্রিয়াধীন...' : 'যাচাই প্রত্যাখ্যাত';
-    final sub = isRejected ? (_status?['rejectionReason'] as String? ?? 'কারণ অজানা') : null;
+    final text = _isBn
+        ? (isVerified ? 'NID যাচাই সম্পন্ন' : isPending ? 'যাচাই প্রক্রিয়াধীন...' : 'যাচাই প্রত্যাখ্যাত')
+        : (isVerified ? 'NID Verified' : isPending ? 'Verification in progress...' : 'Verification Rejected');
+    final sub = isRejected ? (_status?['rejectionReason'] as String? ?? (_isBn ? 'কারণ অজানা' : 'Reason unknown')) : null;
 
     return Container(
       padding: const EdgeInsets.all(16),
@@ -188,7 +194,7 @@ class _NidScreenState extends State<NidScreen> {
         const SizedBox(width: 12),
         Expanded(child: Column(crossAxisAlignment: CrossAxisAlignment.start, children: [
           Text(text, style: TextStyle(color: color, fontSize: 14, fontWeight: FontWeight.w700)),
-          if (sub != null) Text('কারণ: $sub', style: const TextStyle(color: AppColors.textMuted, fontSize: 12)),
+          if (sub != null) Text('${_isBn ? 'কারণ' : 'Reason'}: $sub', style: const TextStyle(color: AppColors.textMuted, fontSize: 12)),
         ])),
       ]),
     );

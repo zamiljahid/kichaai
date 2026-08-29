@@ -1,6 +1,8 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_animate/flutter_animate.dart';
+import 'package:provider/provider.dart';
 import '../core/network/api_client.dart';
+import '../core/utils/app_strings.dart';
 import '../theme/app_theme.dart';
 import '../widgets/animated_background.dart';
 import '../widgets/glass_card.dart';
@@ -24,6 +26,7 @@ class _OnboardingScreenState extends State<OnboardingScreen> {
       title: 'যাচাইকৃত সেবাদাতা',
       titleEn: 'Verified Providers',
       desc: 'সকল সেবাদাতা NID যাচাইকৃত এবং পেশাগতভাবে প্রশিক্ষিত',
+      descEn: 'Every provider is NID-verified and professionally trained',
       color: AppColors.deepBlue,
     ),
     _OnboardingData(
@@ -31,6 +34,7 @@ class _OnboardingScreenState extends State<OnboardingScreen> {
       title: 'দ্রুত সংযোগ',
       titleEn: 'Fast Matching',
       desc: 'আপনার চাহিদা পোস্ট করুন, সেবাদাতা নিজেই আপনার কাছে আসবে',
+      descEn: 'Post what you need — providers come to you',
       color: AppColors.fuchsia,
     ),
     _OnboardingData(
@@ -38,12 +42,14 @@ class _OnboardingScreenState extends State<OnboardingScreen> {
       title: '১৬টি সেবা বিভাগ',
       titleEn: '16 Categories',
       desc: 'ক্যারগিভার থেকে ফটোগ্রাফার — সব ধরনের সেবা এক প্ল্যাটফর্মে',
+      descEn: 'From caregivers to photographers — every service, one platform',
       color: AppColors.deepBlue,
     ),
   ];
 
   @override
   Widget build(BuildContext context) {
+    final isBn = context.watch<LanguageNotifier>().isBengali;
     return Scaffold(
       body: AnimatedBackground(
         child: SafeArea(
@@ -54,7 +60,7 @@ class _OnboardingScreenState extends State<OnboardingScreen> {
                 child: TextButton(
                   onPressed: _goToAuth,
                   child: Text(
-                    'এড়িয়ে যান',
+                    isBn ? 'এড়িয়ে যান' : 'Skip',
                     style: TextStyle(color: AppColors.textSecondary, fontSize: 14),
                   ),
                 ),
@@ -64,7 +70,7 @@ class _OnboardingScreenState extends State<OnboardingScreen> {
                   controller: _controller,
                   onPageChanged: (i) => setState(() => _currentPage = i),
                   itemCount: _pages.length,
-                  itemBuilder: (_, i) => _buildPage(_pages[i]),
+                  itemBuilder: (_, i) => _buildPage(_pages[i], isBn),
                 ),
               ),
               _buildDots(),
@@ -72,12 +78,12 @@ class _OnboardingScreenState extends State<OnboardingScreen> {
                 padding: const EdgeInsets.fromLTRB(24, 16, 24, 32),
                 child: _currentPage == _pages.length - 1
                     ? GlassButton(
-                        label: 'শুরু করুন',
+                        label: isBn ? 'শুরু করুন' : 'Get Started',
                         onPressed: _goToAuth,
                         icon: Icons.arrow_forward_rounded,
                       )
                     : GlassButton(
-                        label: 'পরবর্তী',
+                        label: isBn ? 'পরবর্তী' : 'Next',
                         onPressed: () => _controller.nextPage(
                           duration: const Duration(milliseconds: 400),
                           curve: Curves.easeInOut,
@@ -92,7 +98,7 @@ class _OnboardingScreenState extends State<OnboardingScreen> {
     );
   }
 
-  Widget _buildPage(_OnboardingData data) {
+  Widget _buildPage(_OnboardingData data, bool isBn) {
     return Padding(
       padding: const EdgeInsets.symmetric(horizontal: 32),
       child: Column(
@@ -126,7 +132,7 @@ class _OnboardingScreenState extends State<OnboardingScreen> {
             child: Column(
               children: [
                 Text(
-                  data.title,
+                  isBn ? data.title : data.titleEn,
                   style: const TextStyle(
                     color: AppColors.textPrimary,
                     fontSize: 26,
@@ -134,18 +140,9 @@ class _OnboardingScreenState extends State<OnboardingScreen> {
                   ),
                   textAlign: TextAlign.center,
                 ),
-                const SizedBox(height: 4),
-                Text(
-                  data.titleEn,
-                  style: TextStyle(
-                    color: AppColors.textMuted,
-                    fontSize: 13,
-                    letterSpacing: 1,
-                  ),
-                ),
                 const SizedBox(height: 16),
                 Text(
-                  data.desc,
+                  isBn ? data.desc : data.descEn,
                   style: const TextStyle(
                     color: AppColors.textSecondary,
                     fontSize: 15,
@@ -202,12 +199,14 @@ class _OnboardingData {
   final String title;
   final String titleEn;
   final String desc;
+  final String descEn;
   final Color color;
   const _OnboardingData({
     required this.icon,
     required this.title,
     required this.titleEn,
     required this.desc,
+    required this.descEn,
     required this.color,
   });
 }

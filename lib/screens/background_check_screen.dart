@@ -2,7 +2,9 @@ import 'dart:convert';
 import 'package:flutter/material.dart';
 import 'package:flutter_animate/flutter_animate.dart';
 import 'package:image_picker/image_picker.dart';
+import 'package:provider/provider.dart';
 import '../core/network/api_client.dart';
+import '../core/utils/app_strings.dart';
 import '../theme/app_theme.dart';
 import '../widgets/glass_button.dart';
 
@@ -25,6 +27,7 @@ class _BackgroundCheckScreenState extends State<BackgroundCheckScreen> {
   final _addressCtrl = TextEditingController();
   XFile? _idFront;
   XFile? _idBack;
+  bool _isBn = true;
 
   @override
   void initState() {
@@ -63,7 +66,7 @@ class _BackgroundCheckScreenState extends State<BackgroundCheckScreen> {
   Future<void> _submit() async {
     if (_fullNameCtrl.text.trim().isEmpty || _dobCtrl.text.trim().isEmpty || _addressCtrl.text.trim().isEmpty) {
       ScaffoldMessenger.of(context).showSnackBar(
-        const SnackBar(content: Text('সব তথ্য পূরণ করুন', style: TextStyle(color: Colors.white)), backgroundColor: Color(0xFFEF4444), behavior: SnackBarBehavior.floating),
+        SnackBar(content: Text(_isBn ? 'সব তথ্য পূরণ করুন' : 'Fill in all fields', style: const TextStyle(color: Colors.white)), backgroundColor: const Color(0xFFEF4444), behavior: SnackBarBehavior.floating),
       );
       return;
     }
@@ -87,14 +90,14 @@ class _BackgroundCheckScreenState extends State<BackgroundCheckScreen> {
       await _load();
       if (mounted) {
         ScaffoldMessenger.of(context).showSnackBar(
-          const SnackBar(content: Text('ব্যাকগ্রাউন্ড চেক সাবমিট হয়েছে', style: TextStyle(color: Colors.white)), backgroundColor: Color(0xFF10B981), behavior: SnackBarBehavior.floating),
+          SnackBar(content: Text(_isBn ? 'ব্যাকগ্রাউন্ড চেক সাবমিট হয়েছে' : 'Background check submitted', style: const TextStyle(color: Colors.white)), backgroundColor: const Color(0xFF10B981), behavior: SnackBarBehavior.floating),
         );
       }
     } catch (e) {
       final ex = ApiClient.mapError(e);
       if (mounted) {
         ScaffoldMessenger.of(context).showSnackBar(
-          SnackBar(content: Text(ex.messageBn, style: const TextStyle(color: Colors.white)), backgroundColor: const Color(0xFFEF4444), behavior: SnackBarBehavior.floating),
+          SnackBar(content: Text(ex.localized(_isBn), style: const TextStyle(color: Colors.white)), backgroundColor: const Color(0xFFEF4444), behavior: SnackBarBehavior.floating),
         );
       }
     } finally {
@@ -109,6 +112,7 @@ class _BackgroundCheckScreenState extends State<BackgroundCheckScreen> {
 
   @override
   Widget build(BuildContext context) {
+    _isBn = context.watch<LanguageNotifier>().isBengali;
     final status = _checkData?['status'] as String?;
 
     return Scaffold(
@@ -116,7 +120,7 @@ class _BackgroundCheckScreenState extends State<BackgroundCheckScreen> {
       appBar: AppBar(
         backgroundColor: Colors.transparent,
         elevation: 0,
-        title: const Text('ব্যাকগ্রাউন্ড চেক', style: TextStyle(color: AppColors.textPrimary, fontSize: 18, fontWeight: FontWeight.w700)),
+        title: Text(_isBn ? 'ব্যাকগ্রাউন্ড চেক' : 'Background Check', style: const TextStyle(color: AppColors.textPrimary, fontSize: 18, fontWeight: FontWeight.w700)),
         leading: IconButton(
           icon: const Icon(Icons.arrow_back_ios_new_rounded, color: AppColors.textPrimary, size: 18),
           onPressed: () => Navigator.pop(context),
@@ -141,11 +145,17 @@ class _BackgroundCheckScreenState extends State<BackgroundCheckScreen> {
   }
 
   Widget _buildStatusBanner(String status) {
-    final cfg = switch (status) {
-      'VERIFIED' => (const Color(0xFF10B981), Icons.verified_rounded, 'যাচাই সম্পন্ন', 'আপনার ব্যাকগ্রাউন্ড চেক সফলভাবে সম্পন্ন হয়েছে।'),
-      'PENDING' => (const Color(0xFFF59E0B), Icons.hourglass_empty_rounded, 'পর্যালোচনাধীন', 'আপনার তথ্য যাচাই করা হচ্ছে। কিছুটা সময় লাগতে পারে।'),
-      _ => (const Color(0xFFEF4444), Icons.cancel_outlined, 'প্রত্যাখ্যাত', _checkData?['rejectionReason'] as String? ?? 'আপনার আবেদন প্রত্যাখ্যাত হয়েছে। পুনরায় আবেদন করুন।'),
-    };
+    final cfg = _isBn
+        ? switch (status) {
+            'VERIFIED' => (const Color(0xFF10B981), Icons.verified_rounded, 'যাচাই সম্পন্ন', 'আপনার ব্যাকগ্রাউন্ড চেক সফলভাবে সম্পন্ন হয়েছে।'),
+            'PENDING' => (const Color(0xFFF59E0B), Icons.hourglass_empty_rounded, 'পর্যালোচনাধীন', 'আপনার তথ্য যাচাই করা হচ্ছে। কিছুটা সময় লাগতে পারে।'),
+            _ => (const Color(0xFFEF4444), Icons.cancel_outlined, 'প্রত্যাখ্যাত', _checkData?['rejectionReason'] as String? ?? 'আপনার আবেদন প্রত্যাখ্যাত হয়েছে। পুনরায় আবেদন করুন।'),
+          }
+        : switch (status) {
+            'VERIFIED' => (const Color(0xFF10B981), Icons.verified_rounded, 'Verified', 'Your background check has been completed successfully.'),
+            'PENDING' => (const Color(0xFFF59E0B), Icons.hourglass_empty_rounded, 'Under Review', 'Your information is being verified. This may take some time.'),
+            _ => (const Color(0xFFEF4444), Icons.cancel_outlined, 'Rejected', _checkData?['rejectionReason'] as String? ?? 'Your application was rejected. Please re-apply.'),
+          };
 
     return Container(
       padding: const EdgeInsets.all(16),
@@ -170,12 +180,12 @@ class _BackgroundCheckScreenState extends State<BackgroundCheckScreen> {
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
-        const Text('আবেদন ফর্ম', style: TextStyle(color: AppColors.textMuted, fontSize: 12, fontWeight: FontWeight.w600, letterSpacing: 1)),
+        Text(_isBn ? 'আবেদন ফর্ম' : 'Application Form', style: const TextStyle(color: AppColors.textMuted, fontSize: 12, fontWeight: FontWeight.w600, letterSpacing: 1)),
         const SizedBox(height: 16),
-        _label('পূর্ণ নাম'),
-        _field(_fullNameCtrl, 'আপনার পূর্ণ নাম', Icons.person_outline_rounded),
+        _label(_isBn ? 'পূর্ণ নাম' : 'Full Name'),
+        _field(_fullNameCtrl, _isBn ? 'আপনার পূর্ণ নাম' : 'Your full name', Icons.person_outline_rounded),
         const SizedBox(height: 14),
-        _label('জন্ম তারিখ'),
+        _label(_isBn ? 'জন্ম তারিখ' : 'Date of Birth'),
         GestureDetector(
           onTap: () async {
             final picked = await showDatePicker(
@@ -189,13 +199,13 @@ class _BackgroundCheckScreenState extends State<BackgroundCheckScreen> {
           child: AbsorbPointer(child: _field(_dobCtrl, 'YYYY-MM-DD', Icons.calendar_today_outlined)),
         ),
         const SizedBox(height: 14),
-        _label('বর্তমান ঠিকানা'),
+        _label(_isBn ? 'বর্তমান ঠিকানা' : 'Current Address'),
         TextField(
           controller: _addressCtrl,
           maxLines: 2,
           style: const TextStyle(color: AppColors.textPrimary),
           decoration: InputDecoration(
-            hintText: 'আপনার বর্তমান ঠিকানা',
+            hintText: _isBn ? 'আপনার বর্তমান ঠিকানা' : 'Your current address',
             hintStyle: const TextStyle(color: AppColors.textMuted),
             prefixIcon: const Icon(Icons.location_on_outlined, color: AppColors.textMuted, size: 18),
             filled: true,
@@ -204,16 +214,16 @@ class _BackgroundCheckScreenState extends State<BackgroundCheckScreen> {
           ),
         ),
         const SizedBox(height: 20),
-        _label('পরিচয়পত্রের ছবি'),
+        _label(_isBn ? 'পরিচয়পত্রের ছবি' : 'ID Photos'),
         const SizedBox(height: 10),
         Row(children: [
-          Expanded(child: _imagePicker('সামনের পৃষ্ঠা', _idFront, () => _pickImage(true))),
+          Expanded(child: _imagePicker(_isBn ? 'সামনের পৃষ্ঠা' : 'Front side', _idFront, () => _pickImage(true))),
           const SizedBox(width: 12),
-          Expanded(child: _imagePicker('পেছনের পৃষ্ঠা', _idBack, () => _pickImage(false))),
+          Expanded(child: _imagePicker(_isBn ? 'পেছনের পৃষ্ঠা' : 'Back side', _idBack, () => _pickImage(false))),
         ]),
         const SizedBox(height: 28),
         GlassButton(
-          label: _isSubmitting ? 'সাবমিট হচ্ছে...' : 'আবেদন করুন',
+          label: _isSubmitting ? (_isBn ? 'সাবমিট হচ্ছে...' : 'Submitting...') : (_isBn ? 'আবেদন করুন' : 'Apply'),
           onPressed: _isSubmitting ? null : _submit,
         ),
       ],
@@ -254,7 +264,7 @@ class _BackgroundCheckScreenState extends State<BackgroundCheckScreen> {
           Icon(file != null ? Icons.check_circle_rounded : Icons.add_photo_alternate_outlined,
             color: file != null ? AppColors.deepBlue : AppColors.textMuted, size: 28),
           const SizedBox(height: 6),
-          Text(file != null ? 'নির্বাচিত' : label, style: TextStyle(color: file != null ? AppColors.deepBlue : AppColors.textMuted, fontSize: 11)),
+          Text(file != null ? (_isBn ? 'নির্বাচিত' : 'Selected') : label, style: TextStyle(color: file != null ? AppColors.deepBlue : AppColors.textMuted, fontSize: 11)),
         ]),
       ),
     );

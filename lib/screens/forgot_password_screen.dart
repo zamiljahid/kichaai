@@ -1,6 +1,8 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_animate/flutter_animate.dart';
+import 'package:provider/provider.dart';
 import '../core/network/api_client.dart';
+import '../core/utils/app_strings.dart';
 import '../theme/app_theme.dart';
 import '../widgets/glass_button.dart';
 import '../widgets/glass_card.dart';
@@ -36,12 +38,13 @@ class _ForgotPasswordScreenState extends State<ForgotPasswordScreen> {
   }
 
   Future<void> _submit() async {
+    final isBn = context.read<LanguageNotifier>().isBengali;
     final identifier = _identifierController.text.trim();
     final password = _passwordController.text;
     final confirm = _confirmController.text;
-    if (identifier.isEmpty) { setState(() => _error = 'ইমেইল বা ফোন নম্বর দিন'); return; }
-    if (password.length < 8) { setState(() => _error = 'পাসওয়ার্ড কমপক্ষে ৮ অক্ষরের হতে হবে'); return; }
-    if (password != confirm) { setState(() => _error = 'পাসওয়ার্ড মিলছে না'); return; }
+    if (identifier.isEmpty) { setState(() => _error = isBn ? 'ইমেইল বা ফোন নম্বর দিন' : 'Enter your email or phone number'); return; }
+    if (password.length < 8) { setState(() => _error = isBn ? 'পাসওয়ার্ড কমপক্ষে ৮ অক্ষরের হতে হবে' : 'Password must be at least 8 characters'); return; }
+    if (password != confirm) { setState(() => _error = isBn ? 'পাসওয়ার্ড মিলছে না' : 'Passwords do not match'); return; }
 
     setState(() { _isLoading = true; _error = null; });
     try {
@@ -51,9 +54,9 @@ class _ForgotPasswordScreenState extends State<ForgotPasswordScreen> {
       });
       if (mounted) {
         ScaffoldMessenger.of(context).showSnackBar(
-          const SnackBar(
-            content: Text('পাসওয়ার্ড সফলভাবে পরিবর্তিত হয়েছে', style: TextStyle(color: Colors.white)),
-            backgroundColor: Color(0xFF10B981),
+          SnackBar(
+            content: Text(isBn ? 'পাসওয়ার্ড সফলভাবে পরিবর্তিত হয়েছে' : 'Password changed successfully', style: const TextStyle(color: Colors.white)),
+            backgroundColor: const Color(0xFF10B981),
             behavior: SnackBarBehavior.floating,
           ),
         );
@@ -65,7 +68,7 @@ class _ForgotPasswordScreenState extends State<ForgotPasswordScreen> {
       }
     } catch (e) {
       final ex = ApiClient.mapError(e);
-      if (mounted) setState(() => _error = ex.messageBn);
+      if (mounted) setState(() => _error = ex.localized(isBn));
     } finally {
       if (mounted) setState(() => _isLoading = false);
     }
@@ -73,6 +76,7 @@ class _ForgotPasswordScreenState extends State<ForgotPasswordScreen> {
 
   @override
   Widget build(BuildContext context) {
+    final isBn = context.watch<LanguageNotifier>().isBengali;
     return Scaffold(
       backgroundColor: AppColors.bgDark,
       appBar: AppBar(
@@ -100,39 +104,39 @@ class _ForgotPasswordScreenState extends State<ForgotPasswordScreen> {
                 child: const Icon(Icons.lock_reset_rounded, color: Colors.white, size: 32),
               ).animate().scale(duration: 400.ms),
               const SizedBox(height: 24),
-              const Text(
-                'পাসওয়ার্ড ভুলে গেছেন?',
-                style: TextStyle(color: AppColors.textPrimary, fontSize: 26, fontWeight: FontWeight.w800),
+              Text(
+                isBn ? 'পাসওয়ার্ড ভুলে গেছেন?' : 'Forgot password?',
+                style: const TextStyle(color: AppColors.textPrimary, fontSize: 26, fontWeight: FontWeight.w800),
               ).animate().fadeIn(delay: 100.ms),
               const SizedBox(height: 8),
-              const Text(
-                'ইমেইল/ফোন ও নতুন পাসওয়ার্ড দিন',
-                style: TextStyle(color: AppColors.textMuted, fontSize: 14),
+              Text(
+                isBn ? 'ইমেইল/ফোন ও নতুন পাসওয়ার্ড দিন' : 'Enter your email/phone and a new password',
+                style: const TextStyle(color: AppColors.textMuted, fontSize: 14),
               ).animate().fadeIn(delay: 150.ms),
               const SizedBox(height: 40),
               GlassCard(
                 child: Column(
                   crossAxisAlignment: CrossAxisAlignment.start,
                   children: [
-                    _label('ইমেইল বা ফোন'),
+                    _label(isBn ? 'ইমেইল বা ফোন' : 'Email or phone'),
                     _field(
                       controller: _identifierController,
                       hint: 'example@email.com',
                       icon: Icons.person_outline_rounded,
                       keyboardType: TextInputType.emailAddress,
                     ),
-                    _label('নতুন পাসওয়ার্ড'),
+                    _label(isBn ? 'নতুন পাসওয়ার্ড' : 'New password'),
                     _field(
                       controller: _passwordController,
-                      hint: 'কমপক্ষে ৮ অক্ষর',
+                      hint: isBn ? 'কমপক্ষে ৮ অক্ষর' : 'At least 8 characters',
                       icon: Icons.lock_outline_rounded,
                       obscure: _obscurePass,
                       toggleObscure: () => setState(() => _obscurePass = !_obscurePass),
                     ),
-                    _label('পাসওয়ার্ড নিশ্চিত করুন'),
+                    _label(isBn ? 'পাসওয়ার্ড নিশ্চিত করুন' : 'Confirm password'),
                     _field(
                       controller: _confirmController,
-                      hint: 'পাসওয়ার্ড পুনরায় দিন',
+                      hint: isBn ? 'পাসওয়ার্ড পুনরায় দিন' : 'Re-enter password',
                       icon: Icons.lock_outline_rounded,
                       obscure: _obscureConfirm,
                       toggleObscure: () => setState(() => _obscureConfirm = !_obscureConfirm),
@@ -143,7 +147,9 @@ class _ForgotPasswordScreenState extends State<ForgotPasswordScreen> {
                     ],
                     const SizedBox(height: 24),
                     GlassButton(
-                      label: _isLoading ? 'পরিবর্তন হচ্ছে...' : 'পাসওয়ার্ড পরিবর্তন করুন',
+                      label: _isLoading
+                          ? (isBn ? 'পরিবর্তন হচ্ছে...' : 'Changing...')
+                          : (isBn ? 'পাসওয়ার্ড পরিবর্তন করুন' : 'Change password'),
                       onPressed: _isLoading ? null : _submit,
                     ),
                   ],
