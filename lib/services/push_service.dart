@@ -7,6 +7,7 @@ import '../screens/active_job_screen.dart';
 import '../screens/job_tracking_screen.dart';
 import '../screens/notifications_screen.dart';
 import '../screens/provider_dashboard_screen.dart';
+import 'alarm_notification_service.dart';
 import 'dispatch_service.dart';
 import 'notification_service.dart';
 
@@ -26,6 +27,11 @@ class PushService {
   final ValueNotifier<int> foregroundPushTick = ValueNotifier<int>(0);
 
   static const _deviceIdKey = 'push_device_id';
+
+  // Mirrors fcm.service.ts's FcmService.LOUD_ALERT_TYPES — 'job_offer' (new job/consultation
+  // broadcast), 'schedule_confirmed' (a picked slot just locked in), 'schedule_reminder' (that
+  // scheduled consultation starts in ~10 min). All three ring loud; everything else stays quiet.
+  static const _loudAlertTypes = {'job_offer', 'schedule_confirmed', 'schedule_reminder'};
 
   bool _handlersReady = false;
 
@@ -76,10 +82,27 @@ class PushService {
     if (kIsWeb || _handlersReady) return;
     _handlersReady = true;
 
+    await AlarmNotificationService.instance.init();
+
     FirebaseMessaging.onBackgroundMessage(firebaseMessagingBackgroundHandler);
 
-    FirebaseMessaging.onMessage.listen((_) {
+    FirebaseMessaging.onMessage.listen((message) {
       foregroundPushTick.value++;
+      // Rings loud for job offers and consultation-scheduling moments — see
+      // alarm_notification_service.dart. For a fresh job offer specifically, the provider
+      // dashboard's own poll loop also stops the ring once they actually accept/reject; this
+      // call is what covers them being on some OTHER screen when the push arrives, where that
+      // poll loop isn't running. schedule_confirmed/schedule_reminder have no such second path —
+      // they're one-shot, and the 30s auto-stop in AlarmNotificationService covers being ignored.
+      if (_loudAlertTypes.contains(message.data['alertType'])) {
+        final title = message.notification?.title ?? 'নতুন কাজের অনুরোধ';
+        final body = message.notification?.body ?? 'একটি নতুন অনুরোধ এসেছে — গ্রহণ করতে ট্যাপ করুন।';
+        AlarmNotificationService.instance.startRinging(
+          title: title,
+          body: body,
+          payload: message.data['jobId'] as String?,
+        );
+      }
     });
 
     FirebaseMessaging.instance.onTokenRefresh.listen((_) {
@@ -100,6 +123,12 @@ class PushService {
   /// route='provider' + jobId → ActiveJobScreen; jobId only → JobTrackingScreen;
   /// no jobId (chat pushes) → open the notification list.
   Future<void> openTarget(Map<String, dynamic> data) async {
+    // The user is now looking at it — whatever screen they land on next
+    // (dashboard's own accept/reject dialog, if it's still open) takes over
+    // from here, so the ring itself has done its job.
+    if (_loudAlertTypes.contains(data['alertType'])) {
+      AlarmNotificationService.instance.stopRinging();
+    }
     final navigator = navigatorKey.currentState;
     if (navigator == null) return;
 

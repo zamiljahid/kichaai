@@ -1,6 +1,8 @@
 import 'dart:ui';
 import 'package:flutter/material.dart';
+import 'package:provider/provider.dart';
 import '../core/network/api_client.dart';
+import '../core/utils/app_strings.dart';
 import '../models/notification_model.dart';
 import '../services/notification_service.dart';
 import '../theme/app_theme.dart';
@@ -17,6 +19,7 @@ class _NotificationPreferencesScreenState extends State<NotificationPreferencesS
   NotificationPreference? _prefs;
   bool _isLoading = true;
   bool _isSaving = false;
+  bool _isBn = true;
 
   @override
   void initState() {
@@ -59,9 +62,9 @@ class _NotificationPreferencesScreenState extends State<NotificationPreferencesS
       await NotificationService.instance.upsertPreferences(_prefs!);
       if (mounted) {
         ScaffoldMessenger.of(context).showSnackBar(
-          const SnackBar(
-            content: Text('সেটিংস সংরক্ষিত হয়েছে', style: TextStyle(color: Colors.white)),
-            backgroundColor: Color(0xFF10B981),
+          SnackBar(
+            content: Text(_isBn ? 'সেটিংস সংরক্ষিত হয়েছে' : 'Settings saved', style: const TextStyle(color: Colors.white)),
+            backgroundColor: const Color(0xFF10B981),
             behavior: SnackBarBehavior.floating,
           ),
         );
@@ -71,7 +74,7 @@ class _NotificationPreferencesScreenState extends State<NotificationPreferencesS
       if (mounted) {
         ScaffoldMessenger.of(context).showSnackBar(
           SnackBar(
-            content: Text(e.toString(), style: const TextStyle(color: Colors.white)),
+            content: Text(ApiClient.mapError(e).localized(_isBn), style: const TextStyle(color: Colors.white)),
             backgroundColor: const Color(0xFFEF4444),
             behavior: SnackBarBehavior.floating,
           ),
@@ -84,12 +87,13 @@ class _NotificationPreferencesScreenState extends State<NotificationPreferencesS
 
   @override
   Widget build(BuildContext context) {
+    _isBn = context.watch<LanguageNotifier>().isBengali;
     return Scaffold(
       backgroundColor: AppColors.bgDark,
       appBar: AppBar(
         backgroundColor: Colors.transparent,
         elevation: 0,
-        title: const Text('নোটিফিকেশন সেটিংস', style: TextStyle(color: AppColors.textPrimary, fontSize: 18, fontWeight: FontWeight.w700)),
+        title: Text(_isBn ? 'নোটিফিকেশন সেটিংস' : 'Notification Settings', style: const TextStyle(color: AppColors.textPrimary, fontSize: 18, fontWeight: FontWeight.w700)),
         leading: IconButton(
           icon: const Icon(Icons.arrow_back_ios_new_rounded, color: AppColors.textPrimary, size: 18),
           onPressed: () => Navigator.pop(context),
@@ -98,59 +102,59 @@ class _NotificationPreferencesScreenState extends State<NotificationPreferencesS
       body: _isLoading
           ? const Center(child: CircularProgressIndicator(color: AppColors.deepBlue))
           : _prefs == null
-              ? const Center(child: Text('লোড করা যায়নি', style: TextStyle(color: AppColors.textMuted)))
+              ? Center(child: Text(_isBn ? 'লোড করা যায়নি' : 'Could not load', style: const TextStyle(color: AppColors.textMuted)))
               : ListView(
                   padding: const EdgeInsets.fromLTRB(16, 8, 16, 120),
                   children: [
-                    _sectionHeader('চ্যানেল'),
+                    _sectionHeader(_isBn ? 'চ্যানেল' : 'Channels'),
                     _buildSwitch(
                       icon: Icons.notifications_active_outlined,
-                      label: 'পুশ নোটিফিকেশন',
-                      subtitle: 'অ্যাপের মাধ্যমে সরাসরি বিজ্ঞপ্তি',
+                      label: _isBn ? 'পুশ নোটিফিকেশন' : 'Push Notifications',
+                      subtitle: _isBn ? 'অ্যাপের মাধ্যমে সরাসরি বিজ্ঞপ্তি' : 'Direct alerts through the app',
                       value: _prefs!.pushEnabled,
                       onChanged: (v) => setState(() => _prefs = _prefs!.copyWith(pushEnabled: v)),
                     ),
                     _buildSwitch(
                       icon: Icons.email_outlined,
-                      label: 'ইমেইল নোটিফিকেশন',
-                      subtitle: 'ইমেইলে বিজ্ঞপ্তি পাঠানো হবে',
+                      label: _isBn ? 'ইমেইল নোটিফিকেশন' : 'Email Notifications',
+                      subtitle: _isBn ? 'ইমেইলে বিজ্ঞপ্তি পাঠানো হবে' : 'Notifications will be sent by email',
                       value: _prefs!.emailEnabled,
                       onChanged: (v) => setState(() => _prefs = _prefs!.copyWith(emailEnabled: v)),
                     ),
                     _buildSwitch(
                       icon: Icons.sms_outlined,
-                      label: 'SMS নোটিফিকেশন',
-                      subtitle: 'এসএমএসের মাধ্যমে বিজ্ঞপ্তি',
+                      label: _isBn ? 'SMS নোটিফিকেশন' : 'SMS Notifications',
+                      subtitle: _isBn ? 'এসএমএসের মাধ্যমে বিজ্ঞপ্তি' : 'Notifications via SMS',
                       value: _prefs!.smsEnabled,
                       onChanged: (v) => setState(() => _prefs = _prefs!.copyWith(smsEnabled: v)),
                     ),
                     const SizedBox(height: 24),
-                    _sectionHeader('বিভাগ'),
+                    _sectionHeader(_isBn ? 'বিভাগ' : 'Categories'),
                     _buildSwitch(
                       icon: Icons.work_outline_rounded,
-                      label: 'কাজের আপডেট',
-                      subtitle: 'জব স্ট্যাটাস পরিবর্তনের বিজ্ঞপ্তি',
+                      label: _isBn ? 'কাজের আপডেট' : 'Job Updates',
+                      subtitle: _isBn ? 'জব স্ট্যাটাস পরিবর্তনের বিজ্ঞপ্তি' : 'Notifications for job status changes',
                       value: _prefs!.jobUpdate,
                       onChanged: (v) => setState(() => _prefs = _prefs!.copyWith(jobUpdate: v)),
                     ),
                     _buildSwitch(
                       icon: Icons.payment_rounded,
-                      label: 'পেমেন্ট',
-                      subtitle: 'লেনদেন ও পেমেন্টের বিজ্ঞপ্তি',
+                      label: _isBn ? 'পেমেন্ট' : 'Payment',
+                      subtitle: _isBn ? 'লেনদেন ও পেমেন্টের বিজ্ঞপ্তি' : 'Transaction and payment notifications',
                       value: _prefs!.payment,
                       onChanged: (v) => setState(() => _prefs = _prefs!.copyWith(payment: v)),
                     ),
                     _buildSwitch(
                       icon: Icons.campaign_outlined,
-                      label: 'মার্কেটিং',
-                      subtitle: 'অফার ও প্রমোশনাল বার্তা',
+                      label: _isBn ? 'মার্কেটিং' : 'Marketing',
+                      subtitle: _isBn ? 'অফার ও প্রমোশনাল বার্তা' : 'Offers and promotional messages',
                       value: _prefs!.marketing,
                       onChanged: (v) => setState(() => _prefs = _prefs!.copyWith(marketing: v)),
                     ),
                     _buildSwitch(
                       icon: Icons.info_outline_rounded,
-                      label: 'সিস্টেম',
-                      subtitle: 'অ্যাপ আপডেট ও গুরুত্বপূর্ণ বার্তা',
+                      label: _isBn ? 'সিস্টেম' : 'System',
+                      subtitle: _isBn ? 'অ্যাপ আপডেট ও গুরুত্বপূর্ণ বার্তা' : 'App updates and important messages',
                       value: _prefs!.system,
                       onChanged: (v) => setState(() => _prefs = _prefs!.copyWith(system: v)),
                     ),
@@ -165,7 +169,7 @@ class _NotificationPreferencesScreenState extends State<NotificationPreferencesS
                 border: Border(top: BorderSide(color: AppColors.glassBorder)),
               ),
               child: GlassButton(
-                label: _isSaving ? 'সংরক্ষণ হচ্ছে...' : 'সংরক্ষণ করুন',
+                label: _isSaving ? (_isBn ? 'সংরক্ষণ হচ্ছে...' : 'Saving...') : (_isBn ? 'সংরক্ষণ করুন' : 'Save'),
                 onPressed: _isSaving ? null : _save,
                               ),
             ),
