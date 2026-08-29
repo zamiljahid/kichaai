@@ -124,6 +124,33 @@ class CatalogService {
     }
   }
 
+  /// Providers package several services together at a discount. The endpoint has always
+  /// existed; nothing in the app ever called it, so no bundle could be created from the app.
+  Future<BundleModel> createBundle({
+    required String bundleName,
+    required String description,
+    required List<String> servicesIncluded,
+    required double originalPrice,
+    required double bundlePrice,
+  }) async {
+    try {
+      final discount = originalPrice > 0
+          ? (((originalPrice - bundlePrice) / originalPrice) * 100).round()
+          : 0;
+      final res = await _client.post('/catalog/bundles', data: {
+        'bundleName': bundleName,
+        'description': description,
+        'servicesIncluded': servicesIncluded,
+        'originalPrice': originalPrice,
+        'bundlePrice': bundlePrice,
+        'discountPercent': discount,
+      });
+      return BundleModel.fromJson(res.data as Map<String, dynamic>);
+    } catch (e) {
+      throw ApiClient.mapError(e);
+    }
+  }
+
   Future<void> deleteBundle(String id) async {
     try {
       await _client.delete('/catalog/bundles/$id');
@@ -251,6 +278,16 @@ class TechnicianSpecializationTaxonomy {
     for (final n in tree) {
       for (final t in n.types) {
         if (t.code == typeCode) return t.bn;
+      }
+    }
+    return null;
+  }
+
+  /// Same lookup, language-aware.
+  String? typeLabel(String typeCode, bool isBn) {
+    for (final n in tree) {
+      for (final t in n.types) {
+        if (t.code == typeCode) return isBn ? t.bn : t.en;
       }
     }
     return null;

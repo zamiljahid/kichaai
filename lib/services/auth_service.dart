@@ -2,6 +2,7 @@ import 'package:flutter/foundation.dart' show kIsWeb;
 import 'package:google_sign_in/google_sign_in.dart';
 import '../core/network/api_client.dart';
 import '../models/user_model.dart';
+import 'dispatch_service.dart';
 import 'push_service.dart';
 
 class AuthService {
@@ -166,6 +167,7 @@ class AuthService {
   // ── Logout ────────────────────────────────────────────────────────
 
   Future<void> logout() async {
+    DispatchService.instance.stopLocationTracking();
     try {
       await _client.post('/auth/logout');
     } catch (_) {
@@ -282,6 +284,78 @@ class AuthService {
         return (data['legalAreas'] as List).whereType<String>().toList();
       }
       return legalAreas;
+    } catch (e) {
+      throw ApiClient.mapError(e);
+    }
+  }
+
+  /// Lawyer: update which specific services (bail, court representation,
+  /// consultation…) I deliver — consultation broadcasts filter on these, so a
+  /// service left unchecked here means matching jobs never reach me.
+  Future<List<String>> updateLegalServices(List<String> legalServices) async {
+    try {
+      final res = await _client.patch('/auth/provider-profile/legal-services',
+          data: {'legalServices': legalServices});
+      final data = res.data;
+      if (data is Map && data['legalServices'] is List) {
+        return (data['legalServices'] as List).whereType<String>().toList();
+      }
+      return legalServices;
+    } catch (e) {
+      throw ApiClient.mapError(e);
+    }
+  }
+
+  /// caregiver/photographer/cinematographer/makeup_artist: set the provider's real
+  /// gender so a customer's gender preference on these 4 services is an actual filter
+  /// instead of decorative. Also gates going online for these kinds — see
+  /// DispatchService.startSession / dispatch-service's startLiveSession.
+  /// Returns the persisted value (backend rejects anything but male/female with a 400).
+  Future<String> updateGender(String gender) async {
+    try {
+      final res = await _client.patch('/auth/provider-profile/gender',
+          data: {'gender': gender});
+      final data = res.data;
+      if (data is Map && data['gender'] is String) {
+        return data['gender'] as String;
+      }
+      return gender;
+    } catch (e) {
+      throw ApiClient.mapError(e);
+    }
+  }
+
+  /// Free-text "what I'm especially good at" — shown on the customer-facing provider
+  /// profile. Account-level, not per-service. Max 300 chars (trimmed server-side).
+  Future<void> updateSpecialNote(String specialNote) async {
+    try {
+      await _client.patch('/auth/provider-profile/special-note', data: {'specialNote': specialNote});
+    } catch (e) {
+      throw ApiClient.mapError(e);
+    }
+  }
+
+  /// {hasPhoto, hasPhone, rulesAgreed} — all three gate going online (see
+  /// DispatchService.startSession / dispatch-service's startLiveSession).
+  Future<Map<String, bool>> getProviderProfileCompleteness() async {
+    try {
+      final res = await _client.get('/auth/provider-profile/completeness');
+      final data = res.data as Map;
+      return {
+        'hasPhoto': data['hasPhoto'] as bool? ?? false,
+        'hasPhone': data['hasPhone'] as bool? ?? false,
+        'rulesAgreed': data['rulesAgreed'] as bool? ?? false,
+      };
+    } catch (e) {
+      throw ApiClient.mapError(e);
+    }
+  }
+
+  /// Gates going online alongside profile-photo/phone completeness — see
+  /// DispatchService.startSession / dispatch-service's startLiveSession.
+  Future<void> agreeToProviderRules() async {
+    try {
+      await _client.post('/auth/provider-profile/agree-rules');
     } catch (e) {
       throw ApiClient.mapError(e);
     }
@@ -444,6 +518,11 @@ class AuthService {
     String? city,
     String? district,
     String? postalCode,
+    // Powers the go-online location-mismatch nudge (dispatch-service's startLiveSession
+    // compares a provider's live GPS against this address) — optional so a plain text
+    // address without a captured pin still saves fine, just without that check.
+    double? latitude,
+    double? longitude,
     bool isDefault = false,
   }) async {
     try {
@@ -455,6 +534,8 @@ class AuthService {
         if (city != null) 'city': city,
         if (district != null) 'district': district,
         if (postalCode != null) 'postalCode': postalCode,
+        if (latitude != null) 'latitude': latitude,
+        if (longitude != null) 'longitude': longitude,
         'isDefault': isDefault,
       });
       return AddressModel.fromJson(res.data as Map<String, dynamic>);

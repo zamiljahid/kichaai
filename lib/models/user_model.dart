@@ -4,6 +4,11 @@ class UserModel {
   final String? email;
   final String? phone;
   final String role;
+
+  /// Every role the account holds. `role` is the currently active one; a user can be both
+  /// a customer and a provider, so a check like "can this account provide services" must
+  /// look here, not at `role` alone.
+  final List<String> roles;
   final bool isEmailVerified;
   final bool isPhoneVerified;
   final String? profileImageUrl;
@@ -16,6 +21,7 @@ class UserModel {
     this.email,
     this.phone,
     required this.role,
+    this.roles = const [],
     this.isEmailVerified = false,
     this.isPhoneVerified = false,
     this.profileImageUrl,
@@ -23,18 +29,39 @@ class UserModel {
     this.providerProfileId,
   });
 
-  factory UserModel.fromJson(Map<String, dynamic> json) => UserModel(
-        id: json['id'] as String,
-        fullName: json['fullName'] as String,
-        email: json['email'] as String?,
-        phone: json['phone'] as String?,
-        role: json['role'] as String? ?? 'user',
-        isEmailVerified: json['isEmailVerified'] as bool? ?? false,
-        isPhoneVerified: json['isPhoneVerified'] as bool? ?? false,
-        profileImageUrl: json['profileImageUrl'] as String?,
-        tier: json['tier'] as String?,
-        providerProfileId: json['providerProfileId'] as String?,
-      );
+  // GET /auth/me sends activeRole/roles, avatarUrl and *VerifiedAt timestamps. This used to
+  // read 'role', 'profileImageUrl' and boolean is*Verified keys, none of which the API has
+  // ever returned — so role fell back to 'user' for everyone (hiding every provider tool on
+  // the profile screen), the avatar never rendered, and the "Verified" badge never appeared
+  // even for a verified account. Old key names are still accepted second so any other caller
+  // constructing a UserModel from a differently-shaped payload keeps working.
+  factory UserModel.fromJson(Map<String, dynamic> json) {
+    List<String> rolesOf(dynamic v) =>
+        v is List ? v.map((e) => e.toString()).toList() : const [];
+    final roles = rolesOf(json['roles']);
+    final role = (json['activeRole'] as String?) ??
+        (json['role'] as String?) ??
+        (roles.contains('provider') ? 'provider' : null) ??
+        'user';
+
+    bool verified(String tsKey, String boolKey) =>
+        json[tsKey] != null || (json[boolKey] as bool? ?? false);
+
+    return UserModel(
+      id: json['id'] as String,
+      fullName: json['fullName'] as String,
+      email: json['email'] as String?,
+      phone: json['phone'] as String?,
+      role: (json['isAdmin'] as bool? ?? false) ? 'admin' : role,
+      roles: roles,
+      isEmailVerified: verified('emailVerifiedAt', 'isEmailVerified'),
+      isPhoneVerified: verified('phoneVerifiedAt', 'isPhoneVerified'),
+      profileImageUrl:
+          (json['avatarUrl'] as String?) ?? (json['profileImageUrl'] as String?),
+      tier: json['tier'] as String?,
+      providerProfileId: json['providerProfileId'] as String?,
+    );
+  }
 
   Map<String, dynamic> toJson() => {
         'id': id,
@@ -42,6 +69,7 @@ class UserModel {
         if (email != null) 'email': email,
         if (phone != null) 'phone': phone,
         'role': role,
+        'roles': roles,
         'isEmailVerified': isEmailVerified,
         'isPhoneVerified': isPhoneVerified,
         if (profileImageUrl != null) 'profileImageUrl': profileImageUrl,
@@ -61,6 +89,7 @@ class UserModel {
         email: email ?? this.email,
         phone: phone ?? this.phone,
         role: role,
+        roles: roles,
         isEmailVerified: isEmailVerified,
         isPhoneVerified: isPhoneVerified,
         profileImageUrl: profileImageUrl ?? this.profileImageUrl,

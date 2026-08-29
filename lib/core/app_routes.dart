@@ -29,6 +29,7 @@ import '../../screens/agent_screen.dart';
 import '../../screens/mess_screen.dart';
 import '../../screens/my_match_requests_screen.dart';
 import '../../screens/scrap_screen.dart';
+import '../../screens/meal_groups_list_screen.dart';
 
 class AppRoutes {
   // ── Auth ──────────────────────────────────────────────────────────
@@ -65,6 +66,7 @@ class AppRoutes {
   // ── Commerce ─────────────────────────────────────────────────────
   static const scrap              = '/scrap';
   static const mess               = '/mess';
+  static const mealGroups         = '/meal-groups';
 
   // ── Learning ─────────────────────────────────────────────────────
   static const courses            = '/courses';
@@ -104,6 +106,7 @@ class AppRoutes {
     grocery:            (_) => const GroceryScreen(),
     scrap:              (_) => const ScrapScreen(),
     mess:               (_) => const MessScreen(),
+    mealGroups:         (_) => const MealGroupsListScreen(),
     courses:            (_) => const CoursesScreen(),
     myEnrollments:      (_) => const EnrollmentsScreen(),
     skillShare:         (_) => const SkillShareScreen(),

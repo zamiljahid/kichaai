@@ -165,6 +165,7 @@ class BundleModel {
   final double? originalPrice;
   final bool isActive;
   final List<String> includedItems;
+  final String? providerId;
 
   const BundleModel({
     required this.id,
@@ -176,22 +177,28 @@ class BundleModel {
     this.originalPrice,
     this.isActive = true,
     this.includedItems = const [],
+    this.providerId,
   });
 
-  factory BundleModel.fromJson(Map<String, dynamic> json) => BundleModel(
-        id: json['id'] as String,
-        title: json['title'] as String,
-        titleBn: json['titleBn'] as String?,
-        description: json['description'] as String?,
-        serviceCode: json['serviceCode'] as String,
-        price: _asDouble(json['price']),
-        originalPrice: _asDoubleOrNull(json['originalPrice']),
-        isActive: json['isActive'] as bool? ?? true,
-        includedItems: (json['includedItems'] as List<dynamic>?)
-                ?.map((e) => e as String)
-                .toList() ??
-            [],
-      );
+  // The catalog sends bundleName / bundlePrice / servicesIncluded. This used to read
+  // title / price / includedItems — none of which exist on the wire, so a cast of
+  // the missing title threw on every real bundle. Legacy names are still accepted as fallbacks.
+  factory BundleModel.fromJson(Map<String, dynamic> json) {
+    final services = (json['servicesIncluded'] ?? json['includedItems']) as List<dynamic>?;
+    return BundleModel(
+      id: json['id'] as String,
+      title: (json['bundleName'] ?? json['title'] ?? '') as String,
+      titleBn: json['titleBn'] as String?,
+      description: json['description'] as String?,
+      providerId: json['providerId'] as String?,
+      serviceCode:
+          (json['serviceCode'] as String?) ?? (services?.isNotEmpty == true ? services!.first.toString() : ''),
+      price: _asDouble(json['bundlePrice'] ?? json['price']),
+      originalPrice: _asDoubleOrNull(json['originalPrice']),
+      isActive: json['isActive'] as bool? ?? true,
+      includedItems: services?.map((e) => e.toString()).toList() ?? const [],
+    );
+  }
 
   String displayTitle(String lang) => lang == 'bn' && titleBn != null ? titleBn! : title;
 

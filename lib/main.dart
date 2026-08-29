@@ -5,8 +5,10 @@ import 'package:flutter/services.dart';
 import 'package:provider/provider.dart';
 import 'core/app_routes.dart';
 import 'core/utils/app_strings.dart';
+import 'services/deep_link_service.dart';
 import 'services/push_service.dart';
 import 'theme/app_theme.dart';
+import 'widgets/ai_chat_overlay.dart';
 
 void main() async {
   WidgetsFlutterBinding.ensureInitialized();
@@ -32,6 +34,8 @@ void main() async {
     } catch (_) {}
   }
 
+  DeepLinkService.instance.init(PushService.instance.navigatorKey);
+
   runApp(const KichaaiApp());
 }
 
@@ -49,6 +53,7 @@ class KichaaiApp extends StatelessWidget {
         navigatorKey: PushService.instance.navigatorKey,
         initialRoute: AppRoutes.splash,
         routes: AppRoutes.routes,
+        builder: (context, child) => AiChatOverlay(child: child!),
       ),
     );
   }

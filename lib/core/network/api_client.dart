@@ -18,6 +18,10 @@ class ApiClient {
   static final ApiClient instance = ApiClient._();
   late final Dio _dio;
 
+  /// Tracks session state so app-wide chrome (e.g. the floating AI chat button)
+  /// can show/hide itself without every screen re-checking SharedPreferences.
+  static final ValueNotifier<bool> isLoggedIn = ValueNotifier(false);
+
   ApiClient._() {
     _dio = Dio(BaseOptions(
       baseUrl: _baseUrl,
@@ -65,6 +69,7 @@ class ApiClient {
     } else {
       await prefs.remove(_providerProfileIdKey);
     }
+    isLoggedIn.value = true;
   }
 
   static Future<String?> getAccessToken() async {
@@ -160,6 +165,7 @@ class ApiClient {
     await prefs.remove(_providerProfileIdKey);
     await prefs.remove('providerServiceType');
     await prefs.remove('providerServiceId');
+    isLoggedIn.value = false;
   }
 
   // ── Error mapper ─────────────────────────────────────────────────
@@ -209,6 +215,40 @@ class ApiClient {
           statusCode: 400,
         );
       case 401:
+        // Not every 401 is an expired session. Signing in with the wrong password also returns
+        // 401, and telling someone standing ON the login screen that their "session expired"
+        // explains nothing and hides the one thing they need to know. Translate the causes the
+        // backend actually distinguishes; fall back to the session message only for the token
+        // failures, which is what it was always meant for.
+        final auth401 = serverMsg.toString();
+        if (auth401.contains('Invalid credentials')) {
+          return const AppException(
+            message: 'Wrong email/phone or password',
+            messageBn: 'ইমেইল/ফোন নম্বর বা পাসওয়ার্ড ভুল।',
+            statusCode: 401,
+          );
+        }
+        if (auth401.contains('Account not found') || auth401.contains('User not found')) {
+          return const AppException(
+            message: 'No account found with these details',
+            messageBn: 'এই ইমেইল বা ফোন নম্বরে কোনো অ্যাকাউন্ট নেই।',
+            statusCode: 401,
+          );
+        }
+        if (auth401.contains('Account suspended') || auth401.contains('Account not accessible')) {
+          return const AppException(
+            message: 'This account has been suspended',
+            messageBn: 'আপনার অ্যাকাউন্টটি স্থগিত করা হয়েছে। সহায়তার জন্য যোগাযোগ করুন।',
+            statusCode: 401,
+          );
+        }
+        if (auth401.contains('Google token')) {
+          return const AppException(
+            message: 'Google sign-in failed — try again',
+            messageBn: 'Google দিয়ে লগইন করা যায়নি। আবার চেষ্টা করুন।',
+            statusCode: 401,
+          );
+        }
         return const AppException(
           message: 'Unauthorized',
           messageBn: 'সেশন মেয়াদ শেষ হয়েছে। আবার লগইন করুন।',
@@ -292,7 +332,12 @@ class _AuthInterceptor extends Interceptor {
   ) async {
     // Never try to "refresh the refresh" — an expired/invalid refresh token 401ing here would
     // otherwise recurse forever through this same handler.
-    if (err.response?.statusCode != 401 || err.requestOptions.path.contains('/auth/refresh')) {
+    //
+    // The same applies to every other auth entry point: their 401 means "those credentials are
+    // wrong", not "your token went stale". Refreshing there burned a pointless round-trip on
+    // each failed login and, worse, could wipe the stored tokens of whoever was already signed
+    // in just because someone mistyped a password on the login screen.
+    if (err.response?.statusCode != 401 || _isAuthEntryPoint(err.requestOptions.path)) {
       handler.next(err);
       return;
     }
@@ -314,6 +359,16 @@ class _AuthInterceptor extends Interceptor {
       handler.next(err);
     }
   }
+
+  /// Paths where a 401 is a legitimate result rather than a signal to re-authenticate.
+  static bool _isAuthEntryPoint(String path) =>
+      path.contains('/auth/refresh') ||
+      path.contains('/auth/login') ||
+      path.contains('/auth/signup') ||
+      path.contains('/auth/google') ||
+      path.contains('/auth/verify-otp') ||
+      path.contains('/auth/forgot-password') ||
+      path.contains('/auth/reset-password');
 
   Future<String?> _refreshTokens() async {
     try {
