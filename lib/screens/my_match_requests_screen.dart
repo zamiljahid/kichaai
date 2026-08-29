@@ -1,68 +1,17 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_animate/flutter_animate.dart';
+import 'package:provider/provider.dart';
+import 'package:url_launcher/url_launcher.dart';
 import '../core/network/api_client.dart';
+import '../core/utils/app_strings.dart';
+import '../models/matchmaking_model.dart';
+import '../services/matchmaking_service.dart';
 import '../theme/app_theme.dart';
 import '../widgets/glass_button.dart';
+import '../widgets/policy_agreement_checkbox.dart';
+import 'payment_waiting_screen.dart';
 
-// ── Local models ──────────────────────────────────────────────────
-
-class _MatchRequest {
-  final String id;
-  final String title;
-  final String status;
-  final DateTime createdAt;
-  final double? budgetMin;
-  final double? budgetMax;
-
-  const _MatchRequest({
-    required this.id,
-    required this.title,
-    required this.status,
-    required this.createdAt,
-    this.budgetMin,
-    this.budgetMax,
-  });
-
-  factory _MatchRequest.fromJson(Map<String, dynamic> json) => _MatchRequest(
-        id: json['id'] as String? ?? '',
-        title: json['title'] as String? ?? '',
-        status: json['status'] as String? ?? 'open',
-        createdAt: DateTime.tryParse(json['createdAt'] as String? ?? '') ?? DateTime.now(),
-        budgetMin: (json['budgetMin'] as num?)?.toDouble(),
-        budgetMax: (json['budgetMax'] as num?)?.toDouble(),
-      );
-}
-
-class _ProviderResponse {
-  final String id;
-  final String providerId;
-  final String providerName;
-  final double? priceOffered;
-  final String? note;
-
-  const _ProviderResponse({
-    required this.id,
-    required this.providerId,
-    required this.providerName,
-    this.priceOffered,
-    this.note,
-  });
-
-  factory _ProviderResponse.fromJson(Map<String, dynamic> json) => _ProviderResponse(
-        id: json['id'] as String? ?? '',
-        providerId: json['providerId'] as String? ?? '',
-        providerName: json['providerName'] as String? ??
-            json['providerFullName'] as String? ??
-            json['name'] as String? ??
-            'অজানা সেবাদাতা',
-        priceOffered: (json['priceOffered'] as num?)?.toDouble() ??
-            (json['price'] as num?)?.toDouble() ??
-            (json['amount'] as num?)?.toDouble(),
-        note: json['note'] as String? ?? json['message'] as String?,
-      );
-}
-
-// ── Main screen ───────────────────────────────────────────────────
+const _kMeetFeeAmount = 100.0;
 
 class MyMatchRequestsScreen extends StatefulWidget {
   const MyMatchRequestsScreen({super.key});
@@ -72,19 +21,22 @@ class MyMatchRequestsScreen extends StatefulWidget {
 }
 
 class _MyMatchRequestsScreenState extends State<MyMatchRequestsScreen> {
-  List<_MatchRequest> _requests = [];
+  final _matchmaking = MatchmakingService.instance;
+
+  List<MatchRequestModel> _requests = [];
   bool _isLoading = true;
   String? _error;
+  bool _isBn = true;
 
   // Which request id is currently expanded
   String? _expandedId;
 
   // Per-request response lists (lazy-loaded)
-  final Map<String, List<_ProviderResponse>> _responses = {};
+  final Map<String, List<MatchResponseModel>> _responses = {};
   final Map<String, bool> _responsesLoading = {};
   final Map<String, String?> _responsesError = {};
 
-  // Per-provider action lock: key = "${requestId}_${providerId}"
+  // Per-response action lock
   final Set<String> _saving = {};
 
   @override
@@ -105,44 +57,18 @@ class _MyMatchRequestsScreenState extends State<MyMatchRequestsScreen> {
       if (userId == null || userId.isEmpty) {
         if (mounted) {
           setState(() {
-            _error = 'লগইন তথ্য পাওয়া যায়নি।';
+            _error = _isBn ? 'লগইন তথ্য পাওয়া যায়নি।' : 'Login information not found.';
             _isLoading = false;
           });
         }
         return;
       }
-
-      final response = await ApiClient.instance.dio.get(
-        '/matchmaking/requests',
-        queryParameters: {'customerId': userId},
-      );
-
-      final raw = response.data;
-      List<dynamic> list = [];
-      if (raw is List) {
-        list = raw;
-      } else if (raw is Map && raw['data'] is List) {
-        list = raw['data'] as List;
-      } else if (raw is Map && raw['requests'] is List) {
-        list = raw['requests'] as List;
-      }
-
-      if (mounted) {
-        setState(() {
-          _requests = list
-              .whereType<Map<String, dynamic>>()
-              .map(_MatchRequest.fromJson)
-              .toList();
-          _isLoading = false;
-        });
-      }
+      final requests = await _matchmaking.listRequests(customerId: userId, limit: 50);
+      if (mounted) setState(() { _requests = requests; _isLoading = false; });
     } catch (e) {
       if (mounted) {
         final ex = ApiClient.mapError(e);
-        setState(() {
-          _error = ex.messageBn;
-          _isLoading = false;
-        });
+        setState(() { _error = ex.localized(_isBn); _isLoading = false; });
       }
     }
   }
@@ -154,35 +80,17 @@ class _MyMatchRequestsScreenState extends State<MyMatchRequestsScreen> {
       _responsesError[requestId] = null;
     });
     try {
-      final response = await ApiClient.instance.dio
-          .get('/matchmaking/requests/$requestId/responses');
-
-      final raw = response.data;
-      List<dynamic> list = [];
-      if (raw is List) {
-        list = raw;
-      } else if (raw is Map && raw['data'] is List) {
-        list = raw['data'] as List;
-      } else if (raw is Map && raw['responses'] is List) {
-        list = raw['responses'] as List;
-      }
-
+      final responses = await _matchmaking.listResponses(requestId);
       if (mounted) {
         setState(() {
-          _responses[requestId] = list
-              .whereType<Map<String, dynamic>>()
-              .map(_ProviderResponse.fromJson)
-              .toList();
+          _responses[requestId] = responses;
           _responsesLoading[requestId] = false;
         });
       }
     } catch (e) {
       if (mounted) {
         final ex = ApiClient.mapError(e);
-        setState(() {
-          _responsesError[requestId] = ex.messageBn;
-          _responsesLoading[requestId] = false;
-        });
+        setState(() { _responsesError[requestId] = ex.localized(_isBn); _responsesLoading[requestId] = false; });
       }
     }
   }
@@ -192,20 +100,20 @@ class _MyMatchRequestsScreenState extends State<MyMatchRequestsScreen> {
     if (_saving.contains(key)) return;
     setState(() => _saving.add(key));
     try {
-      // Shortlist/award target the RESPONSE id, not the request/provider.
-      await ApiClient.instance.dio.post('/matchmaking/responses/$responseId/shortlist');
-      if (mounted) _showSuccess('সেবাদাতা শর্টলিস্ট করা হয়েছে।');
+      await _matchmaking.shortlistResponse(responseId);
+      if (mounted) _showSuccess(_isBn ? 'সেবাদাতা শর্টলিস্ট করা হয়েছে।' : 'Provider shortlisted.');
     } catch (e) {
-      if (mounted) {
-        final ex = ApiClient.mapError(e);
-        _showError(ex.messageBn);
-      }
+      if (mounted) _showError(ApiClient.mapError(e).localized(_isBn));
     } finally {
       if (mounted) setState(() => _saving.remove(key));
     }
   }
 
-  Future<void> _award(String responseId) async {
+  // Award locks the pick in — if the response carried a quote, the request now owes
+  // awardAmount with awardPaymentStatus:'pending'. Nothing is credited to the provider and no
+  // chat opens until that's actually paid, so we chain straight into the payment flow here
+  // instead of leaving the customer on an "awarded" card with no way to finish the booking.
+  Future<void> _award(String requestId, String responseId) async {
     final key = '${responseId}_award';
     if (_saving.contains(key)) return;
 
@@ -214,18 +122,114 @@ class _MyMatchRequestsScreenState extends State<MyMatchRequestsScreen> {
 
     setState(() => _saving.add(key));
     try {
-      await ApiClient.instance.dio.post('/matchmaking/responses/$responseId/award');
-      if (mounted) {
-        _showSuccess('কাজ পুরস্কার দেওয়া হয়েছে!');
-        await _loadRequests();
+      final updated = await _matchmaking.awardResponse(responseId);
+      if (!mounted) return;
+      if (updated.awardAmount != null && updated.awardPaymentStatus == 'pending') {
+        await _payForAward(requestId, updated.awardAmount!);
+      } else {
+        _showSuccess(_isBn ? 'কাজ পুরস্কার দেওয়া হয়েছে!' : 'Job awarded!');
       }
+      await _loadRequests();
     } catch (e) {
-      if (mounted) {
-        final ex = ApiClient.mapError(e);
-        _showError(ex.messageBn);
-      }
+      if (mounted) _showError(ApiClient.mapError(e).localized(_isBn));
     } finally {
       if (mounted) setState(() => _saving.remove(key));
+    }
+  }
+
+  /// Re-entry point for a request that's already `awarded` but still `awardPaymentStatus:
+  /// 'pending'` — e.g. the customer awarded it, backed out of the payment screen, and came back.
+  Future<void> _resumePayment(MatchRequestModel req) async {
+    if (req.awardAmount == null) return;
+    await _payForAward(req.id, req.awardAmount!);
+    await _loadRequests();
+  }
+
+  Future<void> _payForAward(String requestId, double amount) async {
+    if (!await PolicyAgreementCheckbox.confirm(context, isBn: _isBn)) return;
+    try {
+      final transaction = await _matchmaking.initiateAwardPayment(requestId);
+      final gatewayPageUrl = transaction['gatewayPageUrl'] as String?;
+      if (!mounted) return;
+      if (gatewayPageUrl == null) {
+        _showError(_isBn ? 'পেমেন্ট শুরু করা যায়নি — আবার চেষ্টা করুন' : 'Could not start the payment — please try again');
+        return;
+      }
+      final result = await Navigator.of(context).push<bool>(MaterialPageRoute(
+        builder: (waitingContext) => PaymentWaitingScreen(
+          gatewayPageUrl: gatewayPageUrl,
+          title: _isBn ? 'সেবাদাতার ফি' : 'Provider Fee',
+          titleEn: 'Provider Fee',
+          amount: amount,
+          checkStatus: () async {
+            try {
+              final r = await _matchmaking.confirmAwardPayment(requestId);
+              return r.awardPaymentStatus == 'paid' ? PaymentCheckStatus.completed : PaymentCheckStatus.pending;
+            } catch (_) {
+              return PaymentCheckStatus.pending;
+            }
+          },
+          onConfirmed: () => Navigator.of(waitingContext).pop(true),
+        ),
+      ));
+      if (mounted && result == true) _showSuccess(_isBn ? 'পেমেন্ট সম্পন্ন হয়েছে — চ্যাট এখন খোলা!' : 'Payment complete — chat is now open!');
+    } catch (e) {
+      if (mounted) _showError(ApiClient.mapError(e).localized(_isBn));
+    }
+  }
+
+  // ── Pre-hire meet call ──────────────────────────────────────────
+
+  Future<void> _requestMeet(String requestId, String responseId) async {
+    final key = '${responseId}_meet';
+    if (_saving.contains(key)) return;
+    setState(() => _saving.add(key));
+    try {
+      await _matchmaking.requestMeet(responseId);
+      if (mounted) _showSuccess(_isBn ? 'মিটিং-এর অনুরোধ পাঠানো হয়েছে' : 'Meet request sent');
+      await _loadResponses(requestId);
+    } catch (e) {
+      if (mounted) _showError(ApiClient.mapError(e).localized(_isBn));
+    } finally {
+      if (mounted) setState(() => _saving.remove(key));
+    }
+  }
+
+  Future<void> _joinMeet(String url) async {
+    try {
+      final ok = await launchUrl(Uri.parse(url), mode: LaunchMode.externalApplication);
+      if (!ok && mounted) _showError(_isBn ? 'মিটিং লিংক খোলা যায়নি' : 'Could not open the meeting link');
+    } catch (_) {
+      if (mounted) _showError(_isBn ? 'মিটিং লিংক খোলা যায়নি' : 'Could not open the meeting link');
+    }
+  }
+
+  Future<void> _payMeetFee(String requestId, String responseId) async {
+    if (!await PolicyAgreementCheckbox.confirm(context, isBn: _isBn)) return;
+    try {
+      final transaction = await _matchmaking.initiateMeetFeePayment(responseId);
+      final gatewayPageUrl = transaction['gatewayPageUrl'] as String?;
+      if (!mounted || gatewayPageUrl == null) return;
+      await Navigator.of(context).push(MaterialPageRoute(
+        builder: (waitingContext) => PaymentWaitingScreen(
+          gatewayPageUrl: gatewayPageUrl,
+          title: _isBn ? 'মিটিং ফি' : 'Meet Fee',
+          titleEn: 'Meet Fee',
+          amount: _kMeetFeeAmount,
+          checkStatus: () async {
+            try {
+              await _matchmaking.confirmMeetFeePayment(responseId);
+              return PaymentCheckStatus.completed;
+            } catch (_) {
+              return PaymentCheckStatus.pending;
+            }
+          },
+          onConfirmed: () => Navigator.of(waitingContext).pop(),
+        ),
+      ));
+      await _loadResponses(requestId);
+    } catch (e) {
+      if (mounted) _showError(ApiClient.mapError(e).localized(_isBn));
     }
   }
 
@@ -239,24 +243,24 @@ class _MyMatchRequestsScreenState extends State<MyMatchRequestsScreen> {
       builder: (ctx) => AlertDialog(
         backgroundColor: AppColors.bgMid,
         shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(20)),
-        title: const Text(
-          'অনুরোধ বাতিল করুন',
-          style: TextStyle(color: AppColors.textPrimary, fontWeight: FontWeight.w700),
+        title: Text(
+          _isBn ? 'অনুরোধ বাতিল করুন' : 'Cancel request',
+          style: const TextStyle(color: AppColors.textPrimary, fontWeight: FontWeight.w700),
         ),
-        content: const Text(
-          'আপনি কি নিশ্চিতভাবে এই অনুরোধটি বাতিল করতে চান? সেবাদাতারা আর সাড়া দিতে পারবেন না।',
-          style: TextStyle(color: AppColors.textMuted, fontSize: 14),
+        content: Text(
+          _isBn ? 'আপনি কি নিশ্চিতভাবে এই অনুরোধটি বাতিল করতে চান? সেবাদাতারা আর সাড়া দিতে পারবেন না।' : 'Are you sure you want to cancel this request? Providers will no longer be able to respond.',
+          style: const TextStyle(color: AppColors.textMuted, fontSize: 14),
         ),
         actions: [
           TextButton(
             onPressed: () => Navigator.of(ctx).pop(false),
-            child: const Text('না', style: TextStyle(color: AppColors.textMuted)),
+            child: Text(_isBn ? 'না' : 'No', style: const TextStyle(color: AppColors.textMuted)),
           ),
           TextButton(
             onPressed: () => Navigator.of(ctx).pop(true),
-            child: const Text(
-              'হ্যাঁ, বাতিল করুন',
-              style: TextStyle(color: Color(0xFFEF4444), fontWeight: FontWeight.w700),
+            child: Text(
+              _isBn ? 'হ্যাঁ, বাতিল করুন' : 'Yes, cancel',
+              style: const TextStyle(color: Color(0xFFEF4444), fontWeight: FontWeight.w700),
             ),
           ),
         ],
@@ -271,14 +275,11 @@ class _MyMatchRequestsScreenState extends State<MyMatchRequestsScreen> {
         data: {'status': 'cancelled'},
       );
       if (mounted) {
-        _showSuccess('অনুরোধ বাতিল করা হয়েছে।');
+        _showSuccess(_isBn ? 'অনুরোধ বাতিল করা হয়েছে।' : 'Request cancelled.');
         await _loadRequests();
       }
     } catch (e) {
-      if (mounted) {
-        final ex = ApiClient.mapError(e);
-        _showError(ex.messageBn);
-      }
+      if (mounted) _showError(ApiClient.mapError(e).localized(_isBn));
     } finally {
       if (mounted) setState(() => _saving.remove(key));
     }
@@ -290,24 +291,24 @@ class _MyMatchRequestsScreenState extends State<MyMatchRequestsScreen> {
       builder: (ctx) => AlertDialog(
         backgroundColor: AppColors.bgMid,
         shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(20)),
-        title: const Text(
-          'কাজ পুরস্কার দিন',
-          style: TextStyle(color: AppColors.textPrimary, fontWeight: FontWeight.w700),
+        title: Text(
+          _isBn ? 'কাজ পুরস্কার দিন' : 'Award the job',
+          style: const TextStyle(color: AppColors.textPrimary, fontWeight: FontWeight.w700),
         ),
-        content: const Text(
-          'আপনি কি নিশ্চিতভাবে এই সেবাদাতাকে কাজটি পুরস্কার দিতে চান?',
-          style: TextStyle(color: AppColors.textMuted, fontSize: 14),
+        content: Text(
+          _isBn ? 'পুরস্কার দেওয়ার পর পেমেন্ট করতে হবে — তারপর চ্যাট খুলবে।' : "After awarding you'll need to pay — the chat opens once that's done.",
+          style: const TextStyle(color: AppColors.textMuted, fontSize: 14),
         ),
         actions: [
           TextButton(
             onPressed: () => Navigator.of(ctx).pop(false),
-            child: const Text('বাতিল', style: TextStyle(color: AppColors.textMuted)),
+            child: Text(_isBn ? 'বাতিল' : 'Cancel', style: const TextStyle(color: AppColors.textMuted)),
           ),
           TextButton(
             onPressed: () => Navigator.of(ctx).pop(true),
-            child: const Text(
-              'হ্যাঁ, পুরস্কার দিন',
-              style: TextStyle(color: AppColors.deepBlue, fontWeight: FontWeight.w700),
+            child: Text(
+              _isBn ? 'হ্যাঁ, পুরস্কার দিন' : 'Yes, award it',
+              style: const TextStyle(color: AppColors.deepBlue, fontWeight: FontWeight.w700),
             ),
           ),
         ],
@@ -361,29 +362,46 @@ class _MyMatchRequestsScreenState extends State<MyMatchRequestsScreen> {
   Color _statusColor(String status) {
     switch (status.toLowerCase()) {
       case 'open':
+      case 'in_negotiation':
         return AppColors.deepBlue;
-      case 'matched':
-        return const Color(0xFF22C55E);
-      case 'closed':
       case 'awarded':
-        return AppColors.textMuted;
+        return AppColors.fuchsia;
+      case 'booked':
+        return const Color(0xFF22C55E);
+      case 'cancelled':
+      case 'expired':
+      case 'closed':
+      case 'draft':
       default:
         return AppColors.textMuted;
     }
   }
 
   String _statusLabel(String status) {
-    switch (status.toLowerCase()) {
-      case 'open':
-        return 'খোলা';
-      case 'matched':
-        return 'মিলেছে';
-      case 'closed':
-        return 'বন্ধ';
-      case 'awarded':
-        return 'পুরস্কৃত';
-      default:
-        return status;
+    final s = status.toLowerCase();
+    if (_isBn) {
+      switch (s) {
+        case 'draft': return 'খসড়া';
+        case 'open': return 'খোলা';
+        case 'in_negotiation': return 'আলোচনা চলছে';
+        case 'awarded': return 'পুরস্কৃত — পেমেন্ট বাকি';
+        case 'booked': return 'বুক হয়েছে';
+        case 'cancelled': return 'বাতিল';
+        case 'expired': return 'মেয়াদ শেষ';
+        case 'closed': return 'বন্ধ';
+        default: return status;
+      }
+    }
+    switch (s) {
+      case 'draft': return 'Draft';
+      case 'open': return 'Open';
+      case 'in_negotiation': return 'In Discussion';
+      case 'awarded': return 'Awarded — Payment Due';
+      case 'booked': return 'Booked';
+      case 'cancelled': return 'Cancelled';
+      case 'expired': return 'Expired';
+      case 'closed': return 'Closed';
+      default: return status;
     }
   }
 
@@ -391,6 +409,7 @@ class _MyMatchRequestsScreenState extends State<MyMatchRequestsScreen> {
 
   @override
   Widget build(BuildContext context) {
+    _isBn = context.watch<LanguageNotifier>().isBengali;
     return Scaffold(
       backgroundColor: AppColors.bgDark,
       appBar: _buildAppBar(),
@@ -414,31 +433,17 @@ class _MyMatchRequestsScreenState extends State<MyMatchRequestsScreen> {
           child: const Icon(Icons.arrow_back_ios_new_rounded, color: AppColors.textPrimary, size: 16),
         ),
       ),
-      title: const Text(
-        'আমার অনুরোধ',
-        style: TextStyle(
-          color: AppColors.textPrimary,
-          fontSize: 18,
-          fontWeight: FontWeight.w700,
-        ),
+      title: Text(
+        _isBn ? 'আমার অনুরোধ' : 'My Requests',
+        style: const TextStyle(color: AppColors.textPrimary, fontSize: 18, fontWeight: FontWeight.w700),
       ),
     );
   }
 
   Widget _buildBody() {
-    if (_isLoading) {
-      return const Center(
-        child: CircularProgressIndicator(color: AppColors.deepBlue),
-      );
-    }
-
-    if (_error != null) {
-      return _buildErrorState();
-    }
-
-    if (_requests.isEmpty) {
-      return _buildEmptyState();
-    }
+    if (_isLoading) return const Center(child: CircularProgressIndicator(color: AppColors.deepBlue));
+    if (_error != null) return _buildErrorState();
+    if (_requests.isEmpty) return _buildEmptyState();
 
     return RefreshIndicator(
       onRefresh: _loadRequests,
@@ -457,16 +462,10 @@ class _MyMatchRequestsScreenState extends State<MyMatchRequestsScreen> {
       child: Column(
         mainAxisSize: MainAxisSize.min,
         children: [
-          Icon(Icons.inbox_rounded, color: AppColors.textMuted, size: 64),
+          const Icon(Icons.inbox_rounded, color: AppColors.textMuted, size: 64),
           const SizedBox(height: 16),
-          const Text(
-            'কোনো অনুরোধ নেই',
-            style: TextStyle(
-              color: AppColors.textMuted,
-              fontSize: 16,
-              fontWeight: FontWeight.w500,
-            ),
-          ),
+          Text(_isBn ? 'কোনো অনুরোধ নেই' : 'No requests',
+              style: const TextStyle(color: AppColors.textMuted, fontSize: 16, fontWeight: FontWeight.w500)),
         ],
       ).animate().fadeIn(duration: 400.ms),
     );
@@ -481,26 +480,19 @@ class _MyMatchRequestsScreenState extends State<MyMatchRequestsScreen> {
           children: [
             const Icon(Icons.wifi_off_rounded, color: AppColors.textMuted, size: 52),
             const SizedBox(height: 12),
-            Text(
-              _error!,
-              textAlign: TextAlign.center,
-              style: const TextStyle(color: AppColors.textMuted, fontSize: 14),
-            ),
+            Text(_error!, textAlign: TextAlign.center, style: const TextStyle(color: AppColors.textMuted, fontSize: 14)),
             const SizedBox(height: 20),
-            GlassButton(
-              label: 'আবার চেষ্টা করুন',
-              onPressed: _loadRequests,
-              width: 200,
-            ),
+            GlassButton(label: _isBn ? 'আবার চেষ্টা করুন' : 'Try again', onPressed: _loadRequests, width: 200),
           ],
         ),
       ),
     );
   }
 
-  Widget _buildRequestCard(_MatchRequest req, int index) {
+  Widget _buildRequestCard(MatchRequestModel req, int index) {
     final isExpanded = _expandedId == req.id;
     final statusColor = _statusColor(req.status);
+    final needsPayment = req.status.toLowerCase() == 'awarded' && req.awardPaymentStatus == 'pending';
 
     return Padding(
       padding: const EdgeInsets.only(bottom: 12),
@@ -518,7 +510,6 @@ class _MyMatchRequestsScreenState extends State<MyMatchRequestsScreen> {
         child: Column(
           crossAxisAlignment: CrossAxisAlignment.stretch,
           children: [
-            // Header row — tap to expand
             GestureDetector(
               onTap: () => _toggleExpand(req.id),
               child: Padding(
@@ -526,7 +517,6 @@ class _MyMatchRequestsScreenState extends State<MyMatchRequestsScreen> {
                 child: Row(
                   crossAxisAlignment: CrossAxisAlignment.start,
                   children: [
-                    // Status indicator dot
                     Container(
                       width: 42,
                       height: 42,
@@ -543,29 +533,17 @@ class _MyMatchRequestsScreenState extends State<MyMatchRequestsScreen> {
                         crossAxisAlignment: CrossAxisAlignment.start,
                         children: [
                           Text(
-                            req.title.isNotEmpty ? req.title : 'শিরোনাম নেই',
-                            style: const TextStyle(
-                              color: AppColors.textPrimary,
-                              fontSize: 15,
-                              fontWeight: FontWeight.w600,
-                            ),
+                            req.title.isNotEmpty ? req.title : (_isBn ? 'শিরোনাম নেই' : 'No title'),
+                            style: const TextStyle(color: AppColors.textPrimary, fontSize: 15, fontWeight: FontWeight.w600),
                             maxLines: 2,
                             overflow: TextOverflow.ellipsis,
                           ),
                           const SizedBox(height: 6),
-                          Row(
-                            children: [
-                              _buildStatusBadge(req.status, statusColor),
-                              const SizedBox(width: 8),
-                              Text(
-                                _formatDate(req.createdAt),
-                                style: const TextStyle(
-                                  color: AppColors.textMuted,
-                                  fontSize: 11,
-                                ),
-                              ),
-                            ],
-                          ),
+                          Row(children: [
+                            _buildStatusBadge(req.status, statusColor),
+                            const SizedBox(width: 8),
+                            Text(_formatDate(req.createdAt), style: const TextStyle(color: AppColors.textMuted, fontSize: 11)),
+                          ]),
                           if (req.budgetMin != null || req.budgetMax != null) ...[
                             const SizedBox(height: 5),
                             _buildBudgetRow(req.budgetMin, req.budgetMax),
@@ -577,39 +555,40 @@ class _MyMatchRequestsScreenState extends State<MyMatchRequestsScreen> {
                     AnimatedRotation(
                       turns: isExpanded ? 0.5 : 0.0,
                       duration: const Duration(milliseconds: 250),
-                      child: const Icon(
-                        Icons.keyboard_arrow_down_rounded,
-                        color: AppColors.textMuted,
-                        size: 24,
-                      ),
+                      child: const Icon(Icons.keyboard_arrow_down_rounded, color: AppColors.textMuted, size: 24),
                     ),
                   ],
                 ),
               ),
             ),
 
-            // Expanded responses section
+            if (needsPayment)
+              Padding(
+                padding: const EdgeInsets.fromLTRB(16, 0, 16, 14),
+                child: SizedBox(
+                  height: 44,
+                  child: GlassButton(
+                    label: _isBn
+                        ? 'পেমেন্ট সম্পন্ন করুন (৳ ${req.awardAmount?.toStringAsFixed(0)})'
+                        : 'Complete Payment (৳ ${req.awardAmount?.toStringAsFixed(0)})',
+                    onPressed: () => _resumePayment(req),
+                  ),
+                ),
+              ),
+
             if (isExpanded) _buildResponsesSection(req),
 
-            // Cancel — only while the request is still open (awarded/closed
-            // requests are past the point of cancelling).
             if (isExpanded && req.status.toLowerCase() == 'open')
               Padding(
                 padding: const EdgeInsets.fromLTRB(16, 0, 16, 14),
                 child: Align(
                   alignment: Alignment.centerRight,
                   child: TextButton.icon(
-                    onPressed: _saving.contains('${req.id}_cancel')
-                        ? null
-                        : () => _cancelRequest(req.id),
-                    icon: const Icon(Icons.close_rounded,
-                        color: Color(0xFFEF4444), size: 16),
-                    label: const Text(
-                      'অনুরোধ বাতিল করুন',
-                      style: TextStyle(
-                          color: Color(0xFFEF4444),
-                          fontSize: 12.5,
-                          fontWeight: FontWeight.w600),
+                    onPressed: _saving.contains('${req.id}_cancel') ? null : () => _cancelRequest(req.id),
+                    icon: const Icon(Icons.close_rounded, color: Color(0xFFEF4444), size: 16),
+                    label: Text(
+                      _isBn ? 'অনুরোধ বাতিল করুন' : 'Cancel request',
+                      style: const TextStyle(color: Color(0xFFEF4444), fontSize: 12.5, fontWeight: FontWeight.w600),
                     ),
                   ),
                 ),
@@ -620,6 +599,50 @@ class _MyMatchRequestsScreenState extends State<MyMatchRequestsScreen> {
     ).animate(delay: Duration(milliseconds: 50 * index)).fadeIn(duration: 300.ms).slideY(begin: 0.06);
   }
 
+  Widget _buildMeetSection(String requestId, MatchResponseModel resp) {
+    final meetKey = '${resp.id}_meet';
+    final isSaving = _saving.contains(meetKey);
+
+    if (resp.meetLink != null && resp.meetFeeStatus == 'paid') {
+      return SizedBox(
+        width: double.infinity,
+        child: OutlinedButton.icon(
+          onPressed: () => _joinMeet(resp.meetLink!),
+          icon: const Icon(Icons.video_camera_front_rounded, color: Color(0xFF10B981), size: 16),
+          label: Text(_isBn ? 'মিটিং-এ যোগ দিন' : 'Join the meet', style: const TextStyle(color: Color(0xFF10B981), fontWeight: FontWeight.w700)),
+          style: OutlinedButton.styleFrom(side: const BorderSide(color: Color(0xFF10B981)), padding: const EdgeInsets.symmetric(vertical: 12)),
+        ),
+      );
+    }
+    if (resp.meetLink != null) {
+      return SizedBox(
+        width: double.infinity,
+        child: OutlinedButton(
+          onPressed: () => _payMeetFee(requestId, resp.id),
+          style: OutlinedButton.styleFrom(side: const BorderSide(color: AppColors.deepBlue), padding: const EdgeInsets.symmetric(vertical: 12)),
+          child: Text(_isBn ? '৳১০০ পে করে মিটিং-এ যোগ দিন' : 'Pay ৳100 to join the meet', style: const TextStyle(color: AppColors.deepBlue, fontWeight: FontWeight.w700)),
+        ),
+      );
+    }
+    if (resp.meetRequestedAt != null) {
+      return Container(
+        width: double.infinity,
+        padding: const EdgeInsets.symmetric(vertical: 10),
+        alignment: Alignment.center,
+        decoration: BoxDecoration(color: AppColors.textMuted.withOpacity(0.08), borderRadius: BorderRadius.circular(12)),
+        child: Text(_isBn ? 'সেবাদাতার সাড়ার অপেক্ষায়...' : 'Waiting for the provider to accept...', style: const TextStyle(color: AppColors.textMuted, fontSize: 12.5)),
+      );
+    }
+    return SizedBox(
+      width: double.infinity,
+      child: TextButton.icon(
+        onPressed: isSaving ? null : () => _requestMeet(requestId, resp.id),
+        icon: const Icon(Icons.video_call_outlined, color: AppColors.deepBlue, size: 16),
+        label: Text(_isBn ? 'আগে ভিডিও কলে কথা বলতে চান?' : 'Want to talk on video first?', style: const TextStyle(color: AppColors.deepBlue, fontSize: 12.5, fontWeight: FontWeight.w600)),
+      ),
+    );
+  }
+
   Widget _buildStatusBadge(String status, Color color) {
     return Container(
       padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 3),
@@ -628,14 +651,7 @@ class _MyMatchRequestsScreenState extends State<MyMatchRequestsScreen> {
         borderRadius: BorderRadius.circular(8),
         border: Border.all(color: color.withOpacity(0.4), width: 1),
       ),
-      child: Text(
-        _statusLabel(status),
-        style: TextStyle(
-          color: color,
-          fontSize: 11,
-          fontWeight: FontWeight.w700,
-        ),
-      ),
+      child: Text(_statusLabel(status), style: TextStyle(color: color, fontSize: 11, fontWeight: FontWeight.w700)),
     );
   }
 
@@ -650,49 +666,32 @@ class _MyMatchRequestsScreenState extends State<MyMatchRequestsScreen> {
     } else {
       return const SizedBox.shrink();
     }
-
-    return Row(
-      children: [
-        const Icon(Icons.account_balance_wallet_rounded, color: AppColors.textMuted, size: 13),
-        const SizedBox(width: 4),
-        Text(
-          budgetText,
-          style: const TextStyle(color: AppColors.textMuted, fontSize: 12),
-        ),
-      ],
-    );
+    return Row(children: [
+      const Icon(Icons.account_balance_wallet_rounded, color: AppColors.textMuted, size: 13),
+      const SizedBox(width: 4),
+      Text(budgetText, style: const TextStyle(color: AppColors.textMuted, fontSize: 12)),
+    ]);
   }
 
-  Widget _buildResponsesSection(_MatchRequest req) {
+  Widget _buildResponsesSection(MatchRequestModel req) {
     final loading = _responsesLoading[req.id] ?? false;
     final error = _responsesError[req.id];
     final responses = _responses[req.id];
+    final alreadyAwarded = req.awardedResponseId;
 
     return Column(
       crossAxisAlignment: CrossAxisAlignment.stretch,
       children: [
-        Container(
-          height: 1,
-          color: AppColors.glassBorder,
-          margin: const EdgeInsets.symmetric(horizontal: 16),
-        ),
+        Container(height: 1, color: AppColors.glassBorder, margin: const EdgeInsets.symmetric(horizontal: 16)),
         const SizedBox(height: 12),
         Padding(
           padding: const EdgeInsets.symmetric(horizontal: 16),
-          child: Row(
-            children: [
-              const Icon(Icons.people_alt_rounded, color: AppColors.textMuted, size: 16),
-              const SizedBox(width: 6),
-              const Text(
-                'সেবাদাতাদের প্রস্তাব',
-                style: TextStyle(
-                  color: AppColors.textMuted,
-                  fontSize: 13,
-                  fontWeight: FontWeight.w600,
-                ),
-              ),
-            ],
-          ),
+          child: Row(children: [
+            const Icon(Icons.people_alt_rounded, color: AppColors.textMuted, size: 16),
+            const SizedBox(width: 6),
+            Text(_isBn ? 'সেবাদাতাদের প্রস্তাব' : 'Provider offers',
+                style: const TextStyle(color: AppColors.textMuted, fontSize: 13, fontWeight: FontWeight.w600)),
+          ]),
         ),
         const SizedBox(height: 10),
         if (loading)
@@ -706,7 +705,7 @@ class _MyMatchRequestsScreenState extends State<MyMatchRequestsScreen> {
           _buildNoResponses()
         else
           ...responses.asMap().entries.map(
-                (entry) => _buildResponseCard(req.id, entry.value, entry.key),
+                (entry) => _buildResponseCard(req.id, entry.value, entry.key, canAct: alreadyAwarded == null),
               ),
         const SizedBox(height: 12),
       ],
@@ -714,13 +713,11 @@ class _MyMatchRequestsScreenState extends State<MyMatchRequestsScreen> {
   }
 
   Widget _buildNoResponses() {
-    return const Padding(
-      padding: EdgeInsets.symmetric(vertical: 20, horizontal: 16),
+    return Padding(
+      padding: const EdgeInsets.symmetric(vertical: 20, horizontal: 16),
       child: Center(
-        child: Text(
-          'এখনো কোনো প্রস্তাব আসেনি',
-          style: TextStyle(color: AppColors.textMuted, fontSize: 13),
-        ),
+        child: Text(_isBn ? 'এখনো কোনো প্রস্তাব আসেনি' : 'No offers yet',
+            style: const TextStyle(color: AppColors.textMuted, fontSize: 13)),
       ),
     );
   }
@@ -728,28 +725,28 @@ class _MyMatchRequestsScreenState extends State<MyMatchRequestsScreen> {
   Widget _buildResponsesError(String error, String requestId) {
     return Padding(
       padding: const EdgeInsets.symmetric(vertical: 12, horizontal: 16),
-      child: Column(
-        children: [
-          Text(error, style: const TextStyle(color: AppColors.textMuted, fontSize: 13)),
-          const SizedBox(height: 8),
-          GestureDetector(
-            onTap: () => _loadResponses(requestId),
-            child: const Text(
-              'আবার চেষ্টা করুন',
-              style: TextStyle(color: AppColors.deepBlue, fontWeight: FontWeight.w600, fontSize: 13),
-            ),
-          ),
-        ],
-      ),
+      child: Column(children: [
+        Text(error, style: const TextStyle(color: AppColors.textMuted, fontSize: 13)),
+        const SizedBox(height: 8),
+        GestureDetector(
+          onTap: () => _loadResponses(requestId),
+          child: Text(_isBn ? 'আবার চেষ্টা করুন' : 'Try again',
+              style: const TextStyle(color: AppColors.deepBlue, fontWeight: FontWeight.w600, fontSize: 13)),
+        ),
+      ]),
     );
   }
 
-  Widget _buildResponseCard(String requestId, _ProviderResponse resp, int index) {
+  Widget _buildResponseCard(String requestId, MatchResponseModel resp, int index, {required bool canAct}) {
     final shortlistKey = '${resp.id}_shortlist';
     final awardKey = '${resp.id}_award';
     final isSaving = _saving.contains(shortlistKey) || _saving.contains(awardKey);
     final isShortlisting = _saving.contains(shortlistKey);
     final isAwarding = _saving.contains(awardKey);
+    final name = (resp.providerNameSnapshot?.trim().isNotEmpty ?? false)
+        ? resp.providerNameSnapshot!
+        : (_isBn ? 'অজানা সেবাদাতা' : 'Unknown provider');
+    final isSelected = resp.status.toLowerCase() == 'selected';
 
     return Padding(
       padding: const EdgeInsets.fromLTRB(12, 0, 12, 10),
@@ -757,32 +754,22 @@ class _MyMatchRequestsScreenState extends State<MyMatchRequestsScreen> {
         decoration: BoxDecoration(
           color: AppColors.glassWhite,
           borderRadius: BorderRadius.circular(14),
-          border: Border.all(color: AppColors.glassBorder, width: 1),
+          border: Border.all(color: isSelected ? AppColors.deepBlue : AppColors.glassBorder, width: isSelected ? 1.5 : 1),
         ),
         padding: const EdgeInsets.all(14),
         child: Column(
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
-            // Provider info row
             Row(
               children: [
                 Container(
                   width: 36,
                   height: 36,
-                  decoration: BoxDecoration(
-                    gradient: AppColors.blueGradient,
-                    borderRadius: BorderRadius.circular(10),
-                  ),
+                  decoration: BoxDecoration(gradient: AppColors.blueGradient, borderRadius: BorderRadius.circular(10)),
                   child: Center(
                     child: Text(
-                      resp.providerName.isNotEmpty
-                          ? resp.providerName.characters.first.toUpperCase()
-                          : 'স',
-                      style: const TextStyle(
-                        color: AppColors.ivory,
-                        fontSize: 16,
-                        fontWeight: FontWeight.w700,
-                      ),
+                      name.isNotEmpty ? name.characters.first.toUpperCase() : (_isBn ? 'স' : '?'),
+                      style: const TextStyle(color: AppColors.ivory, fontSize: 16, fontWeight: FontWeight.w700),
                     ),
                   ),
                 ),
@@ -791,33 +778,34 @@ class _MyMatchRequestsScreenState extends State<MyMatchRequestsScreen> {
                   child: Column(
                     crossAxisAlignment: CrossAxisAlignment.start,
                     children: [
-                      Text(
-                        resp.providerName,
-                        style: const TextStyle(
-                          color: AppColors.textPrimary,
-                          fontSize: 14,
-                          fontWeight: FontWeight.w600,
-                        ),
-                        maxLines: 1,
-                        overflow: TextOverflow.ellipsis,
-                      ),
-                      if (resp.priceOffered != null)
-                        Text(
-                          '৳ ${resp.priceOffered!.toStringAsFixed(0)}',
-                          style: const TextStyle(
-                            color: AppColors.deepBlue,
-                            fontSize: 13,
-                            fontWeight: FontWeight.w700,
-                          ),
-                        ),
+                      Text(name,
+                          style: const TextStyle(color: AppColors.textPrimary, fontSize: 14, fontWeight: FontWeight.w600),
+                          maxLines: 1, overflow: TextOverflow.ellipsis),
+                      Row(children: [
+                        if (resp.quotedAmount != null)
+                          Text('৳ ${resp.quotedAmount!.toStringAsFixed(0)}',
+                              style: const TextStyle(color: AppColors.deepBlue, fontSize: 13, fontWeight: FontWeight.w700)),
+                        if (resp.providerAvgRatingSnapshot != null) ...[
+                          const SizedBox(width: 8),
+                          const Icon(Icons.star_rounded, color: Color(0xFFF4A524), size: 14),
+                          const SizedBox(width: 2),
+                          Text(resp.providerAvgRatingSnapshot!.toStringAsFixed(1),
+                              style: const TextStyle(color: AppColors.textMuted, fontSize: 12, fontWeight: FontWeight.w600)),
+                        ],
+                      ]),
                     ],
                   ),
                 ),
+                if (isSelected)
+                  Container(
+                    padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
+                    decoration: BoxDecoration(color: AppColors.deepBlue.withOpacity(0.12), borderRadius: BorderRadius.circular(8)),
+                    child: Text(_isBn ? 'নির্বাচিত' : 'Selected',
+                        style: const TextStyle(color: AppColors.deepBlue, fontSize: 11, fontWeight: FontWeight.w700)),
+                  ),
               ],
             ),
-
-            // Note
-            if (resp.note != null && resp.note!.trim().isNotEmpty) ...[
+            if (resp.coverMessage != null && resp.coverMessage!.trim().isNotEmpty) ...[
               const SizedBox(height: 10),
               Container(
                 width: double.infinity,
@@ -827,27 +815,17 @@ class _MyMatchRequestsScreenState extends State<MyMatchRequestsScreen> {
                   borderRadius: BorderRadius.circular(10),
                   border: Border.all(color: AppColors.glassBorder, width: 1),
                 ),
-                child: Text(
-                  resp.note!,
-                  style: const TextStyle(
-                    color: AppColors.textMuted,
-                    fontSize: 13,
-                    height: 1.5,
-                  ),
-                ),
+                child: Text(resp.coverMessage!, style: const TextStyle(color: AppColors.textMuted, fontSize: 13, height: 1.5)),
               ),
             ],
-
-            const SizedBox(height: 12),
-
-            // Action buttons
-            Row(
-              children: [
+            if (canAct) ...[
+              const SizedBox(height: 12),
+              Row(children: [
                 Expanded(
                   child: SizedBox(
                     height: 44,
                     child: GlassButton(
-                      label: 'শর্টলিস্ট করুন',
+                      label: _isBn ? 'শর্টলিস্ট করুন' : 'Shortlist',
                       isOutlined: true,
                       onPressed: isSaving ? null : () => _shortlist(resp.id),
                       isLoading: isShortlisting,
@@ -859,14 +837,16 @@ class _MyMatchRequestsScreenState extends State<MyMatchRequestsScreen> {
                   child: SizedBox(
                     height: 44,
                     child: GlassButton(
-                      label: 'পুরস্কার দিন',
-                      onPressed: isSaving ? null : () => _award(resp.id),
+                      label: _isBn ? 'পুরস্কার দিন' : 'Award',
+                      onPressed: isSaving ? null : () => _award(requestId, resp.id),
                       isLoading: isAwarding,
                     ),
                   ),
                 ),
-              ],
-            ),
+              ]),
+              const SizedBox(height: 8),
+              _buildMeetSection(requestId, resp),
+            ],
           ],
         ),
       ).animate(delay: Duration(milliseconds: 60 * index)).fadeIn(duration: 250.ms).slideY(begin: 0.04),

@@ -9,6 +9,7 @@ class MatchProviderModel {
   final String id;
   final String name;
   final String? bio;
+  final String? specialNote;
   final String? profileImageUrl;
   final double? rating;
   final int? totalReviews;
@@ -17,11 +18,16 @@ class MatchProviderModel {
   final String? serviceKind;
   final bool nidVerified;
   final List<String> portfolioImages;
+  // Tutor-only — mirrored from onboarding-service's ProviderTutorProfile onto matchmaking's
+  // ProviderProfile at approval time (see matchmaking.service.ts's syncProviderVerification).
+  final List<String> subjectsTaught;
+  final List<String> teachingLevels;
 
   const MatchProviderModel({
     required this.id,
     required this.name,
     this.bio,
+    this.specialNote,
     this.profileImageUrl,
     this.rating,
     this.totalReviews,
@@ -30,6 +36,8 @@ class MatchProviderModel {
     this.serviceKind,
     this.nidVerified = false,
     this.portfolioImages = const [],
+    this.subjectsTaught = const [],
+    this.teachingLevels = const [],
   });
 
   factory MatchProviderModel.fromJson(Map<String, dynamic> json) =>
@@ -38,8 +46,10 @@ class MatchProviderModel {
         name: json['name'] as String? ??
             json['fullName'] as String? ??
             json['providerName'] as String? ??
+            json['nameSnapshot'] as String? ??
             '',
         bio: json['bio'] as String? ?? json['about'] as String?,
+        specialNote: json['specialNote'] as String?,
         profileImageUrl: json['profileImageUrl'] as String? ??
             json['profilePhoto'] as String?,
         rating: _asDoubleOrNull(json['rating'] ?? json['avgRating']),
@@ -50,6 +60,14 @@ class MatchProviderModel {
             json['kind'] as String?,
         nidVerified: json['nidVerified'] == true,
         portfolioImages: (json['portfolioImages'] as List<dynamic>?)
+                ?.map((e) => e as String)
+                .toList() ??
+            [],
+        subjectsTaught: (json['subjectsTaught'] as List<dynamic>?)
+                ?.map((e) => e as String)
+                .toList() ??
+            [],
+        teachingLevels: (json['teachingLevels'] as List<dynamic>?)
                 ?.map((e) => e as String)
                 .toList() ??
             [],
@@ -78,12 +96,19 @@ class MatchRequestModel {
   final DateTime? publishedAt;
   final DateTime? expiresAt;
   final DateTime createdAt;
+  final String? awardedResponseId;
+  // The awarded quote, snapshotted at award time — only set once a response has been awarded.
+  // awardPaymentStatus is 'pending' until the customer pays (see confirmAwardPayment); the
+  // provider's wallet/chat only unlock once it flips to 'paid'.
+  final double? awardAmount;
+  final String? awardPaymentStatus;
   // Raw per-type detail blobs — kept generic so display code can pull whichever
   // fields matter (studentClass/subjects for tutor, moveInDate for mess, etc.)
   // without a dedicated class per RequestType.
   final Map<String, dynamic>? tutorDetails;
   final Map<String, dynamic>? messDetails;
   final Map<String, dynamic>? petCareDetails;
+  final Map<String, dynamic>? helpingHandDetails;
 
   const MatchRequestModel({
     required this.id,
@@ -107,9 +132,13 @@ class MatchRequestModel {
     this.publishedAt,
     this.expiresAt,
     required this.createdAt,
+    this.awardedResponseId,
+    this.awardAmount,
+    this.awardPaymentStatus,
     this.tutorDetails,
     this.messDetails,
     this.petCareDetails,
+    this.helpingHandDetails,
   });
 
   factory MatchRequestModel.fromJson(Map<String, dynamic> json) =>
@@ -137,9 +166,13 @@ class MatchRequestModel {
         publishedAt: json['publishedAt'] != null ? DateTime.tryParse(json['publishedAt'] as String) : null,
         expiresAt: json['expiresAt'] != null ? DateTime.tryParse(json['expiresAt'] as String) : null,
         createdAt: DateTime.tryParse(json['createdAt'] as String? ?? '') ?? DateTime.now(),
+        awardedResponseId: json['awardedResponseId'] as String?,
+        awardAmount: _asDoubleOrNull(json['awardAmount']),
+        awardPaymentStatus: json['awardPaymentStatus'] as String?,
         tutorDetails: json['tutorDetails'] as Map<String, dynamic>?,
         messDetails: json['messDetails'] as Map<String, dynamic>?,
         petCareDetails: json['petCareDetails'] as Map<String, dynamic>?,
+        helpingHandDetails: json['helpingHandDetails'] as Map<String, dynamic>?,
       );
 }
 
@@ -154,6 +187,9 @@ class MatchResponseModel {
   final String? quotedAmountType;
   final String status;
   final DateTime createdAt;
+  final DateTime? meetRequestedAt;
+  final String? meetLink;
+  final String? meetFeeStatus;
 
   const MatchResponseModel({
     required this.id,
@@ -166,6 +202,9 @@ class MatchResponseModel {
     this.quotedAmountType,
     required this.status,
     required this.createdAt,
+    this.meetRequestedAt,
+    this.meetLink,
+    this.meetFeeStatus,
   });
 
   factory MatchResponseModel.fromJson(Map<String, dynamic> json) =>
@@ -180,5 +219,8 @@ class MatchResponseModel {
         quotedAmountType: json['quotedAmountType'] as String?,
         status: json['status'] as String? ?? 'interested',
         createdAt: DateTime.tryParse(json['createdAt'] as String? ?? '') ?? DateTime.now(),
+        meetRequestedAt: json['meetRequestedAt'] != null ? DateTime.tryParse(json['meetRequestedAt'] as String) : null,
+        meetLink: json['meetLink'] as String?,
+        meetFeeStatus: json['meetFeeStatus'] as String?,
       );
 }

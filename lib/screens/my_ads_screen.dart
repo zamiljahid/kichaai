@@ -189,14 +189,23 @@ class _MyAdsScreenState extends State<MyAdsScreen> {
 
   Widget _adCard(PropertyListing ad) {
     final busy = _busy.contains(ad.id);
-    final rentUnit = ad.isMess ? (_isBn ? '/সিট' : '/seat') : (_isBn ? '/মাস' : '/mo');
+    final rentUnit = ad.isMess
+        ? (_isBn ? '/সিট' : '/seat')
+        : ad.isGarage
+            ? (_isBn ? '/দিন' : '/day')
+            : (_isBn ? '/মাস' : '/mo');
     final info = ad.isMess
         ? (ad.totalSeats != null ? (_isBn ? '${ad.totalSeats} সিট' : '${ad.totalSeats} seats') : '')
-        : [
-            if (ad.bedrooms != null) _isBn ? '${ad.bedrooms} বেড' : '${ad.bedrooms} bed',
-            if (ad.bathrooms != null) _isBn ? '${ad.bathrooms} বাথ' : '${ad.bathrooms} bath',
-            if (ad.sizeSqft != null) '${ad.sizeSqft} sqft',
-          ].join(' · ');
+        : ad.isGarage
+            ? [
+                if (ad.carCapacity != null) _isBn ? '${ad.carCapacity} গাড়ি' : '${ad.carCapacity} cars',
+                if (ad.isCovered != null) (ad.isCovered! ? (_isBn ? 'ছাদযুক্ত' : 'covered') : (_isBn ? 'খোলা' : 'open')),
+              ].join(' · ')
+            : [
+                if (ad.bedrooms != null) _isBn ? '${ad.bedrooms} বেড' : '${ad.bedrooms} bed',
+                if (ad.bathrooms != null) _isBn ? '${ad.bathrooms} বাথ' : '${ad.bathrooms} bath',
+                if (ad.sizeSqft != null) '${ad.sizeSqft} sqft',
+              ].join(' · ');
 
     return Container(
       margin: const EdgeInsets.only(bottom: 14),
@@ -230,13 +239,13 @@ class _MyAdsScreenState extends State<MyAdsScreen> {
                   Container(
                     padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 2.5),
                     decoration: BoxDecoration(
-                      color: (ad.isMess ? _accent : const Color(0xFFB45309)).withOpacity(0.14),
+                      color: (ad.isMess ? _accent : ad.isGarage ? const Color(0xFF6B7280) : const Color(0xFFB45309)).withOpacity(0.14),
                       borderRadius: BorderRadius.circular(8),
                     ),
                     child: Text(
-                        ad.isMess ? (_isBn ? 'মেস' : 'Mess') : (_isBn ? 'বাসা ভাড়া' : 'House'),
+                        ad.isMess ? (_isBn ? 'মেস' : 'Mess') : ad.isGarage ? (_isBn ? 'গ্যারেজ' : 'Garage') : (_isBn ? 'বাসা ভাড়া' : 'House'),
                         style: TextStyle(
-                            color: ad.isMess ? _accent : const Color(0xFFB45309),
+                            color: ad.isMess ? _accent : ad.isGarage ? const Color(0xFF6B7280) : const Color(0xFFB45309),
                             fontSize: 10.5, fontWeight: FontWeight.w800)),
                   ),
                   if (!ad.isActive) ...[

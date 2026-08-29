@@ -50,6 +50,10 @@ class MatchmakingService {
     Map<String, dynamic>? tutorDetails,
     Map<String, dynamic>? messDetails,
     Map<String, dynamic>? petCareDetails,
+    Map<String, dynamic>? helpingHandDetails,
+    // Set when booking a SPECIFIC provider (e.g. from their profile) instead of a public
+    // broadcast — only that provider will see this request in their inbox.
+    String? targetProviderId,
   }) async {
     try {
       final res = await _client.post('/matchmaking/requests', data: {
@@ -66,6 +70,8 @@ class MatchmakingService {
         if (tutorDetails != null) 'tutorDetails': tutorDetails,
         if (messDetails != null) 'messDetails': messDetails,
         if (petCareDetails != null) 'petCareDetails': petCareDetails,
+        if (helpingHandDetails != null) 'helpingHandDetails': helpingHandDetails,
+        if (targetProviderId != null) 'targetProviderId': targetProviderId,
       });
       return MatchRequestModel.fromJson(res.data as Map<String, dynamic>);
     } catch (e) {
@@ -92,6 +98,15 @@ class MatchmakingService {
     String? requestType,
     String? status,
     String? customerId,
+    // Tutor-browse precision filters (ignored server-side for anything but tutor requests).
+    String? subject,
+    String? studentClass,
+    String? prefersGender,
+    // Helping-hand-browse precision filter (ignored server-side for anything else).
+    String? workType,
+    // Pass true when a PROVIDER is browsing the open feed (not listing their own requests as a
+    // customerId) — also surfaces requests privately targeted at them via targetProviderId.
+    bool browseAsProvider = false,
     int limit = 20,
     int offset = 0,
   }) async {
@@ -100,6 +115,11 @@ class MatchmakingService {
         if (requestType != null) 'requestType': requestType,
         if (status != null) 'status': status,
         if (customerId != null) 'customerId': customerId,
+        if (subject != null && subject.isNotEmpty) 'subject': subject,
+        if (studentClass != null && studentClass.isNotEmpty) 'studentClass': studentClass,
+        if (prefersGender != null && prefersGender.isNotEmpty) 'prefersGender': prefersGender,
+        if (workType != null && workType.isNotEmpty) 'workType': workType,
+        if (browseAsProvider) 'browseAsProvider': 'true',
         'limit': limit.toString(),
         'offset': offset.toString(),
       });
@@ -164,6 +184,76 @@ class MatchmakingService {
     try {
       final res = await _client.post('/matchmaking/responses/$responseId/award');
       return MatchRequestModel.fromJson(res.data as Map<String, dynamic>);
+    } catch (e) {
+      throw ApiClient.mapError(e);
+    }
+  }
+
+  /// Starts the real SSLCommerz session for an awarded quote. Returns the raw transaction map
+  /// (has `gatewayPageUrl`) — nothing is credited/unlocked until [confirmAwardPayment] verifies it.
+  Future<Map<String, dynamic>> initiateAwardPayment(String requestId) async {
+    try {
+      final res = await _client.post('/matchmaking/requests/$requestId/award-payment/initiate');
+      final data = res.data as Map<String, dynamic>;
+      return (data['transaction'] as Map<String, dynamic>?) ?? data;
+    } catch (e) {
+      throw ApiClient.mapError(e);
+    }
+  }
+
+  /// Verifies the payment server-to-server; only once this succeeds does the provider's wallet
+  /// get credited and the chat thread open.
+  Future<MatchRequestModel> confirmAwardPayment(String requestId) async {
+    try {
+      final res = await _client.post('/matchmaking/requests/$requestId/award-payment/confirm');
+      return MatchRequestModel.fromJson(res.data as Map<String, dynamic>);
+    } catch (e) {
+      throw ApiClient.mapError(e);
+    }
+  }
+
+  // ── Pre-hire meet call (optional, additive to award) ─────────────────────
+
+  Future<void> requestMeet(String responseId) async {
+    try {
+      await _client.post('/matchmaking/responses/$responseId/request-meet');
+    } catch (e) {
+      throw ApiClient.mapError(e);
+    }
+  }
+
+  Future<void> acceptMeet(String responseId) async {
+    try {
+      await _client.post('/matchmaking/responses/$responseId/accept-meet');
+    } catch (e) {
+      throw ApiClient.mapError(e);
+    }
+  }
+
+  Future<Map<String, dynamic>> initiateMeetFeePayment(String responseId) async {
+    try {
+      final res = await _client.post('/matchmaking/responses/$responseId/meet-fee/initiate');
+      final data = res.data as Map<String, dynamic>;
+      return (data['transaction'] as Map<String, dynamic>?) ?? data;
+    } catch (e) {
+      throw ApiClient.mapError(e);
+    }
+  }
+
+  Future<void> confirmMeetFeePayment(String responseId) async {
+    try {
+      await _client.post('/matchmaking/responses/$responseId/meet-fee/confirm');
+    } catch (e) {
+      throw ApiClient.mapError(e);
+    }
+  }
+
+  // Provider's own submitted responses (each with the parent request attached) — fills a real
+  // gap: providers previously had no way to check back on a response after submitting it.
+  Future<List<Map<String, dynamic>>> listMyResponses() async {
+    try {
+      final res = await _client.get('/matchmaking/my-responses');
+      return (res.data as List).cast<Map<String, dynamic>>();
     } catch (e) {
       throw ApiClient.mapError(e);
     }

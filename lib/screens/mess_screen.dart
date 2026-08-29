@@ -9,6 +9,7 @@ import '../core/network/api_client.dart';
 import '../core/utils/app_strings.dart';
 import '../models/property_model.dart';
 import '../theme/app_theme.dart';
+import '../widgets/pin_picker_screen.dart';
 import 'post_mess_screen.dart';
 
 // App brand accent (pine) — used for save-heart, host button, price pill, CTA.
@@ -44,6 +45,7 @@ class _MessScreenState extends State<MessScreen> {
   String? _occupation; // student | job_holder (MESS)
   int? _minBedrooms; // HOUSE: at least N
   String? _tenantType; // family | bachelor (HOUSE)
+  int? _minCarCapacity; // GARAGE: at least N cars
 
   List<PropertyListing> _all = [];
   final Set<String> _saved = {};
@@ -51,13 +53,22 @@ class _MessScreenState extends State<MessScreen> {
   String? _error;
   String _query = '';
   _View _view = _View.list;
-  LatLng? _userLocation;
+  LatLng? _userLocation; // real device GPS — only for the map's "my location" dot
+  // Where distance filtering/sorting actually searches around. Starts at _userLocation
+  // once resolved, but the seeker can override it via the filter sheet's map picker —
+  // e.g. browsing মেস in ধানমন্ডি while physically standing in উত্তরা. If GPS is denied
+  // and nothing has been picked either, this stays null and searchPropertyListings on
+  // the backend returns everything unsorted/unfiltered by distance — see _openFilterSheet
+  // for the warning shown to the user in that case.
+  LatLng? _searchCenter;
   PropertyListing? _selected; // shown as a floating card on the map
   bool _isBn = true;
   Timer? _debounce;
   final Map<String, BitmapDescriptor> _priceIcons = {}; // Airbnb-style price pills
 
   bool get _isMessTab => _listingType == 'MESS';
+  bool get _isHouseTab => _listingType == 'HOUSE_RENT';
+  bool get _isGarageTab => _listingType == 'GARAGE';
 
   int get _activeFilterCount {
     var n = 0;
@@ -67,31 +78,35 @@ class _MessScreenState extends State<MessScreen> {
       if (_gender != null) n++;
       if (_smoking != null) n++;
       if (_occupation != null) n++;
-    } else {
+    } else if (_isHouseTab) {
       if (_minBedrooms != null) n++;
       if (_tenantType != null) n++;
+    } else {
+      if (_minCarCapacity != null) n++;
     }
     return n;
   }
 
-  /// Draws a rounded white "৳rent" pill (accent when selected) to a PNG so it
-  /// can be used as a Google Maps marker — the Airbnb map look.
+  /// Draws a rounded white "৳rent" pill (soft accent tint when selected) to a
+  /// PNG so it can be used as a Google Maps marker — the Airbnb map look.
   Future<BitmapDescriptor> _pricePill(String text, {required bool selected}) async {
     const scale = 3.0; // sharp on hi-dpi
     final tp = TextPainter(
       text: TextSpan(text: text, style: TextStyle(
-        fontSize: 13 * scale, fontWeight: FontWeight.w800,
-        color: selected ? Colors.white : const Color(0xFF222222))),
+        fontSize: 10.5 * scale, fontWeight: FontWeight.w700,
+        color: selected ? _accent : const Color(0xFF222222))),
       textDirection: TextDirection.ltr,
     )..layout();
-    final padH = 12.0 * scale, padV = 7.0 * scale;
+    final padH = 9.0 * scale, padV = 5.0 * scale;
     final w = tp.width + padH * 2, h = tp.height + padV * 2;
     final rec = ui.PictureRecorder();
     final canvas = Canvas(rec);
     final rrect = RRect.fromRectAndRadius(Rect.fromLTWH(0, 3 * scale, w, h), Radius.circular(h / 2));
     canvas.drawRRect(rrect.shift(Offset(0, 1.5 * scale)),
         Paint()..color = Colors.black26..maskFilter = MaskFilter.blur(BlurStyle.normal, 3 * scale));
-    canvas.drawRRect(rrect, Paint()..color = selected ? _accent : Colors.white);
+    // Selected still reads as white/neutral — just a light accent tint + border,
+    // not a solid saturated fill.
+    canvas.drawRRect(rrect, Paint()..color = selected ? _accent.withOpacity(0.10) : Colors.white);
     canvas.drawRRect(rrect, Paint()
       ..style = PaintingStyle.stroke..strokeWidth = 1.5 * scale
       ..color = selected ? _accent : const Color(0xFFDBDBDB));
@@ -104,7 +119,7 @@ class _MessScreenState extends State<MessScreen> {
   Future<void> _buildPriceIcons() async {
     for (final m in _all) {
       if (m.latLng == null || _priceIcons.containsKey(m.id)) continue;
-      final label = m.rent != null ? takaFmt(m.rent!) : (m.isMess ? 'মেস' : 'বাসা');
+      final label = m.rent != null ? takaFmt(m.rent!) : (m.isMess ? 'মেস' : (m.isGarage ? 'গ্যারেজ' : 'বাসা'));
       _priceIcons[m.id] = await _pricePill(label, selected: false);
     }
     if (mounted) setState(() {});
@@ -126,6 +141,7 @@ class _MessScreenState extends State<MessScreen> {
 
   Future<void> _init() async {
     _userLocation = await _resolveLocation();
+    _searchCenter = _userLocation;
     await _fetch();
   }
 
@@ -145,7 +161,7 @@ class _MessScreenState extends State<MessScreen> {
   Future<void> _fetch() async {
     setState(() { _isLoading = true; _error = null; _selected = null; });
     try {
-      final loc = _userLocation;
+      final loc = _searchCenter;
       final res = await _client.get('/auth/properties/search', queryParameters: {
         'listingType': _listingType,
         if (loc != null) 'lat': loc.latitude,
@@ -156,8 +172,9 @@ class _MessScreenState extends State<MessScreen> {
         if (_isMessTab && _gender != null) 'genderPreference': _gender,
         if (_isMessTab && _smoking != null) 'smokingPreference': _smoking,
         if (_isMessTab && _occupation != null) 'occupationPreference': _occupation,
-        if (!_isMessTab && _minBedrooms != null) 'bedrooms': _minBedrooms,
-        if (!_isMessTab && _tenantType != null) 'tenantType': _tenantType,
+        if (_isHouseTab && _minBedrooms != null) 'bedrooms': _minBedrooms,
+        if (_isHouseTab && _tenantType != null) 'tenantType': _tenantType,
+        if (_isGarageTab && _minCarCapacity != null) 'carCapacity': _minCarCapacity,
       });
       final data = res.data;
       final raw = data is List ? data : (data['items'] ?? data['data'] ?? data['results'] ?? []);
@@ -206,10 +223,15 @@ class _MessScreenState extends State<MessScreen> {
     }
   }
 
-  /// MESS → "৳5,000/সিট" (per seat), HOUSE → "৳25,000/মাস" (whole unit).
+  /// MESS → "৳5,000/সিট" (per seat), HOUSE → "৳25,000/মাস" (whole unit),
+  /// GARAGE → "৳300/দিন" (per day — short-stay, not a monthly lease).
   String _rentLabel(PropertyListing m) {
     if (m.rent == null) return '';
-    final unit = m.isMess ? (_isBn ? '/সিট' : '/seat') : (_isBn ? '/মাস' : '/mo');
+    final unit = m.isMess
+        ? (_isBn ? '/সিট' : '/seat')
+        : m.isGarage
+            ? (_isBn ? '/দিন' : '/day')
+            : (_isBn ? '/মাস' : '/mo');
     return '${takaFmt(m.rent!)}$unit';
   }
 
@@ -224,20 +246,36 @@ class _MessScreenState extends State<MessScreen> {
           children: [
             _searchHeader(),
             _typeToggle(),
+            if (_filtered.any((m) => m.latLng != null)) _mapToggleBar(),
             Expanded(child: _body()),
           ],
         ),
       ),
-      floatingActionButton: (_filtered.any((m) => m.latLng != null))
-          ? FloatingActionButton.extended(
-              onPressed: () => setState(() => _view = _view == _View.list ? _View.map : _View.list),
-              backgroundColor: AppColors.textPrimary,
-              icon: Icon(_view == _View.list ? Icons.map_rounded : Icons.view_list_rounded, color: Colors.white, size: 19),
-              label: Text(_view == _View.list ? (_isBn ? 'ম্যাপ' : 'Map') : (_isBn ? 'তালিকা' : 'List'),
+    );
+  }
+
+  // Moved here from a bottom-centered FloatingActionButton — it used to sit at the bottom of
+  // the screen, overlapping the AI chat button and other bottom UI. A top toggle also reads
+  // more naturally as a view switch (like a segmented control) than a floating action.
+  Widget _mapToggleBar() {
+    return Padding(
+      padding: const EdgeInsets.fromLTRB(16, 0, 16, 10),
+      child: Align(
+        alignment: Alignment.centerRight,
+        child: GestureDetector(
+          onTap: () => setState(() => _view = _view == _View.list ? _View.map : _View.list),
+          child: Container(
+            padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 9),
+            decoration: BoxDecoration(color: AppColors.textPrimary, borderRadius: BorderRadius.circular(20)),
+            child: Row(mainAxisSize: MainAxisSize.min, children: [
+              Icon(_view == _View.list ? Icons.map_rounded : Icons.view_list_rounded, color: Colors.white, size: 17),
+              const SizedBox(width: 6),
+              Text(_view == _View.list ? (_isBn ? 'ম্যাপ' : 'Map') : (_isBn ? 'তালিকা' : 'List'),
                   style: const TextStyle(color: Colors.white, fontWeight: FontWeight.w700, fontSize: 13)),
-            )
-          : null,
-      floatingActionButtonLocation: FloatingActionButtonLocation.centerFloat,
+            ]),
+          ),
+        ),
+      ),
     );
   }
 
@@ -332,7 +370,7 @@ class _MessScreenState extends State<MessScreen> {
     );
   }
 
-  // [ মেস | বাসা ভাড়া ] — the seeker never sees the other kind.
+  // [ মেস | বাসা | গ্যারেজ ] — the seeker never sees the other kinds.
   Widget _typeToggle() {
     Widget seg(String type, String bn, String en) {
       final on = _listingType == type;
@@ -348,9 +386,10 @@ class _MessScreenState extends State<MessScreen> {
             ),
             child: Text(_isBn ? bn : en,
                 textAlign: TextAlign.center,
+                maxLines: 1, overflow: TextOverflow.ellipsis,
                 style: TextStyle(
                     color: on ? Colors.white : AppColors.textSecondary,
-                    fontSize: 13.5, fontWeight: FontWeight.w700)),
+                    fontSize: 12.5, fontWeight: FontWeight.w700)),
           ),
         ),
       );
@@ -367,7 +406,8 @@ class _MessScreenState extends State<MessScreen> {
         ),
         child: Row(children: [
           seg('MESS', 'মেস', 'Mess'),
-          seg('HOUSE_RENT', 'বাসা ভাড়া', 'House rent'),
+          seg('HOUSE_RENT', 'বাসা', 'House'),
+          seg('GARAGE', 'গ্যারেজ', 'Garage'),
         ]),
       ),
     );
@@ -394,7 +434,9 @@ class _MessScreenState extends State<MessScreen> {
         Text(
             _isMessTab
                 ? (_isBn ? 'কোনো মেস পাওয়া যায়নি' : 'No mess found')
-                : (_isBn ? 'কোনো বাসা পাওয়া যায়নি' : 'No house found'),
+                : _isGarageTab
+                    ? (_isBn ? 'কোনো গ্যারেজ পাওয়া যায়নি' : 'No garage found')
+                    : (_isBn ? 'কোনো বাসা পাওয়া যায়নি' : 'No house found'),
             style: const TextStyle(color: AppColors.textMuted, fontSize: 15)),
         if (_activeFilterCount > 0) ...[
           const SizedBox(height: 10),
@@ -412,8 +454,10 @@ class _MessScreenState extends State<MessScreen> {
   void _clearFilters() {
     setState(() {
       _minRent = null; _maxRent = null; _radiusKm = 25;
+      _searchCenter = _userLocation;
       _gender = null; _smoking = null; _occupation = null;
       _minBedrooms = null; _tenantType = null;
+      _minCarCapacity = null;
     });
   }
 
@@ -422,9 +466,13 @@ class _MessScreenState extends State<MessScreen> {
     final minCtrl = TextEditingController(text: _minRent?.toString() ?? '');
     final maxCtrl = TextEditingController(text: _maxRent?.toString() ?? '');
     var radius = _radiusKm;
+    var center = _searchCenter;
+    var isCustomCenter = _searchCenter != null && _searchCenter != _userLocation;
+    var isLocating = false;
     var gender = _gender, smoking = _smoking, occupation = _occupation;
     var bedrooms = _minBedrooms;
     var tenant = _tenantType;
+    var carCapacity = _minCarCapacity;
 
     final applied = await showModalBottomSheet<bool>(
       context: context,
@@ -488,8 +536,9 @@ class _MessScreenState extends State<MessScreen> {
                     GestureDetector(
                       onTap: () => setSheet(() {
                         minCtrl.clear(); maxCtrl.clear(); radius = 25;
+                        center = _userLocation; isCustomCenter = false;
                         gender = null; smoking = null; occupation = null;
-                        bedrooms = null; tenant = null;
+                        bedrooms = null; tenant = null; carCapacity = null;
                       }),
                       child: Text(_isBn ? 'সব মুছুন' : 'Clear all',
                           style: const TextStyle(color: AppColors.textMuted, fontSize: 13, fontWeight: FontWeight.w600)),
@@ -503,12 +552,89 @@ class _MessScreenState extends State<MessScreen> {
                           label(_isBn ? 'ভাড়ার রেঞ্জ' : 'Rent range',
                               hint: _isMessTab
                                   ? (_isBn ? 'প্রতি সিট' : 'per seat')
-                                  : (_isBn ? 'পুরো বাসা' : 'whole unit')),
+                                  : _isGarageTab
+                                      ? (_isBn ? 'প্রতিদিন' : 'per day')
+                                      : (_isBn ? 'পুরো বাসা' : 'whole unit')),
                           Row(children: [
                             Expanded(child: _rentField(minCtrl, _isBn ? 'সর্বনিম্ন ৳' : 'Min ৳')),
                             const Padding(padding: EdgeInsets.symmetric(horizontal: 10),
                                 child: Text('—', style: TextStyle(color: AppColors.textMuted))),
                             Expanded(child: _rentField(maxCtrl, _isBn ? 'সর্বোচ্চ ৳' : 'Max ৳')),
+                          ]),
+                          label(_isBn ? 'অবস্থান' : 'Location',
+                              hint: isLocating
+                                  ? (_isBn ? 'খুঁজছি…' : 'Locating…')
+                                  : center == null
+                                      ? (_isBn ? 'কোনো অবস্থান নেই — দূরত্ব ফিল্টার কাজ করবে না'
+                                                : 'No location set — distance filter won\'t work')
+                                      : isCustomCenter
+                                          ? (_isBn ? 'ম্যাপ থেকে বেছে নেওয়া জায়গা' : 'Custom location from map')
+                                          : (_isBn ? 'বর্তমান অবস্থান' : 'Your current location')),
+                          Row(children: [
+                            Expanded(
+                              child: GestureDetector(
+                                onTap: () async {
+                                  setSheet(() => isLocating = true);
+                                  final loc = await _resolveLocation();
+                                  if (loc != null) _userLocation = loc;
+                                  setSheet(() {
+                                    isLocating = false;
+                                    if (loc != null) { center = loc; isCustomCenter = false; }
+                                  });
+                                  if (loc == null && ctx.mounted) {
+                                    ScaffoldMessenger.of(ctx).showSnackBar(SnackBar(
+                                      content: Text(_isBn ? 'লোকেশন পাওয়া যায়নি — ম্যাপ থেকে বেছে নিন' : 'Could not get location — pick on map instead',
+                                          style: const TextStyle(color: Colors.white)),
+                                      backgroundColor: const Color(0xFFEF4444), behavior: SnackBarBehavior.floating));
+                                  }
+                                },
+                                child: Container(
+                                  padding: const EdgeInsets.symmetric(vertical: 10),
+                                  decoration: BoxDecoration(
+                                    color: !isCustomCenter && center != null ? _accent : AppColors.glassWhite,
+                                    borderRadius: BorderRadius.circular(20),
+                                    border: Border.all(color: !isCustomCenter && center != null ? _accent : AppColors.glassBorder),
+                                  ),
+                                  child: Row(mainAxisAlignment: MainAxisAlignment.center, children: [
+                                    Icon(Icons.my_location_rounded, size: 15,
+                                        color: !isCustomCenter && center != null ? Colors.white : AppColors.textSecondary),
+                                    const SizedBox(width: 6),
+                                    Text(_isBn ? 'বর্তমান অবস্থান' : 'Current location',
+                                        style: TextStyle(fontSize: 12.5, fontWeight: FontWeight.w600,
+                                            color: !isCustomCenter && center != null ? Colors.white : AppColors.textSecondary)),
+                                  ]),
+                                ),
+                              ),
+                            ),
+                            const SizedBox(width: 8),
+                            Expanded(
+                              child: GestureDetector(
+                                onTap: () async {
+                                  final picked = await Navigator.push<LatLng>(
+                                    ctx,
+                                    MaterialPageRoute(
+                                        builder: (_) => PinPickerScreen(isBn: _isBn, initialPosition: center ?? _dhaka)),
+                                  );
+                                  if (picked != null) setSheet(() { center = picked; isCustomCenter = true; });
+                                },
+                                child: Container(
+                                  padding: const EdgeInsets.symmetric(vertical: 10),
+                                  decoration: BoxDecoration(
+                                    color: isCustomCenter ? _accent : AppColors.glassWhite,
+                                    borderRadius: BorderRadius.circular(20),
+                                    border: Border.all(color: isCustomCenter ? _accent : AppColors.glassBorder),
+                                  ),
+                                  child: Row(mainAxisAlignment: MainAxisAlignment.center, children: [
+                                    Icon(Icons.map_rounded, size: 15,
+                                        color: isCustomCenter ? Colors.white : AppColors.textSecondary),
+                                    const SizedBox(width: 6),
+                                    Text(_isBn ? 'ম্যাপে বেছে নিন' : 'Pick on map',
+                                        style: TextStyle(fontSize: 12.5, fontWeight: FontWeight.w600,
+                                            color: isCustomCenter ? Colors.white : AppColors.textSecondary)),
+                                  ]),
+                                ),
+                              ),
+                            ),
                           ]),
                           label(_isBn ? 'দূরত্ব' : 'Distance'),
                           chips<double>([
@@ -537,7 +663,7 @@ class _MessScreenState extends State<MessScreen> {
                               ('student', _isBn ? 'ছাত্র' : 'Student'),
                               ('job_holder', _isBn ? 'চাকরিজীবী' : 'Job holder'),
                             ], occupation, (v) => occupation = v),
-                          ] else ...[
+                          ] else if (_isHouseTab) ...[
                             label(_isBn ? 'বেডরুম' : 'Bedrooms',
                                 hint: _isBn ? 'কমপক্ষে' : 'at least'),
                             chips<int>([
@@ -551,6 +677,14 @@ class _MessScreenState extends State<MessScreen> {
                               ('family', _isBn ? 'ফ্যামিলি' : 'Family'),
                               ('bachelor', _isBn ? 'ব্যাচেলর' : 'Bachelor'),
                             ], tenant, (v) => tenant = v),
+                          ] else ...[
+                            label(_isBn ? 'গাড়ি ধারণক্ষমতা' : 'Car capacity',
+                                hint: _isBn ? 'কমপক্ষে' : 'at least'),
+                            chips<int>([
+                              (1, _isBn ? '১+' : '1+'),
+                              (2, _isBn ? '২+' : '2+'),
+                              (3, _isBn ? '৩+' : '3+'),
+                            ], carCapacity, (v) => carCapacity = v),
                           ],
                         ],
                       ),
@@ -579,8 +713,10 @@ class _MessScreenState extends State<MessScreen> {
         _minRent = int.tryParse(minCtrl.text.trim());
         _maxRent = int.tryParse(maxCtrl.text.trim());
         _radiusKm = radius;
+        _searchCenter = center;
         _gender = gender; _smoking = smoking; _occupation = occupation;
         _minBedrooms = bedrooms; _tenantType = tenant;
+        _minCarCapacity = carCapacity;
       });
       _fetch();
     }
@@ -607,15 +743,21 @@ class _MessScreenState extends State<MessScreen> {
     );
   }
 
-  // ── List (Airbnb photo cards) ─────────────────────────────────────────────────
+  // ── List (compact square grid — 2 columns) ────────────────────────────────────
   Widget _listView() {
     final items = _filtered;
     return RefreshIndicator(
       color: _accent,
       backgroundColor: AppColors.bgMid,
       onRefresh: _fetch,
-      child: ListView.builder(
-        padding: const EdgeInsets.fromLTRB(16, 4, 16, 96),
+      child: GridView.builder(
+        padding: const EdgeInsets.fromLTRB(16, 4, 16, 24),
+        gridDelegate: const SliverGridDelegateWithFixedCrossAxisCount(
+          crossAxisCount: 2,
+          crossAxisSpacing: 10,
+          mainAxisSpacing: 10,
+          childAspectRatio: 0.8,
+        ),
         itemCount: items.length,
         itemBuilder: (_, i) => _airbnbCard(items[i]),
       ),
@@ -624,86 +766,76 @@ class _MessScreenState extends State<MessScreen> {
 
   Widget _airbnbCard(PropertyListing m) {
     final saved = _saved.contains(m.id);
-    return Padding(
-      padding: const EdgeInsets.only(bottom: 26),
-      child: GestureDetector(
-        onTap: () => _showDetail(m),
-        behavior: HitTestBehavior.opaque,
-        child: Column(
-          crossAxisAlignment: CrossAxisAlignment.start,
-          children: [
-            // photo with heart — shorter (landscape) so cards are compact
-            AspectRatio(
-              aspectRatio: 4.5,
-              child: Stack(
-                fit: StackFit.expand,
-                children: [
-                  ClipRRect(
-                    borderRadius: BorderRadius.circular(18),
-                    child: _MessPhotos(photos: m.photosUrls),
-                  ),
-                  Positioned(
-                    top: 12, right: 12,
-                    child: GestureDetector(
-                      onTap: () => setState(() => saved ? _saved.remove(m.id) : _saved.add(m.id)),
-                      child: Icon(saved ? Icons.favorite_rounded : Icons.favorite_border_rounded,
-                          color: saved ? _accent : Colors.white,
-                          size: 27,
-                          shadows: const [Shadow(color: Color(0x66000000), blurRadius: 6)]),
-                    ),
-                  ),
-                  if (m.distanceKm != null)
-                    Positioned(
-                      top: 12, left: 12,
-                      child: Container(
-                        padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 5),
-                        decoration: BoxDecoration(color: Colors.white, borderRadius: BorderRadius.circular(20)),
-                        child: Text('${m.distanceKm!.toStringAsFixed(1)} ${_isBn ? 'কিমি দূরে' : 'km away'}',
-                            style: const TextStyle(color: Color(0xFF222222), fontSize: 11, fontWeight: FontWeight.w700)),
-                      ),
-                    ),
-                ],
-              ),
-            ),
-            const SizedBox(height: 10),
-            Row(
-              crossAxisAlignment: CrossAxisAlignment.start,
+    return GestureDetector(
+      onTap: () => _showDetail(m),
+      behavior: HitTestBehavior.opaque,
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          // Square-ish photo — a compact grid card reads best with the image close to 1:1,
+          // not the old wide landscape strip made for a full-width single-column list.
+          AspectRatio(
+            aspectRatio: 1.15,
+            child: Stack(
+              fit: StackFit.expand,
               children: [
-                Expanded(
-                  child: Text(m.messName,
-                      maxLines: 1, overflow: TextOverflow.ellipsis,
-                      style: const TextStyle(color: AppColors.textPrimary, fontSize: 15.5, fontWeight: FontWeight.w700)),
+                ClipRRect(
+                  borderRadius: BorderRadius.circular(12),
+                  child: _MessPhotos(photos: m.photosUrls, dots: false),
                 ),
-                if (m.isMess && m.totalSeats != null) ...[
-                  const Icon(Icons.event_seat_rounded, size: 15, color: AppColors.textPrimary),
-                  const SizedBox(width: 4),
-                  Text('${m.totalSeats}', style: const TextStyle(color: AppColors.textPrimary, fontSize: 14, fontWeight: FontWeight.w700)),
-                ] else if (!m.isMess && m.bedrooms != null) ...[
-                  const Icon(Icons.bed_rounded, size: 15, color: AppColors.textPrimary),
-                  const SizedBox(width: 4),
-                  Text('${m.bedrooms}', style: const TextStyle(color: AppColors.textPrimary, fontSize: 14, fontWeight: FontWeight.w700)),
-                ],
+                Positioned(
+                  top: 6, right: 6,
+                  child: GestureDetector(
+                    onTap: () => setState(() => saved ? _saved.remove(m.id) : _saved.add(m.id)),
+                    child: Icon(saved ? Icons.favorite_rounded : Icons.favorite_border_rounded,
+                        color: saved ? _accent : Colors.white,
+                        size: 18,
+                        shadows: const [Shadow(color: Color(0x66000000), blurRadius: 5)]),
+                  ),
+                ),
+                if (m.distanceKm != null)
+                  Positioned(
+                    top: 6, left: 6,
+                    child: Container(
+                      padding: const EdgeInsets.symmetric(horizontal: 6, vertical: 2.5),
+                      decoration: BoxDecoration(color: Colors.white, borderRadius: BorderRadius.circular(20)),
+                      child: Text('${m.distanceKm!.toStringAsFixed(1)}${_isBn ? " কিমি" : " km"}',
+                          style: const TextStyle(color: Color(0xFF222222), fontSize: 9, fontWeight: FontWeight.w700)),
+                    ),
+                  ),
               ],
             ),
-            const SizedBox(height: 3),
-            Text(m.address, maxLines: 1, overflow: TextOverflow.ellipsis,
-                style: const TextStyle(color: AppColors.textMuted, fontSize: 13.5)),
-            const SizedBox(height: 2),
-            Text(
-              m.isMess ? _messInfoLine(m) : _houseInfoLine(m),
-              maxLines: 1, overflow: TextOverflow.ellipsis,
-              style: const TextStyle(color: AppColors.textMuted, fontSize: 13),
-            ),
-            if (m.isMess && _messPrefChips(m).isNotEmpty) ...[
-              const SizedBox(height: 6),
-              Wrap(spacing: 6, runSpacing: 6, children: _messPrefChips(m)),
+          ),
+          const SizedBox(height: 5),
+          Row(
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: [
+              Expanded(
+                child: Text(m.messName,
+                    maxLines: 1, overflow: TextOverflow.ellipsis,
+                    style: const TextStyle(color: AppColors.textPrimary, fontSize: 12.5, fontWeight: FontWeight.w700)),
+              ),
+              if (m.isMess && m.totalSeats != null) ...[
+                const Icon(Icons.event_seat_rounded, size: 11, color: AppColors.textPrimary),
+                const SizedBox(width: 2),
+                Text('${m.totalSeats}', style: const TextStyle(color: AppColors.textPrimary, fontSize: 11, fontWeight: FontWeight.w700)),
+              ] else if (m.isHouse && m.bedrooms != null) ...[
+                const Icon(Icons.bed_rounded, size: 11, color: AppColors.textPrimary),
+                const SizedBox(width: 2),
+                Text('${m.bedrooms}', style: const TextStyle(color: AppColors.textPrimary, fontSize: 11, fontWeight: FontWeight.w700)),
+              ] else if (m.isGarage && m.carCapacity != null) ...[
+                const Icon(Icons.directions_car_rounded, size: 11, color: AppColors.textPrimary),
+                const SizedBox(width: 2),
+                Text('${m.carCapacity}', style: const TextStyle(color: AppColors.textPrimary, fontSize: 11, fontWeight: FontWeight.w700)),
+              ],
             ],
-            const SizedBox(height: 4),
-            if (m.rent != null)
-              Text(_rentLabel(m),
-                  style: const TextStyle(color: AppColors.textPrimary, fontSize: 15, fontWeight: FontWeight.w800)),
-          ],
-        ),
+          ),
+          Text(m.address, maxLines: 1, overflow: TextOverflow.ellipsis,
+              style: const TextStyle(color: AppColors.textMuted, fontSize: 10.5)),
+          if (m.rent != null)
+            Text(_rentLabel(m),
+                style: const TextStyle(color: AppColors.textPrimary, fontSize: 12.5, fontWeight: FontWeight.w800)),
+        ],
       ),
     );
   }
@@ -725,20 +857,14 @@ class _MessScreenState extends State<MessScreen> {
     return parts.join(' · ');
   }
 
-  List<Widget> _messPrefChips(PropertyListing m) {
-    Widget chip(String label) => Container(
-      padding: const EdgeInsets.symmetric(horizontal: 9, vertical: 3.5),
-      decoration: BoxDecoration(
-        color: AppColors.glassWhite,
-        borderRadius: BorderRadius.circular(12),
-        border: Border.all(color: AppColors.glassBorder),
-      ),
-      child: Text(label, style: const TextStyle(color: AppColors.textSecondary, fontSize: 11.5, fontWeight: FontWeight.w600)),
-    );
-    return [
-      for (final v in [m.genderPreference, m.smokingPreference, m.occupationPreference])
-        if (_prefLabel(v) != null) chip(_prefLabel(v)!),
+  String _garageInfoLine(PropertyListing m) {
+    final parts = <String>[
+      if (m.carCapacity != null) _isBn ? '${m.carCapacity} গাড়ি ধরে' : '${m.carCapacity} cars',
+      if (m.isCovered != null)
+        (m.isCovered! ? (_isBn ? 'ছাদযুক্ত' : 'covered') : (_isBn ? 'খোলা জায়গা' : 'open')),
+      if (m.ownerName != null) m.ownerName!,
     ];
+    return parts.join(' · ');
   }
 
   // ── Map (Google Maps) ─────────────────────────────────────────────────────────
@@ -801,7 +927,7 @@ class _MessScreenState extends State<MessScreen> {
                     style: const TextStyle(color: AppColors.textMuted, fontSize: 12)),
                 const SizedBox(height: 4),
                 Text(
-                  '${m.isMess ? _messInfoLine(m) : _houseInfoLine(m)}${m.distanceKm != null ? ' · ${m.distanceKm!.toStringAsFixed(1)} ${_isBn ? 'কিমি' : 'km'}' : ''}',
+                  '${m.isMess ? _messInfoLine(m) : (m.isGarage ? _garageInfoLine(m) : _houseInfoLine(m))}${m.distanceKm != null ? ' · ${m.distanceKm!.toStringAsFixed(1)} ${_isBn ? 'কিমি' : 'km'}' : ''}',
                   maxLines: 1, overflow: TextOverflow.ellipsis,
                   style: const TextStyle(color: AppColors.textMuted, fontSize: 12),
                 ),
@@ -1008,7 +1134,9 @@ class _DetailSheet extends StatelessWidget {
                         TextSpan(
                             text: m.isMess
                                 ? (isBn ? ' / মাস (প্রতি সিট)' : ' / month (per seat)')
-                                : (isBn ? ' / মাস (পুরো বাসা)' : ' / month (whole unit)'),
+                                : m.isGarage
+                                    ? (isBn ? ' / দিন' : ' / day')
+                                    : (isBn ? ' / মাস (পুরো বাসা)' : ' / month (whole unit)'),
                             style: const TextStyle(color: AppColors.textMuted, fontSize: 14, fontWeight: FontWeight.w500)),
                       ])),
                     ],
@@ -1018,7 +1146,7 @@ class _DetailSheet extends StatelessWidget {
                       const SizedBox(height: 8),
                       _row(Icons.event_seat_rounded, isBn ? 'মোট ${m.totalSeats} সিট' : '${m.totalSeats} seats'),
                     ],
-                    if (!m.isMess) ...[
+                    if (m.isHouse) ...[
                       if (m.bedrooms != null) ...[
                         const SizedBox(height: 8),
                         _row(Icons.bed_rounded, isBn ? '${m.bedrooms} বেডরুম' : '${m.bedrooms} bedrooms'),
@@ -1039,6 +1167,17 @@ class _DetailSheet extends StatelessWidget {
                         const SizedBox(height: 8),
                         _row(Icons.family_restroom_rounded,
                             isBn ? 'ভাড়াটে: ${prefLabel(m.tenantType)}' : 'Tenant: ${prefLabel(m.tenantType)}'),
+                      ],
+                    ],
+                    if (m.isGarage) ...[
+                      if (m.carCapacity != null) ...[
+                        const SizedBox(height: 8),
+                        _row(Icons.directions_car_rounded, isBn ? '${m.carCapacity} টা গাড়ি ধরে' : 'Fits ${m.carCapacity} car(s)'),
+                      ],
+                      if (m.isCovered != null) ...[
+                        const SizedBox(height: 8),
+                        _row(m.isCovered! ? Icons.garage_rounded : Icons.wb_sunny_outlined,
+                            m.isCovered! ? (isBn ? 'ছাদযুক্ত/শেড আছে' : 'Covered / has a shed') : (isBn ? 'খোলা জায়গা' : 'Open space')),
                       ],
                     ],
                     if (m.isMess) ...[
