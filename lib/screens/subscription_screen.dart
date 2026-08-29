@@ -6,6 +6,8 @@ import '../core/network/api_client.dart';
 import '../core/utils/app_strings.dart';
 import '../theme/app_theme.dart';
 import '../widgets/glass_button.dart';
+import '../widgets/policy_agreement_checkbox.dart';
+import 'payment_waiting_screen.dart';
 
 class SubscriptionScreen extends StatefulWidget {
   const SubscriptionScreen({super.key});
@@ -21,14 +23,16 @@ class _SubscriptionScreenState extends State<SubscriptionScreen> {
   bool _isSaving = false;
   bool _isBn = true;
 
+  // Prices must match auth.service.ts's subscribePlan() planDetails exactly — this UI
+  // shows what the customer will actually be charged, not just an approximation.
   final _plans = [
     {'plan': 'FREE', 'price': 0,
       'featuresBn': ['৫টি জব/মাস', 'বেসিক সাপোর্ট', 'স্ট্যান্ডার্ড লিস্টিং'],
       'featuresEn': ['5 jobs/month', 'Basic support', 'Standard listing']},
-    {'plan': 'STANDARD', 'price': 499,
+    {'plan': 'STANDARD', 'price': 399,
       'featuresBn': ['৩০টি জব/মাস', 'প্রায়োরিটি সাপোর্ট', 'উপরে তালিকাভুক্তি', 'ব্যাজ দেখানো'],
       'featuresEn': ['30 jobs/month', 'Priority support', 'Top listing', 'Verified badge']},
-    {'plan': 'PRO', 'price': 999,
+    {'plan': 'PRO', 'price': 799,
       'featuresBn': ['আনলিমিটেড জব', '২৪/৭ সাপোর্ট', 'সর্বোচ্চ অগ্রাধিকার', 'গোল্ড ব্যাজ', 'বিশ্লেষণ ড্যাশবোর্ড'],
       'featuresEn': ['Unlimited jobs', '24/7 support', 'Highest priority', 'Gold badge', 'Analytics dashboard']},
   ];
@@ -50,16 +54,33 @@ class _SubscriptionScreenState extends State<SubscriptionScreen> {
   }
 
   Future<void> _subscribe(String plan) async {
+    // FREE has nothing to charge, so skip the paid-order agreement gate — only
+    // STANDARD/PRO actually place a paid order that needs it.
+    bool agreed = plan == 'FREE';
     final confirm = await showDialog<bool>(
       context: context,
-      builder: (ctx) => AlertDialog(
-        backgroundColor: AppColors.bgMid,
-        title: Text('$plan ${_isBn ? 'সাবস্ক্রিপশন' : 'subscription'}', style: const TextStyle(color: AppColors.textPrimary)),
-        content: Text(_isBn ? '$plan প্ল্যানে সাবস্ক্রাইব করতে চান?' : 'Subscribe to the $plan plan?', style: const TextStyle(color: AppColors.textMuted)),
-        actions: [
-          TextButton(onPressed: () => Navigator.pop(ctx, false), child: Text(_isBn ? 'বাতিল' : 'Cancel', style: const TextStyle(color: AppColors.textMuted))),
-          TextButton(onPressed: () => Navigator.pop(ctx, true), child: Text(_isBn ? 'নিশ্চিত করুন' : 'Confirm', style: const TextStyle(color: AppColors.deepBlue))),
-        ],
+      builder: (ctx) => StatefulBuilder(
+        builder: (ctx, setDialogState) => AlertDialog(
+          backgroundColor: AppColors.bgMid,
+          title: Text('$plan ${_isBn ? 'সাবস্ক্রিপশন' : 'subscription'}', style: const TextStyle(color: AppColors.textPrimary)),
+          content: Column(
+            mainAxisSize: MainAxisSize.min,
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: [
+              Text(_isBn ? '$plan প্ল্যানে সাবস্ক্রাইব করতে চান?' : 'Subscribe to the $plan plan?', style: const TextStyle(color: AppColors.textMuted)),
+              if (plan != 'FREE')
+                PolicyAgreementCheckbox(
+                  value: agreed,
+                  onChanged: (v) => setDialogState(() => agreed = v),
+                  isBn: _isBn,
+                ),
+            ],
+          ),
+          actions: [
+            TextButton(onPressed: () => Navigator.pop(ctx, false), child: Text(_isBn ? 'বাতিল' : 'Cancel', style: const TextStyle(color: AppColors.textMuted))),
+            TextButton(onPressed: agreed ? () => Navigator.pop(ctx, true) : null, child: Text(_isBn ? 'নিশ্চিত করুন' : 'Confirm', style: TextStyle(color: agreed ? AppColors.deepBlue : AppColors.textMuted))),
+          ],
+        ),
       ),
     );
     if (confirm != true) return;
@@ -67,12 +88,49 @@ class _SubscriptionScreenState extends State<SubscriptionScreen> {
     setState(() => _isSaving = true);
     try {
       await _client.post('/auth/subscriptions', data: {'plan': plan});
-      await _load();
-      if (mounted) {
-        ScaffoldMessenger.of(context).showSnackBar(
-          SnackBar(content: Text(_isBn ? '$plan সাবস্ক্রিপশন সক্রিয় হয়েছে' : '$plan subscription activated', style: const TextStyle(color: Colors.white)), backgroundColor: const Color(0xFF10B981), behavior: SnackBarBehavior.floating),
-        );
+
+      if (plan == 'FREE') {
+        // FREE is always instant, self-service — nothing to pay, nothing to verify.
+        await _load();
+        if (mounted) {
+          ScaffoldMessenger.of(context).showSnackBar(
+            SnackBar(content: Text(_isBn ? '$plan সাবস্ক্রিপশন সক্রিয় হয়েছে' : '$plan subscription activated', style: const TextStyle(color: Colors.white)), backgroundColor: const Color(0xFF10B981), behavior: SnackBarBehavior.floating),
+          );
+        }
+        return;
       }
+
+      // STANDARD/PRO land as PENDING_PAYMENT above — this is the real SSLCommerz path that
+      // actually activates it, instead of the manual bKash/bank + admin-activation fallback.
+      final initRes = await _client.post('/auth/subscriptions/pay/initiate');
+      final gatewayPageUrl = (initRes.data as Map)['transaction']?['gatewayPageUrl'] as String?;
+      if (!mounted) return;
+      if (gatewayPageUrl == null) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(content: Text(_isBn ? 'পেমেন্ট শুরু করা যায়নি — আবার চেষ্টা করুন' : 'Could not start the payment — please try again', style: const TextStyle(color: Colors.white)), backgroundColor: const Color(0xFFEF4444), behavior: SnackBarBehavior.floating),
+        );
+        return;
+      }
+      final priceEntry = _plans.firstWhere((p) => p['plan'] == plan);
+      final amount = (priceEntry['price'] as int).toDouble();
+      await Navigator.of(context).push(MaterialPageRoute(
+        builder: (waitingContext) => PaymentWaitingScreen(
+          gatewayPageUrl: gatewayPageUrl,
+          title: _isBn ? '$plan সাবস্ক্রিপশন' : '$plan Subscription',
+          titleEn: '$plan Subscription',
+          amount: amount,
+          checkStatus: () async {
+            try {
+              await _client.post('/auth/subscriptions/pay/confirm');
+              return PaymentCheckStatus.completed;
+            } catch (_) {
+              return PaymentCheckStatus.pending;
+            }
+          },
+          onConfirmed: () => Navigator.of(waitingContext).pop(),
+        ),
+      ));
+      await _load();
     } catch (e) {
       final ex = ApiClient.mapError(e);
       if (mounted) {

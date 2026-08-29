@@ -95,10 +95,11 @@ class FinanceService {
     }
   }
 
-  Future<List<TransactionModel>> listTransactions({String? providerId}) async {
+  Future<List<TransactionModel>> listTransactions({String? providerId, int limit = 20}) async {
     try {
       final res = await _client.get('/finance/transactions', queryParameters: {
         if (providerId != null) 'providerId': providerId,
+        'limit': limit.toString(),
       });
       final data = res.data;
       final list = data is List ? data : (data['items'] ?? data['data'] ?? []);
@@ -124,19 +125,15 @@ class FinanceService {
   }
 
   Future<void> requestPayout({
-    required String providerId,
     required double amount,
-    required String bankName,
-    required String accountNumber,
-    required String accountHolder,
+    required String payoutMethod,
+    String? payoutAccountInfo,
   }) async {
     try {
       await _client.post('/finance/payouts', data: {
-        'providerId': providerId,
         'amount': amount,
-        'bankName': bankName,
-        'bankAccountNumber': accountNumber,
-        'accountHolderName': accountHolder,
+        'payoutMethod': payoutMethod,
+        if (payoutAccountInfo != null && payoutAccountInfo.isNotEmpty) 'payoutAccountInfo': payoutAccountInfo,
       });
     } catch (e) {
       throw ApiClient.mapError(e);

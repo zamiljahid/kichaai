@@ -65,12 +65,18 @@ class _WalletScreenState extends State<WalletScreen> with SingleTickerProviderSt
     }
   }
 
+  static const _payoutMethods = [
+    ('bkash', 'bKash', 'bKash'),
+    ('nagad', 'নগদ', 'Nagad'),
+    ('bank_transfer', 'ব্যাংক ট্রান্সফার', 'Bank Transfer'),
+  ];
+
   void _showPayoutSheet() {
     final amountCtrl = TextEditingController();
-    final bankCtrl = TextEditingController();
     final accountCtrl = TextEditingController();
-    final holderCtrl = TextEditingController();
+    String method = 'bkash';
     bool isSaving = false;
+    String? error;
 
     showModalBottomSheet(
       context: context,
@@ -96,23 +102,64 @@ class _WalletScreenState extends State<WalletScreen> with SingleTickerProviderSt
                     const SizedBox(height: 16),
                     _sheetField(amountCtrl, _isBn ? 'পরিমাণ (৳)' : 'Amount (৳)', Icons.currency_exchange_rounded, TextInputType.number),
                     const SizedBox(height: 12),
-                    _sheetField(bankCtrl, _isBn ? 'ব্যাংকের নাম' : 'Bank name', Icons.account_balance_outlined),
+                    Text(_isBn ? 'পেআউট পদ্ধতি' : 'Payout method', style: const TextStyle(color: AppColors.textMuted, fontSize: 12, fontWeight: FontWeight.w600)),
+                    const SizedBox(height: 8),
+                    Row(
+                      children: _payoutMethods.map((m) {
+                        final selected = method == m.$1;
+                        return Expanded(
+                          child: GestureDetector(
+                            onTap: () => setS(() => method = m.$1),
+                            child: Container(
+                              margin: EdgeInsets.only(right: m.$1 != _payoutMethods.last.$1 ? 8 : 0),
+                              padding: const EdgeInsets.symmetric(vertical: 10),
+                              decoration: BoxDecoration(
+                                color: selected ? AppColors.deepBlue.withOpacity(0.1) : AppColors.glassWhite,
+                                borderRadius: BorderRadius.circular(10),
+                                border: Border.all(color: selected ? AppColors.deepBlue : AppColors.glassBorder),
+                              ),
+                              child: Text(
+                                _isBn ? m.$2 : m.$3,
+                                textAlign: TextAlign.center,
+                                style: TextStyle(color: selected ? AppColors.deepBlue : AppColors.textSecondary, fontSize: 12, fontWeight: FontWeight.w600),
+                              ),
+                            ),
+                          ),
+                        );
+                      }).toList(),
+                    ),
                     const SizedBox(height: 12),
-                    _sheetField(accountCtrl, _isBn ? 'একাউন্ট নম্বর' : 'Account number', Icons.credit_card_outlined, TextInputType.number),
-                    const SizedBox(height: 12),
-                    _sheetField(holderCtrl, _isBn ? 'একাউন্ট হোল্ডারের নাম' : 'Account holder name', Icons.person_outline_rounded),
+                    _sheetField(
+                      accountCtrl,
+                      method == 'bank_transfer'
+                          ? (_isBn ? 'ব্যাংক নাম, একাউন্ট নম্বর, শাখা' : 'Bank name, account number, branch')
+                          : (_isBn ? 'মোবাইল নম্বর' : 'Mobile number'),
+                      method == 'bank_transfer' ? Icons.account_balance_outlined : Icons.phone_android_rounded,
+                      method == 'bank_transfer' ? null : TextInputType.phone,
+                    ),
+                    if (error != null) ...[
+                      const SizedBox(height: 10),
+                      Text(error!, style: const TextStyle(color: Color(0xFFEF4444), fontSize: 12.5)),
+                    ],
                     const SizedBox(height: 24),
                     GlassButton(
                       label: isSaving ? (_isBn ? 'পাঠানো হচ্ছে...' : 'Sending...') : (_isBn ? 'অনুরোধ পাঠান' : 'Send request'),
-                                            onPressed: isSaving ? null : () async {
-                        setS(() => isSaving = true);
+                      onPressed: isSaving ? null : () async {
+                        final amount = double.tryParse(amountCtrl.text);
+                        if (amount == null || amount <= 0) {
+                          setS(() => error = _isBn ? 'সঠিক পরিমাণ দিন' : 'Enter a valid amount');
+                          return;
+                        }
+                        if (accountCtrl.text.trim().isEmpty) {
+                          setS(() => error = _isBn ? 'একাউন্টের তথ্য দিন' : 'Enter account details');
+                          return;
+                        }
+                        setS(() { isSaving = true; error = null; });
                         try {
                           await FinanceService.instance.requestPayout(
-                            providerId: _providerId!,
-                            amount: double.tryParse(amountCtrl.text) ?? 0,
-                            bankName: bankCtrl.text,
-                            accountNumber: accountCtrl.text,
-                            accountHolder: holderCtrl.text,
+                            amount: amount,
+                            payoutMethod: method,
+                            payoutAccountInfo: accountCtrl.text.trim(),
                           );
                           if (ctx.mounted) {
                             Navigator.pop(ctx);
@@ -122,7 +169,10 @@ class _WalletScreenState extends State<WalletScreen> with SingleTickerProviderSt
                             );
                           }
                         } catch (e) {
-                          setS(() => isSaving = false);
+                          setS(() {
+                            isSaving = false;
+                            error = ApiClient.mapError(e).localized(_isBn);
+                          });
                         }
                       },
                     ),
@@ -318,9 +368,12 @@ class _WalletScreenState extends State<WalletScreen> with SingleTickerProviderSt
                 child: Column(
                   crossAxisAlignment: CrossAxisAlignment.start,
                   children: [
-                    Text('৳${(p['amount'] ?? 0).toStringAsFixed(0)}', style: const TextStyle(color: AppColors.textPrimary, fontSize: 16, fontWeight: FontWeight.w700)),
+                    Text('৳${(double.tryParse('${p['amount'] ?? 0}') ?? 0).toStringAsFixed(0)}', style: const TextStyle(color: AppColors.textPrimary, fontSize: 16, fontWeight: FontWeight.w700)),
                     const SizedBox(height: 4),
-                    Text(p['bankName'] ?? '', style: const TextStyle(color: AppColors.textMuted, fontSize: 12)),
+                    Text(
+                      [p['payoutMethod'], p['payoutAccountInfo']].where((v) => v != null && v.toString().isNotEmpty).join(' · '),
+                      style: const TextStyle(color: AppColors.textMuted, fontSize: 12),
+                    ),
                   ],
                 ),
               ),
