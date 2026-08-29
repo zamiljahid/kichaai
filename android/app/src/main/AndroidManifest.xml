@@ -1,4 +1,14 @@
 <manifest xmlns:android="http://schemas.android.com/apk/res/android">
+    <!-- Loud job-offer alarm (see alarm_notification_service.dart): POST_NOTIFICATIONS so the
+         tray alert can show at all on Android 13+, USE_FULL_SCREEN_INTENT so it can surface like
+         an incoming call over the lock screen instead of a normal heads-up banner, VIBRATE/
+         WAKE_LOCK so the buzz pattern and the ringing loop still fire when the screen is asleep. -->
+    <uses-permission android:name="android.permission.POST_NOTIFICATIONS"/>
+    <uses-permission android:name="android.permission.USE_FULL_SCREEN_INTENT"/>
+    <uses-permission android:name="android.permission.VIBRATE"/>
+    <uses-permission android:name="android.permission.WAKE_LOCK"/>
+    <!-- Mic input for the lawyer AI chat's voice-to-text (speech_to_text package). -->
+    <uses-permission android:name="android.permission.RECORD_AUDIO"/>
     <application
         android:label="kichaai"
         android:name="${applicationName}"
@@ -23,6 +33,16 @@
             <intent-filter>
                 <action android:name="android.intent.action.MAIN"/>
                 <category android:name="android.intent.category.LAUNCHER"/>
+            </intent-filter>
+            <!-- Meal Group invite links (kichaai://meal/join/<code>) — custom-scheme only
+                 (Phase 1), one-tap open while the app is already installed. Real https
+                 Android App Links need a hosted assetlinks.json on kichaai.com, deferred
+                 until the founder sets that up. -->
+            <intent-filter>
+                <action android:name="android.intent.action.VIEW"/>
+                <category android:name="android.intent.category.DEFAULT"/>
+                <category android:name="android.intent.category.BROWSABLE"/>
+                <data android:scheme="kichaai"/>
             </intent-filter>
         </activity>
         <meta-data

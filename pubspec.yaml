@@ -10,7 +10,6 @@ dependencies:
   flutter:
     sdk: flutter
   cupertino_icons: ^1.0.6
-  google_fonts: ^6.1.0
   flutter_animate: ^4.5.0
   dio: ^5.7.0
   shared_preferences: ^2.3.0
@@ -39,6 +38,17 @@ dependencies:
   # "playback" category, which plays through the mute/silent switch without
   # needing Apple's special Critical Alerts entitlement.
   audioplayers: ^6.1.0
+  # On-device speech-to-text for the lawyer AI chat's mic input — audio never leaves the
+  # device, only the transcript is sent to our backend (important given how sensitive legal
+  # conversations are). Uses Android SpeechRecognizer / iOS SFSpeechRecognizer.
+  speech_to_text: ^7.0.0
+  # Meal Group invite sharing — opens the OS share sheet (WhatsApp/SMS/etc.) with the
+  # group's invite code + link; no backend SMS/WhatsApp gateway needed for this.
+  share_plus: ^10.1.2
+  # Meal Group one-tap join links — parses an incoming kichaai://meal/join/<code>
+  # custom-scheme link when the app is already installed (Phase 1; real https
+  # Android App Links / iOS Universal Links need domain verification, out of scope here).
+  app_links: ^6.3.2
 
 dev_dependencies:
   flutter_test:
@@ -52,6 +62,14 @@ flutter:
     - assets/images/
     - assets/images/services/
     - assets/sounds/
+  # Bundled locally instead of relying on GoogleFonts' runtime CDN fetch — on Flutter Web that
+  # fetch depends on the VIEWER's browser reaching fonts.googleapis.com at paint time; any
+  # network restriction there (corporate firewall, DNS block, offline dev) makes every Bengali
+  # glyph app-wide render as tofu ("????"), not just wherever you happen to be looking.
+  fonts:
+    - family: NotoSansBengali
+      fonts:
+        - asset: assets/fonts/NotoSansBengali-Regular.ttf
 
 # Generates android/ios launcher icons from assets/images/logo.png — run
 # `flutter pub run flutter_launcher_icons` after replacing the source file.
