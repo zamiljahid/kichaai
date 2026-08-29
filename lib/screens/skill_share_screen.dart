@@ -1,10 +1,17 @@
 import 'dart:ui';
 import 'package:flutter/material.dart';
 import 'package:flutter_animate/flutter_animate.dart';
+import 'package:provider/provider.dart';
 import '../core/network/api_client.dart';
+import '../core/utils/app_strings.dart';
+import '../services/skill_share_service.dart';
 import '../theme/app_theme.dart';
 import '../widgets/glass_button.dart';
 import 'exchange_detail_screen.dart';
+import 'payment_waiting_screen.dart';
+
+const _kCategories = ['technology', 'language', 'art', 'music', 'sports', 'cooking', 'business'];
+const _kLevels = ['beginner', 'intermediate', 'advanced', 'expert'];
 
 class SkillShareScreen extends StatefulWidget {
   const SkillShareScreen({super.key});
@@ -15,64 +22,72 @@ class SkillShareScreen extends StatefulWidget {
 
 class _SkillShareScreenState extends State<SkillShareScreen> with SingleTickerProviderStateMixin {
   late final TabController _tabController;
-  final _client = ApiClient.instance.dio;
+  final _svc = SkillShareService.instance;
   String? _userId;
 
-  List<dynamic> _mySkills = [];
-  List<dynamic> _searchResults = [];
-  List<dynamic> _myExchanges = [];
+  List<Map<String, dynamic>> _mySkills = [];
+  List<Map<String, dynamic>> _openExchanges = [];
+  List<Map<String, dynamic>> _myExchanges = [];
   bool _isLoading = true;
-  final _searchCtrl = TextEditingController();
+  bool _isBn = true;
 
   @override
   void initState() {
     super.initState();
-    _tabController = TabController(length: 3, vsync: this);
+    _tabController = TabController(length: 4, vsync: this);
     _init();
   }
 
   @override
   void dispose() {
     _tabController.dispose();
-    _searchCtrl.dispose();
     super.dispose();
   }
 
   Future<void> _init() async {
     _userId = await ApiClient.getUserId();
-    await Future.wait([_loadMySkills(), _loadMyExchanges()]);
+    await Future.wait([_loadMySkills(), _loadOpenExchanges(), _loadMyExchanges()]);
   }
 
   Future<void> _loadMySkills() async {
     if (_userId == null) return;
     try {
-      final res = await _client.get('/skill-share/skills/user/$_userId');
-      final data = res.data;
-      final list = data is List ? data : (data['items'] ?? data['data'] ?? []);
-      if (mounted) setState(() { _mySkills = list as List; _isLoading = false; });
+      final list = await _svc.listUserSkills(_userId!);
+      if (mounted) setState(() { _mySkills = list; _isLoading = false; });
     } catch (_) {
       if (mounted) setState(() => _isLoading = false);
     }
   }
 
-  Future<void> _loadMyExchanges() async {
-    if (_userId == null) return;
+  Future<void> _loadOpenExchanges() async {
     try {
-      final res = await _client.get('/skill-share/exchanges', queryParameters: {'userId': _userId});
-      final data = res.data;
-      final list = data is List ? data : (data['items'] ?? data['data'] ?? []);
-      if (mounted) setState(() => _myExchanges = list as List);
+      final list = await _svc.listOpenExchanges();
+      // Someone shouldn't see (and respond to) their own open post in the discovery feed.
+      if (mounted) setState(() => _openExchanges = list.where((e) => e['requesterId'] != _userId).toList());
     } catch (_) {}
   }
 
-  Future<void> _searchSkills(String query) async {
-    if (query.isEmpty) return;
+  Future<void> _loadMyExchanges() async {
     try {
-      final res = await _client.get('/skill-share/skills/search', queryParameters: {'name': query});
-      final data = res.data;
-      final list = data is List ? data : (data['items'] ?? data['data'] ?? []);
-      if (mounted) setState(() => _searchResults = list as List);
+      final list = await _svc.listMyExchanges();
+      if (mounted) setState(() => _myExchanges = list);
     } catch (_) {}
+  }
+
+  void _showError(String msg) {
+    if (!mounted) return;
+    ScaffoldMessenger.of(context).showSnackBar(SnackBar(
+      content: Text(msg, style: const TextStyle(color: Colors.white)),
+      backgroundColor: const Color(0xFFEF4444), behavior: SnackBarBehavior.floating,
+    ));
+  }
+
+  void _showSuccess(String msg) {
+    if (!mounted) return;
+    ScaffoldMessenger.of(context).showSnackBar(SnackBar(
+      content: Text(msg, style: const TextStyle(color: Colors.white)),
+      backgroundColor: const Color(0xFF10B981), behavior: SnackBarBehavior.floating,
+    ));
   }
 
   void _showAddSkillSheet() {
@@ -101,47 +116,45 @@ class _SkillShareScreenState extends State<SkillShareScreen> with SingleTickerPr
                   children: [
                     Center(child: Container(width: 40, height: 4, decoration: BoxDecoration(color: AppColors.glassBorder, borderRadius: BorderRadius.circular(2)))),
                     const SizedBox(height: 16),
-                    const Text('নতুন দক্ষতা যোগ করুন', style: TextStyle(color: AppColors.textPrimary, fontSize: 18, fontWeight: FontWeight.w700)),
+                    Text(_isBn ? 'নতুন দক্ষতা যোগ করুন' : 'Add a New Skill', style: const TextStyle(color: AppColors.textPrimary, fontSize: 18, fontWeight: FontWeight.w700)),
                     const SizedBox(height: 16),
-                    _sheetField(nameCtrl, 'দক্ষতার নাম', Icons.star_outline_rounded),
+                    _sheetField(nameCtrl, _isBn ? 'দক্ষতার নাম' : 'Skill name', Icons.star_outline_rounded),
                     const SizedBox(height: 12),
-                    _sheetField(descCtrl, 'বিবরণ', Icons.description_outlined, maxLines: 3),
+                    _sheetField(descCtrl, _isBn ? 'বিবরণ' : 'Description', Icons.description_outlined, maxLines: 3),
                     const SizedBox(height: 12),
                     DropdownButtonFormField<String>(
-                      value: category,
+                      initialValue: category,
                       dropdownColor: AppColors.bgMid,
                       style: const TextStyle(color: AppColors.textPrimary),
-                      decoration: _inputDeco('বিভাগ'),
-                      items: ['technology', 'language', 'art', 'music', 'sports', 'cooking', 'business']
-                          .map((e) => DropdownMenuItem(value: e, child: Text(e)))
-                          .toList(),
+                      decoration: _inputDeco(_isBn ? 'বিভাগ' : 'Category'),
+                      items: _kCategories.map((e) => DropdownMenuItem(value: e, child: Text(e))).toList(),
                       onChanged: (v) => setS(() => category = v ?? category),
                     ),
                     const SizedBox(height: 12),
                     DropdownButtonFormField<String>(
-                      value: level,
+                      initialValue: level,
                       dropdownColor: AppColors.bgMid,
                       style: const TextStyle(color: AppColors.textPrimary),
-                      decoration: _inputDeco('স্তর'),
-                      items: ['beginner', 'intermediate', 'expert']
-                          .map((e) => DropdownMenuItem(value: e, child: Text(e)))
-                          .toList(),
+                      decoration: _inputDeco(_isBn ? 'স্তর' : 'Level'),
+                      items: _kLevels.map((e) => DropdownMenuItem(value: e, child: Text(e))).toList(),
                       onChanged: (v) => setS(() => level = v ?? level),
                     ),
                     const SizedBox(height: 24),
                     GlassButton(
-                      label: 'যোগ করুন',
-                                            onPressed: () async {
+                      label: _isBn ? 'যোগ করুন' : 'Add',
+                      onPressed: () async {
+                        if (nameCtrl.text.trim().isEmpty) return;
                         try {
-                          await _client.post('/skill-share/skills', data: {
-                            'userId': _userId,
-                            'skillName': nameCtrl.text,
-                            'description': descCtrl.text,
-                            'category': category,
-                            'level': level,
-                          });
+                          await _svc.addSkill(
+                            skillName: nameCtrl.text.trim(),
+                            description: descCtrl.text.trim().isEmpty ? null : descCtrl.text.trim(),
+                            category: category,
+                            level: level,
+                          );
                           if (ctx.mounted) { Navigator.pop(ctx); _loadMySkills(); }
-                        } catch (_) {}
+                        } catch (e) {
+                          if (ctx.mounted) _showError(ApiClient.mapError(e).localized(_isBn));
+                        }
                       },
                     ),
                   ],
@@ -188,12 +201,13 @@ class _SkillShareScreenState extends State<SkillShareScreen> with SingleTickerPr
 
   @override
   Widget build(BuildContext context) {
+    _isBn = context.watch<LanguageNotifier>().isBengali;
     return Scaffold(
       backgroundColor: AppColors.bgDark,
       appBar: AppBar(
         backgroundColor: Colors.transparent,
         elevation: 0,
-        title: const Text('স্কিল শেয়ার', style: TextStyle(color: AppColors.textPrimary, fontSize: 18, fontWeight: FontWeight.w700)),
+        title: Text(_isBn ? 'স্কিল শেয়ার' : 'Skill Share', style: const TextStyle(color: AppColors.textPrimary, fontSize: 18, fontWeight: FontWeight.w700)),
         leading: IconButton(
           icon: const Icon(Icons.arrow_back_ios_new_rounded, color: AppColors.textPrimary, size: 18),
           onPressed: () => Navigator.pop(context),
@@ -203,7 +217,12 @@ class _SkillShareScreenState extends State<SkillShareScreen> with SingleTickerPr
           labelColor: AppColors.deepBlue,
           unselectedLabelColor: AppColors.textMuted,
           indicatorColor: AppColors.deepBlue,
-          tabs: const [Tab(text: 'আমার দক্ষতা'), Tab(text: 'খুঁজুন'), Tab(text: 'এক্সচেঞ্জ')],
+          tabs: [
+            Tab(text: _isBn ? 'খুঁজুন' : 'Discover'),
+            Tab(text: _isBn ? 'আমার দক্ষতা' : 'My Skills'),
+            Tab(text: _isBn ? 'অনুরোধ' : 'Requests'),
+            Tab(text: _isBn ? 'এক্সচেঞ্জ' : 'Exchanges'),
+          ],
         ),
       ),
       body: _isLoading
@@ -211,16 +230,185 @@ class _SkillShareScreenState extends State<SkillShareScreen> with SingleTickerPr
           : TabBarView(
               controller: _tabController,
               children: [
+                _buildDiscoverTab(),
                 _buildMySkillsTab(),
-                _buildSearchTab(),
+                _buildRequestsTab(),
                 _buildExchangesTab(),
               ],
             ),
-      floatingActionButton: FloatingActionButton(
-        onPressed: _showAddSkillSheet,
-        backgroundColor: AppColors.deepBlue,
-        child: const Icon(Icons.add_rounded, color: Colors.white),
+      floatingActionButton: AnimatedBuilder(
+        animation: _tabController,
+        builder: (_, __) => FloatingActionButton(
+          onPressed: _tabController.index == 2 ? _showPostRequestSheet : _showAddSkillSheet,
+          backgroundColor: AppColors.deepBlue,
+          child: const Icon(Icons.add_rounded, color: Colors.white),
+        ),
       ),
+    );
+  }
+
+  // ── Discover ──────────────────────────────────────────────────────
+  // Finding someone else's skill is the whole point of a skill exchange, but the screen
+  // only ever listed your own skills and your own exchanges — GET /skill-share/skills/search
+  // had no caller anywhere in the app.
+  final _discoverCtrl = TextEditingController();
+  List<Map<String, dynamic>> _discovered = [];
+  bool _discovering = false;
+  bool _discoverRan = false;
+
+  Future<void> _runDiscover() async {
+    final q = _discoverCtrl.text.trim();
+    setState(() => _discovering = true);
+    try {
+      final rows = await SkillShareService.instance
+          .searchSkills(skillName: q.isEmpty ? null : q);
+      if (mounted) setState(() => _discovered = rows);
+    } catch (_) {
+      if (mounted) setState(() => _discovered = []);
+    } finally {
+      if (mounted) {
+        setState(() {
+          _discovering = false;
+          _discoverRan = true;
+        });
+      }
+    }
+  }
+
+  Widget _buildDiscoverTab() {
+    return Column(
+      children: [
+        Padding(
+          padding: const EdgeInsets.fromLTRB(16, 14, 16, 8),
+          child: Row(
+            children: [
+              Expanded(
+                child: TextField(
+                  controller: _discoverCtrl,
+                  onSubmitted: (_) => _runDiscover(),
+                  style: const TextStyle(color: AppColors.textPrimary, fontSize: 14),
+                  decoration: InputDecoration(
+                    hintText: _isBn
+                        ? 'দক্ষতা খুঁজুন (যেমন: গিটার, ইংরেজি)'
+                        : 'Search a skill (e.g. guitar, English)',
+                    hintStyle: const TextStyle(color: AppColors.textMuted, fontSize: 13),
+                    prefixIcon: const Icon(Icons.search_rounded,
+                        color: AppColors.textMuted, size: 20),
+                    filled: true,
+                    fillColor: AppColors.glassWhite,
+                    border: OutlineInputBorder(
+                      borderRadius: BorderRadius.circular(12),
+                      borderSide: const BorderSide(color: AppColors.glassBorder),
+                    ),
+                    enabledBorder: OutlineInputBorder(
+                      borderRadius: BorderRadius.circular(12),
+                      borderSide: const BorderSide(color: AppColors.glassBorder),
+                    ),
+                  ),
+                ),
+              ),
+              const SizedBox(width: 10),
+              GestureDetector(
+                onTap: _discovering ? null : _runDiscover,
+                child: Container(
+                  width: 48,
+                  height: 48,
+                  decoration: BoxDecoration(
+                    color: AppColors.deepBlue,
+                    borderRadius: BorderRadius.circular(12),
+                  ),
+                  child: _discovering
+                      ? const Padding(
+                          padding: EdgeInsets.all(14),
+                          child: CircularProgressIndicator(
+                              strokeWidth: 2, color: Colors.white),
+                        )
+                      : const Icon(Icons.arrow_forward_rounded,
+                          color: Colors.white, size: 20),
+                ),
+              ),
+            ],
+          ),
+        ),
+        Expanded(
+          child: _discovered.isEmpty
+              ? Center(
+                  child: Text(
+                    _discoverRan
+                        ? (_isBn ? 'কিছু পাওয়া যায়নি' : 'Nothing found')
+                        : (_isBn
+                            ? 'অন্যদের দক্ষতা খুঁজতে সার্চ করুন'
+                            : "Search to find other people's skills"),
+                    style: const TextStyle(color: AppColors.textMuted, fontSize: 13),
+                  ),
+                )
+              : ListView.builder(
+                  padding: const EdgeInsets.fromLTRB(16, 4, 16, 90),
+                  itemCount: _discovered.length,
+                  itemBuilder: (_, i) {
+                    final r = _discovered[i];
+                    final name = (r['skillName'] ?? '').toString();
+                    final cat = (r['category'] ?? '').toString();
+                    final level = (r['level'] ?? '').toString();
+                    final desc = (r['description'] ?? '').toString();
+                    return Container(
+                      margin: const EdgeInsets.only(bottom: 10),
+                      padding: const EdgeInsets.all(14),
+                      decoration: BoxDecoration(
+                        color: AppColors.glassWhite,
+                        borderRadius: BorderRadius.circular(14),
+                        border: Border.all(color: AppColors.glassBorder),
+                      ),
+                      child: Column(
+                        crossAxisAlignment: CrossAxisAlignment.start,
+                        children: [
+                          Row(
+                            children: [
+                              Expanded(
+                                child: Text(name,
+                                    style: const TextStyle(
+                                        color: AppColors.textPrimary,
+                                        fontSize: 14,
+                                        fontWeight: FontWeight.w700)),
+                              ),
+                              if (level.isNotEmpty)
+                                Container(
+                                  padding: const EdgeInsets.symmetric(
+                                      horizontal: 8, vertical: 3),
+                                  decoration: BoxDecoration(
+                                    color: AppColors.glassWhite,
+                                    borderRadius: BorderRadius.circular(20),
+                                    border: Border.all(color: AppColors.glassBorder),
+                                  ),
+                                  child: Text(level,
+                                      style: const TextStyle(
+                                          color: AppColors.textSecondary,
+                                          fontSize: 10,
+                                          fontWeight: FontWeight.w600)),
+                                ),
+                            ],
+                          ),
+                          if (cat.isNotEmpty) ...[
+                            const SizedBox(height: 3),
+                            Text(cat,
+                                style: const TextStyle(
+                                    color: AppColors.deepBlue, fontSize: 11.5)),
+                          ],
+                          if (desc.isNotEmpty) ...[
+                            const SizedBox(height: 6),
+                            Text(desc,
+                                maxLines: 3,
+                                overflow: TextOverflow.ellipsis,
+                                style: const TextStyle(
+                                    color: AppColors.textSecondary, fontSize: 12)),
+                          ],
+                        ],
+                      ),
+                    );
+                  },
+                ),
+        ),
+      ],
     );
   }
 
@@ -230,9 +418,9 @@ class _SkillShareScreenState extends State<SkillShareScreen> with SingleTickerPr
         child: Column(mainAxisAlignment: MainAxisAlignment.center, children: [
           const Icon(Icons.auto_awesome_rounded, color: AppColors.textMuted, size: 56),
           const SizedBox(height: 12),
-          const Text('কোনো দক্ষতা নেই', style: TextStyle(color: AppColors.textMuted)),
+          Text(_isBn ? 'কোনো দক্ষতা নেই' : 'No skills yet', style: const TextStyle(color: AppColors.textMuted)),
           const SizedBox(height: 8),
-          TextButton(onPressed: _showAddSkillSheet, child: const Text('যোগ করুন', style: TextStyle(color: AppColors.deepBlue))),
+          TextButton(onPressed: _showAddSkillSheet, child: Text(_isBn ? 'যোগ করুন' : 'Add', style: const TextStyle(color: AppColors.deepBlue))),
         ]),
       );
     }
@@ -240,7 +428,7 @@ class _SkillShareScreenState extends State<SkillShareScreen> with SingleTickerPr
       padding: const EdgeInsets.fromLTRB(16, 12, 16, 100),
       itemCount: _mySkills.length,
       itemBuilder: (ctx, i) {
-        final s = _mySkills[i] as Map<String, dynamic>;
+        final s = _mySkills[i];
         final level = s['level'] as String? ?? 'beginner';
         return GestureDetector(
           onTap: () => _showEditSkillSheet(s),
@@ -256,7 +444,7 @@ class _SkillShareScreenState extends State<SkillShareScreen> with SingleTickerPr
             Container(
               width: 44,
               height: 44,
-              decoration: BoxDecoration(color: AppColors.deepBlue.withOpacity(0.1), borderRadius: BorderRadius.circular(12)),
+              decoration: BoxDecoration(color: AppColors.deepBlue.withValues(alpha: 0.1), borderRadius: BorderRadius.circular(12)),
               child: const Icon(Icons.auto_awesome_rounded, color: AppColors.deepBlue, size: 22),
             ),
             const SizedBox(width: 12),
@@ -267,7 +455,7 @@ class _SkillShareScreenState extends State<SkillShareScreen> with SingleTickerPr
             ])),
             Container(
               padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 4),
-              decoration: BoxDecoration(color: _levelColor(level).withOpacity(0.15), borderRadius: BorderRadius.circular(8)),
+              decoration: BoxDecoration(color: _levelColor(level).withValues(alpha: 0.15), borderRadius: BorderRadius.circular(8)),
               child: Text(level, style: TextStyle(color: _levelColor(level), fontSize: 11, fontWeight: FontWeight.w600)),
             ),
           ]),
@@ -284,8 +472,8 @@ class _SkillShareScreenState extends State<SkillShareScreen> with SingleTickerPr
     if (skillId.isEmpty) return;
     final nameCtrl = TextEditingController(text: s['skillName'] as String? ?? '');
     final descCtrl = TextEditingController(text: s['description'] as String? ?? '');
-    String category = s['category'] as String? ?? 'technology';
-    String level = s['level'] as String? ?? 'beginner';
+    String category = _kCategories.contains(s['category']) ? s['category'] as String : 'technology';
+    String level = _kLevels.contains(s['level']) ? s['level'] as String : 'beginner';
     bool saving = false;
 
     showModalBottomSheet(
@@ -308,36 +496,32 @@ class _SkillShareScreenState extends State<SkillShareScreen> with SingleTickerPr
                   children: [
                     Center(child: Container(width: 40, height: 4, decoration: BoxDecoration(color: AppColors.glassBorder, borderRadius: BorderRadius.circular(2)))),
                     const SizedBox(height: 16),
-                    const Text('দক্ষতা সম্পাদনা করুন', style: TextStyle(color: AppColors.textPrimary, fontSize: 18, fontWeight: FontWeight.w700)),
+                    Text(_isBn ? 'দক্ষতা সম্পাদনা করুন' : 'Edit Skill', style: const TextStyle(color: AppColors.textPrimary, fontSize: 18, fontWeight: FontWeight.w700)),
                     const SizedBox(height: 16),
-                    _sheetField(nameCtrl, 'দক্ষতার নাম', Icons.star_outline_rounded),
+                    _sheetField(nameCtrl, _isBn ? 'দক্ষতার নাম' : 'Skill name', Icons.star_outline_rounded),
                     const SizedBox(height: 12),
-                    _sheetField(descCtrl, 'বিবরণ', Icons.description_outlined, maxLines: 3),
+                    _sheetField(descCtrl, _isBn ? 'বিবরণ' : 'Description', Icons.description_outlined, maxLines: 3),
                     const SizedBox(height: 12),
                     DropdownButtonFormField<String>(
-                      value: ['technology', 'language', 'art', 'music', 'sports', 'cooking', 'business'].contains(category) ? category : 'technology',
+                      initialValue: category,
                       dropdownColor: AppColors.bgMid,
                       style: const TextStyle(color: AppColors.textPrimary),
-                      decoration: _inputDeco('বিভাগ'),
-                      items: ['technology', 'language', 'art', 'music', 'sports', 'cooking', 'business']
-                          .map((e) => DropdownMenuItem(value: e, child: Text(e)))
-                          .toList(),
+                      decoration: _inputDeco(_isBn ? 'বিভাগ' : 'Category'),
+                      items: _kCategories.map((e) => DropdownMenuItem(value: e, child: Text(e))).toList(),
                       onChanged: (v) => setS(() => category = v ?? category),
                     ),
                     const SizedBox(height: 12),
                     DropdownButtonFormField<String>(
-                      value: ['beginner', 'intermediate', 'advanced', 'expert'].contains(level) ? level : 'beginner',
+                      initialValue: level,
                       dropdownColor: AppColors.bgMid,
                       style: const TextStyle(color: AppColors.textPrimary),
-                      decoration: _inputDeco('স্তর'),
-                      items: ['beginner', 'intermediate', 'advanced', 'expert']
-                          .map((e) => DropdownMenuItem(value: e, child: Text(e)))
-                          .toList(),
+                      decoration: _inputDeco(_isBn ? 'স্তর' : 'Level'),
+                      items: _kLevels.map((e) => DropdownMenuItem(value: e, child: Text(e))).toList(),
                       onChanged: (v) => setS(() => level = v ?? level),
                     ),
                     const SizedBox(height: 24),
                     GlassButton(
-                      label: 'সংরক্ষণ করুন',
+                      label: _isBn ? 'সংরক্ষণ করুন' : 'Save',
                       isLoading: saving,
                       onPressed: saving ? null : () async {
                         final changes = <String, dynamic>{
@@ -352,10 +536,11 @@ class _SkillShareScreenState extends State<SkillShareScreen> with SingleTickerPr
                         }
                         setS(() => saving = true);
                         try {
-                          await _client.patch('/skill-share/skills/$skillId', data: changes);
+                          await _svc.updateSkill(skillId, changes);
                           if (ctx.mounted) { Navigator.pop(ctx); _loadMySkills(); }
-                        } catch (_) {
+                        } catch (e) {
                           setS(() => saving = false);
+                          if (ctx.mounted) _showError(ApiClient.mapError(e).localized(_isBn));
                         }
                       },
                     ),
@@ -369,76 +554,186 @@ class _SkillShareScreenState extends State<SkillShareScreen> with SingleTickerPr
     );
   }
 
-  Widget _buildSearchTab() {
-    return Column(children: [
-      Padding(
-        padding: const EdgeInsets.all(16),
-        child: TextField(
-          controller: _searchCtrl,
-          style: const TextStyle(color: AppColors.textPrimary),
-          onSubmitted: _searchSkills,
-          decoration: InputDecoration(
-            hintText: 'দক্ষতা খুঁজুন...',
-            hintStyle: const TextStyle(color: AppColors.textMuted),
-            prefixIcon: const Icon(Icons.search_rounded, color: AppColors.textMuted),
-            suffixIcon: IconButton(icon: const Icon(Icons.send_rounded, color: AppColors.deepBlue), onPressed: () => _searchSkills(_searchCtrl.text)),
-            filled: true,
-            fillColor: AppColors.bgMid,
-            border: OutlineInputBorder(borderRadius: BorderRadius.circular(14), borderSide: BorderSide(color: AppColors.glassBorder)),
+  // ── "অনুরোধ" tab: browse everyone's open (unclaimed) exchange posts;
+  // FAB posts a new one. Previously this tab was a "search a specific person
+  // & propose directly to them" flow that didn't match how the backend
+  // actually models a proposal (an open post, not person-targeted) — every
+  // proposal sent through the old flow failed backend validation outright.
+
+  Widget _buildRequestsTab() {
+    if (_openExchanges.isEmpty) {
+      return Center(
+        child: Column(mainAxisAlignment: MainAxisAlignment.center, children: [
+          const Icon(Icons.campaign_outlined, color: AppColors.textMuted, size: 56),
+          const SizedBox(height: 12),
+          Text(_isBn ? 'এই মুহূর্তে কোনো খোলা অনুরোধ নেই' : 'No open requests right now', style: const TextStyle(color: AppColors.textMuted)),
+          const SizedBox(height: 8),
+          TextButton(onPressed: _showPostRequestSheet, child: Text(_isBn ? 'একটি পোস্ট করুন' : 'Post one', style: const TextStyle(color: AppColors.deepBlue))),
+        ]),
+      );
+    }
+    return RefreshIndicator(
+      color: AppColors.deepBlue,
+      backgroundColor: AppColors.bgMid,
+      onRefresh: _loadOpenExchanges,
+      child: ListView.builder(
+        padding: const EdgeInsets.fromLTRB(16, 12, 16, 100),
+        itemCount: _openExchanges.length,
+        itemBuilder: (ctx, i) {
+          final e = _openExchanges[i];
+          final offered = e['offeredSkill'] as Map<String, dynamic>?;
+          return Container(
+            margin: const EdgeInsets.only(bottom: 10),
+            padding: const EdgeInsets.all(14),
+            decoration: BoxDecoration(
+              color: AppColors.bgMid,
+              borderRadius: BorderRadius.circular(14),
+              border: Border.all(color: AppColors.glassBorder),
+            ),
+            child: Column(crossAxisAlignment: CrossAxisAlignment.start, children: [
+              Row(children: [
+                Icon(Icons.auto_awesome_rounded, color: AppColors.deepBlue, size: 16),
+                const SizedBox(width: 6),
+                Expanded(child: Text(_isBn ? 'দিচ্ছেন: ${offered?['skillName'] ?? '—'}' : 'Offering: ${offered?['skillName'] ?? '—'}', style: const TextStyle(color: AppColors.textPrimary, fontSize: 13.5, fontWeight: FontWeight.w600))),
+              ]),
+              const SizedBox(height: 6),
+              Row(children: [
+                const Icon(Icons.swap_horiz_rounded, color: AppColors.textMuted, size: 16),
+                const SizedBox(width: 6),
+                Expanded(child: Text(_isBn ? 'চাচ্ছেন: ${e['wantedSkillName'] ?? '—'} (${e['wantedSkillCategory'] ?? ''})' : 'Wants: ${e['wantedSkillName'] ?? '—'} (${e['wantedSkillCategory'] ?? ''})', style: const TextStyle(color: AppColors.textSecondary, fontSize: 13))),
+              ]),
+              if ((e['message'] as String?)?.isNotEmpty ?? false) ...[
+                const SizedBox(height: 6),
+                Text(e['message'] as String, style: const TextStyle(color: AppColors.textMuted, fontSize: 12), maxLines: 2, overflow: TextOverflow.ellipsis),
+              ],
+              const SizedBox(height: 10),
+              Row(children: [
+                const Icon(Icons.repeat_rounded, color: AppColors.textMuted, size: 13),
+                const SizedBox(width: 4),
+                Text(_isBn ? '${e['agreedSessionCount'] ?? 1} সেশন' : '${e['agreedSessionCount'] ?? 1} sessions', style: const TextStyle(color: AppColors.textMuted, fontSize: 11)),
+                const Spacer(),
+                TextButton(
+                  onPressed: () => _showRespondSheet(e),
+                  child: Text(_isBn ? 'রেসপন্স দিন' : 'Respond', style: const TextStyle(color: AppColors.deepBlue, fontSize: 12.5, fontWeight: FontWeight.w700)),
+                ),
+              ]),
+            ]),
+          ).animate().fadeIn(delay: Duration(milliseconds: i * 40));
+        },
+      ),
+    );
+  }
+
+  void _showPostRequestSheet() {
+    if (_mySkills.isEmpty) {
+      _showError(_isBn ? 'প্রথমে "আমার দক্ষতা" ট্যাবে অন্তত একটি দক্ষতা যোগ করুন' : 'First add at least one skill in the "My Skills" tab');
+      return;
+    }
+    String? offeredSkillId = _mySkills.first['id'] as String?;
+    final wantedNameCtrl = TextEditingController();
+    String wantedCategory = 'technology';
+    int sessions = 3;
+    final msgCtrl = TextEditingController();
+    bool submitting = false;
+
+    showModalBottomSheet(
+      context: context,
+      isScrollControlled: true,
+      backgroundColor: Colors.transparent,
+      builder: (ctx) => StatefulBuilder(
+        builder: (ctx, setS) => Padding(
+          padding: EdgeInsets.only(bottom: MediaQuery.of(ctx).viewInsets.bottom),
+          child: ClipRRect(
+            borderRadius: const BorderRadius.vertical(top: Radius.circular(24)),
+            child: BackdropFilter(
+              filter: ImageFilter.blur(sigmaX: 12, sigmaY: 12),
+              child: Container(
+                color: AppColors.bgMid,
+                padding: const EdgeInsets.fromLTRB(20, 20, 20, 32),
+                child: SingleChildScrollView(
+                  child: Column(
+                    mainAxisSize: MainAxisSize.min,
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    children: [
+                      Center(child: Container(width: 40, height: 4, decoration: BoxDecoration(color: AppColors.glassBorder, borderRadius: BorderRadius.circular(2)))),
+                      const SizedBox(height: 16),
+                      Text(_isBn ? 'অনুরোধ পোস্ট করুন' : 'Post a Request', style: const TextStyle(color: AppColors.textPrimary, fontSize: 18, fontWeight: FontWeight.w700)),
+                      const SizedBox(height: 4),
+                      Text(_isBn ? 'যে কেউ এটা দেখে সাড়া দিতে পারবে' : 'Anyone who sees this can respond', style: const TextStyle(color: AppColors.textMuted, fontSize: 12)),
+                      const SizedBox(height: 16),
+                      Text(_isBn ? 'আপনি কী দিচ্ছেন:' : 'What you\'re offering:', style: const TextStyle(color: AppColors.textMuted, fontSize: 12)),
+                      const SizedBox(height: 8),
+                      DropdownButtonFormField<String>(
+                        initialValue: offeredSkillId,
+                        dropdownColor: AppColors.bgMid,
+                        style: const TextStyle(color: AppColors.textPrimary),
+                        decoration: _inputDeco(_isBn ? 'আমার দক্ষতা' : 'My skill'),
+                        items: _mySkills.map((s) => DropdownMenuItem<String>(value: s['id'] as String?, child: Text(s['skillName'] as String? ?? ''))).toList(),
+                        onChanged: (v) => setS(() => offeredSkillId = v),
+                      ),
+                      const SizedBox(height: 14),
+                      Text(_isBn ? 'আপনি কী চান:' : 'What you want:', style: const TextStyle(color: AppColors.textMuted, fontSize: 12)),
+                      const SizedBox(height: 8),
+                      _sheetField(wantedNameCtrl, _isBn ? 'যেমন: React ডেভেলপমেন্ট' : 'e.g. React development', Icons.search_rounded),
+                      const SizedBox(height: 12),
+                      DropdownButtonFormField<String>(
+                        initialValue: wantedCategory,
+                        dropdownColor: AppColors.bgMid,
+                        style: const TextStyle(color: AppColors.textPrimary),
+                        decoration: _inputDeco(_isBn ? 'বিভাগ' : 'Category'),
+                        items: _kCategories.map((e) => DropdownMenuItem(value: e, child: Text(e))).toList(),
+                        onChanged: (v) => setS(() => wantedCategory = v ?? wantedCategory),
+                      ),
+                      const SizedBox(height: 12),
+                      Row(children: [
+                        Text(_isBn ? 'সেশন সংখ্যা:' : 'Number of sessions:', style: const TextStyle(color: AppColors.textMuted, fontSize: 12)),
+                        const Spacer(),
+                        IconButton(onPressed: () => setS(() => sessions = (sessions - 1).clamp(1, 12)), icon: const Icon(Icons.remove_rounded, color: AppColors.textMuted)),
+                        Text('$sessions', style: const TextStyle(color: AppColors.textPrimary, fontWeight: FontWeight.w700)),
+                        IconButton(onPressed: () => setS(() => sessions = (sessions + 1).clamp(1, 12)), icon: const Icon(Icons.add_rounded, color: AppColors.deepBlue)),
+                      ]),
+                      const SizedBox(height: 12),
+                      _sheetField(msgCtrl, _isBn ? 'বার্তা (ঐচ্ছিক)' : 'Message (optional)', Icons.message_outlined, maxLines: 2),
+                      const SizedBox(height: 24),
+                      GlassButton(
+                        label: _isBn ? 'পোস্ট করুন' : 'Post',
+                        isLoading: submitting,
+                        onPressed: submitting ? null : () async {
+                          if (offeredSkillId == null || wantedNameCtrl.text.trim().isEmpty) {
+                            _showError(_isBn ? 'সব ঘর পূরণ করুন' : 'Fill in all fields');
+                            return;
+                          }
+                          setS(() => submitting = true);
+                          try {
+                            await _svc.proposeExchange(
+                              offeredSkillId: offeredSkillId!,
+                              wantedSkillName: wantedNameCtrl.text.trim(),
+                              wantedSkillCategory: wantedCategory,
+                              message: msgCtrl.text.trim(),
+                              agreedSessionCount: sessions,
+                            );
+                            if (ctx.mounted) { Navigator.pop(ctx); _loadMyExchanges(); _tabController.animateTo(2); }
+                            _showSuccess(_isBn ? 'অনুরোধ পোস্ট হয়েছে' : 'Request posted');
+                          } catch (e) {
+                            setS(() => submitting = false);
+                            if (ctx.mounted) _showError(ApiClient.mapError(e).localized(_isBn));
+                          }
+                        },
+                      ),
+                    ],
+                  ),
+                ),
+              ),
+            ),
           ),
         ),
       ),
-      Expanded(
-        child: _searchResults.isEmpty
-            ? const Center(child: Text('কিছু লিখে খুঁজুন', style: TextStyle(color: AppColors.textMuted)))
-            : ListView.builder(
-                padding: const EdgeInsets.fromLTRB(16, 0, 16, 100),
-                itemCount: _searchResults.length,
-                itemBuilder: (ctx, i) {
-                  final s = _searchResults[i] as Map<String, dynamic>;
-                  final level = s['level'] as String? ?? 'beginner';
-                  return Container(
-                    margin: const EdgeInsets.only(bottom: 10),
-                    padding: const EdgeInsets.all(14),
-                    decoration: BoxDecoration(
-                      color: AppColors.bgMid,
-                      borderRadius: BorderRadius.circular(14),
-                      border: Border.all(color: AppColors.glassBorder),
-                    ),
-                    child: Row(children: [
-                      Expanded(child: Column(crossAxisAlignment: CrossAxisAlignment.start, children: [
-                        Text(s['skillName'] as String? ?? '', style: const TextStyle(color: AppColors.textPrimary, fontSize: 13, fontWeight: FontWeight.w600)),
-                        const SizedBox(height: 2),
-                        Text(s['category'] as String? ?? '', style: const TextStyle(color: AppColors.textMuted, fontSize: 11)),
-                      ])),
-                      Container(
-                        padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 4),
-                        decoration: BoxDecoration(color: _levelColor(level).withOpacity(0.15), borderRadius: BorderRadius.circular(8)),
-                        child: Text(level, style: TextStyle(color: _levelColor(level), fontSize: 11, fontWeight: FontWeight.w600)),
-                      ),
-                      const SizedBox(width: 8),
-                      TextButton(
-                        onPressed: () => _proposeExchange(s),
-                        child: const Text('প্রস্তাব', style: TextStyle(color: AppColors.deepBlue, fontSize: 12, fontWeight: FontWeight.w600)),
-                      ),
-                    ]),
-                  );
-                },
-              ),
-      ),
-    ]);
+    );
   }
 
-  void _proposeExchange(Map<String, dynamic> responderSkill) {
-    if (_mySkills.isEmpty) {
-      ScaffoldMessenger.of(context).showSnackBar(
-        const SnackBar(content: Text('প্রথমে আপনার দক্ষতা যোগ করুন', style: TextStyle(color: Colors.white)), backgroundColor: Color(0xFFF59E0B), behavior: SnackBarBehavior.floating),
-      );
-      return;
-    }
-    String? mySkillId = (_mySkills.first as Map<String, dynamic>)['id'] as String?;
-    int sessions = 3;
-    final msgCtrl = TextEditingController();
+  void _showRespondSheet(Map<String, dynamic> exchange) {
+    String? myOfferId = _mySkills.isNotEmpty ? _mySkills.first['id'] as String? : null;
+    bool submitting = false;
 
     showModalBottomSheet(
       context: context,
@@ -460,49 +755,41 @@ class _SkillShareScreenState extends State<SkillShareScreen> with SingleTickerPr
                   children: [
                     Center(child: Container(width: 40, height: 4, decoration: BoxDecoration(color: AppColors.glassBorder, borderRadius: BorderRadius.circular(2)))),
                     const SizedBox(height: 16),
-                    const Text('এক্সচেঞ্জ প্রস্তাব', style: TextStyle(color: AppColors.textPrimary, fontSize: 18, fontWeight: FontWeight.w700)),
-                    const SizedBox(height: 12),
-                    const Text('আপনার দক্ষতা নির্বাচন করুন:', style: TextStyle(color: AppColors.textMuted, fontSize: 12)),
-                    const SizedBox(height: 8),
-                    DropdownButtonFormField<String>(
-                      value: mySkillId,
-                      dropdownColor: AppColors.bgMid,
-                      style: const TextStyle(color: AppColors.textPrimary),
-                      decoration: _inputDeco('আমার দক্ষতা'),
-                      items: _mySkills.map((s) {
-                        final skill = s as Map<String, dynamic>;
-                        return DropdownMenuItem<String>(value: skill['id'] as String?, child: Text(skill['skillName'] as String? ?? ''));
-                      }).toList(),
-                      onChanged: (v) => setS(() => mySkillId = v),
-                    ),
-                    const SizedBox(height: 12),
+                    Text(_isBn ? 'এই অনুরোধে সাড়া দিন' : 'Respond to This Request', style: const TextStyle(color: AppColors.textPrimary, fontSize: 18, fontWeight: FontWeight.w700)),
+                    const SizedBox(height: 16),
+                    if (_mySkills.isEmpty)
+                      Text(_isBn ? 'গ্রহণ করতে হলে আগে অন্তত একটি দক্ষতা যোগ করুন' : 'Add at least one skill before you can accept', style: const TextStyle(color: AppColors.textMuted, fontSize: 13))
+                    else ...[
+                      Text(_isBn ? 'বিনিময়ে আপনি কোন দক্ষতা দেবেন:' : 'What skill will you give in exchange:', style: const TextStyle(color: AppColors.textMuted, fontSize: 12)),
+                      const SizedBox(height: 8),
+                      DropdownButtonFormField<String>(
+                        initialValue: myOfferId,
+                        dropdownColor: AppColors.bgMid,
+                        style: const TextStyle(color: AppColors.textPrimary),
+                        decoration: _inputDeco(_isBn ? 'আমার দক্ষতা' : 'My skill'),
+                        items: _mySkills.map((s) => DropdownMenuItem<String>(value: s['id'] as String?, child: Text(s['skillName'] as String? ?? ''))).toList(),
+                        onChanged: (v) => setS(() => myOfferId = v),
+                      ),
+                    ],
+                    const SizedBox(height: 22),
                     Row(children: [
-                      const Text('সেশন সংখ্যা:', style: TextStyle(color: AppColors.textMuted, fontSize: 12)),
-                      const Spacer(),
-                      IconButton(onPressed: () => setS(() => sessions = (sessions - 1).clamp(1, 12)), icon: const Icon(Icons.remove_rounded, color: AppColors.textMuted)),
-                      Text('$sessions', style: const TextStyle(color: AppColors.textPrimary, fontWeight: FontWeight.w700)),
-                      IconButton(onPressed: () => setS(() => sessions = (sessions + 1).clamp(1, 12)), icon: const Icon(Icons.add_rounded, color: AppColors.deepBlue)),
+                      Expanded(
+                        child: GlassButton(
+                          label: _isBn ? 'পাস করুন' : 'Pass',
+                          isOutlined: true,
+                          isLoading: submitting,
+                          onPressed: submitting ? null : () => _respond(ctx, exchange, false, null, (v) => setS(() => submitting = v)),
+                        ),
+                      ),
+                      const SizedBox(width: 12),
+                      Expanded(
+                        child: GlassButton(
+                          label: _isBn ? 'গ্রহণ করুন' : 'Accept',
+                          isLoading: submitting,
+                          onPressed: (submitting || _mySkills.isEmpty) ? null : () => _respond(ctx, exchange, true, myOfferId, (v) => setS(() => submitting = v)),
+                        ),
+                      ),
                     ]),
-                    const SizedBox(height: 12),
-                    _sheetField(msgCtrl, 'বার্তা (ঐচ্ছিক)', Icons.message_outlined),
-                    const SizedBox(height: 24),
-                    GlassButton(
-                      label: 'প্রস্তাব পাঠান',
-                                            onPressed: () async {
-                        final responderId = responderSkill['userId'] as String?;
-                        try {
-                          await _client.post('/skill-share/exchanges', data: {
-                            'requesterId': _userId,
-                            'responderId': responderId,
-                            'requesterSkillId': mySkillId,
-                            'responderSkillId': responderSkill['id'],
-                            'proposedSessions': sessions,
-                            'message': msgCtrl.text,
-                          });
-                          if (ctx.mounted) { Navigator.pop(ctx); _loadMyExchanges(); _tabController.animateTo(2); }
-                        } catch (_) {}
-                      },
-                    ),
                   ],
                 ),
               ),
@@ -513,9 +800,25 @@ class _SkillShareScreenState extends State<SkillShareScreen> with SingleTickerPr
     );
   }
 
+  Future<void> _respond(BuildContext ctx, Map<String, dynamic> exchange, bool accept, String? wantedSkillId, void Function(bool) setSubmitting) async {
+    setSubmitting(true);
+    try {
+      await _svc.respondToExchange(exchange['id'] as String, accept: accept, wantedSkillId: wantedSkillId);
+      if (ctx.mounted) Navigator.pop(ctx);
+      _showSuccess(accept ? (_isBn ? 'গ্রহণ করা হয়েছে' : 'Accepted') : (_isBn ? 'পাস করা হয়েছে' : 'Passed'));
+      await Future.wait([_loadOpenExchanges(), _loadMyExchanges()]);
+      if (accept) _tabController.animateTo(2);
+    } catch (e) {
+      setSubmitting(false);
+      // Most likely someone else already claimed it first — refresh so it drops off the feed.
+      if (ctx.mounted) _showError(ApiClient.mapError(e).localized(_isBn));
+      _loadOpenExchanges();
+    }
+  }
+
   Widget _buildExchangesTab() {
     if (_myExchanges.isEmpty) {
-      return const Center(child: Text('কোনো এক্সচেঞ্জ নেই', style: TextStyle(color: AppColors.textMuted)));
+      return Center(child: Text(_isBn ? 'কোনো এক্সচেঞ্জ নেই' : 'No exchanges yet', style: const TextStyle(color: AppColors.textMuted)));
     }
     return RefreshIndicator(
       color: AppColors.deepBlue,
@@ -525,8 +828,9 @@ class _SkillShareScreenState extends State<SkillShareScreen> with SingleTickerPr
         padding: const EdgeInsets.fromLTRB(16, 12, 16, 100),
         itemCount: _myExchanges.length,
         itemBuilder: (ctx, i) {
-          final e = _myExchanges[i] as Map<String, dynamic>;
+          final e = _myExchanges[i];
           final status = e['status'] as String? ?? 'proposed';
+          final offered = e['offeredSkill'] as Map<String, dynamic>?;
           final statusColors = {
             'proposed': const Color(0xFFF59E0B),
             'accepted': const Color(0xFF10B981),
@@ -548,18 +852,18 @@ class _SkillShareScreenState extends State<SkillShareScreen> with SingleTickerPr
                 Container(
                   width: 44,
                   height: 44,
-                  decoration: BoxDecoration(color: AppColors.deepBlue.withOpacity(0.1), borderRadius: BorderRadius.circular(12)),
+                  decoration: BoxDecoration(color: AppColors.deepBlue.withValues(alpha: 0.1), borderRadius: BorderRadius.circular(12)),
                   child: const Icon(Icons.swap_horiz_rounded, color: AppColors.deepBlue, size: 22),
                 ),
                 const SizedBox(width: 12),
                 Expanded(child: Column(crossAxisAlignment: CrossAxisAlignment.start, children: [
-                  Text('এক্সচেঞ্জ #${(e['id'] as String? ?? '').substring(0, 8)}', style: const TextStyle(color: AppColors.textPrimary, fontSize: 13, fontWeight: FontWeight.w600)),
+                  Text('${offered?['skillName'] ?? '—'} ↔ ${e['wantedSkillName'] ?? '—'}', style: const TextStyle(color: AppColors.textPrimary, fontSize: 13, fontWeight: FontWeight.w600), maxLines: 1, overflow: TextOverflow.ellipsis),
                   const SizedBox(height: 2),
-                  Text('${e['proposedSessions'] ?? 0} সেশন', style: const TextStyle(color: AppColors.textMuted, fontSize: 11)),
+                  Text(_isBn ? '${e['agreedSessionCount'] ?? 1} সেশন' : '${e['agreedSessionCount'] ?? 1} sessions', style: const TextStyle(color: AppColors.textMuted, fontSize: 11)),
                 ])),
                 Container(
                   padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 4),
-                  decoration: BoxDecoration(color: color.withOpacity(0.1), borderRadius: BorderRadius.circular(8)),
+                  decoration: BoxDecoration(color: color.withValues(alpha: 0.1), borderRadius: BorderRadius.circular(8)),
                   child: Text(status, style: TextStyle(color: color, fontSize: 11, fontWeight: FontWeight.w600)),
                 ),
                 const Icon(Icons.chevron_right_rounded, color: AppColors.textMuted, size: 18),

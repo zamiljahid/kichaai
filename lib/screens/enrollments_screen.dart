@@ -1,7 +1,9 @@
 import 'dart:ui';
 import 'package:flutter/material.dart';
 import 'package:flutter_animate/flutter_animate.dart';
+import 'package:provider/provider.dart';
 import '../core/network/api_client.dart';
+import '../core/utils/app_strings.dart';
 import '../models/micro_learning_model.dart';
 import '../theme/app_theme.dart';
 import 'lesson_player_screen.dart';
@@ -18,6 +20,7 @@ class _EnrollmentsScreenState extends State<EnrollmentsScreen> {
   List<dynamic> _enrollments = [];
   bool _isLoading = true;
   String? _userId;
+  bool _isBn = true;
 
   @override
   void initState() {
@@ -71,7 +74,7 @@ class _EnrollmentsScreenState extends State<EnrollmentsScreen> {
                       child: Column(children: [
                         const Icon(Icons.workspace_premium_rounded, color: Colors.white, size: 56),
                         const SizedBox(height: 12),
-                        const Text('সম্পন্নের সনদ', style: TextStyle(color: Colors.white70, fontSize: 13)),
+                        Text(_isBn ? 'সম্পন্নের সনদ' : 'Certificate of Completion', style: const TextStyle(color: Colors.white70, fontSize: 13)),
                         const SizedBox(height: 4),
                         Text(courseName, style: const TextStyle(color: Colors.white, fontSize: 18, fontWeight: FontWeight.w800), textAlign: TextAlign.center),
                         const SizedBox(height: 8),
@@ -84,7 +87,7 @@ class _EnrollmentsScreenState extends State<EnrollmentsScreen> {
                     TextButton.icon(
                       onPressed: () => Navigator.pop(ctx),
                       icon: const Icon(Icons.close_rounded, color: AppColors.textMuted),
-                      label: const Text('বন্ধ করুন', style: TextStyle(color: AppColors.textMuted)),
+                      label: Text(_isBn ? 'বন্ধ করুন' : 'Close', style: const TextStyle(color: AppColors.textMuted)),
                     ),
                   ],
                 ),
@@ -98,12 +101,13 @@ class _EnrollmentsScreenState extends State<EnrollmentsScreen> {
 
   @override
   Widget build(BuildContext context) {
+    _isBn = context.watch<LanguageNotifier>().isBengali;
     return Scaffold(
       backgroundColor: AppColors.bgDark,
       appBar: AppBar(
         backgroundColor: Colors.transparent,
         elevation: 0,
-        title: const Text('আমার কোর্সসমূহ', style: TextStyle(color: AppColors.textPrimary, fontSize: 18, fontWeight: FontWeight.w700)),
+        title: Text(_isBn ? 'আমার কোর্সসমূহ' : 'My Courses', style: const TextStyle(color: AppColors.textPrimary, fontSize: 18, fontWeight: FontWeight.w700)),
         leading: IconButton(
           icon: const Icon(Icons.arrow_back_ios_new_rounded, color: AppColors.textPrimary, size: 18),
           onPressed: () => Navigator.pop(context),
@@ -116,9 +120,9 @@ class _EnrollmentsScreenState extends State<EnrollmentsScreen> {
                   child: Column(mainAxisAlignment: MainAxisAlignment.center, children: [
                     const Icon(Icons.school_outlined, color: AppColors.textMuted, size: 64),
                     const SizedBox(height: 12),
-                    const Text('কোনো এনরোলমেন্ট নেই', style: TextStyle(color: AppColors.textMuted, fontSize: 16)),
+                    Text(_isBn ? 'কোনো এনরোলমেন্ট নেই' : 'No enrollments', style: const TextStyle(color: AppColors.textMuted, fontSize: 16)),
                     const SizedBox(height: 8),
-                    const Text('কোর্সে ভর্তি হন', style: TextStyle(color: AppColors.textMuted, fontSize: 13)),
+                    Text(_isBn ? 'কোর্সে ভর্তি হন' : 'Enroll in a course', style: const TextStyle(color: AppColors.textMuted, fontSize: 13)),
                   ]),
                 )
               : RefreshIndicator(
@@ -163,7 +167,7 @@ class _EnrollmentsScreenState extends State<EnrollmentsScreen> {
                                 Padding(
                                   padding: const EdgeInsets.all(14),
                                   child: Column(crossAxisAlignment: CrossAxisAlignment.start, children: [
-                                    Text(course['title'] as String? ?? 'কোর্স', style: const TextStyle(color: AppColors.textPrimary, fontSize: 15, fontWeight: FontWeight.w700)),
+                                    Text(course['title'] as String? ?? (_isBn ? 'কোর্স' : 'Course'), style: const TextStyle(color: AppColors.textPrimary, fontSize: 15, fontWeight: FontWeight.w700)),
                                     const SizedBox(height: 6),
                                     Row(children: [
                                       Expanded(
@@ -193,7 +197,7 @@ class _EnrollmentsScreenState extends State<EnrollmentsScreen> {
                                               Navigator.push(context, MaterialPageRoute(builder: (_) => LessonPlayerScreen(enrollment: enrollment, lessons: lessons))).then((_) => _load());
                                             },
                                             icon: const Icon(Icons.play_arrow_rounded, size: 16),
-                                            label: const Text('চালিয়ে যান', style: TextStyle(fontSize: 12)),
+                                            label: Text(_isBn ? 'চালিয়ে যান' : 'Continue', style: const TextStyle(fontSize: 12)),
                                             style: OutlinedButton.styleFrom(foregroundColor: AppColors.deepBlue, side: const BorderSide(color: AppColors.deepBlue), shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(10))),
                                           ),
                                         )
@@ -202,7 +206,7 @@ class _EnrollmentsScreenState extends State<EnrollmentsScreen> {
                                           child: ElevatedButton.icon(
                                             onPressed: () => _viewCertificate(enrollmentId, course['title'] as String? ?? ''),
                                             icon: const Icon(Icons.workspace_premium_rounded, size: 16, color: Colors.white),
-                                            label: const Text('সনদ দেখুন', style: TextStyle(color: Colors.white, fontSize: 12)),
+                                            label: Text(_isBn ? 'সনদ দেখুন' : 'View Certificate', style: const TextStyle(color: Colors.white, fontSize: 12)),
                                             style: ElevatedButton.styleFrom(backgroundColor: const Color(0xFF10B981), shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(10))),
                                           ),
                                         ),

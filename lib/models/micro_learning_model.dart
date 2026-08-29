@@ -164,3 +164,36 @@ class EnrollmentModel {
                 [],
       );
 }
+
+/// Response from POST /micro-learning/enrollments/initiate — either the course was free and
+/// [enrollment] is already set, or it's paid and [gatewayPageUrl] is where the customer pays.
+class EnrollmentInitiation {
+  final bool requiresPayment;
+  final EnrollmentModel? enrollment;
+  final String? gatewayPageUrl;
+  final double? amount;
+
+  const EnrollmentInitiation({
+    required this.requiresPayment,
+    this.enrollment,
+    this.gatewayPageUrl,
+    this.amount,
+  });
+
+  factory EnrollmentInitiation.fromJson(Map<String, dynamic> json) {
+    final requiresPayment = json['requiresPayment'] as bool? ?? false;
+    if (!requiresPayment) {
+      final enrollmentJson = json['enrollment'] as Map<String, dynamic>?;
+      return EnrollmentInitiation(
+        requiresPayment: false,
+        enrollment: enrollmentJson != null ? EnrollmentModel.fromJson(enrollmentJson) : null,
+      );
+    }
+    final txn = json['transaction'] as Map<String, dynamic>? ?? {};
+    return EnrollmentInitiation(
+      requiresPayment: true,
+      gatewayPageUrl: txn['gatewayPageUrl'] as String?,
+      amount: double.tryParse('${txn['amount']}'),
+    );
+  }
+}
