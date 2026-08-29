@@ -1,5 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_animate/flutter_animate.dart';
+import 'package:provider/provider.dart';
+import '../core/utils/app_strings.dart';
 import '../models/matchmaking_model.dart';
 import '../services/matchmaking_service.dart';
 import '../theme/app_theme.dart';
@@ -20,6 +22,7 @@ class ProviderProfileScreen extends StatefulWidget {
 class _ProviderProfileScreenState extends State<ProviderProfileScreen> {
   MatchProviderModel? _provider;
   bool _isLoading = true;
+  bool _isBn = true;
 
   @override
   void initState() {
@@ -38,6 +41,7 @@ class _ProviderProfileScreenState extends State<ProviderProfileScreen> {
 
   @override
   Widget build(BuildContext context) {
+    _isBn = context.watch<LanguageNotifier>().isBengali;
     return Scaffold(
       body: AnimatedBackground(
         child: SafeArea(
@@ -47,7 +51,7 @@ class _ProviderProfileScreenState extends State<ProviderProfileScreen> {
               if (_isLoading)
                 const Expanded(child: Center(child: CircularProgressIndicator(color: AppColors.deepBlue)))
               else if (_provider == null)
-                Expanded(child: Center(child: Text('তথ্য পাওয়া যায়নি', style: TextStyle(color: AppColors.textMuted))))
+                Expanded(child: Center(child: Text(_isBn ? 'তথ্য পাওয়া যায়নি' : 'Information not found', style: const TextStyle(color: AppColors.textMuted))))
               else
                 Expanded(
                   child: SingleChildScrollView(
@@ -55,14 +59,22 @@ class _ProviderProfileScreenState extends State<ProviderProfileScreen> {
                     child: Column(children: [
                       _buildProfileCard(_provider!),
                       const SizedBox(height: 16),
+                      if (widget.kind == 'tutor' && (_provider!.subjectsTaught.isNotEmpty || _provider!.teachingLevels.isNotEmpty)) ...[
+                        _buildTutorInfoCard(_provider!),
+                        const SizedBox(height: 16),
+                      ],
                       if (_provider!.bio?.isNotEmpty ?? false) _buildBioCard(_provider!),
+                      if (_provider!.specialNote?.isNotEmpty ?? false) ...[
+                        const SizedBox(height: 16),
+                        _buildSpecialNoteCard(_provider!),
+                      ],
                       if (_provider!.portfolioImages.isNotEmpty) ...[
                         const SizedBox(height: 16),
                         _buildPortfolioGrid(_provider!),
                       ],
                       const SizedBox(height: 24),
                       GlassButton(
-                        label: 'অনুরোধ পাঠান',
+                        label: _isBn ? 'অনুরোধ পাঠান' : 'Send request',
                         onPressed: () => Navigator.of(context).push(MaterialPageRoute(
                           builder: (_) => MatchRequestScreen(providerId: widget.providerId, kind: widget.kind),
                         )),
@@ -91,7 +103,7 @@ class _ProviderProfileScreenState extends State<ProviderProfileScreen> {
             ),
           ),
           const SizedBox(width: 16),
-          const Text('Provider প্রোফাইল', style: TextStyle(color: AppColors.textPrimary, fontSize: 18, fontWeight: FontWeight.w700)),
+          Text(_isBn ? 'Provider প্রোফাইল' : 'Provider Profile', style: const TextStyle(color: AppColors.textPrimary, fontSize: 18, fontWeight: FontWeight.w700)),
         ],
       ),
     );
@@ -109,7 +121,17 @@ class _ProviderProfileScreenState extends State<ProviderProfileScreen> {
               style: const TextStyle(color: AppColors.ivory, fontSize: 34, fontWeight: FontWeight.w700))),
           ),
           const SizedBox(height: 14),
-          Text(p.name, style: const TextStyle(color: AppColors.textPrimary, fontSize: 20, fontWeight: FontWeight.w700)),
+          Row(mainAxisSize: MainAxisSize.min, children: [
+            Flexible(child: Text(p.name, style: const TextStyle(color: AppColors.textPrimary, fontSize: 20, fontWeight: FontWeight.w700), overflow: TextOverflow.ellipsis)),
+            if (p.nidVerified) ...[
+              const SizedBox(width: 6),
+              const Icon(Icons.verified_rounded, color: Color(0xFF10B981), size: 20),
+            ],
+          ]),
+          if (p.nidVerified) ...[
+            const SizedBox(height: 4),
+            Text(_isBn ? 'NID যাচাইকৃত' : 'NID Verified', style: const TextStyle(color: Color(0xFF10B981), fontSize: 11.5, fontWeight: FontWeight.w600)),
+          ],
           const SizedBox(height: 8),
           Row(mainAxisAlignment: MainAxisAlignment.center, children: [
             if (p.rating != null) ...[
@@ -119,33 +141,73 @@ class _ProviderProfileScreenState extends State<ProviderProfileScreen> {
               const SizedBox(width: 6),
             ],
             if (p.totalReviews != null)
-              Text('(${p.totalReviews} রিভিউ)', style: TextStyle(color: AppColors.textMuted, fontSize: 12)),
+              Text(_isBn ? '(${p.totalReviews} রিভিউ)' : '(${p.totalReviews} reviews)', style: const TextStyle(color: AppColors.textMuted, fontSize: 12)),
           ]),
           if (p.totalJobs != null) ...[
             const SizedBox(height: 4),
-            Text('${p.totalJobs} কাজ সম্পন্ন', style: TextStyle(color: AppColors.textMuted, fontSize: 12)),
+            Text(_isBn ? '${p.totalJobs} কাজ সম্পন্ন' : '${p.totalJobs} jobs completed', style: const TextStyle(color: AppColors.textMuted, fontSize: 12)),
           ],
         ],
       ),
     ).animate().fadeIn(duration: 400.ms).scale(begin: const Offset(0.95, 0.95));
   }
 
+  Widget _buildTutorInfoCard(MatchProviderModel p) {
+    return GlassCard(
+      padding: const EdgeInsets.all(16),
+      child: Column(crossAxisAlignment: CrossAxisAlignment.start, children: [
+        if (p.subjectsTaught.isNotEmpty) ...[
+          Text(_isBn ? 'যে বিষয়ে পড়ান' : 'Subjects taught', style: const TextStyle(color: AppColors.textSecondary, fontSize: 12, fontWeight: FontWeight.w600)),
+          const SizedBox(height: 8),
+          Wrap(spacing: 6, runSpacing: 6, children: p.subjectsTaught.map((s) => _infoChip(s)).toList()),
+        ],
+        if (p.teachingLevels.isNotEmpty) ...[
+          if (p.subjectsTaught.isNotEmpty) const SizedBox(height: 14),
+          Text(_isBn ? 'যে লেভেলে পড়ান' : 'Levels taught', style: const TextStyle(color: AppColors.textSecondary, fontSize: 12, fontWeight: FontWeight.w600)),
+          const SizedBox(height: 8),
+          Wrap(spacing: 6, runSpacing: 6, children: p.teachingLevels.map((s) => _infoChip(s)).toList()),
+        ],
+      ]),
+    ).animate(delay: 50.ms).fadeIn().slideY(begin: 0.05);
+  }
+
+  Widget _infoChip(String label) => Container(
+    padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 6),
+    decoration: BoxDecoration(color: AppColors.deepBlue.withOpacity(0.08), borderRadius: BorderRadius.circular(14)),
+    child: Text(label, style: const TextStyle(color: AppColors.deepBlue, fontSize: 12, fontWeight: FontWeight.w600)),
+  );
+
   Widget _buildBioCard(MatchProviderModel p) {
     return GlassCard(
       padding: const EdgeInsets.all(16),
       child: Column(crossAxisAlignment: CrossAxisAlignment.start, children: [
-        const Text('পরিচিতি', style: TextStyle(color: AppColors.textSecondary, fontSize: 12, fontWeight: FontWeight.w600)),
+        Text(_isBn ? 'পরিচিতি' : 'About', style: const TextStyle(color: AppColors.textSecondary, fontSize: 12, fontWeight: FontWeight.w600)),
         const SizedBox(height: 8),
         Text(p.bio!, style: const TextStyle(color: AppColors.textPrimary, fontSize: 14, height: 1.6)),
       ]),
     ).animate(delay: 100.ms).fadeIn().slideY(begin: 0.05);
   }
 
+  Widget _buildSpecialNoteCard(MatchProviderModel p) {
+    return GlassCard(
+      padding: const EdgeInsets.all(16),
+      child: Column(crossAxisAlignment: CrossAxisAlignment.start, children: [
+        Row(children: [
+          const Icon(Icons.star_rounded, color: Color(0xFFF59E0B), size: 16),
+          const SizedBox(width: 6),
+          Text(_isBn ? 'বিশেষ দক্ষতা' : 'Especially good at', style: const TextStyle(color: AppColors.textSecondary, fontSize: 12, fontWeight: FontWeight.w600)),
+        ]),
+        const SizedBox(height: 8),
+        Text(p.specialNote!, style: const TextStyle(color: AppColors.textPrimary, fontSize: 14, height: 1.6)),
+      ]),
+    ).animate(delay: 120.ms).fadeIn().slideY(begin: 0.05);
+  }
+
   Widget _buildPortfolioGrid(MatchProviderModel p) {
     return GlassCard(
       padding: const EdgeInsets.all(16),
       child: Column(crossAxisAlignment: CrossAxisAlignment.start, children: [
-        const Text('পোর্টফোলিও', style: TextStyle(color: AppColors.textSecondary, fontSize: 12, fontWeight: FontWeight.w600)),
+        Text(_isBn ? 'পোর্টফোলিও' : 'Portfolio', style: const TextStyle(color: AppColors.textSecondary, fontSize: 12, fontWeight: FontWeight.w600)),
         const SizedBox(height: 12),
         GridView.builder(
           shrinkWrap: true,

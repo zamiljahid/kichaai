@@ -1,6 +1,9 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_animate/flutter_animate.dart';
 import 'package:dio/dio.dart';
+import 'package:provider/provider.dart';
+import '../core/network/api_client.dart';
+import '../core/utils/app_strings.dart';
 import '../models/dispatch_model.dart';
 import '../services/dispatch_service.dart';
 import '../theme/app_theme.dart';
@@ -8,7 +11,9 @@ import '../widgets/animated_background.dart';
 import '../widgets/glass_button.dart';
 import '../widgets/glass_card.dart';
 import '../widgets/availability_calendar.dart';
+import '../widgets/policy_agreement_checkbox.dart';
 import 'job_tracking_screen.dart';
+import 'payment_waiting_screen.dart';
 
 /// Customer-facing browse-and-confirm flow for advance-booking jobs
 /// (photographer / cinematographer / makeup_artist). The customer picks who
@@ -17,12 +22,14 @@ class AdvanceBookingBrowseScreen extends StatefulWidget {
   final String jobId;
   final String serviceKind;
   final DateTime eventDate;
+  final DateTime? eventEndDate; // caregiver multi-day booking — range end, null for a single-day job
 
   const AdvanceBookingBrowseScreen({
     super.key,
     required this.jobId,
     required this.serviceKind,
     required this.eventDate,
+    this.eventEndDate,
   });
 
   @override
@@ -33,6 +40,7 @@ class _AdvanceBookingBrowseScreenState extends State<AdvanceBookingBrowseScreen>
   List<AvailableProviderModel> _providers = [];
   bool _loading = true;
   String? _error;
+  bool _isBn = true;
 
   @override
   void initState() {
@@ -49,6 +57,7 @@ class _AdvanceBookingBrowseScreenState extends State<AdvanceBookingBrowseScreen>
       final list = await DispatchService.instance.listAvailableProviders(
         serviceKind: widget.serviceKind,
         eventDate: widget.eventDate,
+        eventEndDate: widget.eventEndDate,
       );
       if (!mounted) return;
       setState(() {
@@ -58,7 +67,7 @@ class _AdvanceBookingBrowseScreenState extends State<AdvanceBookingBrowseScreen>
     } catch (e) {
       if (!mounted) return;
       setState(() {
-        _error = e.toString();
+        _error = ApiClient.mapError(e).localized(_isBn);
         _loading = false;
       });
     }
@@ -87,6 +96,7 @@ class _AdvanceBookingBrowseScreenState extends State<AdvanceBookingBrowseScreen>
 
   @override
   Widget build(BuildContext context) {
+    _isBn = context.watch<LanguageNotifier>().isBengali;
     return Scaffold(
       body: AnimatedBackground(
         child: SafeArea(
@@ -124,10 +134,12 @@ class _AdvanceBookingBrowseScreenState extends State<AdvanceBookingBrowseScreen>
             child: Column(
               crossAxisAlignment: CrossAxisAlignment.start,
               children: [
-                const Text('উপলব্ধ প্রোভাইডার',
-                    style: TextStyle(color: AppColors.textPrimary, fontSize: 17, fontWeight: FontWeight.w700)),
+                Text(_isBn ? 'উপলব্ধ প্রোভাইডার' : 'Available Providers',
+                    style: const TextStyle(color: AppColors.textPrimary, fontSize: 17, fontWeight: FontWeight.w700)),
                 Text(
-                  _formatEventDate(widget.eventDate),
+                  widget.eventEndDate != null
+                      ? '${_formatDateOnly(widget.eventDate, _isBn)} → ${_formatDateOnly(widget.eventEndDate!, _isBn)}'
+                      : _formatEventDate(widget.eventDate, _isBn),
                   style: const TextStyle(color: AppColors.textMuted, fontSize: 12),
                 ),
               ],
@@ -153,7 +165,7 @@ class _AdvanceBookingBrowseScreenState extends State<AdvanceBookingBrowseScreen>
               const SizedBox(height: 12),
               Text(_error!, style: const TextStyle(color: AppColors.textSecondary, fontSize: 13), textAlign: TextAlign.center),
               const SizedBox(height: 16),
-              GlassButton(label: 'আবার চেষ্টা করুন', icon: Icons.refresh_rounded, isOutlined: true, onPressed: _fetch),
+              GlassButton(label: _isBn ? 'আবার চেষ্টা করুন' : 'Try again', icon: Icons.refresh_rounded, isOutlined: true, onPressed: _fetch),
             ],
           ),
         ),
@@ -168,19 +180,19 @@ class _AdvanceBookingBrowseScreenState extends State<AdvanceBookingBrowseScreen>
             children: [
               const Icon(Icons.event_busy_rounded, color: AppColors.textMuted, size: 48),
               const SizedBox(height: 16),
-              const Text('এই তারিখে কেউ ফ্রি নেই',
-                  style: TextStyle(color: AppColors.textPrimary, fontSize: 16, fontWeight: FontWeight.w700)),
+              Text(_isBn ? 'এই তারিখে কেউ ফ্রি নেই' : 'No one is free on this date',
+                  style: const TextStyle(color: AppColors.textPrimary, fontSize: 16, fontWeight: FontWeight.w700)),
               const SizedBox(height: 8),
-              const Text(
-                'অন্য দিন বা সময় বেছে নিয়ে আবার চেষ্টা করুন।',
-                style: TextStyle(color: AppColors.textMuted, fontSize: 13),
+              Text(
+                _isBn ? 'অন্য দিন বা সময় বেছে নিয়ে আবার চেষ্টা করুন।' : 'Try a different day or time.',
+                style: const TextStyle(color: AppColors.textMuted, fontSize: 13),
                 textAlign: TextAlign.center,
               ),
               const SizedBox(height: 20),
-              GlassButton(label: 'আবার চেষ্টা করুন', icon: Icons.refresh_rounded, isOutlined: true, onPressed: _fetch),
+              GlassButton(label: _isBn ? 'আবার চেষ্টা করুন' : 'Try again', icon: Icons.refresh_rounded, isOutlined: true, onPressed: _fetch),
               const SizedBox(height: 10),
               GlassButton(
-                label: 'তারিখ পরিবর্তন করুন',
+                label: _isBn ? 'তারিখ পরিবর্তন করুন' : 'Change date',
                 icon: Icons.edit_calendar_rounded,
                 onPressed: () => Navigator.of(context).pop(),
               ),
@@ -388,8 +400,11 @@ class _ProviderDetailScreen extends StatefulWidget {
 
 class _ProviderDetailScreenState extends State<_ProviderDetailScreen> {
   bool _busy = false;
+  bool _isBn = true;
+  bool _agreedToPolicies = false;
 
   Future<void> _confirm() async {
+    if (!_agreedToPolicies) return;
     setState(() => _busy = true);
     try {
       final job = await DispatchService.instance.confirmProvider(
@@ -397,23 +412,70 @@ class _ProviderDetailScreenState extends State<_ProviderDetailScreen> {
         widget.provider.providerId,
       );
       if (!mounted) return;
-      // Pop the detail screen with `.confirmed`, then replace the browse route
-      // with the tracking screen so the customer lands on tracking.
+      // Pop the detail screen with `.confirmed` first — the browse list behind it is done
+      // with either way, whether or not a deposit still needs paying.
       Navigator.of(context).pop(_DetailResult.confirmed);
+
+      if (!job.depositRequired) {
+        Navigator.of(context).pushReplacement(
+          MaterialPageRoute(builder: (_) => JobTrackingScreen(jobId: job.id)),
+        );
+        return;
+      }
+
+      // Deposit required — pay it now, right after confirming, rather than leaving the
+      // booking half-done. Same initiate → open gateway → poll → verify pattern as course
+      // enrollment; the day-of shoot itself is blocked (requestStart) until this clears.
+      final transaction = await DispatchService.instance.initiateDepositPayment(job.id);
+      final gatewayPageUrl = transaction['gatewayPageUrl'] as String?;
+      if (!mounted) return;
+      if (gatewayPageUrl == null) {
+        Navigator.of(context).pushReplacement(
+          MaterialPageRoute(builder: (_) => JobTrackingScreen(jobId: job.id)),
+        );
+        _showSnack(_isBn ? 'বুকিং হয়েছে, কিন্তু অগ্রিম পেমেন্ট শুরু করা যায়নি — পরে ট্রাকিং স্ক্রিন থেকে চেষ্টা করুন' : 'Booked, but could not start the deposit payment — try again from the tracking screen');
+        return;
+      }
+
+      double? confirmedDeposit;
+      final navigator = Navigator.of(context);
+      await navigator.push(MaterialPageRoute(
+        builder: (waitingContext) => PaymentWaitingScreen(
+          gatewayPageUrl: gatewayPageUrl,
+          title: _isBn ? 'বুকিং অগ্রিম' : 'Booking Deposit',
+          titleEn: 'Booking Deposit',
+          amount: job.depositAmount ?? 0,
+          checkStatus: () async {
+            try {
+              final confirmedJob = await DispatchService.instance.confirmDepositPayment(job.id);
+              confirmedDeposit = confirmedJob.depositAmount;
+              return PaymentCheckStatus.completed;
+            } catch (_) {
+              return PaymentCheckStatus.pending;
+            }
+          },
+          onConfirmed: () => Navigator.of(waitingContext).pop(),
+        ),
+      ));
+
+      if (!mounted) return;
       Navigator.of(context).pushReplacement(
         MaterialPageRoute(builder: (_) => JobTrackingScreen(jobId: job.id)),
       );
+      if (confirmedDeposit == null) {
+        _showSnack(_isBn ? 'অগ্রিম পেমেন্ট এখনো বাকি — ট্রাকিং স্ক্রিন থেকে সম্পন্ন করুন' : 'Deposit payment still pending — complete it from the tracking screen');
+      }
     } on DioException catch (e) {
       if (!mounted) return;
       if (e.response?.statusCode == 409) {
-        _showSnack('দুঃখিত, এই সময়ে উনি এইমাত্র বুক হয়ে গেছেন');
+        _showSnack(_isBn ? 'দুঃখিত, এই সময়ে উনি এইমাত্র বুক হয়ে গেছেন' : 'Sorry, they were just booked for this time');
         Navigator.of(context).pop(_DetailResult.conflict);
         return;
       }
-      _showSnack(e.message ?? 'নিশ্চিত করতে সমস্যা হয়েছে');
+      _showSnack(e.message ?? (_isBn ? 'নিশ্চিত করতে সমস্যা হয়েছে' : 'Could not confirm'));
     } catch (e) {
       if (!mounted) return;
-      _showSnack(e.toString());
+      _showSnack(ApiClient.mapError(e).localized(_isBn));
     } finally {
       if (mounted) setState(() => _busy = false);
     }
@@ -430,7 +492,7 @@ class _ProviderDetailScreenState extends State<_ProviderDetailScreen> {
       Navigator.of(context).pop(_DetailResult.rejected);
     } catch (e) {
       if (!mounted) return;
-      _showSnack(e.toString());
+      _showSnack(ApiClient.mapError(e).localized(_isBn));
     } finally {
       if (mounted) setState(() => _busy = false);
     }
@@ -448,6 +510,7 @@ class _ProviderDetailScreenState extends State<_ProviderDetailScreen> {
 
   @override
   Widget build(BuildContext context) {
+    _isBn = context.watch<LanguageNotifier>().isBengali;
     final p = widget.provider;
     return Scaffold(
       body: AnimatedBackground(
@@ -549,10 +612,10 @@ class _ProviderDetailScreenState extends State<_ProviderDetailScreen> {
                       ),
                       const SizedBox(height: 16),
                       if (p.portfolio.isNotEmpty) ...[
-                        const Padding(
-                          padding: EdgeInsets.only(left: 4, bottom: 8),
-                          child: Text('পোর্টফোলিও',
-                              style: TextStyle(color: AppColors.textMuted, fontSize: 12, fontWeight: FontWeight.w700)),
+                        Padding(
+                          padding: const EdgeInsets.only(left: 4, bottom: 8),
+                          child: Text(_isBn ? 'পোর্টফোলিও' : 'Portfolio',
+                              style: const TextStyle(color: AppColors.textMuted, fontSize: 12, fontWeight: FontWeight.w700)),
                         ),
                         GridView.builder(
                           shrinkWrap: true,
@@ -578,22 +641,28 @@ class _ProviderDetailScreenState extends State<_ProviderDetailScreen> {
                         ),
                         const SizedBox(height: 20),
                       ],
-                      const Padding(
-                        padding: EdgeInsets.only(left: 4, bottom: 8),
-                        child: Text('আসন্ন সময়সূচী',
-                            style: TextStyle(color: AppColors.textMuted, fontSize: 12, fontWeight: FontWeight.w700)),
+                      Padding(
+                        padding: const EdgeInsets.only(left: 4, bottom: 8),
+                        child: Text(_isBn ? 'আসন্ন সময়সূচী' : 'Upcoming Schedule',
+                            style: const TextStyle(color: AppColors.textMuted, fontSize: 12, fontWeight: FontWeight.w700)),
                       ),
                       AvailabilityCalendar(providerId: p.providerId),
-                      const SizedBox(height: 20),
+                      const SizedBox(height: 12),
+                      PolicyAgreementCheckbox(
+                        value: _agreedToPolicies,
+                        onChanged: (v) => setState(() => _agreedToPolicies = v),
+                        isBn: _isBn,
+                      ),
+                      const SizedBox(height: 8),
                       GlassButton(
-                        label: 'এনাকে বেছে নিন',
+                        label: _isBn ? 'এনাকে বেছে নিন' : 'Choose them',
                         icon: Icons.check_circle_rounded,
                         isLoading: _busy,
-                        onPressed: _busy ? null : _confirm,
+                        onPressed: (_busy || !_agreedToPolicies) ? null : _confirm,
                       ),
                       const SizedBox(height: 10),
                       GlassButton(
-                        label: 'না, অন্য কাউকে দেখান',
+                        label: _isBn ? 'না, অন্য কাউকে দেখান' : 'No, show someone else',
                         icon: Icons.skip_next_rounded,
                         isOutlined: true,
                         onPressed: _busy ? null : _reject,
@@ -616,10 +685,22 @@ const _bnMonths = [
   'জানু', 'ফেব', 'মার্চ', 'এপ্রি', 'মে', 'জুন',
   'জুলা', 'আগ', 'সেপ্ট', 'অক্টো', 'নভে', 'ডিসে',
 ];
+const _enMonths = [
+  'Jan', 'Feb', 'Mar', 'Apr', 'May', 'Jun',
+  'Jul', 'Aug', 'Sep', 'Oct', 'Nov', 'Dec',
+];
 
-String _formatEventDate(DateTime d) {
+String _formatEventDate(DateTime d, bool isBn) {
   final local = d.toLocal();
   final hh = local.hour.toString().padLeft(2, '0');
   final mm = local.minute.toString().padLeft(2, '0');
-  return '${local.day} ${_bnMonths[local.month - 1]} ${local.year}, $hh:$mm';
+  final month = (isBn ? _bnMonths : _enMonths)[local.month - 1];
+  return '${local.day} $month ${local.year}, $hh:$mm';
+}
+
+// Caregiver multi-day range — a day, not a moment, so no time-of-day in the label.
+String _formatDateOnly(DateTime d, bool isBn) {
+  final local = d.toLocal();
+  final month = (isBn ? _bnMonths : _enMonths)[local.month - 1];
+  return '${local.day} $month ${local.year}';
 }
