@@ -201,6 +201,10 @@ class _JobTrackingScreenState extends State<JobTrackingScreen> {
                       _buildMeetLinkCard(_job!),
                       const SizedBox(height: 16),
                     ],
+                    if ((_job!.opinionSummary ?? '').trim().isNotEmpty) ...[
+                      _buildOpinionCard(_job!),
+                      const SizedBox(height: 16),
+                    ],
                     _buildJobDetails(_job!),
                     const SizedBox(height: 16),
                     if (_job!.awaitingQuoteApproval) ...[
@@ -663,6 +667,98 @@ class _JobTrackingScreenState extends State<JobTrackingScreen> {
   // local widget state, which is lost the moment the customer navigates away — leaving them
   // with no way to rejoin the call if they close the app or come back later. This screen
   // (reachable any time via Orders → this job) is the durable, jobId-backed home for it.
+
+  /// The written opinion, which is the whole thing a consultation customer paid for.
+  /// It has been stored on the job since the feature shipped and shown nowhere — after the
+  /// Meet ended the app simply went quiet.
+  Widget _buildOpinionCard(JobModel job) {
+    final summary = (job.opinionSummary ?? '').trim();
+    if (summary.isEmpty) return const SizedBox.shrink();
+    final advice = (job.opinionAdvice ?? '').trim();
+    final steps = (job.opinionNextSteps ?? '').trim();
+
+    Widget section(String labelBn, String labelEn, String value, IconData icon) => Padding(
+          padding: const EdgeInsets.only(top: 14),
+          child: Column(crossAxisAlignment: CrossAxisAlignment.start, children: [
+            Row(children: [
+              Icon(icon, size: 15, color: AppColors.deepBlue),
+              const SizedBox(width: 6),
+              Text(_isBn ? labelBn : labelEn,
+                  style: const TextStyle(
+                      color: AppColors.deepBlue, fontSize: 12, fontWeight: FontWeight.w700)),
+            ]),
+            const SizedBox(height: 5),
+            SelectableText(
+              value,
+              style: const TextStyle(
+                  color: AppColors.textPrimary, fontSize: 14, height: 1.55),
+            ),
+          ]),
+        );
+
+    return GlassCard(
+      padding: const EdgeInsets.all(18),
+      child: Column(crossAxisAlignment: CrossAxisAlignment.start, children: [
+        Row(children: [
+          const Icon(Icons.gavel_rounded, color: AppColors.deepBlue, size: 19),
+          const SizedBox(width: 8),
+          Expanded(
+            child: Text(_isBn ? 'আপনার আইনি পরামর্শ' : 'Your legal opinion',
+                style: const TextStyle(
+                    color: AppColors.textPrimary,
+                    fontSize: 15.5,
+                    fontWeight: FontWeight.w800)),
+          ),
+          if (job.opinionDeliveredAt != null)
+            Text(
+              '${job.opinionDeliveredAt!.toLocal().day}/${job.opinionDeliveredAt!.toLocal().month}',
+              style: const TextStyle(color: AppColors.textMuted, fontSize: 11),
+            ),
+        ]),
+        const SizedBox(height: 2),
+        Text(
+          _isBn
+              ? 'আইনজীবী ${job.providerNameSnapshot ?? ''} এই পরামর্শ দিয়েছেন'.trim()
+              : 'Written by ${job.providerNameSnapshot ?? 'your lawyer'}',
+          style: const TextStyle(color: AppColors.textMuted, fontSize: 11.5),
+        ),
+        section('সারসংক্ষেপ', 'Summary', summary, Icons.summarize_outlined),
+        if (advice.isNotEmpty)
+          section('পরামর্শ', 'Advice', advice, Icons.lightbulb_outline_rounded),
+        if (steps.isNotEmpty)
+          section('পরবর্তী পদক্ষেপ', 'Next steps', steps, Icons.checklist_rounded),
+        const SizedBox(height: 14),
+        Row(children: [
+          Expanded(
+            child: OutlinedButton.icon(
+              onPressed: () {
+                final text = [
+                  _isBn ? 'আইনি পরামর্শ' : 'Legal opinion',
+                  '',
+                  (_isBn ? 'সারসংক্ষেপ: ' : 'Summary: ') + summary,
+                  if (advice.isNotEmpty) (_isBn ? 'পরামর্শ: ' : 'Advice: ') + advice,
+                  if (steps.isNotEmpty) (_isBn ? 'পরবর্তী পদক্ষেপ: ' : 'Next steps: ') + steps,
+                ].join('\n');
+                Clipboard.setData(ClipboardData(text: text));
+                ScaffoldMessenger.of(context).showSnackBar(SnackBar(
+                  content: Text(_isBn ? 'পরামর্শ কপি হয়েছে' : 'Opinion copied',
+                      style: const TextStyle(color: Colors.white)),
+                  backgroundColor: const Color(0xFF10B981),
+                  behavior: SnackBarBehavior.floating,
+                ));
+              },
+              style: OutlinedButton.styleFrom(
+                  side: const BorderSide(color: AppColors.glassBorder)),
+              icon: const Icon(Icons.copy_rounded, size: 15, color: AppColors.textSecondary),
+              label: Text(_isBn ? 'কপি করুন' : 'Copy',
+                  style: const TextStyle(color: AppColors.textSecondary, fontSize: 12)),
+            ),
+          ),
+        ]),
+      ]),
+    );
+  }
+
   Widget _buildMeetLinkCard(JobModel job) {
     final link = job.meetLink!;
     return GlassCard(

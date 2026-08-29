@@ -40,6 +40,14 @@ class JobModel {
       exactLocationHidden; // true → address is coarse + pin fuzzed (pre-accept / not owner)
   final String? meetLink; // lawyer video consultations — Google Meet link
   final String? consultationTiming; // lawyer only — 'instant' | 'schedule'
+
+  // The written opinion a lawyer submits after the Meet. The backend has stored these
+  // since the feature shipped, but the model never read them, so the advice the customer
+  // paid for could not be shown anywhere in the app.
+  final String? opinionSummary;
+  final String? opinionAdvice;
+  final String? opinionNextSteps;
+  final DateTime? opinionDeliveredAt;
   final DateTime?
       scheduledAt; // lawyer schedule-mode — set once a slot is picked
   final String?
@@ -109,6 +117,10 @@ class JobModel {
     this.exactLocationHidden = false,
     this.meetLink,
     this.consultationTiming,
+    this.opinionSummary,
+    this.opinionAdvice,
+    this.opinionNextSteps,
+    this.opinionDeliveredAt,
     this.scheduledAt,
     this.startPhotoUrl,
     this.endPhotoUrl,
@@ -170,6 +182,12 @@ class JobModel {
         exactLocationHidden: json['exactLocationHidden'] == true,
         meetLink: json['meetLink'] as String?,
         consultationTiming: json['consultationTiming'] as String?,
+        opinionSummary: json['opinionSummary'] as String?,
+        opinionAdvice: json['opinionAdvice'] as String?,
+        opinionNextSteps: json['opinionNextSteps'] as String?,
+        opinionDeliveredAt: json['opinionDeliveredAt'] != null
+            ? DateTime.tryParse(json['opinionDeliveredAt'] as String)
+            : null,
         scheduledAt: json['scheduledAt'] != null
             ? DateTime.tryParse(json['scheduledAt'] as String)
             : null,
