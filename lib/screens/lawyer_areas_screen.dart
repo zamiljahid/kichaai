@@ -1,4 +1,7 @@
 import 'package:flutter/material.dart';
+import 'package:provider/provider.dart';
+import '../core/network/api_client.dart';
+import '../core/utils/app_strings.dart';
 import '../services/auth_service.dart';
 import '../services/onboarding_service.dart';
 import '../theme/app_theme.dart';
@@ -21,10 +24,13 @@ class LawyerAreasScreen extends StatefulWidget {
 
 class _LawyerAreasScreenState extends State<LawyerAreasScreen> {
   List<Map<String, dynamic>> _areas = [];
+  List<Map<String, dynamic>> _services = [];
   final Set<String> _selected = {};
+  final Set<String> _selectedServices = {};
   bool _loading = true;
   bool _saving = false;
   String? _error;
+  bool _isBn = true;
 
   @override
   void initState() {
@@ -38,27 +44,29 @@ class _LawyerAreasScreenState extends State<LawyerAreasScreen> {
       _error = null;
     });
     try {
-      final results = await Future.wait([
-        OnboardingService.instance.getLegalOptions(),
-        AuthService.instance.getMeRaw(),
-      ]);
-      if (!mounted) return;
-      final opts = results[0];
-      final me = results[1];
+      final me = await AuthService.instance.getMeRaw();
       final pp = me['providerProfile'];
-      final existing = (pp is Map ? pp['legalAreas'] : null) as List?;
+      final legalRole = pp is Map ? pp['legalRole'] as String? : null;
+      final opts = await OnboardingService.instance.getLegalOptions(role: legalRole);
+      if (!mounted) return;
+      final existingAreas = (pp is Map ? pp['legalAreas'] : null) as List?;
+      final existingServices = (pp is Map ? pp['legalServices'] : null) as List?;
       setState(() {
         _areas = (opts['areas'] as List? ?? []).cast<Map<String, dynamic>>();
+        _services = (opts['services'] as List? ?? []).cast<Map<String, dynamic>>();
         _selected
           ..clear()
-          ..addAll((existing ?? const <dynamic>[]).whereType<String>());
+          ..addAll((existingAreas ?? const <dynamic>[]).whereType<String>());
+        _selectedServices
+          ..clear()
+          ..addAll((existingServices ?? const <dynamic>[]).whereType<String>());
         _loading = false;
       });
     } catch (e) {
       if (mounted) {
         setState(() {
           _loading = false;
-          _error = e.toString();
+          _error = ApiClient.mapError(e).localized(_isBn);
         });
       }
     }
@@ -66,24 +74,33 @@ class _LawyerAreasScreenState extends State<LawyerAreasScreen> {
 
   Future<void> _save() async {
     if (_selected.isEmpty) {
-      _snack('অন্তত একটি এরিয়া নির্বাচন করুন', error: true);
+      _snack(_isBn ? 'অন্তত একটি এরিয়া নির্বাচন করুন' : 'Select at least one area', error: true);
+      return;
+    }
+    if (_selectedServices.isEmpty) {
+      _snack(_isBn ? 'অন্তত একটি সেবা নির্বাচন করুন' : 'Select at least one service', error: true);
       return;
     }
     setState(() => _saving = true);
     try {
-      final persisted =
+      final persistedAreas =
           await AuthService.instance.updateLegalAreas(_selected.toList());
+      final persistedServices =
+          await AuthService.instance.updateLegalServices(_selectedServices.toList());
       if (!mounted) return;
       setState(() {
         _selected
           ..clear()
-          ..addAll(persisted);
+          ..addAll(persistedAreas);
+        _selectedServices
+          ..clear()
+          ..addAll(persistedServices);
         _saving = false;
       });
-      _snack('সংরক্ষিত হয়েছে — ${persisted.length} টি এরিয়া');
+      _snack(_isBn ? 'সংরক্ষিত হয়েছে' : 'Saved');
     } catch (e) {
       if (mounted) setState(() => _saving = false);
-      _snack('সংরক্ষণ ব্যর্থ: $e', error: true);
+      _snack(_isBn ? 'সংরক্ষণ ব্যর্থ: ${ApiClient.mapError(e).localized(_isBn)}' : 'Save failed: ${ApiClient.mapError(e).localized(_isBn)}', error: true);
     }
   }
 
@@ -101,6 +118,7 @@ class _LawyerAreasScreenState extends State<LawyerAreasScreen> {
 
   @override
   Widget build(BuildContext context) {
+    _isBn = context.watch<LanguageNotifier>().isBengali;
     return Scaffold(
       body: AnimatedBackground(
         child: SafeArea(
@@ -125,10 +143,10 @@ class _LawyerAreasScreenState extends State<LawyerAreasScreen> {
                 color: AppColors.textPrimary),
             onPressed: () => Navigator.of(context).pop(),
           ),
-          const Expanded(
+          Expanded(
             child: Text(
-              'আমার প্র্যাকটিস এরিয়া',
-              style: TextStyle(
+              _isBn ? 'আমার প্র্যাকটিস এরিয়া' : 'My Practice Areas',
+              style: const TextStyle(
                   color: AppColors.textPrimary,
                   fontSize: 18,
                   fontWeight: FontWeight.w700),
@@ -154,6 +172,57 @@ class _LawyerAreasScreenState extends State<LawyerAreasScreen> {
     );
   }
 
+  Widget _buildChipWrap(List<Map<String, dynamic>> options, Set<String> selectedSet) {
+    return Wrap(
+      spacing: 8,
+      runSpacing: 8,
+      children: options.map((a) {
+        final code = a['code'] as String? ?? '';
+        final label = (_isBn ? a['bn'] as String? : a['en'] as String?) ?? a['bn'] as String? ?? a['name'] as String? ?? code;
+        final isSelected = selectedSet.contains(code);
+        return GestureDetector(
+          onTap: () => setState(() {
+            if (isSelected) {
+              selectedSet.remove(code);
+            } else {
+              selectedSet.add(code);
+            }
+          }),
+          child: AnimatedContainer(
+            duration: const Duration(milliseconds: 180),
+            padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 9),
+            decoration: BoxDecoration(
+              gradient: isSelected ? AppColors.blueGradient : null,
+              color: isSelected ? null : AppColors.glassWhite,
+              borderRadius: BorderRadius.circular(100),
+              border: Border.all(
+                color: isSelected ? AppColors.deepBlue : AppColors.glassBorder,
+                width: 1.5,
+              ),
+            ),
+            child: Row(
+              mainAxisSize: MainAxisSize.min,
+              children: [
+                if (isSelected) ...[
+                  const Icon(Icons.check_rounded, color: Colors.white, size: 14),
+                  const SizedBox(width: 5),
+                ],
+                Text(
+                  label,
+                  style: TextStyle(
+                    color: isSelected ? Colors.white : AppColors.textSecondary,
+                    fontSize: 13,
+                    fontWeight: FontWeight.w600,
+                  ),
+                ),
+              ],
+            ),
+          ),
+        );
+      }).toList(),
+    );
+  }
+
   Widget _buildBody() {
     if (_loading) {
       return const Center(
@@ -174,7 +243,7 @@ class _LawyerAreasScreenState extends State<LawyerAreasScreen> {
                   style: const TextStyle(color: AppColors.textSecondary)),
               const SizedBox(height: 16),
               GlassButton(
-                  label: 'আবার চেষ্টা করুন', isOutlined: true, onPressed: _load),
+                  label: _isBn ? 'আবার চেষ্টা করুন' : 'Try again', isOutlined: true, onPressed: _load),
             ],
           ),
         ),
@@ -199,10 +268,12 @@ class _LawyerAreasScreenState extends State<LawyerAreasScreen> {
                       color: AppColors.deepBlue, size: 20),
                 ),
                 const SizedBox(width: 12),
-                const Expanded(
+                Expanded(
                   child: Text(
-                    'যেসব বিষয়ে মামলা/পরামর্শ নেন সেগুলো টিক দিন — শুধু এই বিষয়ের অনুরোধই আপনার কাছে যাবে।',
-                    style: TextStyle(
+                    _isBn
+                        ? 'যেসব বিষয়ে মামলা/পরামর্শ নেন সেগুলো টিক দিন — শুধু এই বিষয়ের অনুরোধই আপনার কাছে যাবে।'
+                        : 'Tick the areas you take cases/consultations in — only requests for these will reach you.',
+                    style: const TextStyle(
                         color: AppColors.textSecondary,
                         fontSize: 12.5,
                         height: 1.4),
@@ -215,66 +286,46 @@ class _LawyerAreasScreenState extends State<LawyerAreasScreen> {
         Expanded(
           child: SingleChildScrollView(
             padding: const EdgeInsets.fromLTRB(20, 0, 20, 12),
-            child: Wrap(
-              spacing: 8,
-              runSpacing: 8,
-              children: _areas.map((a) {
-                final code = a['code'] as String? ?? '';
-                final label = a['bn'] as String? ?? a['name'] as String? ?? code;
-                final isSelected = _selected.contains(code);
-                return GestureDetector(
-                  onTap: () => setState(() {
-                    if (isSelected) {
-                      _selected.remove(code);
-                    } else {
-                      _selected.add(code);
-                    }
-                  }),
-                  child: AnimatedContainer(
-                    duration: const Duration(milliseconds: 180),
-                    padding: const EdgeInsets.symmetric(
-                        horizontal: 14, vertical: 9),
-                    decoration: BoxDecoration(
-                      gradient: isSelected ? AppColors.blueGradient : null,
-                      color: isSelected ? null : AppColors.glassWhite,
-                      borderRadius: BorderRadius.circular(100),
-                      border: Border.all(
-                        color: isSelected
-                            ? AppColors.deepBlue
-                            : AppColors.glassBorder,
-                        width: 1.5,
-                      ),
-                    ),
-                    child: Row(
-                      mainAxisSize: MainAxisSize.min,
-                      children: [
-                        if (isSelected) ...[
-                          const Icon(Icons.check_rounded,
-                              color: Colors.white, size: 14),
-                          const SizedBox(width: 5),
-                        ],
-                        Text(
-                          label,
-                          style: TextStyle(
-                            color: isSelected
-                                ? Colors.white
-                                : AppColors.textSecondary,
-                            fontSize: 13,
-                            fontWeight: FontWeight.w600,
-                          ),
-                        ),
-                      ],
-                    ),
-                  ),
-                );
-              }).toList(),
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                Text(
+                  _isBn ? 'বিষয় (এরিয়া)' : 'Areas',
+                  style: const TextStyle(
+                      color: AppColors.textPrimary,
+                      fontSize: 14,
+                      fontWeight: FontWeight.w700),
+                ),
+                const SizedBox(height: 10),
+                _buildChipWrap(_areas, _selected),
+                const SizedBox(height: 22),
+                Text(
+                  _isBn ? 'নির্দিষ্ট সেবা' : 'Specific services',
+                  style: const TextStyle(
+                      color: AppColors.textPrimary,
+                      fontSize: 14,
+                      fontWeight: FontWeight.w700),
+                ),
+                const SizedBox(height: 4),
+                Text(
+                  _isBn
+                      ? 'শুধু টিক দেওয়া সেবার অনুরোধই আপনার কাছে আসবে (যেমন জামিন আবেদন)।'
+                      : 'Only requests for the ticked services will reach you (e.g. bail application).',
+                  style: const TextStyle(
+                      color: AppColors.textSecondary,
+                      fontSize: 12,
+                      height: 1.4),
+                ),
+                const SizedBox(height: 10),
+                _buildChipWrap(_services, _selectedServices),
+              ],
             ),
           ),
         ),
         Padding(
           padding: const EdgeInsets.fromLTRB(20, 6, 20, 16),
           child: GlassButton(
-            label: 'সংরক্ষণ করুন',
+            label: _isBn ? 'সংরক্ষণ করুন' : 'Save',
             icon: Icons.check_rounded,
             isLoading: _saving,
             onPressed: _save,
