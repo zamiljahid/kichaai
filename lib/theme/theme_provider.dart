@@ -2,6 +2,8 @@ import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 
+import 'page_transitions.dart';
+
 // Bundled locally as assets/fonts/NotoSansBengali-Regular.ttf (see pubspec.yaml) instead of
 // google_fonts' runtime CDN fetch — that fetch depends on the VIEWER's browser reaching
 // fonts.googleapis.com at paint time; any network restriction there (corporate firewall, DNS
@@ -75,6 +77,7 @@ class ThemeProvider with ChangeNotifier {
       secondaryHeaderColor: colorScheme.secondaryContainer,
       fontFamily: kBengaliFont,
       textTheme: _textThemeFor(colorScheme),
+      pageTransitionsTheme: kAppPageTransitionsTheme,
       appBarTheme: AppBarTheme(
         backgroundColor: colorScheme.primary,
         foregroundColor: colorScheme.onPrimary,
