@@ -9,6 +9,7 @@ import '../services/messaging_service.dart';
 import '../theme/app_gradients.dart';
 import '../widgets/glass_card.dart';
 import 'chat_screen.dart';
+import '../widgets/custom_bottom_nav.dart';
 
 class MessagesScreen extends StatefulWidget {
   const MessagesScreen({super.key});
@@ -101,6 +102,10 @@ class _MessagesScreenState extends State<MessagesScreen> {
             floating: true,
             snap: true,
             backgroundColor: Colors.transparent,
+            foregroundColor: colors.onSurface,
+            // This bar is transparent over the light canvas, so it must not
+            // inherit the theme's primary-bar rounding or white foreground.
+            shape: const RoundedRectangleBorder(),
             actions: [
               // Global language toggle is in the nav bar — no per-screen chip.
               IconButton(
@@ -123,7 +128,7 @@ class _MessagesScreenState extends State<MessagesScreen> {
                 childCount: _filteredThreads.length,
               ),
             ),
-          const SliverToBoxAdapter(child: SizedBox(height: 100)),
+          SliverToBoxAdapter(child: SizedBox(height: bottomNavClearance(context))),
         ],
       ),
     );

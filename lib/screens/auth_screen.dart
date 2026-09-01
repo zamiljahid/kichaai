@@ -148,27 +148,37 @@ class _AuthScreenState extends State<AuthScreen> with SingleTickerProviderStateM
     final colors = Theme.of(context).colorScheme;
     return Column(
       children: [
+        // The real app logo, not a stand-in Material glyph.
         Container(
-          width: 72,
-          height: 72,
+          width: 88,
+          height: 88,
           decoration: BoxDecoration(
-            gradient: AppGradients.primary(colors),
-            borderRadius: BorderRadius.circular(20),
+            color: colors.surface,
+            shape: BoxShape.circle,
+            border: Border.all(color: colors.primary.withValues(alpha: 0.7), width: 3),
             boxShadow: [
               BoxShadow(
-                color: colors.primary.withOpacity(0.5),
+                color: colors.primary.withValues(alpha: 0.35),
                 blurRadius: 24,
                 offset: const Offset(0, 8),
               ),
             ],
           ),
-          child: Icon(Icons.hub_rounded, color: colors.onPrimary, size: 38),
+          child: ClipOval(
+            child: Padding(
+              padding: const EdgeInsets.all(3),
+              child: Image.asset('assets/images/logo.png', fit: BoxFit.cover),
+            ),
+          ),
         ),
         const SizedBox(height: 12),
         Text(
           'কিচাই',
           style: TextStyle(
-            color: colors.onPrimary,
+            // Was ivory (#FDFBF6) — a near-white sitting directly on the light
+            // canvas, so the wordmark was all but invisible. It is not on the
+            // gradient; that belongs to the sibling logo above it.
+            color: colors.onSurface,
             fontSize: 28,
             fontWeight: FontWeight.w800,
             letterSpacing: 1,
@@ -176,7 +186,7 @@ class _AuthScreenState extends State<AuthScreen> with SingleTickerProviderStateM
         ),
         Text(
           'আপনার বিশ্বস্ত সেবা মার্কেটপ্লেস',
-          style: TextStyle(color: colors.outline, fontSize: 13),
+          style: TextStyle(color: colors.onSurfaceVariant, fontSize: 13),
         ),
       ],
     ).animate().fadeIn(duration: 500.ms).slideY(begin: -0.2);

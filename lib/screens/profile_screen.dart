@@ -34,6 +34,7 @@ import 'technician_specializations_screen.dart';
 import 'referral_screen.dart';
 import 'subscription_screen.dart';
 import 'wallet_screen.dart';
+import '../widgets/custom_bottom_nav.dart';
 
 class ProfileScreen extends StatefulWidget {
   const ProfileScreen({super.key});
@@ -251,6 +252,10 @@ class _ProfileScreenState extends State<ProfileScreen> {
             floating: true,
             snap: true,
             backgroundColor: Colors.transparent,
+            foregroundColor: colors.onSurface,
+            // This bar is transparent over the light canvas, so it must not
+            // inherit the theme's primary-bar rounding or white foreground.
+            shape: const RoundedRectangleBorder(),
           ),
           if (_isLoading)
             SliverToBoxAdapter(child: _buildSkeleton())
@@ -275,7 +280,7 @@ class _ProfileScreenState extends State<ProfileScreen> {
               ),
             ),
             SliverToBoxAdapter(child: _buildDeleteAccount()),
-            const SliverToBoxAdapter(child: SizedBox(height: 100)),
+            SliverToBoxAdapter(child: SizedBox(height: bottomNavClearance(context))),
           ],
         ],
       ),

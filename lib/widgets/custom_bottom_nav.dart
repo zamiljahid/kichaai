@@ -6,6 +6,18 @@ import 'package:provider/provider.dart';
 
 import '../core/utils/app_strings.dart';
 
+/// Total height the floating nav occupies: the 80px pill plus its 8px vertical
+/// margins. The bottom safe-area inset is on top of this, which is why
+/// [bottomNavClearance] exists rather than a bare constant — the nav is taller
+/// than the old one, and screens that scroll under it (extendBody: true) were
+/// clearing it with a hardcoded 100.
+const double kBottomNavHeight = 96;
+
+/// Space a scrolling tab screen must leave at the end of its content so the
+/// last item is not hidden behind the floating nav.
+double bottomNavClearance(BuildContext context) =>
+    kBottomNavHeight + MediaQuery.paddingOf(context).bottom;
+
 /// ki_chai's floating bottom nav: a frosted, primary-tinted pill that page
 /// content scrolls behind, wrapping a [FlashyTabBar] whose selected item drops
 /// its icon and slides the label up under a moving indicator.

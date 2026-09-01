@@ -1,5 +1,4 @@
 import 'package:flutter/material.dart';
-import 'package:flutter/services.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 
 import 'page_transitions.dart';
@@ -93,7 +92,6 @@ class ThemeProvider with ChangeNotifier {
             bottomRight: Radius.circular(30),
           ),
         ),
-        systemOverlayStyle: SystemUiOverlayStyle.light,
         titleTextStyle: TextStyle(
           fontFamily: kBengaliFont,
           color: colorScheme.onPrimary,

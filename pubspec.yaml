@@ -49,10 +49,6 @@ dependencies:
   # custom-scheme link when the app is already installed (Phase 1; real https
   # Android App Links / iOS Universal Links need domain verification, out of scope here).
   app_links: ^6.3.2
-  # ki_chai design-system port: the service grid cards and the splash logo are
-  # Lottie JSON (assets/animations/), not static images. No substitute — this is
-  # the only way to render those files.
-  lottie: ^3.3.1
   # The animated bottom nav from ki_chai: the selected item's icon dissolves and
   # its label slides up under a moving indicator. Pinned to the same 0.0.x the
   # source app uses.
@@ -69,7 +65,6 @@ flutter:
   assets:
     - assets/images/
     - assets/images/services/
-    - assets/animations/
     - assets/sounds/
   # Bundled locally instead of relying on GoogleFonts' runtime CDN fetch — on Flutter Web that
   # fetch depends on the VIEWER's browser reaching fonts.googleapis.com at paint time; any

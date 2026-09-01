@@ -12,6 +12,7 @@ import '../theme/app_gradients.dart';
 import '../widgets/glass_card.dart';
 import 'job_tracking_screen.dart';
 import 'my_match_requests_screen.dart';
+import '../widgets/custom_bottom_nav.dart';
 
 class OrdersScreen extends StatefulWidget {
   const OrdersScreen({super.key});
@@ -137,6 +138,10 @@ class _OrdersScreenState extends State<OrdersScreen> with SingleTickerProviderSt
           SliverAppBar(
             title: Text(_isBn ? 'আমার অর্ডার' : 'My Orders', style: TextStyle(color: colors.onSurface, fontWeight: FontWeight.w700)),
             floating: true, snap: true, backgroundColor: Colors.transparent,
+            foregroundColor: colors.onSurface,
+            // This bar is transparent over the light canvas, so it must not
+            // inherit the theme's primary-bar rounding or white foreground.
+            shape: const RoundedRectangleBorder(),
             bottom: PreferredSize(
               preferredSize: const Size.fromHeight(52),
               child: Padding(
@@ -188,7 +193,7 @@ class _OrdersScreenState extends State<OrdersScreen> with SingleTickerProviderSt
                 ],
                ),
             ),
-          const SliverToBoxAdapter(child: SizedBox(height: 100)),
+          SliverToBoxAdapter(child: SizedBox(height: bottomNavClearance(context))),
         ],
       ),
     );

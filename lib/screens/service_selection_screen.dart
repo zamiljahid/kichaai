@@ -4,7 +4,6 @@ import 'package:provider/provider.dart';
 import '../core/utils/app_strings.dart';
 import '../services/catalog_service.dart';
 import '../widgets/animated_background.dart';
-import '../widgets/service_animation.dart';
 import 'courses_screen.dart';
 import 'grocery_screen.dart';
 import 'job_request_screen.dart';
@@ -16,6 +15,7 @@ import 'provider_browse_screen.dart';
 import 'scrap_screen.dart';
 import 'service_mode_hub_screen.dart';
 import 'skill_share_screen.dart';
+import '../widgets/custom_bottom_nav.dart';
 
 // Same override as home_screen.dart's _catalogCodeFor — these two serviceKind
 // values don't match the catalog's ServiceType.code 1:1.
@@ -144,7 +144,10 @@ class _ServiceSelectionScreenState extends State<ServiceSelectionScreen> {
               _buildHeader(context, isBn),
               Expanded(
                 child: Padding(
-                  padding: const EdgeInsets.fromLTRB(16, 0, 16, 16),
+                  // Clears the floating nav — the grid scrolls under it
+                  // (extendBody: true), so 16 left the last row hidden.
+                  padding: EdgeInsets.fromLTRB(
+                      16, 0, 16, bottomNavClearance(context)),
                   child: GridView.builder(
                     itemCount: visible.length,
                     // Max-extent keeps each card a sensible width on any screen
@@ -211,36 +214,30 @@ class _ServiceSelectionScreenState extends State<ServiceSelectionScreen> {
         padding: const EdgeInsets.all(12),
         child: Row(
           children: [
-            // ki_chai's animated service artwork; the previous tile stays as the
-            // fallback for kinds with no animation.
-            ServiceAnimation(
-              kind: s.serviceKind,
-              size: 46,
-              fallback: Container(
-                width: 46,
-                height: 46,
-                decoration: BoxDecoration(
-                  gradient: s.imagePath == null
-                      ? LinearGradient(
-                          colors: [s.color, Color.lerp(s.color, Colors.black, 0.22)!],
-                          begin: Alignment.topLeft,
-                          end: Alignment.bottomRight,
-                        )
-                      : null,
-                  color: s.imagePath != null ? colors.surface : null,
-                  borderRadius: BorderRadius.circular(14),
-                  border: s.imagePath != null ? Border.all(color: colors.outlineVariant) : null,
-                  boxShadow: s.imagePath == null
-                      ? [BoxShadow(color: s.color.withValues(alpha: 0.4), blurRadius: 10, offset: const Offset(0, 4))]
-                      : null,
-                ),
-                child: s.imagePath != null
-                    ? ClipRRect(
-                        borderRadius: BorderRadius.circular(13),
-                        child: Image.asset(s.imagePath!, fit: BoxFit.cover),
+            Container(
+              width: 46,
+              height: 46,
+              decoration: BoxDecoration(
+                gradient: s.imagePath == null
+                    ? LinearGradient(
+                        colors: [s.color, Color.lerp(s.color, Colors.black, 0.22)!],
+                        begin: Alignment.topLeft,
+                        end: Alignment.bottomRight,
                       )
-                    : Icon(s.icon, color: Colors.white, size: 24),
+                    : null,
+                color: s.imagePath != null ? colors.surface : null,
+                borderRadius: BorderRadius.circular(14),
+                border: s.imagePath != null ? Border.all(color: colors.outlineVariant) : null,
+                boxShadow: s.imagePath == null
+                    ? [BoxShadow(color: s.color.withValues(alpha: 0.4), blurRadius: 10, offset: const Offset(0, 4))]
+                    : null,
               ),
+              child: s.imagePath != null
+                  ? ClipRRect(
+                      borderRadius: BorderRadius.circular(13),
+                      child: Image.asset(s.imagePath!, fit: BoxFit.cover),
+                    )
+                  : Icon(s.icon, color: Colors.white, size: 24),
             ),
             const SizedBox(width: 12),
             Expanded(

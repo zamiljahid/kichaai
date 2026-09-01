@@ -8,7 +8,6 @@ import '../services/catalog_service.dart';
 import '../services/dispatch_service.dart';
 import '../theme/app_gradients.dart';
 import '../widgets/glass_card.dart';
-import '../widgets/service_animation.dart';
 import 'courses_screen.dart';
 import 'grocery_screen.dart';
 import 'job_request_screen.dart';
@@ -23,6 +22,7 @@ import 'scrap_screen.dart';
 import 'service_mode_hub_screen.dart';
 import 'service_selection_screen.dart';
 import 'skill_share_screen.dart';
+import '../widgets/custom_bottom_nav.dart';
 
 class _ServiceItem {
   final String nameBn;
@@ -175,7 +175,7 @@ class _HomeScreenState extends State<HomeScreen> {
                 ? _buildSkeletonProviderRow()
                 : _buildFeaturedProviders(),
           ),
-          const SliverToBoxAdapter(child: SizedBox(height: 100)),
+          SliverToBoxAdapter(child: SizedBox(height: bottomNavClearance(context))),
         ],
       ),
     );
@@ -189,6 +189,8 @@ class _HomeScreenState extends State<HomeScreen> {
       floating: true,
       snap: true,
       backgroundColor: Colors.transparent,
+      foregroundColor: colors.onSurface,
+      shape: const RoundedRectangleBorder(),
       flexibleSpace: FlexibleSpaceBar(
         background: Padding(
           padding: const EdgeInsets.fromLTRB(20, 34, 20, 10),
@@ -499,37 +501,30 @@ class _HomeScreenState extends State<HomeScreen> {
         child: Column(
           mainAxisAlignment: MainAxisAlignment.center,
           children: [
-            // ki_chai's animated service artwork where the kind has one; the
-            // previous image/gradient-icon tile is the fallback for the four
-            // kinds that don't (helping_hand, laundry, cook, commute).
-            ServiceAnimation(
-              kind: item.kind,
-              size: 46,
-              fallback: Container(
-                width: 46,
-                height: 46,
-                decoration: BoxDecoration(
-                  gradient: item.imagePath == null
-                      ? LinearGradient(
-                          colors: [color, Color.lerp(color, Colors.black, 0.22)!],
-                          begin: Alignment.topLeft,
-                          end: Alignment.bottomRight,
-                        )
-                      : null,
-                  color: item.imagePath != null ? colors.surface : null,
-                  borderRadius: BorderRadius.circular(14),
-                  border: item.imagePath != null ? Border.all(color: colors.outlineVariant) : null,
-                  boxShadow: item.imagePath == null
-                      ? [BoxShadow(color: color.withValues(alpha: 0.4), blurRadius: 10, offset: const Offset(0, 4))]
-                      : null,
-                ),
-                child: item.imagePath != null
-                    ? ClipRRect(
-                        borderRadius: BorderRadius.circular(13),
-                        child: Image.asset(item.imagePath!, fit: BoxFit.cover),
+            Container(
+              width: 46,
+              height: 46,
+              decoration: BoxDecoration(
+                gradient: item.imagePath == null
+                    ? LinearGradient(
+                        colors: [color, Color.lerp(color, Colors.black, 0.22)!],
+                        begin: Alignment.topLeft,
+                        end: Alignment.bottomRight,
                       )
-                    : Icon(item.icon, color: Colors.white, size: 23),
+                    : null,
+                color: item.imagePath != null ? colors.surface : null,
+                borderRadius: BorderRadius.circular(14),
+                border: item.imagePath != null ? Border.all(color: colors.outlineVariant) : null,
+                boxShadow: item.imagePath == null
+                    ? [BoxShadow(color: color.withValues(alpha: 0.4), blurRadius: 10, offset: const Offset(0, 4))]
+                    : null,
               ),
+              child: item.imagePath != null
+                  ? ClipRRect(
+                      borderRadius: BorderRadius.circular(13),
+                      child: Image.asset(item.imagePath!, fit: BoxFit.cover),
+                    )
+                  : Icon(item.icon, color: Colors.white, size: 23),
             ),
             const SizedBox(height: 8),
             Text(
