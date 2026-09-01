@@ -4,6 +4,7 @@ import 'package:provider/provider.dart';
 import '../core/network/api_client.dart';
 import '../core/utils/app_strings.dart';
 import '../theme/app_gradients.dart';
+import '../widgets/animated_background.dart';
 
 class PaymentScreen extends StatefulWidget {
   const PaymentScreen({super.key});
@@ -79,7 +80,7 @@ class _PaymentScreenState extends State<PaymentScreen> {
     final colors = Theme.of(context).colorScheme;
     _isBn = context.watch<LanguageNotifier>().isBengali;
     return Scaffold(
-      backgroundColor: colors.surfaceContainerHighest,
+      backgroundColor: Colors.transparent,
       appBar: AppBar(
         backgroundColor: Colors.transparent,
         elevation: 0,
@@ -89,36 +90,38 @@ class _PaymentScreenState extends State<PaymentScreen> {
           onPressed: () => Navigator.pop(context),
         ),
       ),
-      body: _isLoading && _payments.isEmpty
-          ? Center(child: CircularProgressIndicator(color: colors.primary))
-          : _payments.isEmpty
-              ? Center(child: Text(_isBn ? 'কোনো পেমেন্ট নেই' : 'No payments', style: TextStyle(color: colors.outline)))
-              : Column(
-                  children: [
-                    _buildSummaryCard(),
-                    Expanded(
-                      child: RefreshIndicator(
-                        color: colors.primary,
-                        backgroundColor: colors.surface,
-                        onRefresh: () => _load(reset: true),
-                        child: ListView.builder(
-                          controller: _scrollCtrl,
-                          padding: const EdgeInsets.fromLTRB(16, 8, 16, 100),
-                          itemCount: _payments.length + (_hasMore ? 1 : 0),
-                          itemBuilder: (ctx, i) {
-                            if (i == _payments.length) {
-                              return Padding(
-                                padding: EdgeInsets.all(16),
-                                child: Center(child: CircularProgressIndicator(color: colors.primary, strokeWidth: 2)),
-                              );
-                            }
-                            return _buildPaymentTile(_payments[i] as Map<String, dynamic>, i);
-                          },
+      body: AnimatedBackground(
+          child: _isLoading && _payments.isEmpty
+            ? Center(child: CircularProgressIndicator(color: colors.primary))
+            : _payments.isEmpty
+                ? Center(child: Text(_isBn ? 'কোনো পেমেন্ট নেই' : 'No payments', style: TextStyle(color: colors.outline)))
+                : Column(
+                    children: [
+                      _buildSummaryCard(),
+                      Expanded(
+                        child: RefreshIndicator(
+                          color: colors.primary,
+                          backgroundColor: colors.surface,
+                          onRefresh: () => _load(reset: true),
+                          child: ListView.builder(
+                            controller: _scrollCtrl,
+                            padding: const EdgeInsets.fromLTRB(16, 8, 16, 100),
+                            itemCount: _payments.length + (_hasMore ? 1 : 0),
+                            itemBuilder: (ctx, i) {
+                              if (i == _payments.length) {
+                                return Padding(
+                                  padding: EdgeInsets.all(16),
+                                  child: Center(child: CircularProgressIndicator(color: colors.primary, strokeWidth: 2)),
+                                );
+                              }
+                              return _buildPaymentTile(_payments[i] as Map<String, dynamic>, i);
+                            },
+                          ),
                         ),
                       ),
-                    ),
-                  ],
-                ),
+                    ],
+                  ),
+        ),
     );
   }
 
@@ -177,8 +180,15 @@ class _PaymentScreenState extends State<PaymentScreen> {
       padding: const EdgeInsets.all(14),
       decoration: BoxDecoration(
         color: colors.surface,
-        borderRadius: BorderRadius.circular(14),
+        borderRadius: BorderRadius.circular(20),
         border: Border.all(color: colors.outlineVariant),
+        boxShadow: [
+          BoxShadow(
+            color: colors.shadow.withValues(alpha: 0.06),
+            blurRadius: 18,
+            offset: const Offset(0, 8),
+          ),
+        ],
       ),
       child: Row(children: [
         Container(

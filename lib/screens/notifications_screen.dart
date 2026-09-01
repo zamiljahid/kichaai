@@ -9,6 +9,7 @@ import '../models/notification_model.dart';
 import '../services/notification_service.dart';
 import '../services/push_service.dart';
 import 'notification_preferences_screen.dart';
+import '../widgets/animated_background.dart';
 
 // ── Notification Bell Widget ─────────────────────────────────────────────────
 
@@ -66,8 +67,15 @@ class _NotificationBellState extends State<NotificationBell> {
             padding: const EdgeInsets.all(8),
             decoration: BoxDecoration(
               color: colors.surface,
-              borderRadius: BorderRadius.circular(10),
+              borderRadius: BorderRadius.circular(20),
               border: Border.all(color: colors.outlineVariant),
+              boxShadow: [
+                BoxShadow(
+                  color: colors.shadow.withValues(alpha: 0.06),
+                  blurRadius: 18,
+                  offset: const Offset(0, 8),
+                ),
+              ],
             ),
             child: Stack(
               clipBehavior: Clip.none,
@@ -253,7 +261,7 @@ class _NotificationListScreenState extends State<NotificationListScreen> {
     final colors = Theme.of(context).colorScheme;
     _isBn = context.watch<LanguageNotifier>().isBengali;
     return Scaffold(
-      backgroundColor: colors.surfaceContainerHighest,
+      backgroundColor: Colors.transparent,
       appBar: AppBar(
         backgroundColor: Colors.transparent,
         elevation: 0,
@@ -274,29 +282,31 @@ class _NotificationListScreenState extends State<NotificationListScreen> {
           ),
         ],
       ),
-      body: _isLoading && _notifications.isEmpty
-          ? Center(child: CircularProgressIndicator(color: colors.primary))
-          : _notifications.isEmpty
-              ? _buildEmpty()
-              : RefreshIndicator(
-                  color: colors.primary,
-                  backgroundColor: colors.surface,
-                  onRefresh: () => _loadNotifications(reset: true),
-                  child: ListView.builder(
-                    controller: _scrollController,
-                    padding: const EdgeInsets.fromLTRB(16, 8, 16, 100),
-                    itemCount: _notifications.length + (_hasMore ? 1 : 0),
-                    itemBuilder: (ctx, i) {
-                      if (i == _notifications.length) {
-                        return Center(child: Padding(
-                          padding: EdgeInsets.all(16),
-                          child: CircularProgressIndicator(color: colors.primary, strokeWidth: 2),
-                        ));
-                      }
-                      return _buildTile(_notifications[i], i);
-                    },
+      body: AnimatedBackground(
+          child: _isLoading && _notifications.isEmpty
+            ? Center(child: CircularProgressIndicator(color: colors.primary))
+            : _notifications.isEmpty
+                ? _buildEmpty()
+                : RefreshIndicator(
+                    color: colors.primary,
+                    backgroundColor: colors.surface,
+                    onRefresh: () => _loadNotifications(reset: true),
+                    child: ListView.builder(
+                      controller: _scrollController,
+                      padding: const EdgeInsets.fromLTRB(16, 8, 16, 100),
+                      itemCount: _notifications.length + (_hasMore ? 1 : 0),
+                      itemBuilder: (ctx, i) {
+                        if (i == _notifications.length) {
+                          return Center(child: Padding(
+                            padding: EdgeInsets.all(16),
+                            child: CircularProgressIndicator(color: colors.primary, strokeWidth: 2),
+                          ));
+                        }
+                        return _buildTile(_notifications[i], i);
+                      },
+                    ),
                   ),
-                ),
+        ),
     );
   }
 

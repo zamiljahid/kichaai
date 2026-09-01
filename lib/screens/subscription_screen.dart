@@ -7,6 +7,7 @@ import '../core/utils/app_strings.dart';
 import '../widgets/glass_button.dart';
 import '../widgets/policy_agreement_checkbox.dart';
 import 'payment_waiting_screen.dart';
+import '../widgets/animated_background.dart';
 
 class SubscriptionScreen extends StatefulWidget {
   const SubscriptionScreen({super.key});
@@ -181,7 +182,7 @@ class _SubscriptionScreenState extends State<SubscriptionScreen> {
     final currentPlan = _subscription?['plan'] as String? ?? 'FREE';
 
     return Scaffold(
-      backgroundColor: colors.surfaceContainerHighest,
+      backgroundColor: Colors.transparent,
       appBar: AppBar(
         backgroundColor: Colors.transparent,
         elevation: 0,
@@ -191,33 +192,35 @@ class _SubscriptionScreenState extends State<SubscriptionScreen> {
           onPressed: () => Navigator.pop(context),
         ),
       ),
-      body: _isLoading
-          ? Center(child: CircularProgressIndicator(color: colors.primary))
-          : ListView(
-              padding: const EdgeInsets.fromLTRB(16, 12, 16, 100),
-              children: [
-                _buildCurrentCard(currentPlan),
-                const SizedBox(height: 24),
-                Text(_isBn ? 'প্ল্যান তুলনা' : 'Compare plans', style: TextStyle(color: colors.outline, fontSize: 12, fontWeight: FontWeight.w600, letterSpacing: 1)),
-                const SizedBox(height: 12),
-                ..._plans.asMap().entries.map((entry) {
-                  final i = entry.key;
-                  final p = entry.value;
-                  final plan = p['plan'] as String;
-                  final price = p['price'] as int;
-                  final features = (p[_isBn ? 'featuresBn' : 'featuresEn'] as List).cast<String>();
-                  final isCurrent = plan == currentPlan;
-                  return _buildPlanCard(plan, price, features, isCurrent, i);
-                }),
-                if (currentPlan != 'FREE') ...[
-                  const SizedBox(height: 16),
-                  TextButton(
-                    onPressed: _cancel,
-                    child: Text(_isBn ? 'সাবস্ক্রিপশন বাতিল করুন' : 'Cancel subscription', style: const TextStyle(color: Color(0xFFEF4444), fontSize: 13)),
-                  ),
+      body: AnimatedBackground(
+          child: _isLoading
+            ? Center(child: CircularProgressIndicator(color: colors.primary))
+            : ListView(
+                padding: const EdgeInsets.fromLTRB(16, 12, 16, 100),
+                children: [
+                  _buildCurrentCard(currentPlan),
+                  const SizedBox(height: 24),
+                  Text(_isBn ? 'প্ল্যান তুলনা' : 'Compare plans', style: TextStyle(color: colors.outline, fontSize: 12, fontWeight: FontWeight.w600, letterSpacing: 1)),
+                  const SizedBox(height: 12),
+                  ..._plans.asMap().entries.map((entry) {
+                    final i = entry.key;
+                    final p = entry.value;
+                    final plan = p['plan'] as String;
+                    final price = p['price'] as int;
+                    final features = (p[_isBn ? 'featuresBn' : 'featuresEn'] as List).cast<String>();
+                    final isCurrent = plan == currentPlan;
+                    return _buildPlanCard(plan, price, features, isCurrent, i);
+                  }),
+                  if (currentPlan != 'FREE') ...[
+                    const SizedBox(height: 16),
+                    TextButton(
+                      onPressed: _cancel,
+                      child: Text(_isBn ? 'সাবস্ক্রিপশন বাতিল করুন' : 'Cancel subscription', style: const TextStyle(color: Color(0xFFEF4444), fontSize: 13)),
+                    ),
+                  ],
                 ],
-              ],
-            ),
+              ),
+        ),
     );
   }
 

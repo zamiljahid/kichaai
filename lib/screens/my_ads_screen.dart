@@ -4,6 +4,8 @@ import '../core/network/api_client.dart';
 import '../core/utils/app_strings.dart';
 import '../models/property_model.dart';
 import 'post_mess_screen.dart';
+import '../widgets/animated_background.dart';
+import 'package:flutter_animate/flutter_animate.dart';
 
 /// "আমার বিজ্ঞাপন" — every mess/house listing the logged-in user has posted.
 /// Edit, delete, or temporarily hide (isActive=false, the "seats full" case).
@@ -119,7 +121,7 @@ class _MyAdsScreenState extends State<MyAdsScreen> {
     final colors = Theme.of(context).colorScheme;
     _isBn = context.watch<LanguageNotifier>().isBengali;
     return Scaffold(
-      backgroundColor: colors.surfaceContainerHighest,
+      backgroundColor: Colors.transparent,
       appBar: AppBar(
         backgroundColor: Colors.transparent,
         elevation: 0,
@@ -130,7 +132,9 @@ class _MyAdsScreenState extends State<MyAdsScreen> {
           onPressed: () => Navigator.pop(context),
         ),
       ),
-      body: _body(),
+      body: AnimatedBackground(
+          child: _body(),
+        ),
       floatingActionButton: FloatingActionButton.extended(
         onPressed: () => _openPost(),
         backgroundColor: colors.primary,
@@ -182,7 +186,10 @@ class _MyAdsScreenState extends State<MyAdsScreen> {
       child: ListView.builder(
         padding: const EdgeInsets.fromLTRB(16, 4, 16, 96),
         itemCount: _ads.length,
-        itemBuilder: (_, i) => _adCard(_ads[i]),
+        itemBuilder: (_, i) => _adCard(_ads[i])
+            .animate(delay: (40 * i).ms)
+            .fadeIn(duration: 280.ms)
+            .slideY(begin: 0.12, curve: Curves.easeOutCubic),
       ),
     );
   }
@@ -214,6 +221,13 @@ class _MyAdsScreenState extends State<MyAdsScreen> {
         color: colors.surface,
         borderRadius: BorderRadius.circular(18),
         border: Border.all(color: colors.outlineVariant),
+        boxShadow: [
+          BoxShadow(
+            color: colors.shadow.withValues(alpha: 0.06),
+            blurRadius: 18,
+            offset: const Offset(0, 8),
+          ),
+        ],
       ),
       child: Column(children: [
         Padding(

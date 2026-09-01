@@ -10,6 +10,7 @@ import '../services/dispatch_service.dart';
 import '../services/onboarding_service.dart';
 import '../widgets/provider_completeness_gate.dart';
 import 'gender_screen.dart';
+import '../widgets/animated_background.dart';
 
 class ProviderOnlineScreen extends StatefulWidget {
   const ProviderOnlineScreen({super.key});
@@ -261,7 +262,7 @@ class _ProviderOnlineScreenState extends State<ProviderOnlineScreen> {
     final colors = Theme.of(context).colorScheme;
     _isBn = context.watch<LanguageNotifier>().isBengali;
     return Scaffold(
-      backgroundColor: colors.surfaceContainerHighest,
+      backgroundColor: Colors.transparent,
       appBar: AppBar(
         backgroundColor: Colors.transparent,
         elevation: 0,
@@ -271,25 +272,27 @@ class _ProviderOnlineScreenState extends State<ProviderOnlineScreen> {
           onPressed: () => Navigator.pop(context),
         ),
       ),
-      body: SingleChildScrollView(
-        padding: const EdgeInsets.all(24),
-        child: Column(
-          children: [
-            const SizedBox(height: 24),
-            _buildToggle(),
-            const SizedBox(height: 32),
-            if (!_isOnline) ...[
-              _buildServiceSelector(),
+      body: AnimatedBackground(
+          child: SingleChildScrollView(
+          padding: const EdgeInsets.all(24),
+          child: Column(
+            children: [
               const SizedBox(height: 24),
+              _buildToggle(),
+              const SizedBox(height: 32),
+              if (!_isOnline) ...[
+                _buildServiceSelector(),
+                const SizedBox(height: 24),
+              ],
+              if (_isOnline) _buildSessionInfo(),
+              if (_sessionSummary != null) ...[
+                const SizedBox(height: 24),
+                _buildSessionSummary(),
+              ],
             ],
-            if (_isOnline) _buildSessionInfo(),
-            if (_sessionSummary != null) ...[
-              const SizedBox(height: 24),
-              _buildSessionSummary(),
-            ],
-          ],
+          ),
         ),
-      ),
+        ),
     );
   }
 
@@ -351,6 +354,13 @@ class _ProviderOnlineScreenState extends State<ProviderOnlineScreen> {
         color: colors.surface,
         borderRadius: BorderRadius.circular(16),
         border: Border.all(color: colors.outlineVariant),
+        boxShadow: [
+          BoxShadow(
+            color: colors.shadow.withValues(alpha: 0.06),
+            blurRadius: 18,
+            offset: const Offset(0, 8),
+          ),
+        ],
       ),
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
@@ -426,6 +436,13 @@ class _ProviderOnlineScreenState extends State<ProviderOnlineScreen> {
         color: colors.surface,
         borderRadius: BorderRadius.circular(16),
         border: Border.all(color: colors.outlineVariant),
+        boxShadow: [
+          BoxShadow(
+            color: colors.shadow.withValues(alpha: 0.06),
+            blurRadius: 18,
+            offset: const Offset(0, 8),
+          ),
+        ],
       ),
       child: Column(crossAxisAlignment: CrossAxisAlignment.start, children: [
         Text(_isBn ? 'সেশন সারাংশ' : 'Session Summary', style: TextStyle(color: colors.outline, fontSize: 12, fontWeight: FontWeight.w600)),

@@ -10,6 +10,7 @@ import '../core/utils/app_strings.dart';
 import '../services/onboarding_service.dart';
 import '../services/auth_service.dart';
 import '../widgets/availability_calendar.dart';
+import '../widgets/animated_background.dart';
 
 class PortfolioScreen extends StatefulWidget {
   const PortfolioScreen({super.key});
@@ -226,7 +227,7 @@ class _PortfolioScreenState extends State<PortfolioScreen> {
     final colors = Theme.of(context).colorScheme;
     _isBn = context.watch<LanguageNotifier>().isBengali;
     return Scaffold(
-      backgroundColor: colors.surfaceContainerHighest,
+      backgroundColor: Colors.transparent,
       appBar: AppBar(
         backgroundColor: Colors.transparent,
         elevation: 0,
@@ -236,31 +237,33 @@ class _PortfolioScreenState extends State<PortfolioScreen> {
           onPressed: () => Navigator.pop(context),
         ),
       ),
-      body: _isLoading
-          ? Center(child: CircularProgressIndicator(color: colors.primary))
-          : RefreshIndicator(
-              color: colors.primary,
-              backgroundColor: colors.surface,
-              onRefresh: _init,
-              child: ListView(
-                padding: const EdgeInsets.fromLTRB(16, 12, 16, 100),
-                children: [
-                  _buildHeaderCard(),
-                  const SizedBox(height: 20),
-                  Text(_isBn ? 'কাজের নমুনা (পোর্টফোলিও)' : 'Work Samples (Portfolio)',
-                      style: TextStyle(color: colors.onSurface, fontSize: 14, fontWeight: FontWeight.w700)),
-                  const SizedBox(height: 10),
-                  _buildPortfolioGrid(),
-                  if (_userId != null) ...[
-                    const SizedBox(height: 24),
-                    Text(_isBn ? 'আসন্ন সময়সূচী' : 'Upcoming Schedule',
+      body: AnimatedBackground(
+          child: _isLoading
+            ? Center(child: CircularProgressIndicator(color: colors.primary))
+            : RefreshIndicator(
+                color: colors.primary,
+                backgroundColor: colors.surface,
+                onRefresh: _init,
+                child: ListView(
+                  padding: const EdgeInsets.fromLTRB(16, 12, 16, 100),
+                  children: [
+                    _buildHeaderCard(),
+                    const SizedBox(height: 20),
+                    Text(_isBn ? 'কাজের নমুনা (পোর্টফোলিও)' : 'Work Samples (Portfolio)',
                         style: TextStyle(color: colors.onSurface, fontSize: 14, fontWeight: FontWeight.w700)),
                     const SizedBox(height: 10),
-                    AvailabilityCalendar(providerId: _userId!, interactive: true),
+                    _buildPortfolioGrid(),
+                    if (_userId != null) ...[
+                      const SizedBox(height: 24),
+                      Text(_isBn ? 'আসন্ন সময়সূচী' : 'Upcoming Schedule',
+                          style: TextStyle(color: colors.onSurface, fontSize: 14, fontWeight: FontWeight.w700)),
+                      const SizedBox(height: 10),
+                      AvailabilityCalendar(providerId: _userId!, interactive: true),
+                    ],
                   ],
-                ],
+                ),
               ),
-            ),
+        ),
       floatingActionButton: _isUploading
           ? FloatingActionButton(
               onPressed: null,
@@ -283,6 +286,13 @@ class _PortfolioScreenState extends State<PortfolioScreen> {
         color: colors.surface,
         borderRadius: BorderRadius.circular(16),
         border: Border.all(color: colors.outlineVariant, width: 1.2),
+        boxShadow: [
+          BoxShadow(
+            color: colors.shadow.withValues(alpha: 0.06),
+            blurRadius: 18,
+            offset: const Offset(0, 8),
+          ),
+        ],
       ),
       child: Row(
         children: [
@@ -316,6 +326,13 @@ class _PortfolioScreenState extends State<PortfolioScreen> {
                           color: colors.surface,
                           borderRadius: BorderRadius.circular(6),
                           border: Border.all(color: colors.outlineVariant),
+                          boxShadow: [
+                            BoxShadow(
+                              color: colors.shadow.withValues(alpha: 0.06),
+                              blurRadius: 18,
+                              offset: const Offset(0, 8),
+                            ),
+                          ],
                         ),
                         child: Text(_level!, style: TextStyle(color: colors.outline, fontSize: 10, fontWeight: FontWeight.w600)),
                       ),

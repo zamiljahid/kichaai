@@ -8,6 +8,7 @@ import '../core/utils/app_strings.dart';
 import '../services/dispatch_service.dart';
 import '../services/scrap_service.dart';
 import '../widgets/glass_button.dart';
+import '../widgets/animated_background.dart';
 
 // ---------------------------------------------------------------------------
 // Screen
@@ -241,7 +242,7 @@ class _ScrapScreenState extends State<ScrapScreen>
     final colors = Theme.of(context).colorScheme;
     _isBn = context.watch<LanguageNotifier>().isBengali;
     return Scaffold(
-      backgroundColor: colors.surfaceContainerHighest,
+      backgroundColor: Colors.transparent,
       appBar: AppBar(
         backgroundColor: colors.surface,
         elevation: 0,
@@ -261,10 +262,12 @@ class _ScrapScreenState extends State<ScrapScreen>
           tabs: [Tab(text: _isBn ? 'নতুন অনুরোধ' : 'New Request'), Tab(text: _isBn ? 'আমার অনুরোধ' : 'My Requests')],
         ),
       ),
-      body: TabBarView(
-        controller: _tabController,
-        children: [_buildNewRequestTab(), _buildMyRequestsTab()],
-      ),
+      body: AnimatedBackground(
+          child: TabBarView(
+          controller: _tabController,
+          children: [_buildNewRequestTab(), _buildMyRequestsTab()],
+        ),
+        ),
     );
   }
 
@@ -464,6 +467,13 @@ class _ScrapScreenState extends State<ScrapScreen>
           color: colors.surface,
           borderRadius: BorderRadius.circular(16),
           border: Border.all(color: colors.outlineVariant),
+          boxShadow: [
+            BoxShadow(
+              color: colors.shadow.withValues(alpha: 0.06),
+              blurRadius: 18,
+              offset: const Offset(0, 8),
+            ),
+          ],
         ),
         child: Row(
           children: [
@@ -502,7 +512,10 @@ class _ScrapScreenState extends State<ScrapScreen>
       child: ListView.builder(
         padding: const EdgeInsets.fromLTRB(16, 16, 16, 40),
         itemCount: _myRequests.length,
-        itemBuilder: (ctx, i) => _buildRequestCard(_myRequests[i], i),
+        itemBuilder: (ctx, i) => _buildRequestCard(_myRequests[i], i)
+            .animate(delay: (40 * i).ms)
+            .fadeIn(duration: 280.ms)
+            .slideY(begin: 0.12, curve: Curves.easeOutCubic),
       ),
     ).animate().fadeIn(duration: 350.ms);
   }

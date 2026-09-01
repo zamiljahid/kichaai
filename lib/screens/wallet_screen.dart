@@ -7,6 +7,7 @@ import '../core/utils/app_strings.dart';
 import '../services/finance_service.dart';
 import '../theme/app_gradients.dart';
 import '../widgets/glass_button.dart';
+import '../widgets/animated_background.dart';
 
 class WalletScreen extends StatefulWidget {
   const WalletScreen({super.key});
@@ -209,7 +210,7 @@ class _WalletScreenState extends State<WalletScreen> with SingleTickerProviderSt
     final colors = Theme.of(context).colorScheme;
     _isBn = context.watch<LanguageNotifier>().isBengali;
     return Scaffold(
-      backgroundColor: colors.surfaceContainerHighest,
+      backgroundColor: Colors.transparent,
       appBar: AppBar(
         backgroundColor: Colors.transparent,
         elevation: 0,
@@ -226,24 +227,26 @@ class _WalletScreenState extends State<WalletScreen> with SingleTickerProviderSt
           tabs: [Tab(text: _isBn ? 'লেনদেন' : 'Transactions'), Tab(text: _isBn ? 'পেআউট' : 'Payouts')],
         ),
       ),
-      body: _isLoading
-          ? Center(child: CircularProgressIndicator(color: colors.primary))
-          : _providerId == null
-              ? Center(child: Text(_isBn ? 'প্রোভাইডার একাউন্ট প্রয়োজন' : 'Provider account required', style: TextStyle(color: colors.outline)))
-              : Column(
-                  children: [
-                    _buildBalanceCard(),
-                    Expanded(
-                      child: TabBarView(
-                        controller: _tabController,
-                        children: [
-                          _buildTransactionList(),
-                          _buildPayoutList(),
-                        ],
+      body: AnimatedBackground(
+          child: _isLoading
+            ? Center(child: CircularProgressIndicator(color: colors.primary))
+            : _providerId == null
+                ? Center(child: Text(_isBn ? 'প্রোভাইডার একাউন্ট প্রয়োজন' : 'Provider account required', style: TextStyle(color: colors.outline)))
+                : Column(
+                    children: [
+                      _buildBalanceCard(),
+                      Expanded(
+                        child: TabBarView(
+                          controller: _tabController,
+                          children: [
+                            _buildTransactionList(),
+                            _buildPayoutList(),
+                          ],
+                        ),
                       ),
-                    ),
-                  ],
-                ),
+                    ],
+                  ),
+        ),
       floatingActionButton: _providerId == null ? null : FloatingActionButton.extended(
         onPressed: _showPayoutSheet,
         backgroundColor: colors.primary,
@@ -303,8 +306,15 @@ class _WalletScreenState extends State<WalletScreen> with SingleTickerProviderSt
             padding: const EdgeInsets.all(14),
             decoration: BoxDecoration(
               color: colors.surface,
-              borderRadius: BorderRadius.circular(14),
+              borderRadius: BorderRadius.circular(20),
               border: Border.all(color: colors.outlineVariant),
+              boxShadow: [
+                BoxShadow(
+                  color: colors.shadow.withValues(alpha: 0.06),
+                  blurRadius: 18,
+                  offset: const Offset(0, 8),
+                ),
+              ],
             ),
             child: Row(
               children: [
@@ -365,8 +375,15 @@ class _WalletScreenState extends State<WalletScreen> with SingleTickerProviderSt
           padding: const EdgeInsets.all(14),
           decoration: BoxDecoration(
             color: colors.surface,
-            borderRadius: BorderRadius.circular(14),
+            borderRadius: BorderRadius.circular(20),
             border: Border.all(color: colors.outlineVariant),
+            boxShadow: [
+              BoxShadow(
+                color: colors.shadow.withValues(alpha: 0.06),
+                blurRadius: 18,
+                offset: const Offset(0, 8),
+              ),
+            ],
           ),
           child: Row(
             children: [
