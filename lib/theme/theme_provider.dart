@@ -29,7 +29,11 @@ enum AppThemeColor {
 /// The persisted shape of the user's theme settings, read once before the first
 /// frame so the app never paints one theme and then snaps to another.
 class ThemeSettings {
-  const ThemeSettings({this.color, this.mode = ThemeMode.system});
+  // Defaults to light, NOT system. The dark theme is complete and reachable
+  // from the theme picker, but ~80 screens have never been looked at in dark —
+  // following the device setting would ship that to every user with dark mode
+  // on, immediately. Flip this to ThemeMode.system once dark is audited.
+  const ThemeSettings({this.color, this.mode = ThemeMode.light});
   final AppThemeColor? color;
   final ThemeMode mode;
 }
@@ -81,10 +85,12 @@ class ThemeProvider with ChangeNotifier {
     }
   }
 
+  /// An explicit stored choice — including 'system' — is honoured. Only the
+  /// absence of one falls back to light.
   static ThemeMode _modeFromName(String? name) => switch (name) {
-        'light' => ThemeMode.light,
         'dark' => ThemeMode.dark,
-        _ => ThemeMode.system,
+        'system' => ThemeMode.system,
+        _ => ThemeMode.light,
       };
 
   /// Sets an explicit colour, or clears back to the role default with null.

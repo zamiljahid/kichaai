@@ -49,10 +49,16 @@ void main() {
     test('theme mode round-trips', () async {
       SharedPreferences.setMockInitialValues({});
       final p = ThemeProvider();
-      expect(p.themeMode, ThemeMode.system);
+      // Light by default until dark has been audited across every screen.
+      expect(p.themeMode, ThemeMode.light);
 
       await p.setThemeMode(ThemeMode.dark);
       expect((await ThemeProvider.loadPersisted()).mode, ThemeMode.dark);
+
+      // An explicit 'system' choice is still honoured — only the absence of a
+      // stored value falls back to light.
+      await p.setThemeMode(ThemeMode.system);
+      expect((await ThemeProvider.loadPersisted()).mode, ThemeMode.system);
     });
   });
 
