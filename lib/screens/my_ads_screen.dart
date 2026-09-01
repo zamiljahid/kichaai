@@ -226,10 +226,10 @@ class _MyAdsScreenState extends State<MyAdsScreen> {
                 child: ad.photosUrls.isNotEmpty
                     ? Image.network(ad.photosUrls.first, fit: BoxFit.cover,
                         errorBuilder: (_, __, ___) => ColoredBox(
-                            color: Color(0xFFEDE8DE),
+                            color: colors.surfaceContainerHighest,
                             child: Icon(Icons.home_work_rounded, color: colors.outline)))
                     : ColoredBox(
-                        color: Color(0xFFEDE8DE),
+                        color: colors.surfaceContainerHighest,
                         child: Icon(Icons.home_work_rounded, color: colors.outline)),
               ),
             ),

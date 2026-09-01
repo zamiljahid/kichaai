@@ -91,7 +91,7 @@ class _MessScreenState extends State<MessScreen> {
     final tp = TextPainter(
       text: TextSpan(text: text, style: TextStyle(
         fontSize: 10.5 * scale, fontWeight: FontWeight.w700,
-        color: selected ? colors.primary : const Color(0xFF222222))),
+        color: selected ? colors.primary : colors.onSurface)),
       textDirection: TextDirection.ltr,
     )..layout();
     final padH = 9.0 * scale, padV = 5.0 * scale;
@@ -804,9 +804,9 @@ class _MessScreenState extends State<MessScreen> {
                     top: 6, left: 6,
                     child: Container(
                       padding: const EdgeInsets.symmetric(horizontal: 6, vertical: 2.5),
-                      decoration: BoxDecoration(color: Colors.white, borderRadius: BorderRadius.circular(20)),
+                      decoration: BoxDecoration(color: colors.surface, borderRadius: BorderRadius.circular(20)),
                       child: Text('${m.distanceKm!.toStringAsFixed(1)}${_isBn ? " কিমি" : " km"}',
-                          style: const TextStyle(color: Color(0xFF222222), fontSize: 9, fontWeight: FontWeight.w700)),
+                          style: TextStyle(color: colors.onSurface, fontSize: 9, fontWeight: FontWeight.w700)),
                     ),
                   ),
               ],
@@ -1065,7 +1065,7 @@ class _MessPhotosState extends State<_MessPhotos> {
   Widget build(BuildContext context) {
     final colors = Theme.of(context).colorScheme;
     if (widget.photos.isEmpty) {
-      return Container(color: const Color(0xFFEDE8DE), child: Center(child: Icon(Icons.home_work_rounded, color: colors.outline, size: 44)));
+      return Container(color: colors.surfaceContainerHighest, child: Center(child: Icon(Icons.home_work_rounded, color: colors.outline, size: 44)));
     }
     return Stack(fit: StackFit.expand, children: [
       PageView.builder(
@@ -1073,7 +1073,7 @@ class _MessPhotosState extends State<_MessPhotos> {
         onPageChanged: (i) => setState(() => _page = i),
         itemCount: widget.photos.length,
         itemBuilder: (_, i) => Image.network(widget.photos[i], fit: BoxFit.cover,
-            errorBuilder: (_, __, ___) => Container(color: const Color(0xFFEDE8DE), child: Icon(Icons.home_work_rounded, color: colors.outline, size: 40))),
+            errorBuilder: (_, __, ___) => Container(color: colors.surfaceContainerHighest, child: Icon(Icons.home_work_rounded, color: colors.outline, size: 40))),
       ),
       if (widget.dots && widget.photos.length > 1)
         Positioned(

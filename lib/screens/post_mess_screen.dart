@@ -698,7 +698,7 @@ class _PostPropertyScreenState extends State<PostPropertyScreen> {
         for (var i = 0; i < _existingPhotos.length; i++)
           _thumb(
             Image.network(_existingPhotos[i], fit: BoxFit.cover,
-                errorBuilder: (_, __, ___) => const ColoredBox(color: Color(0xFFEDE8DE))),
+                errorBuilder: (_, __, ___) => ColoredBox(color: colors.surfaceContainerHighest)),
             () => setState(() => _existingPhotos.removeAt(i)),
           ),
         for (var i = 0; i < _newPhotos.length; i++)
