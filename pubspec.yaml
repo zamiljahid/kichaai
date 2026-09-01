@@ -81,4 +81,11 @@ flutter_launcher_icons:
   android: true
   ios: true
   image_path: "assets/images/logo.png"
+  # iOS rejects an icon with an alpha channel at submission.
   remove_alpha_ios: true
+  # Adaptive icons — neither this app nor ki_chai had any, so on Android 8+ the
+  # launcher was falling back to the legacy bitmap and shrinking it inside a
+  # system-drawn shape. Background is the splash tone so the icon, the native
+  # splash and the first Flutter frame all agree.
+  adaptive_icon_background: "#E9DDFF"
+  adaptive_icon_foreground: "assets/images/logo.png"

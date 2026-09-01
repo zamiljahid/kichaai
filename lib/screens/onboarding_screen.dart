@@ -111,50 +111,83 @@ class _OnboardingScreenState extends State<OnboardingScreen> {
       child: Column(
         mainAxisAlignment: MainAxisAlignment.center,
         children: [
-          Container(
-            width: 130,
-            height: 130,
-            decoration: BoxDecoration(
-              shape: BoxShape.circle,
-              gradient: LinearGradient(
-                colors: [data.color, data.color.withOpacity(0.6)],
-                begin: Alignment.topLeft,
-                end: Alignment.bottomRight,
-              ),
-              boxShadow: [
-                BoxShadow(
-                  color: data.color.withOpacity(0.5),
-                  blurRadius: 40,
-                  offset: const Offset(0, 15),
+          // ki_chai's stacked concentric-ring treatment, the same one the
+          // splash uses for the logo: a soft container disc, a heavy primary
+          // ring, then the artwork on a raised surface plate.
+          Stack(
+            alignment: Alignment.center,
+            children: [
+              Container(
+                width: 138,
+                height: 138,
+                decoration: BoxDecoration(
+                  shape: BoxShape.circle,
+                  color: colors.primaryContainer,
+                  boxShadow: [
+                    BoxShadow(
+                      color: data.color.withValues(alpha: 0.28),
+                      offset: const Offset(8, 8),
+                      blurRadius: 18,
+                    ),
+                    BoxShadow(
+                      color: colors.surface.withValues(alpha: 0.5),
+                      offset: const Offset(-8, -8),
+                      blurRadius: 18,
+                    ),
+                  ],
                 ),
-              ],
-            ),
-            child: Icon(data.icon, color: colors.onPrimary, size: 64),
+              ),
+              Container(
+                width: 138,
+                height: 138,
+                decoration: BoxDecoration(
+                  shape: BoxShape.circle,
+                  border: Border.all(
+                    color: data.color.withValues(alpha: 0.7),
+                    width: 7,
+                  ),
+                ),
+              ),
+              Container(
+                width: 116,
+                height: 116,
+                decoration: BoxDecoration(
+                  shape: BoxShape.circle,
+                  gradient: LinearGradient(
+                    begin: Alignment.topLeft,
+                    end: Alignment.bottomRight,
+                    colors: [data.color, colors.primaryContainer],
+                  ),
+                ),
+                child: Icon(data.icon, color: colors.onPrimary, size: 56),
+              ),
+            ],
           )
               .animate(key: ValueKey(data.title))
               .scale(duration: 500.ms, curve: Curves.elasticOut)
               .fadeIn(),
           const SizedBox(height: 40),
           GlassCard(
+            borderRadius: 24,
             child: Column(
               children: [
                 Text(
                   isBn ? data.title : data.titleEn,
-                  style: TextStyle(
-                    color: colors.onSurface,
-                    fontSize: 26,
-                    fontWeight: FontWeight.w700,
-                  ),
+                  // Theme scale rather than an inline size, so the heading
+                  // tracks the design system like every other screen.
+                  style: Theme.of(context).textTheme.headlineLarge?.copyWith(
+                        fontWeight: FontWeight.w800,
+                        letterSpacing: -0.4,
+                      ),
                   textAlign: TextAlign.center,
                 ),
-                const SizedBox(height: 16),
+                const SizedBox(height: 14),
                 Text(
                   isBn ? data.desc : data.descEn,
-                  style: TextStyle(
-                    color: colors.onSurfaceVariant,
-                    fontSize: 15,
-                    height: 1.6,
-                  ),
+                  style: Theme.of(context).textTheme.bodyLarge?.copyWith(
+                        color: colors.onSurfaceVariant,
+                        height: 1.6,
+                      ),
                   textAlign: TextAlign.center,
                 ),
               ],
@@ -162,7 +195,7 @@ class _OnboardingScreenState extends State<OnboardingScreen> {
           )
               .animate(key: ValueKey('card_${data.title}'))
               .fadeIn(duration: 400.ms)
-              .slideY(begin: 0.2),
+              .slideY(begin: 0.2, curve: Curves.easeOutCubic),
         ],
       ),
     );
@@ -175,13 +208,25 @@ class _OnboardingScreenState extends State<OnboardingScreen> {
       children: List.generate(
         _pages.length,
         (i) => AnimatedContainer(
-          duration: const Duration(milliseconds: 300),
+          duration: const Duration(milliseconds: 320),
+          curve: Curves.easeOutCubic,
           margin: const EdgeInsets.symmetric(horizontal: 4),
-          width: i == _currentPage ? 24 : 8,
+          width: i == _currentPage ? 26 : 8,
           height: 8,
           decoration: BoxDecoration(
-            color: i == _currentPage ? colors.primary : colors.outline,
+            color: i == _currentPage
+                ? colors.primary
+                : colors.outlineVariant,
             borderRadius: BorderRadius.circular(4),
+            boxShadow: i == _currentPage
+                ? [
+                    BoxShadow(
+                      color: colors.primary.withValues(alpha: 0.35),
+                      blurRadius: 8,
+                      offset: const Offset(0, 2),
+                    ),
+                  ]
+                : null,
           ),
         ),
       ),
