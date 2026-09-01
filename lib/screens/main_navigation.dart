@@ -6,8 +6,10 @@ import '../core/utils/app_strings.dart';
 import '../services/auth_service.dart';
 import '../services/dispatch_service.dart';
 import '../theme/app_theme.dart';
+import '../theme/active_role_provider.dart';
 import '../widgets/animated_background.dart';
 import '../widgets/custom_bottom_nav.dart';
+import '../widgets/role_switch_toggle.dart';
 import 'home_screen.dart';
 import 'notifications_screen.dart';
 import 'service_selection_screen.dart';
@@ -26,8 +28,11 @@ class MainNavigation extends StatefulWidget {
 class _MainNavigationState extends State<MainNavigation> {
   int _currentIndex = 0;
   bool _hasProviderProfile = false;
-  bool _isProviderMode = false;
   bool _switchingRole = false;
+
+  /// Mirrors ActiveRoleProvider, which owns the flag so the app-level theme can
+  /// follow the role (customer → purple, provider → blue).
+  bool get _isProviderMode => context.read<ActiveRoleProvider>().isProvider;
 
   final List<Widget> _screens = const [
     HomeScreen(),
@@ -60,6 +65,7 @@ class _MainNavigationState extends State<MainNavigation> {
   @override
   Widget build(BuildContext context) {
     final isBn = context.watch<LanguageNotifier>().isBengali;
+    final isProviderMode = context.watch<ActiveRoleProvider>().isProvider;
     return Scaffold(
       extendBody: true,
       body: AnimatedBackground(
@@ -67,17 +73,12 @@ class _MainNavigationState extends State<MainNavigation> {
           children: [
             _buildTopBar(isBn),
             Expanded(
-              child: _isProviderMode
-                  ? const ProviderDashboardScreen()
-                  : IndexedStack(
-                      index: _currentIndex,
-                      children: _screens,
-                    ),
+              child: _buildBody(isProviderMode),
             ),
           ],
         ),
       ),
-      bottomNavigationBar: _isProviderMode
+      bottomNavigationBar: isProviderMode
           ? null
           : CustomBottomNav(
               currentIndex: _currentIndex,
@@ -94,10 +95,10 @@ class _MainNavigationState extends State<MainNavigation> {
         child: Row(
           children: [
             if (_hasProviderProfile) ...[
-              Expanded(child: _buildModeTogglePill()),
+              _buildRoleToggle(isBn),
               const SizedBox(width: 10),
-            ] else
-              const Spacer(),
+            ],
+            const Spacer(),
             const NotificationBell(),
             const SizedBox(width: 8),
             _buildLangToggle(isBn),
@@ -107,35 +108,84 @@ class _MainNavigationState extends State<MainNavigation> {
     );
   }
 
-  Widget _buildModeTogglePill() {
-    return Container(
-      height: 38,
-      decoration: BoxDecoration(
-        color: AppColors.glassWhite,
-        borderRadius: BorderRadius.circular(10),
-        border: Border.all(color: AppColors.glassBorder),
+  /// ki_chai's sliding role toggle, with the provider-side online dot kept as
+  /// a corner badge — going online is a provider concept, and a provider
+  /// browsing the customer view still needs to see their provider side is live
+  /// without switching over.
+  Widget _buildRoleToggle(bool isBn) {
+    return Stack(
+      clipBehavior: Clip.none,
+      children: [
+        RoleSwitchToggle(
+          isProvider: context.watch<ActiveRoleProvider>().isProvider,
+          enabled: !_switchingRole,
+          onTap: _toggleRole,
+          customerLabel: isBn ? 'গ্রাহক' : 'Customer',
+          providerLabel: isBn ? 'প্রোভাইডার' : 'Provider',
+        ),
+        Positioned(
+          top: -1,
+          right: -1,
+          child: ValueListenableBuilder<bool>(
+            valueListenable: DispatchService.instance.isOnlineNotifier,
+            builder: (context, isOnline, __) => isOnline
+                ? Container(
+                    width: 10,
+                    height: 10,
+                    decoration: BoxDecoration(
+                      color: const Color(0xFF22C55E),
+                      shape: BoxShape.circle,
+                      border: Border.all(
+                        color: Theme.of(context).colorScheme.surface,
+                        width: 2,
+                      ),
+                    ),
+                  )
+                : const SizedBox.shrink(),
+          ),
+        ),
+      ],
+    );
+  }
+
+  Widget _buildBody(bool isProviderMode) {
+    // Cross-fade + settle between the two dashboards, matching ki_chai's shell.
+    return AnimatedSwitcher(
+      duration: const Duration(milliseconds: 450),
+      switchInCurve: Curves.easeOutCubic,
+      switchOutCurve: Curves.easeInCubic,
+      transitionBuilder: (child, animation) => FadeTransition(
+        opacity: animation,
+        child: ScaleTransition(
+          scale: Tween<double>(begin: 0.96, end: 1).animate(animation),
+          child: child,
+        ),
       ),
-      child: Row(
-        children: [
-          _modeTab('গ্রাহক', isProvider: false),
-          _modeTab('প্রোভাইডার', isProvider: true),
-        ],
+      child: KeyedSubtree(
+        key: ValueKey(isProviderMode ? 'provider' : 'customer'),
+        child: isProviderMode
+            ? const ProviderDashboardScreen()
+            : IndexedStack(
+                index: _currentIndex,
+                children: _screens,
+              ),
       ),
     );
   }
 
+  void _toggleRole() => _switchMode(!_isProviderMode);
+
   Future<void> _switchMode(bool toProvider) async {
     if (_isProviderMode == toProvider || _switchingRole) return;
-    setState(() {
-      _isProviderMode = toProvider;
-      _switchingRole = true;
-    }); // optimistic
+    final role = context.read<ActiveRoleProvider>();
+    role.setProviderMode(toProvider); // optimistic
+    setState(() => _switchingRole = true);
     try {
       await AuthService.instance
           .switchRole(toProvider ? 'provider' : 'customer');
     } catch (e) {
       if (mounted) {
-        setState(() => _isProviderMode = !toProvider); // revert
+        role.setProviderMode(!toProvider); // revert
         ScaffoldMessenger.of(context).showSnackBar(SnackBar(
           content:
               Text(e.toString(), style: const TextStyle(color: Colors.white)),
@@ -146,59 +196,6 @@ class _MainNavigationState extends State<MainNavigation> {
     } finally {
       if (mounted) setState(() => _switchingRole = false);
     }
-  }
-
-  Widget _modeTab(String label, {required bool isProvider}) {
-    final isSelected = _isProviderMode == isProvider;
-    // Only the প্রোভাইডার tab ever needs the online dot — going online is a provider-side
-    // concept. Lets a provider browsing the customer tab see at a glance that their provider
-    // side is still live, without switching over.
-    final showOnlineDot = isProvider;
-    return Expanded(
-      child: GestureDetector(
-        onTap: () => _switchMode(isProvider),
-        child: AnimatedContainer(
-          duration: const Duration(milliseconds: 200),
-          margin: const EdgeInsets.all(3),
-          decoration: BoxDecoration(
-            gradient: isSelected ? AppColors.blueGradient : null,
-            borderRadius: BorderRadius.circular(7),
-          ),
-          child: Center(
-            child: Row(
-              mainAxisSize: MainAxisSize.min,
-              children: [
-                if (showOnlineDot)
-                  ValueListenableBuilder<bool>(
-                    valueListenable: DispatchService.instance.isOnlineNotifier,
-                    builder: (_, isOnline, __) => isOnline
-                        ? Padding(
-                            padding: const EdgeInsets.only(right: 5),
-                            child: Container(
-                              width: 7,
-                              height: 7,
-                              decoration: const BoxDecoration(
-                                color: Color(0xFF4ADE80),
-                                shape: BoxShape.circle,
-                              ),
-                            ),
-                          )
-                        : const SizedBox.shrink(),
-                  ),
-                Text(
-                  label,
-                  style: TextStyle(
-                    color: isSelected ? Colors.white : AppColors.textMuted,
-                    fontSize: 12,
-                    fontWeight: FontWeight.w600,
-                  ),
-                ),
-              ],
-            ),
-          ),
-        ),
-      ),
-    );
   }
 
   Widget _buildLangToggle(bool isBn) {
