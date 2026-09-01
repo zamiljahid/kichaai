@@ -1,12 +1,15 @@
 <?xml version="1.0" encoding="utf-8"?>
-<!-- Modify this file to customize your launch splash screen -->
-<layer-list xmlns:android="http://schemas.android.com/apk/res/android">
-    <item android:drawable="@android:color/white" />
+<!-- Native splash. Painted the seeded purple scheme's primaryContainer
+     (#E9DDFF), which is exactly where the Flutter splash's animated gradient
+     starts, so the OS window hands off to the first frame without a flash.
 
-    <!-- You can insert your own image assets here -->
-    <!-- <item>
-        <bitmap
-            android:gravity="center"
-            android:src="@mipmap/launch_image" />
-    </item> -->
+     This cannot follow the role-driven theme: the OS draws it before any Dart
+     runs, so there is no role to read yet. It uses the customer/default
+     palette; a provider sees it settle to blue once Flutter takes over. -->
+<layer-list xmlns:android="http://schemas.android.com/apk/res/android">
+    <item>
+        <shape android:shape="rectangle">
+            <solid android:color="#E9DDFF" />
+        </shape>
+    </item>
 </layer-list>
