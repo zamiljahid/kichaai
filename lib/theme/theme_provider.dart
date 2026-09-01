@@ -26,44 +26,98 @@ enum AppThemeColor {
   final Color seedColor;
 }
 
+/// The persisted shape of the user's theme settings, read once before the first
+/// frame so the app never paints one theme and then snaps to another.
+class ThemeSettings {
+  const ThemeSettings({this.color, this.mode = ThemeMode.system});
+  final AppThemeColor? color;
+  final ThemeMode mode;
+}
+
 class ThemeProvider with ChangeNotifier {
+  /// Same key ki_chai writes, so a shared preferences store stays readable by
+  /// both apps. 0 means "no explicit pick — follow the role".
   static const _themePreferenceKey = 'appThemeCode';
+  static const _themeModeKey = 'appThemeMode';
 
-  AppThemeColor _themeColor = AppThemeColor.purple;
+  AppThemeColor? _override;
+  ThemeMode _themeMode;
 
-  AppThemeColor get themeColor => _themeColor;
-  int get themeCode => _themeColor == AppThemeColor.blue ? 2 : 1;
-  Color get seedColor => _themeColor.seedColor;
-  bool get isBlueTheme => _themeColor == AppThemeColor.blue;
+  ThemeProvider({ThemeSettings settings = const ThemeSettings()})
+      : _override = settings.color,
+        _themeMode = settings.mode;
 
-  ThemeProvider({AppThemeColor initialThemeColor = AppThemeColor.purple})
-      : _themeColor = initialThemeColor;
+  /// The user's explicit colour pick, or null when they have never chosen one
+  /// and the active role should decide.
+  AppThemeColor? get override => _override;
 
-  ThemeData get themeData => themeDataFor(_themeColor);
+  /// system / light / dark.
+  ThemeMode get themeMode => _themeMode;
 
-  /// Reads the persisted selection written by [setThemeColor]. Returns the
-  /// default (purple) when nothing has been stored yet.
-  static Future<AppThemeColor> loadPersisted() async {
+  /// The colour actually in force: an explicit pick wins, otherwise the role's
+  /// default. ki_chai persists a pick but then derives the theme from the role
+  /// anyway, so its picker can never take effect — this resolves that while
+  /// keeping the role default for anyone who never opens the picker.
+  AppThemeColor effectiveColor({required bool isProvider}) =>
+      _override ?? (isProvider ? AppThemeColor.blue : AppThemeColor.purple);
+
+  static Future<ThemeSettings> loadPersisted() async {
     final prefs = await SharedPreferences.getInstance();
-    return themeColorFromCode(prefs.getInt(_themePreferenceKey));
+    return ThemeSettings(
+      color: themeColorFromCode(prefs.getInt(_themePreferenceKey)),
+      mode: _modeFromName(prefs.getString(_themeModeKey)),
+    );
   }
 
-  static AppThemeColor themeColorFromCode(int? themeCode) {
+  /// null (follow the role) unless an explicit 1/2 was stored.
+  static AppThemeColor? themeColorFromCode(int? themeCode) {
     switch (themeCode) {
+      case 1:
+        return AppThemeColor.purple;
       case 2:
         return AppThemeColor.blue;
-      case 1:
       default:
-        return AppThemeColor.purple;
+        return null;
     }
+  }
+
+  static ThemeMode _modeFromName(String? name) => switch (name) {
+        'light' => ThemeMode.light,
+        'dark' => ThemeMode.dark,
+        _ => ThemeMode.system,
+      };
+
+  /// Sets an explicit colour, or clears back to the role default with null.
+  Future<void> setThemeColor(AppThemeColor? themeColor) async {
+    if (_override != themeColor) {
+      _override = themeColor;
+      notifyListeners();
+    }
+    final prefs = await SharedPreferences.getInstance();
+    await prefs.setInt(
+      _themePreferenceKey,
+      themeColor == null ? 0 : (themeColor == AppThemeColor.blue ? 2 : 1),
+    );
+  }
+
+  Future<void> setThemeMode(ThemeMode mode) async {
+    if (_themeMode != mode) {
+      _themeMode = mode;
+      notifyListeners();
+    }
+    final prefs = await SharedPreferences.getInstance();
+    await prefs.setString(_themeModeKey, mode.name);
   }
 
   /// Builds the [ThemeData] for a given [AppThemeColor]. Kept static so the
   /// app can derive the theme directly from the active role.
-  static ThemeData themeDataFor(AppThemeColor themeColor) {
+  static ThemeData themeDataFor(
+    AppThemeColor themeColor, {
+    Brightness brightness = Brightness.light,
+  }) {
     final colorScheme = ColorScheme.fromSeed(
       seedColor: themeColor.seedColor,
-      brightness: Brightness.light,
+      brightness: brightness,
     );
 
     return ThemeData(
@@ -75,7 +129,7 @@ class ThemeProvider with ChangeNotifier {
       primaryColorDark: colorScheme.primary,
       secondaryHeaderColor: colorScheme.secondaryContainer,
       fontFamily: kBengaliFont,
-      textTheme: _textThemeFor(colorScheme),
+      textTheme: _textThemeFor(colorScheme, brightness),
       pageTransitionsTheme: kAppPageTransitionsTheme,
       appBarTheme: AppBarTheme(
         backgroundColor: colorScheme.primary,
@@ -142,9 +196,11 @@ class ThemeProvider with ChangeNotifier {
   /// This app's existing type scale, re-pointed at the seeded scheme. Sizes and
   /// weights are unchanged from the previous theme; only the hardcoded colors
   /// became [ColorScheme] roles.
-  static TextTheme _textThemeFor(ColorScheme colors) {
-    return Typography.material2021(platform: TargetPlatform.android)
-        .black
+  static TextTheme _textThemeFor(ColorScheme colors, Brightness brightness) {
+    final base = Typography.material2021(platform: TargetPlatform.android);
+    // .black is the dark-on-light set, .white the light-on-dark one. Picking
+    // the wrong one leaves every unstyled string invisible in that mode.
+    return (brightness == Brightness.dark ? base.white : base.black)
         .apply(fontFamily: kBengaliFont)
         .copyWith(
           displayLarge: TextStyle(
@@ -212,47 +268,4 @@ class ThemeProvider with ChangeNotifier {
         );
   }
 
-  void setThemeColor(AppThemeColor themeColor) async {
-    if (_themeColor != themeColor) {
-      _themeColor = themeColor;
-      notifyListeners();
-    }
-
-    final prefs = await SharedPreferences.getInstance();
-    await prefs.setInt(_themePreferenceKey, themeCode);
-  }
-
-  void toggleThemeColor() {
-    setThemeColor(isBlueTheme ? AppThemeColor.purple : AppThemeColor.blue);
-  }
-
-  void setSeedColor(Color color) {
-    setThemeColor(_themeFromSeedValue(color.toARGB32()));
-  }
-
-  AppThemeColor _themeFromSeedValue(int? colorValue) {
-    if (colorValue == null) return AppThemeColor.purple;
-
-    final color = Color(colorValue);
-    final blueDistance = _colorDistance(color, AppThemeColor.blue.seedColor);
-    final purpleDistance = _colorDistance(
-      color,
-      AppThemeColor.purple.seedColor,
-    );
-
-    return blueDistance < purpleDistance
-        ? AppThemeColor.blue
-        : AppThemeColor.purple;
-  }
-
-  int _colorDistance(Color a, Color b) {
-    final red = _channelValue(a.r) - _channelValue(b.r);
-    final green = _channelValue(a.g) - _channelValue(b.g);
-    final blue = _channelValue(a.b) - _channelValue(b.b);
-    return red * red + green * green + blue * blue;
-  }
-
-  int _channelValue(double value) {
-    return (value * 255).round().clamp(0, 255);
-  }
 }

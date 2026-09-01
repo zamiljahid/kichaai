@@ -17,18 +17,6 @@ void main() async {
     DeviceOrientation.portraitUp,
     DeviceOrientation.portraitDown,
   ]);
-  // Light theme: the status/nav bar icons have to be DARK to stay visible.
-  // These were set for the retired dark palette and would render invisible
-  // white-on-white against the seeded light surfaces.
-  SystemChrome.setSystemUIOverlayStyle(
-    const SystemUiOverlayStyle(
-      statusBarColor: Colors.transparent,
-      statusBarIconBrightness: Brightness.dark,
-      statusBarBrightness: Brightness.light,
-      systemNavigationBarColor: Colors.white,
-      systemNavigationBarIconBrightness: Brightness.dark,
-    ),
-  );
   if (!kIsWeb && defaultTargetPlatform == TargetPlatform.android) {
     try {
       await Firebase.initializeApp();
@@ -38,17 +26,17 @@ void main() async {
 
   DeepLinkService.instance.init(PushService.instance.navigatorKey);
 
-  // Read the persisted colour choice before the first frame so the app never
+  // Read the persisted colour + mode before the first frame so the app never
   // paints one theme and then snaps to another.
-  final themeColor = await ThemeProvider.loadPersisted();
+  final themeSettings = await ThemeProvider.loadPersisted();
 
-  runApp(KichaaiApp(initialThemeColor: themeColor));
+  runApp(KichaaiApp(themeSettings: themeSettings));
 }
 
 class KichaaiApp extends StatelessWidget {
-  const KichaaiApp({super.key, this.initialThemeColor = AppThemeColor.purple});
+  const KichaaiApp({super.key, this.themeSettings = const ThemeSettings()});
 
-  final AppThemeColor initialThemeColor;
+  final ThemeSettings themeSettings;
 
   @override
   Widget build(BuildContext context) {
@@ -57,7 +45,7 @@ class KichaaiApp extends StatelessWidget {
         ChangeNotifierProvider(create: (_) => LanguageNotifier()),
         ChangeNotifierProvider(create: (_) => ActiveRoleProvider()),
         ChangeNotifierProvider(
-          create: (_) => ThemeProvider(initialThemeColor: initialThemeColor),
+          create: (_) => ThemeProvider(settings: themeSettings),
         ),
       ],
       child: const _KichaaiMaterialApp(),
@@ -70,20 +58,47 @@ class _KichaaiMaterialApp extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    // The active role drives the palette: customer → purple, provider → blue.
-    // Same rule as ki_chai, and the reason every colour is read from the
-    // ColorScheme rather than a constant.
+    // The active role drives the palette by default — customer → purple,
+    // provider → blue, the same rule as ki_chai — unless the user has picked a
+    // colour explicitly in Settings, which wins. Either way it resolves to a
+    // seed, which is why every colour is read from the ColorScheme.
     final isProvider = context.watch<ActiveRoleProvider>().isProvider;
-    final themeColor = isProvider ? AppThemeColor.blue : AppThemeColor.purple;
+    final themeState = context.watch<ThemeProvider>();
+    final themeColor = themeState.effectiveColor(isProvider: isProvider);
 
     return MaterialApp(
       title: 'Kichaai | কিচাই',
       debugShowCheckedModeBanner: false,
       theme: ThemeProvider.themeDataFor(themeColor),
+      darkTheme: ThemeProvider.themeDataFor(
+        themeColor,
+        brightness: Brightness.dark,
+      ),
+      // Defaults to ThemeMode.system, so the app follows the device setting
+      // until the user overrides it in Settings.
+      themeMode: themeState.themeMode,
       navigatorKey: PushService.instance.navigatorKey,
       initialRoute: AppRoutes.splash,
       routes: AppRoutes.routes,
-      builder: (context, child) => AiChatOverlay(child: child!),
+      // The system bars have to track the RESOLVED brightness — a fixed style
+      // leaves the status-bar icons invisible in one mode or the other. This
+      // context is below MaterialApp, so Theme.of here is the active theme.
+      builder: (context, child) {
+        final scheme = Theme.of(context).colorScheme;
+        final isDark = Theme.of(context).brightness == Brightness.dark;
+        return AnnotatedRegion<SystemUiOverlayStyle>(
+          value: SystemUiOverlayStyle(
+            statusBarColor: Colors.transparent,
+            statusBarIconBrightness:
+                isDark ? Brightness.light : Brightness.dark,
+            statusBarBrightness: isDark ? Brightness.dark : Brightness.light,
+            systemNavigationBarColor: scheme.surface,
+            systemNavigationBarIconBrightness:
+                isDark ? Brightness.light : Brightness.dark,
+          ),
+          child: AiChatOverlay(child: child!),
+        );
+      },
     );
   }
 }

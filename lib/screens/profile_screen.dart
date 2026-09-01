@@ -22,6 +22,7 @@ import 'lawyer_areas_screen.dart';
 import 'dispute_screen.dart';
 import 'nid_screen.dart';
 import 'notification_preferences_screen.dart';
+import 'theme_settings_screen.dart';
 import 'notifications_screen.dart';
 import 'my_ads_screen.dart';
 import 'my_match_requests_screen.dart';
@@ -823,6 +824,7 @@ class _ProfileScreenState extends State<ProfileScreen> {
       _profileTile(Icons.credit_card_outlined, isBn ? 'NID যাচাইকরণ' : 'NID Verification', () => nav(const NidScreen()), color: const Color(0xFF8B5CF6)),
       _profileTile(Icons.shield_outlined, isBn ? 'ব্যাকগ্রাউন্ড চেক' : 'Background Check', () => nav(const BackgroundCheckScreen()), color: const Color(0xFF8B5CF6)),
       _profileTile(Icons.tune_rounded, isBn ? 'নোটিফিকেশন সেটিংস' : 'Notification Settings', () => nav(const NotificationPreferencesScreen()), color: colors.outline),
+      _profileTile(Icons.palette_outlined, isBn ? 'থিম' : 'Theme', () => nav(const ThemeSettingsScreen()), color: colors.primary),
     ];
 
     return Padding(
