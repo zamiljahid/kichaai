@@ -1,191 +1,103 @@
 import 'package:flutter/material.dart';
 
-// Bundled locally as assets/fonts/NotoSansBengali-Regular.ttf (see pubspec.yaml) instead of
-// google_fonts' runtime CDN fetch — that fetch depends on the VIEWER's browser reaching
-// fonts.googleapis.com at paint time; any network restriction there (corporate firewall, DNS
-// block, offline dev) makes every Bengali glyph app-wide render as tofu ("????").
-const _kBengaliFont = 'NotoSansBengali';
+import 'theme_provider.dart';
 
-/// Light "Pine & Marigold" palette. Token NAMES are kept identical to the old
-/// dark theme so every screen re-colours automatically — only the values change:
-///   deepBlue  → pine green (primary)
-///   fuchsia   → marigold  (warm accent, used sparingly)
-///   bgDark    → warm oat canvas
-///   glassWhite→ solid white card/chip fill
+export 'theme_provider.dart' show kBengaliFont;
+
+/// TRANSITIONAL SHIM — being deleted.
+///
+/// The app's colors now come from the seeded [ColorScheme] built in
+/// [ThemeProvider.themeDataFor], read at each call site as
+/// `Theme.of(context).colorScheme`. That is what lets the whole app re-colour
+/// when the active role flips the seed (purple ⇄ blue); static constants
+/// cannot, because their values are fixed at compile time.
+///
+/// The constants below are the *purple* scheme's real values, so screens that
+/// have not been converted yet still render in the new palette instead of the
+/// retired pine/marigold one. They do not follow the role switch. Each screen
+/// loses its `AppColors` references as it is converted, and this class is
+/// removed once the last one is gone.
+///
+/// Mapping used by the conversion — apply it consistently:
+///
+/// | AppColors        | ColorScheme role                |
+/// |------------------|---------------------------------|
+/// | deepBlue         | primary                         |
+/// | ivory            | onPrimary                       |
+/// | bgMid            | surface                         |
+/// | glassWhite       | surface                         |
+/// | bgDark           | surfaceContainerHighest         |
+/// | glassBorder      | outlineVariant                  |
+/// | textPrimary      | onSurface                       |
+/// | textSecondary    | onSurfaceVariant                |
+/// | textMuted        | outline                         |
+/// | fuchsia          | secondary                       |
+/// | softRed          | error                           |
+/// | glassBlue        | primary @ 8%                    |
+/// | glassBorderBlue  | primary @ 20%                   |
+/// | blueGradient     | AppGradients.primary(colors)    |
+/// | fuchsiaGradient  | AppGradients.accent(colors)     |
+/// | bgGradient       | AppGradients.background(colors) |
+/// | cardGradient     | AppGradients.card(colors)       |
+///
+/// `softAmber` and `softBlue` stay literal: they encode status semantics
+/// (pending / informational), not brand colour, and must not shift with the
+/// theme or two different statuses would render identically.
+@Deprecated('Read Theme.of(context).colorScheme instead. See the table above.')
 class AppColors {
   static const Color black = Color(0xFF000000);
-  static const Color deepBlue = Color(0xFF0F5D45); // pine — primary
-  static const Color fuchsia = Color(0xFFD98A0B); // deep marigold — accent
-  static const Color ivory =
-      Color(0xFFFDFBF6); // near-white text on coloured surfaces
 
-  static const Color bgDark = Color(0xFFF6F3EB); // warm oat canvas
-  static const Color bgMid = Color(0xFFFFFFFF); // card surface
-  static const Color glassWhite =
-      Color(0xFFFFFFFF); // solid light card/chip fill
-  static const Color glassBorder = Color(0xFFE7E2D6); // warm hairline
-  static const Color glassBlue = Color(0x140F5D45); // pine tint 8%
-  static const Color glassBorderBlue = Color(0x330F5D45);
+  static const Color deepBlue = Color(0xFF65558F); // → colorScheme.primary
+  static const Color fuchsia = Color(0xFF625B71); // → colorScheme.secondary
+  static const Color ivory = Color(0xFFFFFFFF); // → colorScheme.onPrimary
 
-  static const Color textPrimary = Color(0xFF10231C); // deep pine-ink
-  static const Color textSecondary = Color(0xFF3A4A43);
-  static const Color textMuted = Color(0xFF6B7C74);
+  static const Color bgDark = Color(0xFFE6E0E9); // → surfaceContainerHighest
+  static const Color bgMid = Color(0xFFFDF7FF); // → colorScheme.surface
+  static const Color glassWhite = Color(0xFFFDF7FF); // → colorScheme.surface
+  static const Color glassBorder = Color(0xFFCAC4CF); // → outlineVariant
+  static const Color glassBlue = Color(0x1465558F); // → primary @ 8%
+  static const Color glassBorderBlue = Color(0x3365558F); // → primary @ 20%
 
-  // Soft status tokens — used for icon/background tints on stat tiles and status chips so
-  // those read as one coordinated system instead of per-tile hardcoded colors. Deep green stays
-  // reserved for primary actions/active states, not every card background.
+  static const Color textPrimary = Color(0xFF1D1B20); // → onSurface
+  static const Color textSecondary = Color(0xFF49454E); // → onSurfaceVariant
+  static const Color textMuted = Color(0xFF7A757F); // → outline
+
+  // Status tokens. These are NOT theme colours — they stay fixed so "pending"
+  // and "failed" never collapse into the same hue when the seed changes.
   static const Color softAmber = Color(0xFFB27107);
-  static const Color softRed = Color(0xFFB91C1C);
+  static const Color softRed = Color(0xFFBA1A1A); // → colorScheme.error
   static const Color softBlue = Color(0xFF2563EB);
 
   static LinearGradient get bgGradient => const LinearGradient(
         begin: Alignment.topLeft,
         end: Alignment.bottomRight,
-        colors: [Color(0xFFF7F4EC), Color(0xFFEFF3EE), Color(0xFFF7F4EC)],
+        colors: [Color(0xFFFFFFFF), Color(0xFFF8F2FA), Color(0xFFFFFFFF)],
         stops: [0.0, 0.5, 1.0],
       );
 
   static LinearGradient get blueGradient => const LinearGradient(
         begin: Alignment.topLeft,
         end: Alignment.bottomRight,
-        colors: [Color(0xFF12735A), Color(0xFF0A3D2E)],
+        colors: [Color(0xFF65558F), Color(0xFF4D3D75)],
       );
 
   static LinearGradient get fuchsiaGradient => const LinearGradient(
         begin: Alignment.topLeft,
         end: Alignment.bottomRight,
-        colors: [Color(0xFFF4A524), Color(0xFFD98A0B)],
+        colors: [Color(0xFF625B71), Color(0xFF4A4458)],
       );
 
   static LinearGradient get cardGradient => const LinearGradient(
         begin: Alignment.topLeft,
         end: Alignment.bottomRight,
-        colors: [Color(0xFFFFFFFF), Color(0xFFFCFAF4)],
+        colors: [Color(0xFFFDF7FF), Color(0xFFF8F2FA)],
       );
 }
 
+/// Kept so `MaterialApp` and any remaining callers keep compiling while the
+/// screens are converted. The real theme is [ThemeProvider.themeDataFor].
 class AppTheme {
-  static ThemeData get darkTheme {
-    return ThemeData(
-      useMaterial3: true,
-      brightness: Brightness.light,
-      scaffoldBackgroundColor: AppColors.bgDark,
-      colorScheme: const ColorScheme.light(
-        primary: AppColors.deepBlue,
-        secondary: AppColors.fuchsia,
-        surface: AppColors.bgMid,
-        onPrimary: AppColors.ivory,
-        onSecondary: Color(0xFF3D2A00),
-        onSurface: AppColors.textPrimary,
-      ),
-      fontFamily: _kBengaliFont,
-      textTheme: Typography.material2021(platform: TargetPlatform.android)
-          .black
-          .apply(fontFamily: _kBengaliFont)
-          .copyWith(
-            displayLarge: const TextStyle(
-              fontFamily: _kBengaliFont,
-              color: AppColors.textPrimary,
-              fontSize: 32,
-              fontWeight: FontWeight.w700,
-              letterSpacing: -0.5,
-            ),
-            displayMedium: const TextStyle(
-              fontFamily: _kBengaliFont,
-              color: AppColors.textPrimary,
-              fontSize: 28,
-              fontWeight: FontWeight.w700,
-            ),
-            headlineLarge: const TextStyle(
-              fontFamily: _kBengaliFont,
-              color: AppColors.textPrimary,
-              fontSize: 24,
-              fontWeight: FontWeight.w600,
-            ),
-            headlineMedium: const TextStyle(
-              fontFamily: _kBengaliFont,
-              color: AppColors.textPrimary,
-              fontSize: 20,
-              fontWeight: FontWeight.w600,
-            ),
-            titleLarge: const TextStyle(
-              fontFamily: _kBengaliFont,
-              color: AppColors.textPrimary,
-              fontSize: 18,
-              fontWeight: FontWeight.w600,
-            ),
-            titleMedium: const TextStyle(
-              fontFamily: _kBengaliFont,
-              color: AppColors.textPrimary,
-              fontSize: 16,
-              fontWeight: FontWeight.w500,
-            ),
-            bodyLarge: const TextStyle(
-              fontFamily: _kBengaliFont,
-              color: AppColors.textPrimary,
-              fontSize: 16,
-              fontWeight: FontWeight.w400,
-            ),
-            bodyMedium: const TextStyle(
-              fontFamily: _kBengaliFont,
-              color: AppColors.textSecondary,
-              fontSize: 14,
-              fontWeight: FontWeight.w400,
-            ),
-            bodySmall: const TextStyle(
-              fontFamily: _kBengaliFont,
-              color: AppColors.textMuted,
-              fontSize: 12,
-              fontWeight: FontWeight.w400,
-            ),
-            labelLarge: const TextStyle(
-              fontFamily: _kBengaliFont,
-              color: AppColors.textPrimary,
-              fontSize: 14,
-              fontWeight: FontWeight.w600,
-              letterSpacing: 0.5,
-            ),
-          ),
-      appBarTheme: const AppBarTheme(
-        backgroundColor: Colors.transparent,
-        elevation: 0,
-        scrolledUnderElevation: 0,
-        titleTextStyle: TextStyle(
-          fontFamily: _kBengaliFont,
-          color: AppColors.textPrimary,
-          fontSize: 18,
-          fontWeight: FontWeight.w600,
-        ),
-        iconTheme: IconThemeData(color: AppColors.textPrimary),
-      ),
-      inputDecorationTheme: InputDecorationTheme(
-        filled: true,
-        fillColor: AppColors.glassWhite,
-        contentPadding:
-            const EdgeInsets.symmetric(horizontal: 20, vertical: 16),
-        border: OutlineInputBorder(
-          borderRadius: BorderRadius.circular(16),
-          borderSide: const BorderSide(color: AppColors.glassBorder, width: 1),
-        ),
-        enabledBorder: OutlineInputBorder(
-          borderRadius: BorderRadius.circular(16),
-          borderSide: const BorderSide(color: AppColors.glassBorder, width: 1),
-        ),
-        focusedBorder: OutlineInputBorder(
-          borderRadius: BorderRadius.circular(16),
-          borderSide: const BorderSide(color: AppColors.deepBlue, width: 1.5),
-        ),
-        hintStyle: const TextStyle(
-          fontFamily: _kBengaliFont,
-          color: AppColors.textMuted,
-          fontSize: 14,
-        ),
-        labelStyle: const TextStyle(
-          fontFamily: _kBengaliFont,
-          color: AppColors.textSecondary,
-          fontSize: 14,
-        ),
-      ),
-    );
-  }
+  @Deprecated('Use ThemeProvider.themeDataFor(role-derived AppThemeColor).')
+  static ThemeData get darkTheme =>
+      ThemeProvider.themeDataFor(AppThemeColor.purple);
 }
