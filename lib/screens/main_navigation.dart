@@ -57,7 +57,15 @@ class _MainNavigationState extends State<MainNavigation> {
         (cachedId != null && cachedId.isNotEmpty) && role == 'PROVIDER';
     debugPrint(
         '[Nav] providerProfileId=$cachedId role=$role → isProvider=$isProvider');
-    if (mounted) setState(() => _hasProviderProfile = isProvider);
+    if (!mounted) return;
+    // ActiveRoleProvider is app-scoped and survives a logout, so an account
+    // without a provider profile must be forced back to the customer view —
+    // otherwise signing in as a customer after a provider session would land
+    // on the provider dashboard with no toggle to escape it.
+    if (!isProvider) {
+      context.read<ActiveRoleProvider>().setProviderMode(false);
+    }
+    setState(() => _hasProviderProfile = isProvider);
     if (isProvider) DispatchService.instance.syncOnlineStatus();
   }
 

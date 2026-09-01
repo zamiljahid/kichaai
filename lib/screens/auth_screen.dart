@@ -10,6 +10,7 @@ import '../widgets/glass_card.dart';
 import '../widgets/glass_button.dart';
 import 'forgot_password_screen.dart';
 import 'main_navigation.dart';
+import 'role_selection_screen.dart';
 import 'otp_screen.dart';
 
 class AuthScreen extends StatefulWidget {
@@ -428,11 +429,12 @@ class _AuthScreenState extends State<AuthScreen> with SingleTickerProviderStateM
         identifier: identifier,
         password: password,
       );
+      final next = await postLoginDestination();
       if (mounted) {
         WidgetsBinding.instance.addPostFrameCallback((_) {
           if (mounted) {
             Navigator.of(context).pushReplacement(
-              MaterialPageRoute(builder: (_) => const MainNavigation()),
+              MaterialPageRoute(builder: (_) => next),
             );
           }
         });
@@ -451,11 +453,12 @@ class _AuthScreenState extends State<AuthScreen> with SingleTickerProviderStateM
     try {
       final result = await AuthService.instance.googleLogin();
       if (result == null) return; // user cancelled picker — silent
+      final next = await postLoginDestination();
       if (!mounted) return;
       WidgetsBinding.instance.addPostFrameCallback((_) {
         if (mounted) {
           Navigator.of(context).pushReplacement(
-            MaterialPageRoute(builder: (_) => const MainNavigation()),
+            MaterialPageRoute(builder: (_) => next),
           );
         }
       });
@@ -515,10 +518,12 @@ class _AuthScreenState extends State<AuthScreen> with SingleTickerProviderStateM
       } else {
         // Got tokens — navigate using addPostFrameCallback to avoid
         // BackdropFilter removeChild crash on Flutter Web.
+        final next = await postLoginDestination();
+        if (!mounted) return;
         WidgetsBinding.instance.addPostFrameCallback((_) {
           if (mounted) {
             Navigator.of(context).pushReplacement(
-              MaterialPageRoute(builder: (_) => const MainNavigation()),
+              MaterialPageRoute(builder: (_) => next),
             );
           }
         });
