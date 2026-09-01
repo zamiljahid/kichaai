@@ -6,7 +6,7 @@ import '../core/network/api_client.dart';
 import '../core/utils/app_strings.dart';
 import '../models/micro_learning_model.dart';
 import '../services/micro_learning_service.dart';
-import '../theme/app_theme.dart';
+import '../theme/app_gradients.dart';
 import '../widgets/animated_background.dart';
 import '../widgets/glass_button.dart';
 import 'course_detail_screen.dart';
@@ -83,6 +83,7 @@ class _InstructorProfileScreenState extends State<InstructorProfileScreen> {
 
   @override
   Widget build(BuildContext context) {
+    final colors = Theme.of(context).colorScheme;
     _isBn = context.watch<LanguageNotifier>().isBengali;
     return Scaffold(
       body: AnimatedBackground(
@@ -92,12 +93,12 @@ class _InstructorProfileScreenState extends State<InstructorProfileScreen> {
               _header(),
               Expanded(
                 child: _loading
-                    ? const Center(child: CircularProgressIndicator(color: AppColors.deepBlue))
+                    ? Center(child: CircularProgressIndicator(color: colors.primary))
                     : _error != null
                         ? _errorView()
                         : RefreshIndicator(
                             onRefresh: _load,
-                            color: AppColors.deepBlue,
+                            color: colors.primary,
                             child: ListView(
                               padding: const EdgeInsets.fromLTRB(16, 4, 16, 28),
                               children: [
@@ -107,8 +108,8 @@ class _InstructorProfileScreenState extends State<InstructorProfileScreen> {
                                   _isBn
                                       ? 'এই শিক্ষকের কোর্স (${_courses.length})'
                                       : 'Courses by this instructor (${_courses.length})',
-                                  style: const TextStyle(
-                                      color: AppColors.textPrimary,
+                                  style: TextStyle(
+                                      color: colors.onSurface,
                                       fontSize: 14,
                                       fontWeight: FontWeight.w700),
                                 ),
@@ -121,8 +122,8 @@ class _InstructorProfileScreenState extends State<InstructorProfileScreen> {
                                         _isBn
                                             ? 'এখনো কোনো প্রকাশিত কোর্স নেই'
                                             : 'No published courses yet',
-                                        style: const TextStyle(
-                                            color: AppColors.textMuted, fontSize: 13.5),
+                                        style: TextStyle(
+                                            color: colors.outline, fontSize: 13.5),
                                       ),
                                     ),
                                   )
@@ -142,6 +143,7 @@ class _InstructorProfileScreenState extends State<InstructorProfileScreen> {
   }
 
   Widget _header() {
+    final colors = Theme.of(context).colorScheme;
     return Padding(
       padding: const EdgeInsets.fromLTRB(16, 12, 20, 8),
       child: Row(
@@ -152,12 +154,12 @@ class _InstructorProfileScreenState extends State<InstructorProfileScreen> {
               width: 40,
               height: 40,
               decoration: BoxDecoration(
-                color: AppColors.glassWhite,
+                color: colors.surface,
                 borderRadius: BorderRadius.circular(12),
-                border: Border.all(color: AppColors.glassBorder),
+                border: Border.all(color: colors.outlineVariant),
               ),
-              child: const Icon(Icons.arrow_back_ios_new_rounded,
-                  color: AppColors.textPrimary, size: 16),
+              child: Icon(Icons.arrow_back_ios_new_rounded,
+                  color: colors.onSurface, size: 16),
             ),
           ),
           const SizedBox(width: 14),
@@ -168,12 +170,12 @@ class _InstructorProfileScreenState extends State<InstructorProfileScreen> {
                 Text(_name,
                     maxLines: 1,
                     overflow: TextOverflow.ellipsis,
-                    style: const TextStyle(
-                        color: AppColors.textPrimary,
+                    style: TextStyle(
+                        color: colors.onSurface,
                         fontSize: 18,
                         fontWeight: FontWeight.w700)),
                 Text(_isBn ? 'শিক্ষক' : 'Instructor',
-                    style: const TextStyle(color: AppColors.textMuted, fontSize: 12)),
+                    style: TextStyle(color: colors.outline, fontSize: 12)),
               ],
             ),
           ),
@@ -183,21 +185,22 @@ class _InstructorProfileScreenState extends State<InstructorProfileScreen> {
   }
 
   Widget _statsCard() {
+    final colors = Theme.of(context).colorScheme;
     final rating = _avgRating;
     Widget stat(IconData icon, String value, String label) => Expanded(
           child: Column(
             children: [
-              Icon(icon, color: AppColors.deepBlue, size: 18),
+              Icon(icon, color: colors.primary, size: 18),
               const SizedBox(height: 6),
               Text(value,
-                  style: const TextStyle(
-                      color: AppColors.textPrimary,
+                  style: TextStyle(
+                      color: colors.onSurface,
                       fontSize: 16,
                       fontWeight: FontWeight.w700)),
               const SizedBox(height: 2),
               Text(label,
                   textAlign: TextAlign.center,
-                  style: const TextStyle(color: AppColors.textMuted, fontSize: 11)),
+                  style: TextStyle(color: colors.outline, fontSize: 11)),
             ],
           ),
         );
@@ -205,9 +208,9 @@ class _InstructorProfileScreenState extends State<InstructorProfileScreen> {
     return Container(
       padding: const EdgeInsets.symmetric(vertical: 16, horizontal: 12),
       decoration: BoxDecoration(
-        color: AppColors.glassWhite,
+        color: colors.surface,
         borderRadius: BorderRadius.circular(16),
-        border: Border.all(color: AppColors.glassBorder),
+        border: Border.all(color: colors.outlineVariant),
       ),
       child: Row(
         children: [
@@ -226,6 +229,7 @@ class _InstructorProfileScreenState extends State<InstructorProfileScreen> {
   }
 
   Widget _courseTile(CourseModel c, int index) {
+    final colors = Theme.of(context).colorScheme;
     return Padding(
       padding: const EdgeInsets.only(bottom: 10),
       child: GestureDetector(
@@ -235,9 +239,9 @@ class _InstructorProfileScreenState extends State<InstructorProfileScreen> {
         child: Container(
           padding: const EdgeInsets.all(14),
           decoration: BoxDecoration(
-            color: AppColors.glassWhite,
+            color: colors.surface,
             borderRadius: BorderRadius.circular(16),
-            border: Border.all(color: AppColors.glassBorder),
+            border: Border.all(color: colors.outlineVariant),
           ),
           child: Row(
             children: [
@@ -245,11 +249,11 @@ class _InstructorProfileScreenState extends State<InstructorProfileScreen> {
                 width: 52,
                 height: 52,
                 decoration: BoxDecoration(
-                  gradient: AppColors.blueGradient,
+                  gradient: AppGradients.primary(colors),
                   borderRadius: BorderRadius.circular(12),
                 ),
-                child: const Icon(Icons.play_circle_fill_rounded,
-                    color: AppColors.ivory, size: 24),
+                child: Icon(Icons.play_circle_fill_rounded,
+                    color: colors.onPrimary, size: 24),
               ),
               const SizedBox(width: 12),
               Expanded(
@@ -259,8 +263,8 @@ class _InstructorProfileScreenState extends State<InstructorProfileScreen> {
                     Text(c.title,
                         maxLines: 2,
                         overflow: TextOverflow.ellipsis,
-                        style: const TextStyle(
-                            color: AppColors.textPrimary,
+                        style: TextStyle(
+                            color: colors.onSurface,
                             fontSize: 14,
                             fontWeight: FontWeight.w700)),
                     const SizedBox(height: 4),
@@ -270,8 +274,8 @@ class _InstructorProfileScreenState extends State<InstructorProfileScreen> {
                             color: Color(0xFFFFC107), size: 14),
                         const SizedBox(width: 3),
                         Text(c.rating!.toStringAsFixed(1),
-                            style: const TextStyle(
-                                color: AppColors.textSecondary, fontSize: 11.5)),
+                            style: TextStyle(
+                                color: colors.onSurfaceVariant, fontSize: 11.5)),
                         const SizedBox(width: 10),
                       ],
                       if (c.enrollmentCount != null)
@@ -279,8 +283,8 @@ class _InstructorProfileScreenState extends State<InstructorProfileScreen> {
                           _isBn
                               ? '${c.enrollmentCount} জন ভর্তি'
                               : '${c.enrollmentCount} enrolled',
-                          style: const TextStyle(
-                              color: AppColors.textMuted, fontSize: 11.5),
+                          style: TextStyle(
+                              color: colors.outline, fontSize: 11.5),
                         ),
                     ]),
                   ],
@@ -288,8 +292,8 @@ class _InstructorProfileScreenState extends State<InstructorProfileScreen> {
               ),
               const SizedBox(width: 10),
               Text('৳ ${c.price.toStringAsFixed(0)}',
-                  style: const TextStyle(
-                      color: AppColors.deepBlue,
+                  style: TextStyle(
+                      color: colors.primary,
                       fontSize: 14,
                       fontWeight: FontWeight.w800)),
             ],
@@ -300,13 +304,14 @@ class _InstructorProfileScreenState extends State<InstructorProfileScreen> {
   }
 
   Widget _errorView() {
+    final colors = Theme.of(context).colorScheme;
     return Center(
       child: Padding(
         padding: const EdgeInsets.all(28),
         child: Column(mainAxisSize: MainAxisSize.min, children: [
           Text(_error!,
               textAlign: TextAlign.center,
-              style: const TextStyle(color: AppColors.textMuted, fontSize: 13.5)),
+              style: TextStyle(color: colors.outline, fontSize: 13.5)),
           const SizedBox(height: 14),
           GlassButton(
               label: _isBn ? 'আবার চেষ্টা' : 'Retry',

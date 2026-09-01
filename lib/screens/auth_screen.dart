@@ -4,7 +4,7 @@ import 'package:flutter_animate/flutter_animate.dart';
 import 'package:provider/provider.dart';
 import '../core/utils/app_strings.dart';
 import '../services/auth_service.dart';
-import '../theme/app_theme.dart';
+import '../theme/app_gradients.dart';
 import '../widgets/animated_background.dart';
 import '../widgets/glass_card.dart';
 import '../widgets/glass_button.dart';
@@ -54,10 +54,11 @@ class _AuthScreenState extends State<AuthScreen> with SingleTickerProviderStateM
   }
 
   void _showError(String message) {
+    final colors = Theme.of(context).colorScheme;
     if (!mounted) return;
     ScaffoldMessenger.of(context).showSnackBar(
       SnackBar(
-        content: Text(message, style: const TextStyle(color: AppColors.ivory)),
+        content: Text(message, style: TextStyle(color: colors.onPrimary)),
         backgroundColor: const Color(0xFFEF4444),
         behavior: SnackBarBehavior.floating,
         shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
@@ -115,6 +116,7 @@ class _AuthScreenState extends State<AuthScreen> with SingleTickerProviderStateM
   }
 
   Widget _buildLangToggle(AppStrings strings) {
+    final colors = Theme.of(context).colorScheme;
     return GestureDetector(
       onTap: () => context.read<LanguageNotifier>().toggle(),
       child: ClipRRect(
@@ -124,14 +126,14 @@ class _AuthScreenState extends State<AuthScreen> with SingleTickerProviderStateM
           child: Container(
             padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 6),
             decoration: BoxDecoration(
-              color: AppColors.glassWhite,
+              color: colors.surface,
               borderRadius: BorderRadius.circular(10),
-              border: Border.all(color: AppColors.glassBorder, width: 1),
+              border: Border.all(color: colors.outlineVariant, width: 1),
             ),
             child: Text(
               strings.langToggle,
-              style: const TextStyle(
-                color: AppColors.textPrimary,
+              style: TextStyle(
+                color: colors.onSurface,
                 fontSize: 12,
                 fontWeight: FontWeight.w700,
               ),
@@ -143,29 +145,30 @@ class _AuthScreenState extends State<AuthScreen> with SingleTickerProviderStateM
   }
 
   Widget _buildLogo() {
+    final colors = Theme.of(context).colorScheme;
     return Column(
       children: [
         Container(
           width: 72,
           height: 72,
           decoration: BoxDecoration(
-            gradient: AppColors.blueGradient,
+            gradient: AppGradients.primary(colors),
             borderRadius: BorderRadius.circular(20),
             boxShadow: [
               BoxShadow(
-                color: AppColors.deepBlue.withOpacity(0.5),
+                color: colors.primary.withOpacity(0.5),
                 blurRadius: 24,
                 offset: const Offset(0, 8),
               ),
             ],
           ),
-          child: const Icon(Icons.hub_rounded, color: AppColors.ivory, size: 38),
+          child: Icon(Icons.hub_rounded, color: colors.onPrimary, size: 38),
         ),
         const SizedBox(height: 12),
-        const Text(
+        Text(
           'কিচাই',
           style: TextStyle(
-            color: AppColors.ivory,
+            color: colors.onPrimary,
             fontSize: 28,
             fontWeight: FontWeight.w800,
             letterSpacing: 1,
@@ -173,13 +176,14 @@ class _AuthScreenState extends State<AuthScreen> with SingleTickerProviderStateM
         ),
         Text(
           'আপনার বিশ্বস্ত সেবা মার্কেটপ্লেস',
-          style: TextStyle(color: AppColors.textMuted, fontSize: 13),
+          style: TextStyle(color: colors.outline, fontSize: 13),
         ),
       ],
     ).animate().fadeIn(duration: 500.ms).slideY(begin: -0.2);
   }
 
   Widget _buildTabBar(AppStrings strings) {
+    final colors = Theme.of(context).colorScheme;
     return ClipRRect(
       borderRadius: BorderRadius.circular(16),
       child: BackdropFilter(
@@ -187,18 +191,18 @@ class _AuthScreenState extends State<AuthScreen> with SingleTickerProviderStateM
         child: Container(
           height: 52,
           decoration: BoxDecoration(
-            color: AppColors.glassWhite,
+            color: colors.surface,
             borderRadius: BorderRadius.circular(16),
-            border: Border.all(color: AppColors.glassBorder, width: 1.5),
+            border: Border.all(color: colors.outlineVariant, width: 1.5),
           ),
           child: TabBar(
             controller: _tabController,
             indicator: BoxDecoration(
-              gradient: AppColors.blueGradient,
+              gradient: AppGradients.primary(colors),
               borderRadius: BorderRadius.circular(12),
               boxShadow: [
                 BoxShadow(
-                  color: AppColors.deepBlue.withOpacity(0.4),
+                  color: colors.primary.withOpacity(0.4),
                   blurRadius: 8,
                 ),
               ],
@@ -206,8 +210,8 @@ class _AuthScreenState extends State<AuthScreen> with SingleTickerProviderStateM
             indicatorSize: TabBarIndicatorSize.tab,
             indicatorPadding: const EdgeInsets.all(4),
             dividerColor: Colors.transparent,
-            labelColor: AppColors.ivory,
-            unselectedLabelColor: AppColors.textMuted,
+            labelColor: colors.onPrimary,
+            unselectedLabelColor: colors.outline,
             labelStyle: const TextStyle(fontSize: 15, fontWeight: FontWeight.w600),
             tabs: [
               Tab(text: strings.loginTab),
@@ -220,21 +224,22 @@ class _AuthScreenState extends State<AuthScreen> with SingleTickerProviderStateM
   }
 
   Widget _buildLoginTab(AppStrings strings) {
+    final colors = Theme.of(context).colorScheme;
     return GlassCard(
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
           Text(
             strings.welcomeBack,
-            style: const TextStyle(
-              color: AppColors.textPrimary,
+            style: TextStyle(
+              color: colors.onSurface,
               fontSize: 22,
               fontWeight: FontWeight.w700,
             ),
           ),
           Text(
             strings.loginSubtitle,
-            style: TextStyle(color: AppColors.textSecondary, fontSize: 14),
+            style: TextStyle(color: colors.onSurfaceVariant, fontSize: 14),
           ),
           const SizedBox(height: 24),
           _buildTextField(
@@ -254,7 +259,7 @@ class _AuthScreenState extends State<AuthScreen> with SingleTickerProviderStateM
             suffixIcon: IconButton(
               icon: Icon(
                 _obscurePassword ? Icons.visibility_off_rounded : Icons.visibility_rounded,
-                color: AppColors.textMuted,
+                color: colors.outline,
                 size: 20,
               ),
               onPressed: () => setState(() => _obscurePassword = !_obscurePassword),
@@ -267,7 +272,7 @@ class _AuthScreenState extends State<AuthScreen> with SingleTickerProviderStateM
               onPressed: () => Navigator.push(context, MaterialPageRoute(builder: (_) => const ForgotPasswordScreen())),
               child: Text(
                 strings.forgotPassword,
-                style: TextStyle(color: AppColors.deepBlue, fontSize: 13),
+                style: TextStyle(color: colors.primary, fontSize: 13),
               ),
             ),
           ),
@@ -293,21 +298,22 @@ class _AuthScreenState extends State<AuthScreen> with SingleTickerProviderStateM
   }
 
   Widget _buildRegisterTab(AppStrings strings) {
+    final colors = Theme.of(context).colorScheme;
     return GlassCard(
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
           Text(
             strings.createAccount,
-            style: const TextStyle(
-              color: AppColors.textPrimary,
+            style: TextStyle(
+              color: colors.onSurface,
               fontSize: 22,
               fontWeight: FontWeight.w700,
             ),
           ),
           Text(
             strings.registerSubtitle,
-            style: TextStyle(color: AppColors.textSecondary, fontSize: 14),
+            style: TextStyle(color: colors.onSurfaceVariant, fontSize: 14),
           ),
           const SizedBox(height: 20),
           _buildTextField(
@@ -338,7 +344,7 @@ class _AuthScreenState extends State<AuthScreen> with SingleTickerProviderStateM
             suffixIcon: IconButton(
               icon: Icon(
                 _obscurePassword ? Icons.visibility_off_rounded : Icons.visibility_rounded,
-                color: AppColors.textMuted,
+                color: colors.outline,
                 size: 20,
               ),
               onPressed: () => setState(() => _obscurePassword = !_obscurePassword),
@@ -363,28 +369,30 @@ class _AuthScreenState extends State<AuthScreen> with SingleTickerProviderStateM
     bool obscure = false,
     Widget? suffixIcon,
   }) {
+    final colors = Theme.of(context).colorScheme;
     return TextFormField(
       controller: controller,
       obscureText: obscure,
       keyboardType: keyboardType,
-      style: const TextStyle(color: AppColors.textPrimary, fontSize: 15),
+      style: TextStyle(color: colors.onSurface, fontSize: 15),
       decoration: InputDecoration(
         hintText: hint,
-        prefixIcon: Icon(icon, color: AppColors.textMuted, size: 20),
+        prefixIcon: Icon(icon, color: colors.outline, size: 20),
         suffixIcon: suffixIcon,
       ),
     );
   }
 
   Widget _buildDivider(AppStrings strings) {
+    final colors = Theme.of(context).colorScheme;
     return Row(
       children: [
-        Expanded(child: Divider(color: AppColors.glassBorder, thickness: 1)),
+        Expanded(child: Divider(color: colors.outlineVariant, thickness: 1)),
         Padding(
           padding: const EdgeInsets.symmetric(horizontal: 12),
-          child: Text(strings.orDivider, style: TextStyle(color: AppColors.textMuted, fontSize: 13)),
+          child: Text(strings.orDivider, style: TextStyle(color: colors.outline, fontSize: 13)),
         ),
-        Expanded(child: Divider(color: AppColors.glassBorder, thickness: 1)),
+        Expanded(child: Divider(color: colors.outlineVariant, thickness: 1)),
       ],
     );
   }

@@ -4,7 +4,7 @@ import 'package:provider/provider.dart';
 import '../core/utils/app_strings.dart';
 import '../models/matchmaking_model.dart';
 import '../services/matchmaking_service.dart';
-import '../theme/app_theme.dart';
+import '../theme/app_gradients.dart';
 import '../widgets/animated_background.dart';
 import '../widgets/glass_card.dart';
 import 'match_request_screen.dart';
@@ -49,6 +49,7 @@ class _ProviderBrowseScreenState extends State<ProviderBrowseScreen> {
 
   @override
   Widget build(BuildContext context) {
+    final colors = Theme.of(context).colorScheme;
     _isBn = context.watch<LanguageNotifier>().isBengali;
     return Scaffold(
       body: AnimatedBackground(
@@ -67,32 +68,32 @@ class _ProviderBrowseScreenState extends State<ProviderBrowseScreen> {
                   child: Container(
                     padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 14),
                     decoration: BoxDecoration(
-                      gradient: AppColors.blueGradient,
+                      gradient: AppGradients.primary(colors),
                       borderRadius: BorderRadius.circular(14),
-                      boxShadow: [BoxShadow(color: AppColors.deepBlue.withValues(alpha: 0.35), blurRadius: 12, offset: const Offset(0, 4))],
+                      boxShadow: [BoxShadow(color: colors.primary.withValues(alpha: 0.35), blurRadius: 12, offset: const Offset(0, 4))],
                     ),
                     child: Row(children: [
-                      const Icon(Icons.campaign_rounded, color: AppColors.ivory, size: 20),
+                      Icon(Icons.campaign_rounded, color: colors.onPrimary, size: 20),
                       const SizedBox(width: 10),
                       Expanded(
                         child: Text(
                           _isBn ? 'সবাইকে জানিয়ে অনুরোধ পোস্ট করুন — যেকোনো সেবাদাতা সাড়া দিতে পারবেন' : 'Post an open request — any provider can respond',
-                          style: const TextStyle(color: AppColors.ivory, fontSize: 13, fontWeight: FontWeight.w600),
+                          style: TextStyle(color: colors.onPrimary, fontSize: 13, fontWeight: FontWeight.w600),
                         ),
                       ),
-                      const Icon(Icons.arrow_forward_ios_rounded, color: AppColors.ivory, size: 14),
+                      Icon(Icons.arrow_forward_ios_rounded, color: colors.onPrimary, size: 14),
                     ]),
                   ),
                 ),
               ).animate().fadeIn(duration: 350.ms).slideY(begin: 0.08),
               Expanded(
                 child: _isLoading
-                    ? const Center(child: CircularProgressIndicator(color: AppColors.deepBlue))
+                    ? Center(child: CircularProgressIndicator(color: colors.primary))
                     : _providers.isEmpty
                         ? _buildEmpty()
                         : RefreshIndicator(
                                 onRefresh: _load,
-                                color: AppColors.deepBlue,
+                                color: colors.primary,
                                 child: ListView.builder(
                                   padding: const EdgeInsets.fromLTRB(16, 0, 16, 24),
                                   itemCount: _providers.length,
@@ -108,6 +109,7 @@ class _ProviderBrowseScreenState extends State<ProviderBrowseScreen> {
   }
 
   Widget _buildHeader(BuildContext context) {
+    final colors = Theme.of(context).colorScheme;
     return Padding(
       padding: const EdgeInsets.fromLTRB(20, 16, 20, 20),
       child: Row(
@@ -116,17 +118,17 @@ class _ProviderBrowseScreenState extends State<ProviderBrowseScreen> {
             onTap: () => Navigator.of(context).pop(),
             child: Container(
               width: 40, height: 40,
-              decoration: BoxDecoration(color: AppColors.glassWhite, borderRadius: BorderRadius.circular(12), border: Border.all(color: AppColors.glassBorder, width: 1.5)),
-              child: const Icon(Icons.arrow_back_ios_new_rounded, color: AppColors.textPrimary, size: 18),
+              decoration: BoxDecoration(color: colors.surface, borderRadius: BorderRadius.circular(12), border: Border.all(color: colors.outlineVariant, width: 1.5)),
+              child: Icon(Icons.arrow_back_ios_new_rounded, color: colors.onSurface, size: 18),
             ),
           ),
           const SizedBox(width: 16),
           Expanded(
             child: Column(crossAxisAlignment: CrossAxisAlignment.start, children: [
-              Text(widget.label, style: const TextStyle(color: AppColors.textPrimary, fontSize: 18, fontWeight: FontWeight.w700), overflow: TextOverflow.ellipsis),
+              Text(widget.label, style: TextStyle(color: colors.onSurface, fontSize: 18, fontWeight: FontWeight.w700), overflow: TextOverflow.ellipsis),
               Text(
                 _isBn ? '${_providers.length} জন সেবাদাতা পাওয়া গেছে' : '${_providers.length} providers found',
-                style: const TextStyle(color: AppColors.textMuted, fontSize: 12),
+                style: TextStyle(color: colors.outline, fontSize: 12),
               ),
             ]),
           ),
@@ -136,6 +138,7 @@ class _ProviderBrowseScreenState extends State<ProviderBrowseScreen> {
   }
 
   Widget _buildProviderCard(MatchProviderModel p, int index) {
+    final colors = Theme.of(context).colorScheme;
     void openProfile() => Navigator.of(context).push(MaterialPageRoute(
           builder: (_) => ProviderProfileScreen(providerId: p.id, kind: widget.kind),
         ));
@@ -151,39 +154,39 @@ class _ProviderBrowseScreenState extends State<ProviderBrowseScreen> {
               children: [
                 Container(
                   width: 56, height: 56,
-                  decoration: BoxDecoration(gradient: AppColors.blueGradient, shape: BoxShape.circle),
+                  decoration: BoxDecoration(gradient: AppGradients.primary(colors), shape: BoxShape.circle),
                   child: Center(
                     child: Text(p.name.isNotEmpty ? p.name[0].toUpperCase() : '?',
-                      style: const TextStyle(color: AppColors.ivory, fontSize: 22, fontWeight: FontWeight.w700)),
+                      style: TextStyle(color: colors.onPrimary, fontSize: 22, fontWeight: FontWeight.w700)),
                   ),
                 ),
                 const SizedBox(width: 14),
                 Expanded(
                   child: Column(crossAxisAlignment: CrossAxisAlignment.start, children: [
                     Row(children: [
-                      Flexible(child: Text(p.name, style: const TextStyle(color: AppColors.textPrimary, fontSize: 15, fontWeight: FontWeight.w600), overflow: TextOverflow.ellipsis)),
+                      Flexible(child: Text(p.name, style: TextStyle(color: colors.onSurface, fontSize: 15, fontWeight: FontWeight.w600), overflow: TextOverflow.ellipsis)),
                       if (p.nidVerified) ...[
                         const SizedBox(width: 5),
                         const Icon(Icons.verified_rounded, color: Color(0xFF10B981), size: 15),
                       ],
                     ]),
                     if (p.bio?.isNotEmpty ?? false)
-                      Text(p.bio!, style: TextStyle(color: AppColors.textMuted, fontSize: 12), maxLines: 1, overflow: TextOverflow.ellipsis),
+                      Text(p.bio!, style: TextStyle(color: colors.outline, fontSize: 12), maxLines: 1, overflow: TextOverflow.ellipsis),
                     const SizedBox(height: 6),
                     Row(children: [
                       if (p.rating != null) ...[
                         const Icon(Icons.star_rounded, color: Color(0xFFFFC107), size: 14),
                         const SizedBox(width: 3),
-                        Text(p.rating!.toStringAsFixed(1), style: const TextStyle(color: AppColors.textPrimary, fontSize: 12, fontWeight: FontWeight.w600)),
+                        Text(p.rating!.toStringAsFixed(1), style: TextStyle(color: colors.onSurface, fontSize: 12, fontWeight: FontWeight.w600)),
                         const SizedBox(width: 8),
                       ],
                       if (p.totalReviews != null)
-                        Text(_isBn ? '(${p.totalReviews} রিভিউ)' : '(${p.totalReviews} reviews)', style: const TextStyle(color: AppColors.textMuted, fontSize: 11)),
+                        Text(_isBn ? '(${p.totalReviews} রিভিউ)' : '(${p.totalReviews} reviews)', style: TextStyle(color: colors.outline, fontSize: 11)),
                       if (p.totalJobs != null) ...[
                         const SizedBox(width: 8),
-                        Icon(Icons.work_outline_rounded, color: AppColors.textMuted, size: 12),
+                        Icon(Icons.work_outline_rounded, color: colors.outline, size: 12),
                         const SizedBox(width: 3),
-                        Text(_isBn ? '${p.totalJobs} কাজ সম্পন্ন' : '${p.totalJobs} jobs done', style: const TextStyle(color: AppColors.textMuted, fontSize: 11)),
+                        Text(_isBn ? '${p.totalJobs} কাজ সম্পন্ন' : '${p.totalJobs} jobs done', style: TextStyle(color: colors.outline, fontSize: 11)),
                       ],
                     ]),
                   ]),
@@ -193,8 +196,8 @@ class _ProviderBrowseScreenState extends State<ProviderBrowseScreen> {
                   onTap: openProfile,
                   child: Container(
                     padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 8),
-                    decoration: BoxDecoration(gradient: AppColors.blueGradient, borderRadius: BorderRadius.circular(10)),
-                    child: Text(_isBn ? 'বুক করুন' : 'Book', style: const TextStyle(color: AppColors.ivory, fontSize: 12, fontWeight: FontWeight.w600)),
+                    decoration: BoxDecoration(gradient: AppGradients.primary(colors), borderRadius: BorderRadius.circular(10)),
+                    child: Text(_isBn ? 'বুক করুন' : 'Book', style: TextStyle(color: colors.onPrimary, fontSize: 12, fontWeight: FontWeight.w600)),
                   ),
                 ),
               ],
@@ -202,8 +205,8 @@ class _ProviderBrowseScreenState extends State<ProviderBrowseScreen> {
             if (widget.kind == 'tutor' && (p.subjectsTaught.isNotEmpty || p.teachingLevels.isNotEmpty)) ...[
               const SizedBox(height: 10),
               Wrap(spacing: 6, runSpacing: 6, children: [
-                ...p.subjectsTaught.map((s) => _infoChip(s, AppColors.deepBlue)),
-                ...p.teachingLevels.map((l) => _infoChip(l, AppColors.fuchsia)),
+                ...p.subjectsTaught.map((s) => _infoChip(s, colors.primary)),
+                ...p.teachingLevels.map((l) => _infoChip(l, colors.secondary)),
               ]),
             ],
           ]),
@@ -222,24 +225,27 @@ class _ProviderBrowseScreenState extends State<ProviderBrowseScreen> {
       );
 
 
-  Widget _buildEmpty() => Center(
+  Widget _buildEmpty() {
+    final colors = Theme.of(context).colorScheme;
+    return Center(
     child: Padding(
       padding: const EdgeInsets.all(32),
       child: Column(mainAxisSize: MainAxisSize.min, children: [
-        const Icon(Icons.person_search_rounded, color: AppColors.textMuted, size: 56),
+        Icon(Icons.person_search_rounded, color: colors.outline, size: 56),
         const SizedBox(height: 16),
         Text(
           _isBn ? '${widget.label} এর জন্য এখনো কোনো সেবাদাতা নেই' : 'No providers for ${widget.label} yet',
-          style: const TextStyle(color: AppColors.textPrimary, fontSize: 15, fontWeight: FontWeight.w600),
+          style: TextStyle(color: colors.onSurface, fontSize: 15, fontWeight: FontWeight.w600),
           textAlign: TextAlign.center,
         ),
         const SizedBox(height: 8),
         Text(
           _isBn ? 'উপরের বাটন থেকে একটা অনুরোধ পোস্ট করুন — নতুন সেবাদাতা এলে সাড়া দিতে পারবেন।' : 'Post a request using the button above — providers will be able to respond once available.',
-          style: const TextStyle(color: AppColors.textMuted, fontSize: 13),
+          style: TextStyle(color: colors.outline, fontSize: 13),
           textAlign: TextAlign.center,
         ),
       ]),
     ),
   );
+  }
 }

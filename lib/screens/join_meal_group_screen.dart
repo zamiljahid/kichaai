@@ -3,7 +3,8 @@ import 'package:flutter/services.dart';
 import 'package:flutter_animate/flutter_animate.dart';
 import '../core/network/api_client.dart';
 import '../services/meal_service.dart';
-import '../theme/app_theme.dart';
+import '../theme/app_gradients.dart';
+import '../theme/status_colors.dart';
 import '../widgets/glass_button.dart';
 
 const _kCodeLength = 6;
@@ -77,7 +78,7 @@ class _JoinMealGroupScreenState extends State<JoinMealGroupScreen> {
       if (alreadyMember) {
         ScaffoldMessenger.of(context).showSnackBar(const SnackBar(
           content: Text('আপনি আগে থেকেই এই গ্রুপের সদস্য'),
-          backgroundColor: AppColors.softBlue,
+          backgroundColor: StatusColors.blue,
         ));
       }
       Navigator.of(context).pop(group);
@@ -88,11 +89,12 @@ class _JoinMealGroupScreenState extends State<JoinMealGroupScreen> {
 
   @override
   Widget build(BuildContext context) {
+    final colors = Theme.of(context).colorScheme;
     return Scaffold(
-      backgroundColor: AppColors.bgDark,
+      backgroundColor: colors.surfaceContainerHighest,
       appBar: AppBar(title: const Text('কোড দিয়ে যোগ দিন')),
       body: DecoratedBox(
-        decoration: BoxDecoration(gradient: AppColors.bgGradient),
+        decoration: BoxDecoration(gradient: AppGradients.background(colors)),
         child: SingleChildScrollView(
           padding: const EdgeInsets.all(20),
           child: Column(
@@ -101,10 +103,10 @@ class _JoinMealGroupScreenState extends State<JoinMealGroupScreen> {
                   .animate()
                   .scale(duration: 400.ms, curve: Curves.easeOutBack),
               const SizedBox(height: 16),
-              const Text(
+              Text(
                 'গ্রুপ ম্যানেজারের দেওয়া ৬ অক্ষরের কোডটি লিখুন',
                 textAlign: TextAlign.center,
-                style: TextStyle(color: AppColors.textPrimary, fontSize: 15, fontWeight: FontWeight.w600),
+                style: TextStyle(color: colors.onSurface, fontSize: 15, fontWeight: FontWeight.w600),
               ),
               const SizedBox(height: 28),
               Row(
@@ -115,12 +117,12 @@ class _JoinMealGroupScreenState extends State<JoinMealGroupScreen> {
               TextField(
                 controller: _yourNameCtrl,
                 textAlign: TextAlign.center,
-                style: const TextStyle(color: AppColors.textPrimary),
+                style: TextStyle(color: colors.onSurface),
                 decoration: const InputDecoration(hintText: 'আপনার নাম (গ্রুপে দেখাবে)'),
               ),
               if (_error != null) ...[
                 const SizedBox(height: 12),
-                Text(_error!, style: const TextStyle(color: AppColors.softRed, fontSize: 13)),
+                Text(_error!, style: TextStyle(color: colors.error, fontSize: 13)),
               ],
               const SizedBox(height: 24),
               GlassButton(
@@ -137,6 +139,7 @@ class _JoinMealGroupScreenState extends State<JoinMealGroupScreen> {
   }
 
   Widget _buildCodeBox(int index) {
+    final colors = Theme.of(context).colorScheme;
     final filled = _charCtrls[index].text.isNotEmpty;
     return Padding(
       padding: const EdgeInsets.symmetric(horizontal: 4),
@@ -149,7 +152,7 @@ class _JoinMealGroupScreenState extends State<JoinMealGroupScreen> {
           textAlign: TextAlign.center,
           maxLength: 1,
           textCapitalization: TextCapitalization.characters,
-          style: const TextStyle(color: AppColors.textPrimary, fontSize: 22, fontWeight: FontWeight.w700),
+          style: TextStyle(color: colors.onSurface, fontSize: 22, fontWeight: FontWeight.w700),
           inputFormatters: [
             FilteringTextInputFormatter.allow(RegExp('[a-zA-Z0-9]')),
             UpperCaseTextFormatter(),
@@ -158,18 +161,18 @@ class _JoinMealGroupScreenState extends State<JoinMealGroupScreen> {
             counterText: '',
             contentPadding: EdgeInsets.zero,
             filled: true,
-            fillColor: filled ? AppColors.glassBlue : AppColors.glassWhite,
+            fillColor: filled ? colors.primary.withValues(alpha: 0.08) : colors.surface,
             border: OutlineInputBorder(
               borderRadius: BorderRadius.circular(12),
-              borderSide: BorderSide(color: filled ? AppColors.deepBlue : AppColors.glassBorder, width: filled ? 1.5 : 1),
+              borderSide: BorderSide(color: filled ? colors.primary : colors.outlineVariant, width: filled ? 1.5 : 1),
             ),
             enabledBorder: OutlineInputBorder(
               borderRadius: BorderRadius.circular(12),
-              borderSide: BorderSide(color: filled ? AppColors.deepBlue : AppColors.glassBorder, width: filled ? 1.5 : 1),
+              borderSide: BorderSide(color: filled ? colors.primary : colors.outlineVariant, width: filled ? 1.5 : 1),
             ),
             focusedBorder: OutlineInputBorder(
               borderRadius: BorderRadius.circular(12),
-              borderSide: const BorderSide(color: AppColors.deepBlue, width: 2),
+              borderSide: BorderSide(color: colors.primary, width: 2),
             ),
           ),
           onChanged: (v) => _onChanged(index, v),

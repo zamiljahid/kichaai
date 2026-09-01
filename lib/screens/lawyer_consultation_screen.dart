@@ -8,13 +8,14 @@ import '../core/utils/meet_link.dart';
 import '../models/dispatch_model.dart';
 import '../services/dispatch_service.dart';
 import '../services/onboarding_service.dart';
-import '../theme/app_theme.dart';
+import '../theme/app_gradients.dart';
 import '../widgets/animated_background.dart';
 import '../widgets/glass_button.dart';
 import '../widgets/glass_card.dart';
 import '../widgets/policy_agreement_checkbox.dart';
 import 'payment_waiting_screen.dart';
 import 'lawyer_ai_chat_screen.dart';
+import '../theme/status_colors.dart';
 
 /// Customer-facing lawyer consultation booking (Uber-style).
 ///  1. pick legal area + service, describe the problem, pick instant vs schedule
@@ -326,24 +327,28 @@ class _LawyerConsultationScreenState extends State<LawyerConsultationScreen> {
     );
   }
 
-  Widget _appBar() => Padding(
+  Widget _appBar() {
+    final colors = Theme.of(context).colorScheme;
+    return Padding(
         padding: const EdgeInsets.fromLTRB(8, 8, 16, 4),
         child: Row(children: [
           IconButton(
-            icon: const Icon(Icons.arrow_back_rounded, color: AppColors.textPrimary),
+            icon: Icon(Icons.arrow_back_rounded, color: colors.onSurface),
             onPressed: () => Navigator.of(context).pop(),
           ),
           Text(_isBn ? 'আইনি পরামর্শ' : 'Legal Consultation',
-              style: const TextStyle(color: AppColors.textPrimary, fontSize: 18, fontWeight: FontWeight.w700)),
+              style: TextStyle(color: colors.onSurface, fontSize: 18, fontWeight: FontWeight.w700)),
         ]),
       );
+  }
 
   Widget _body() {
+    final colors = Theme.of(context).colorScheme;
     switch (_step) {
       case _Step.waiting:
         if (_timing == 'schedule' && _slotOffers.isNotEmpty) return _slotOffersView();
         return _centered(
-          const CircularProgressIndicator(color: AppColors.deepBlue),
+          CircularProgressIndicator(color: colors.primary),
           _isBn
               ? (_timing == 'schedule'
                   ? 'একজন আইনজীবী খোঁজা হচ্ছে…\nকেউ সময় প্রস্তাব করলে বা সরাসরি গ্রহণ করলে এখানে জানানো হবে।'
@@ -369,7 +374,8 @@ class _LawyerConsultationScreenState extends State<LawyerConsultationScreen> {
   // ── SELECT: one compact form — area, service, description, mode ────
 
   Widget _selectView() {
-    if (_loadingOptions) return const Center(child: CircularProgressIndicator(color: AppColors.deepBlue));
+    final colors = Theme.of(context).colorScheme;
+    if (_loadingOptions) return Center(child: CircularProgressIndicator(color: colors.primary));
     return SingleChildScrollView(
       padding: const EdgeInsets.fromLTRB(20, 8, 20, 32),
       child: Column(crossAxisAlignment: CrossAxisAlignment.stretch, children: [
@@ -405,11 +411,11 @@ class _LawyerConsultationScreenState extends State<LawyerConsultationScreen> {
             if (_services.any(_isAdvocateOnly)) ...[
               const SizedBox(height: 10),
               Row(children: [
-                const Icon(Icons.gavel_rounded, size: 13, color: AppColors.textMuted),
+                Icon(Icons.gavel_rounded, size: 13, color: colors.outline),
                 const SizedBox(width: 5),
                 Expanded(
                   child: Text(_isBn ? '= শুধু আইনজীবী নিতে পারবেন (আইন সহকারী নয়)' : '= only advocates can take this (not legal assistants)',
-                      style: const TextStyle(color: AppColors.textMuted, fontSize: 11)),
+                      style: TextStyle(color: colors.outline, fontSize: 11)),
                 ),
               ]),
             ],
@@ -457,12 +463,14 @@ class _LawyerConsultationScreenState extends State<LawyerConsultationScreen> {
     _refreshOnlineCount();
   }
 
-  Widget _askAiCard() => GestureDetector(
+  Widget _askAiCard() {
+    final colors = Theme.of(context).colorScheme;
+    return GestureDetector(
         onTap: _openAskAi,
         child: Container(
           padding: const EdgeInsets.all(16),
           decoration: BoxDecoration(
-            gradient: AppColors.blueGradient,
+            gradient: AppGradients.primary(colors),
             borderRadius: BorderRadius.circular(16),
           ),
           child: Row(children: [
@@ -485,16 +493,20 @@ class _LawyerConsultationScreenState extends State<LawyerConsultationScreen> {
           ]),
         ),
       );
+  }
 
-  Widget _sectionCard({required String title, required Widget child}) => GlassCard(
+  Widget _sectionCard({required String title, required Widget child}) {
+    final colors = Theme.of(context).colorScheme;
+    return GlassCard(
         padding: const EdgeInsets.all(18),
         child: Column(crossAxisAlignment: CrossAxisAlignment.start, children: [
           Text(title,
-              style: const TextStyle(color: AppColors.textPrimary, fontSize: 15, fontWeight: FontWeight.w600)),
+              style: TextStyle(color: colors.onSurface, fontSize: 15, fontWeight: FontWeight.w600)),
           const SizedBox(height: 12),
           child,
         ]),
       );
+  }
 
   // ── Instant vs Schedule ──────────────────────────────────────────
 
@@ -527,6 +539,7 @@ class _LawyerConsultationScreenState extends State<LawyerConsultationScreen> {
     required String label,
     required String sublabel,
   }) {
+    final colors = Theme.of(context).colorScheme;
     final selected = _timing == value;
     return InkWell(
       borderRadius: BorderRadius.circular(14),
@@ -534,22 +547,22 @@ class _LawyerConsultationScreenState extends State<LawyerConsultationScreen> {
       child: Container(
         padding: const EdgeInsets.symmetric(vertical: 14, horizontal: 10),
         decoration: BoxDecoration(
-          color: selected ? AppColors.deepBlue.withOpacity(0.08) : const Color(0xFFF9F7F0),
+          color: selected ? colors.primary.withOpacity(0.08) : colors.surfaceContainerLow,
           borderRadius: BorderRadius.circular(14),
-          border: Border.all(color: selected ? AppColors.deepBlue : AppColors.glassBorder, width: selected ? 1.5 : 1),
+          border: Border.all(color: selected ? colors.primary : colors.outlineVariant, width: selected ? 1.5 : 1),
         ),
         child: Column(children: [
-          Icon(icon, size: 22, color: selected ? AppColors.deepBlue : AppColors.textMuted),
+          Icon(icon, size: 22, color: selected ? colors.primary : colors.outline),
           const SizedBox(height: 6),
           Text(label,
               style: TextStyle(
-                  color: selected ? AppColors.deepBlue : AppColors.textPrimary,
+                  color: selected ? colors.primary : colors.onSurface,
                   fontSize: 13.5,
                   fontWeight: FontWeight.w700)),
           const SizedBox(height: 2),
           Text(sublabel,
               textAlign: TextAlign.center,
-              style: const TextStyle(color: AppColors.textMuted, fontSize: 10.5, height: 1.3)),
+              style: TextStyle(color: colors.outline, fontSize: 10.5, height: 1.3)),
         ]),
       ),
     );
@@ -557,26 +570,30 @@ class _LawyerConsultationScreenState extends State<LawyerConsultationScreen> {
 
   // ── Schedule-mode: pick from lawyers' proposed times ────────────────
 
-  Widget _slotOffersView() => SingleChildScrollView(
+  Widget _slotOffersView() {
+    final colors = Theme.of(context).colorScheme;
+    return SingleChildScrollView(
         padding: const EdgeInsets.fromLTRB(20, 8, 20, 32),
         child: Column(crossAxisAlignment: CrossAxisAlignment.stretch, children: [
           Text(_isBn ? 'একজন আইনজীবী কিছু সময় প্রস্তাব করেছেন' : 'A lawyer has proposed some times',
-              style: const TextStyle(color: AppColors.textPrimary, fontSize: 16, fontWeight: FontWeight.w700)),
+              style: TextStyle(color: colors.onSurface, fontSize: 16, fontWeight: FontWeight.w700)),
           const SizedBox(height: 4),
           Text(_isBn ? 'আপনার জন্য সুবিধাজনক একটি সময় বেছে নিন — তখনই একটি Meet লিংক তৈরি হবে।' : 'Pick a time that works for you — a Meet link will be created right then.',
-              style: const TextStyle(color: AppColors.textMuted, fontSize: 12.5)),
+              style: TextStyle(color: colors.outline, fontSize: 12.5)),
           const SizedBox(height: 16),
           ..._slotOffers.map(_slotOfferCard),
           const SizedBox(height: 8),
           Center(
             child: Text(_isBn ? 'অন্য আইনজীবীরাও এখনই বা সময় প্রস্তাব করে যুক্ত হতে পারেন — এখানেই দেখা যাবে।' : 'Other lawyers may also join by accepting now or proposing times — you\'ll see it here.',
                 textAlign: TextAlign.center,
-                style: const TextStyle(color: AppColors.textMuted, fontSize: 11.5)),
+                style: TextStyle(color: colors.outline, fontSize: 11.5)),
           ),
         ]),
       );
+  }
 
   Widget _slotOfferCard(Map<String, dynamic> offer) {
+    final colors = Theme.of(context).colorScheme;
     final providerId = offer['providerId'] as String? ?? '';
     final name = (offer['providerNameSnapshot'] as String?)?.trim();
     final slots = (offer['slots'] as List? ?? []).cast<Map<String, dynamic>>();
@@ -586,10 +603,10 @@ class _LawyerConsultationScreenState extends State<LawyerConsultationScreen> {
         padding: const EdgeInsets.all(16),
         child: Column(crossAxisAlignment: CrossAxisAlignment.start, children: [
           Row(children: [
-            const Icon(Icons.gavel_rounded, size: 16, color: AppColors.deepBlue),
+            Icon(Icons.gavel_rounded, size: 16, color: colors.primary),
             const SizedBox(width: 6),
             Text(name?.isNotEmpty == true ? name! : (_isBn ? 'একজন আইনজীবী' : 'A lawyer'),
-                style: const TextStyle(color: AppColors.textPrimary, fontSize: 13.5, fontWeight: FontWeight.w700)),
+                style: TextStyle(color: colors.onSurface, fontSize: 13.5, fontWeight: FontWeight.w700)),
           ]),
           const SizedBox(height: 10),
           Wrap(
@@ -606,8 +623,8 @@ class _LawyerConsultationScreenState extends State<LawyerConsultationScreen> {
               return OutlinedButton(
                 onPressed: _pickingSlot ? null : () => _pickSlot(providerId, i),
                 style: OutlinedButton.styleFrom(
-                  foregroundColor: AppColors.deepBlue,
-                  side: const BorderSide(color: AppColors.deepBlue),
+                  foregroundColor: colors.primary,
+                  side: BorderSide(color: colors.primary),
                   shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(10)),
                   padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 10),
                 ),
@@ -652,25 +669,28 @@ class _LawyerConsultationScreenState extends State<LawyerConsultationScreen> {
   static bool _isAdvocateOnly(Map<String, dynamic> it) =>
       it['advocate'] == true && it['assistant'] != true;
 
-  InputDecoration _fieldDecoration({String? hint}) => InputDecoration(
+  InputDecoration _fieldDecoration({String? hint}) {
+    final colors = Theme.of(context).colorScheme;
+    return InputDecoration(
         hintText: hint,
-        hintStyle: const TextStyle(color: AppColors.textMuted, fontSize: 13.5),
+        hintStyle: TextStyle(color: colors.outline, fontSize: 13.5),
         filled: true,
-        fillColor: const Color(0xFFF9F7F0),
+        fillColor: colors.surfaceContainerLow,
         contentPadding: const EdgeInsets.symmetric(horizontal: 14, vertical: 12),
         border: OutlineInputBorder(
           borderRadius: BorderRadius.circular(14),
-          borderSide: const BorderSide(color: AppColors.glassBorder),
+          borderSide: BorderSide(color: colors.outlineVariant),
         ),
         enabledBorder: OutlineInputBorder(
           borderRadius: BorderRadius.circular(14),
-          borderSide: const BorderSide(color: AppColors.glassBorder),
+          borderSide: BorderSide(color: colors.outlineVariant),
         ),
         focusedBorder: OutlineInputBorder(
           borderRadius: BorderRadius.circular(14),
-          borderSide: const BorderSide(color: AppColors.deepBlue, width: 1.5),
+          borderSide: BorderSide(color: colors.primary, width: 1.5),
         ),
       );
+  }
 
   /// `markAdvocateOnly`: services the backend restricts to advocates (court
   /// representation, bail, case filing, full opinion) get a gavel on the right
@@ -682,17 +702,19 @@ class _LawyerConsultationScreenState extends State<LawyerConsultationScreen> {
     required ValueChanged<String?> onChanged,
     IconData Function(String code)? leadingIcon,
     bool markAdvocateOnly = false,
-  }) =>
-      DropdownButtonFormField<String>(
+  }) {
+    final colors = Theme.of(context).colorScheme;
+    return DropdownButtonFormField<String>(
         initialValue: value,
         isExpanded: true,
-        icon: const Icon(Icons.keyboard_arrow_down_rounded, color: AppColors.textMuted),
+        icon: Icon(Icons.keyboard_arrow_down_rounded, color: colors.outline),
         dropdownColor: Colors.white,
         borderRadius: BorderRadius.circular(14),
         menuMaxHeight: 380,
         decoration: _fieldDecoration(hint: hint),
-        hint: Text(hint, style: const TextStyle(color: AppColors.textMuted, fontSize: 13.5)),
+        hint: Text(hint, style: TextStyle(color: colors.outline, fontSize: 13.5)),
         items: items.map((it) {
+    final colors = Theme.of(context).colorScheme;
           final code = it['code'] as String;
           final label = ((_isBn ? it['bn'] : it['en']) ?? it['bn'] ?? it['en'] ?? code).toString();
           final advocateOnly = markAdvocateOnly && _isAdvocateOnly(it);
@@ -704,32 +726,34 @@ class _LawyerConsultationScreenState extends State<LawyerConsultationScreen> {
                   width: 28,
                   height: 28,
                   decoration: BoxDecoration(
-                    color: AppColors.glassBlue,
+                    color: colors.primary.withValues(alpha: 0.08),
                     borderRadius: BorderRadius.circular(8),
                   ),
-                  child: Icon(leadingIcon(code), size: 16, color: AppColors.deepBlue),
+                  child: Icon(leadingIcon(code), size: 16, color: colors.primary),
                 ),
                 const SizedBox(width: 10),
               ],
               Expanded(
                 child: Text(label,
                     overflow: TextOverflow.ellipsis,
-                    style: const TextStyle(
-                        color: AppColors.textPrimary, fontSize: 14, fontWeight: FontWeight.w500)),
+                    style: TextStyle(
+                        color: colors.onSurface, fontSize: 14, fontWeight: FontWeight.w500)),
               ),
               if (advocateOnly) ...[
                 const SizedBox(width: 6),
-                const Icon(Icons.gavel_rounded, size: 15, color: AppColors.deepBlue),
+                Icon(Icons.gavel_rounded, size: 15, color: colors.primary),
               ],
             ]),
           );
         }).toList(),
         onChanged: onChanged,
       );
+  }
 
   // ── Description — what the lawyer reads before accepting ───────────
 
   Widget _descriptionCard() {
+    final colors = Theme.of(context).colorScheme;
     final len = _descCtrl.text.trim().length;
     final enough = len >= _kMinDescriptionChars;
     return _sectionCard(
@@ -741,7 +765,7 @@ class _LawyerConsultationScreenState extends State<LawyerConsultationScreen> {
           maxLines: 5,
           textInputAction: TextInputAction.newline,
           onChanged: (_) => setState(() {}),
-          style: const TextStyle(color: AppColors.textPrimary, fontSize: 14, height: 1.5),
+          style: TextStyle(color: colors.onSurface, fontSize: 14, height: 1.5),
           decoration: _fieldDecoration(
               hint: _isBn ? 'যেমন: ৩ বছর আগে বিয়ে হয়েছে, এখন তালাক চাই, ১টি সন্তান আছে।' : 'e.g. Married 3 years ago, want a divorce now, have 1 child.'),
         ),
@@ -757,7 +781,7 @@ class _LawyerConsultationScreenState extends State<LawyerConsultationScreen> {
                 _isBn
                     ? 'আইনজীবী আগে থেকে আপনার সমস্যা বুঝে প্রস্তুত হতে পারবেন — কমপক্ষে ${_bnDigits(_kMinDescriptionChars)} অক্ষর লিখুন (${_bnDigits(len)}/${_bnDigits(_kMinDescriptionChars)})'
                     : 'This lets the lawyer understand your issue beforehand — write at least $_kMinDescriptionChars characters ($len/$_kMinDescriptionChars)',
-                style: const TextStyle(color: AppColors.textMuted, fontSize: 11),
+                style: TextStyle(color: colors.outline, fontSize: 11),
               ),
       ]),
     );
@@ -772,9 +796,9 @@ class _LawyerConsultationScreenState extends State<LawyerConsultationScreen> {
       return Container(
         padding: const EdgeInsets.all(12),
         decoration: BoxDecoration(
-          color: const Color(0x14D98A0B),
+          color: StatusColors.amber.withValues(alpha: 0.08),
           borderRadius: BorderRadius.circular(12),
-          border: Border.all(color: const Color(0x40D98A0B)),
+          border: Border.all(color: StatusColors.amber.withValues(alpha: 0.25)),
         ),
         child: Row(children: [
           const Icon(Icons.info_outline_rounded, size: 18, color: Color(0xFFB27107)),
@@ -815,7 +839,9 @@ class _LawyerConsultationScreenState extends State<LawyerConsultationScreen> {
 
   // ── JOINED — the Google Meet link card ──────────────────────────────
 
-  Widget _joinedView() => _centered(
+  Widget _joinedView() {
+    final colors = Theme.of(context).colorScheme;
+    return _centered(
         Container(
           width: 84, height: 84,
           decoration: const BoxDecoration(color: Color(0x3310B981), shape: BoxShape.circle),
@@ -833,9 +859,9 @@ class _LawyerConsultationScreenState extends State<LawyerConsultationScreen> {
             Container(
               padding: const EdgeInsets.all(14),
               decoration: BoxDecoration(
-                color: const Color(0xFFD98A0B).withOpacity(0.08),
+                color: StatusColors.amber.withValues(alpha: 0.08),
                 borderRadius: BorderRadius.circular(12),
-                border: Border.all(color: const Color(0xFFD98A0B).withOpacity(0.35)),
+                border: Border.all(color: StatusColors.amber.withValues(alpha: 0.35)),
               ),
               child: Column(children: [
                 Row(mainAxisAlignment: MainAxisAlignment.center, children: [
@@ -865,21 +891,21 @@ class _LawyerConsultationScreenState extends State<LawyerConsultationScreen> {
             Container(
               padding: const EdgeInsets.all(14),
               decoration: BoxDecoration(
-                color: AppColors.deepBlue.withOpacity(0.07),
+                color: colors.primary.withOpacity(0.07),
                 borderRadius: BorderRadius.circular(12),
-                border: Border.all(color: AppColors.deepBlue.withOpacity(0.35)),
+                border: Border.all(color: colors.primary.withOpacity(0.35)),
               ),
               child: Column(children: [
                 Row(mainAxisAlignment: MainAxisAlignment.center, children: [
-                  const Icon(Icons.videocam_rounded, color: AppColors.deepBlue, size: 20),
+                  Icon(Icons.videocam_rounded, color: colors.primary, size: 20),
                   const SizedBox(width: 8),
                   Text(_isBn ? 'ভিডিও কলের লিংক তৈরি হয়েছে' : 'Video call link created',
-                      style: const TextStyle(color: AppColors.deepBlue, fontSize: 14, fontWeight: FontWeight.w700)),
+                      style: TextStyle(color: colors.primary, fontSize: 14, fontWeight: FontWeight.w700)),
                 ]),
                 const SizedBox(height: 8),
                 SelectableText(_meetLink!,
                     textAlign: TextAlign.center,
-                    style: const TextStyle(color: AppColors.textSecondary, fontSize: 12)),
+                    style: TextStyle(color: colors.onSurfaceVariant, fontSize: 12)),
                 const SizedBox(height: 10),
                 GlassButton(
                   label: _isBn ? 'মিটিং এ যোগ দিন' : 'Join meeting',
@@ -911,57 +937,59 @@ class _LawyerConsultationScreenState extends State<LawyerConsultationScreen> {
           GlassButton(label: _isBn ? 'সম্পন্ন' : 'Done', onPressed: () => Navigator.of(context).pop()),
         ]),
       );
+  }
 
   Future<void> _addCaseDocument() async {
+    final colors = Theme.of(context).colorScheme;
     if (_jobId == null) return;
     final urlCtrl = TextEditingController();
     final typeCtrl = TextEditingController();
     final ok = await showDialog<bool>(
       context: context,
       builder: (ctx) => AlertDialog(
-        backgroundColor: AppColors.bgMid,
+        backgroundColor: colors.surface,
         shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)),
-        title: Text(_isBn ? 'কেস ডকুমেন্ট' : 'Case Document', style: const TextStyle(color: AppColors.textPrimary, fontSize: 16, fontWeight: FontWeight.w700)),
+        title: Text(_isBn ? 'কেস ডকুমেন্ট' : 'Case Document', style: TextStyle(color: colors.onSurface, fontSize: 16, fontWeight: FontWeight.w700)),
         content: Column(
           mainAxisSize: MainAxisSize.min,
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
             Text(_isBn ? 'ডকুমেন্টের লিংক দিন (ছবি/PDF)। আইনজীবী এটি দেখতে পাবেন।' : 'Enter a document link (image/PDF). The lawyer will be able to see it.',
-                style: const TextStyle(color: AppColors.textSecondary, fontSize: 13)),
+                style: TextStyle(color: colors.onSurfaceVariant, fontSize: 13)),
             const SizedBox(height: 14),
             TextField(
               controller: urlCtrl,
               autofocus: true,
               keyboardType: TextInputType.url,
-              style: const TextStyle(color: AppColors.textPrimary, fontSize: 14),
+              style: TextStyle(color: colors.onSurface, fontSize: 14),
               decoration: InputDecoration(
                 hintText: 'https://…',
-                hintStyle: const TextStyle(color: AppColors.textMuted),
-                border: OutlineInputBorder(borderRadius: BorderRadius.circular(10), borderSide: const BorderSide(color: AppColors.glassBorder)),
-                focusedBorder: OutlineInputBorder(borderRadius: BorderRadius.circular(10), borderSide: const BorderSide(color: AppColors.deepBlue)),
+                hintStyle: TextStyle(color: colors.outline),
+                border: OutlineInputBorder(borderRadius: BorderRadius.circular(10), borderSide: BorderSide(color: colors.outlineVariant)),
+                focusedBorder: OutlineInputBorder(borderRadius: BorderRadius.circular(10), borderSide: BorderSide(color: colors.primary)),
               ),
             ),
             const SizedBox(height: 10),
             TextField(
               controller: typeCtrl,
-              style: const TextStyle(color: AppColors.textPrimary, fontSize: 14),
+              style: TextStyle(color: colors.onSurface, fontSize: 14),
               decoration: InputDecoration(
                 hintText: _isBn ? 'ধরন (যেমন: legal_notice) — ঐচ্ছিক' : 'Type (e.g. legal_notice) — optional',
-                hintStyle: const TextStyle(color: AppColors.textMuted, fontSize: 13),
-                border: OutlineInputBorder(borderRadius: BorderRadius.circular(10), borderSide: const BorderSide(color: AppColors.glassBorder)),
-                focusedBorder: OutlineInputBorder(borderRadius: BorderRadius.circular(10), borderSide: const BorderSide(color: AppColors.deepBlue)),
+                hintStyle: TextStyle(color: colors.outline, fontSize: 13),
+                border: OutlineInputBorder(borderRadius: BorderRadius.circular(10), borderSide: BorderSide(color: colors.outlineVariant)),
+                focusedBorder: OutlineInputBorder(borderRadius: BorderRadius.circular(10), borderSide: BorderSide(color: colors.primary)),
               ),
             ),
           ],
         ),
         actions: [
-          TextButton(onPressed: () => Navigator.pop(ctx, false), child: Text(_isBn ? 'বাতিল' : 'Cancel', style: const TextStyle(color: AppColors.textMuted))),
+          TextButton(onPressed: () => Navigator.pop(ctx, false), child: Text(_isBn ? 'বাতিল' : 'Cancel', style: TextStyle(color: colors.outline))),
           TextButton(
             onPressed: () {
               final u = urlCtrl.text.trim();
               if (u.startsWith('http')) Navigator.pop(ctx, true);
             },
-            child: Text(_isBn ? 'যোগ করুন' : 'Add', style: const TextStyle(color: AppColors.deepBlue, fontWeight: FontWeight.w700)),
+            child: Text(_isBn ? 'যোগ করুন' : 'Add', style: TextStyle(color: colors.primary, fontWeight: FontWeight.w700)),
           ),
         ],
       ),
@@ -982,15 +1010,18 @@ class _LawyerConsultationScreenState extends State<LawyerConsultationScreen> {
     }
   }
 
-  Widget _centered(Widget top, String msg, {Widget? action}) => Center(
+  Widget _centered(Widget top, String msg, {Widget? action}) {
+    final colors = Theme.of(context).colorScheme;
+    return Center(
         child: SingleChildScrollView(
           padding: const EdgeInsets.all(28),
           child: Column(mainAxisAlignment: MainAxisAlignment.center, children: [
             top,
             const SizedBox(height: 20),
-            Text(msg, textAlign: TextAlign.center, style: const TextStyle(color: AppColors.textSecondary, fontSize: 15)),
+            Text(msg, textAlign: TextAlign.center, style: TextStyle(color: colors.onSurfaceVariant, fontSize: 15)),
             if (action != null) ...[const SizedBox(height: 24), action],
           ]),
         ),
       );
+  }
 }

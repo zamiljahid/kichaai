@@ -3,7 +3,7 @@ import 'package:flutter_animate/flutter_animate.dart';
 import 'package:provider/provider.dart';
 import '../core/network/api_client.dart';
 import '../core/utils/app_strings.dart';
-import '../theme/app_theme.dart';
+import '../theme/app_gradients.dart';
 import '../widgets/animated_background.dart';
 import '../widgets/glass_button.dart';
 import '../widgets/glass_card.dart';
@@ -28,9 +28,10 @@ class _OtpScreenState extends State<OtpScreen> {
   }
 
   void _showError(String message) {
+    final colors = Theme.of(context).colorScheme;
     if (!mounted) return;
     ScaffoldMessenger.of(context).showSnackBar(SnackBar(
-      content: Text(message, style: const TextStyle(color: AppColors.ivory)),
+      content: Text(message, style: TextStyle(color: colors.onPrimary)),
       backgroundColor: const Color(0xFFEF4444),
       behavior: SnackBarBehavior.floating,
       shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
@@ -71,6 +72,7 @@ class _OtpScreenState extends State<OtpScreen> {
 
   @override
   Widget build(BuildContext context) {
+    final colors = Theme.of(context).colorScheme;
     final isBn = context.watch<LanguageNotifier>().isBengali;
     return Scaffold(
       body: AnimatedBackground(
@@ -85,27 +87,27 @@ class _OtpScreenState extends State<OtpScreen> {
                   width: 72,
                   height: 72,
                   decoration: BoxDecoration(
-                    gradient: AppColors.blueGradient,
+                    gradient: AppGradients.primary(colors),
                     borderRadius: BorderRadius.circular(20),
                     boxShadow: [
                       BoxShadow(
-                        color: AppColors.deepBlue.withOpacity(0.5),
+                        color: colors.primary.withOpacity(0.5),
                         blurRadius: 24,
                         offset: const Offset(0, 8),
                       ),
                     ],
                   ),
-                  child: const Icon(Icons.mark_email_read_rounded, color: AppColors.ivory, size: 36),
+                  child: Icon(Icons.mark_email_read_rounded, color: colors.onPrimary, size: 36),
                 ).animate().fadeIn(duration: 500.ms).scale(begin: const Offset(0.8, 0.8)),
                 const SizedBox(height: 20),
                 Text(
                   isBn ? 'ইমেইল যাচাই করুন' : 'Verify your email',
-                  style: const TextStyle(color: AppColors.textPrimary, fontSize: 24, fontWeight: FontWeight.w700),
+                  style: TextStyle(color: colors.onSurface, fontSize: 24, fontWeight: FontWeight.w700),
                 ).animate().fadeIn(duration: 400.ms, delay: 100.ms),
                 const SizedBox(height: 8),
                 Text(
                   isBn ? '${widget.email} ঠিকানায় পাঠানো OTP কোডটি দিন' : 'Enter the OTP code sent to ${widget.email}',
-                  style: const TextStyle(color: AppColors.textSecondary, fontSize: 14),
+                  style: TextStyle(color: colors.onSurfaceVariant, fontSize: 14),
                   textAlign: TextAlign.center,
                 ).animate().fadeIn(duration: 400.ms, delay: 150.ms),
                 const SizedBox(height: 32),
@@ -115,7 +117,7 @@ class _OtpScreenState extends State<OtpScreen> {
                     children: [
                       Text(
                         isBn ? 'OTP কোড' : 'OTP code',
-                        style: const TextStyle(color: AppColors.textSecondary, fontSize: 13, fontWeight: FontWeight.w500),
+                        style: TextStyle(color: colors.onSurfaceVariant, fontSize: 13, fontWeight: FontWeight.w500),
                       ),
                       const SizedBox(height: 8),
                       TextField(
@@ -123,8 +125,8 @@ class _OtpScreenState extends State<OtpScreen> {
                         keyboardType: TextInputType.number,
                         maxLength: 6,
                         textAlign: TextAlign.center,
-                        style: const TextStyle(
-                          color: AppColors.textPrimary,
+                        style: TextStyle(
+                          color: colors.onSurface,
                           fontSize: 28,
                           fontWeight: FontWeight.w700,
                           letterSpacing: 12,
@@ -132,7 +134,7 @@ class _OtpScreenState extends State<OtpScreen> {
                         decoration: InputDecoration(
                           counterText: '',
                           hintText: '------',
-                          hintStyle: TextStyle(color: AppColors.textMuted, fontSize: 28, letterSpacing: 12),
+                          hintStyle: TextStyle(color: colors.outline, fontSize: 28, letterSpacing: 12),
                         ),
                       ),
                       const SizedBox(height: 24),
@@ -149,7 +151,7 @@ class _OtpScreenState extends State<OtpScreen> {
                   onPressed: () => Navigator.of(context).pop(),
                   child: Text(
                     isBn ? 'ফিরে যান' : 'Go back',
-                    style: const TextStyle(color: AppColors.textMuted, fontSize: 14),
+                    style: TextStyle(color: colors.outline, fontSize: 14),
                   ),
                 ),
               ],

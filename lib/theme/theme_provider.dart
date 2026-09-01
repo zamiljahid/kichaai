@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:flutter/services.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 
 // Bundled locally as assets/fonts/NotoSansBengali-Regular.ttf (see pubspec.yaml) instead of
@@ -78,7 +79,18 @@ class ThemeProvider with ChangeNotifier {
         backgroundColor: colorScheme.primary,
         foregroundColor: colorScheme.onPrimary,
         elevation: 0,
+        scrolledUnderElevation: 0,
         centerTitle: true,
+        // ki_chai's app-bar silhouette: a primary-filled bar with its bottom
+        // corners rounded off by 30. Set on the theme rather than per screen so
+        // all ~56 AppBars pick it up without touching a single call site.
+        shape: const RoundedRectangleBorder(
+          borderRadius: BorderRadius.only(
+            bottomLeft: Radius.circular(30),
+            bottomRight: Radius.circular(30),
+          ),
+        ),
+        systemOverlayStyle: SystemUiOverlayStyle.light,
         titleTextStyle: TextStyle(
           fontFamily: kBengaliFont,
           color: colorScheme.onPrimary,

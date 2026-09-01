@@ -4,7 +4,6 @@ import 'package:flutter_animate/flutter_animate.dart';
 import 'package:provider/provider.dart';
 import '../core/network/api_client.dart';
 import '../core/utils/app_strings.dart';
-import '../theme/app_theme.dart';
 import '../widgets/glass_button.dart';
 import '../widgets/glass_card.dart';
 import 'auth_screen.dart';
@@ -94,15 +93,16 @@ class _ResetPasswordScreenState extends State<ResetPasswordScreen> {
 
   @override
   Widget build(BuildContext context) {
+    final colors = Theme.of(context).colorScheme;
     final isBn = context.watch<LanguageNotifier>().isBengali;
     return Scaffold(
-      backgroundColor: AppColors.bgDark,
+      backgroundColor: colors.surfaceContainerHighest,
       appBar: AppBar(
         backgroundColor: Colors.transparent,
         elevation: 0,
-        title: Text(isBn ? 'পাসওয়ার্ড রিসেট' : 'Reset password', style: const TextStyle(color: AppColors.textPrimary, fontSize: 18, fontWeight: FontWeight.w700)),
+        title: Text(isBn ? 'পাসওয়ার্ড রিসেট' : 'Reset password', style: TextStyle(color: colors.onSurface, fontSize: 18, fontWeight: FontWeight.w700)),
         leading: IconButton(
-          icon: const Icon(Icons.arrow_back_ios_new_rounded, color: AppColors.textPrimary, size: 18),
+          icon: Icon(Icons.arrow_back_ios_new_rounded, color: colors.onSurface, size: 18),
           onPressed: () => Navigator.pop(context),
         ),
       ),
@@ -114,7 +114,7 @@ class _ResetPasswordScreenState extends State<ResetPasswordScreen> {
             children: [
               Text(
                 isBn ? '${widget.email} এ OTP পাঠানো হয়েছে' : 'An OTP has been sent to ${widget.email}',
-                style: const TextStyle(color: AppColors.textMuted, fontSize: 13),
+                style: TextStyle(color: colors.outline, fontSize: 13),
               ),
               const SizedBox(height: 24),
               GlassCard(
@@ -132,7 +132,7 @@ class _ResetPasswordScreenState extends State<ResetPasswordScreen> {
                       alignment: Alignment.centerRight,
                       child: TextButton(
                         onPressed: _resendOtp,
-                        child: Text(isBn ? 'পুনরায় পাঠান' : 'Resend', style: const TextStyle(color: AppColors.deepBlue, fontSize: 12)),
+                        child: Text(isBn ? 'পুনরায় পাঠান' : 'Resend', style: TextStyle(color: colors.primary, fontSize: 12)),
                       ),
                     ),
                     _label(isBn ? 'নতুন পাসওয়ার্ড' : 'New password'),
@@ -173,10 +173,13 @@ class _ResetPasswordScreenState extends State<ResetPasswordScreen> {
     );
   }
 
-  Widget _label(String text) => Padding(
+  Widget _label(String text) {
+    final colors = Theme.of(context).colorScheme;
+    return Padding(
     padding: const EdgeInsets.only(bottom: 8, top: 16),
-    child: Text(text, style: const TextStyle(color: AppColors.textMuted, fontSize: 12, fontWeight: FontWeight.w600)),
+    child: Text(text, style: TextStyle(color: colors.outline, fontSize: 12, fontWeight: FontWeight.w600)),
   );
+  }
 
   Widget _field({
     required TextEditingController controller,
@@ -186,23 +189,24 @@ class _ResetPasswordScreenState extends State<ResetPasswordScreen> {
     bool obscure = false,
     VoidCallback? toggleObscure,
   }) {
+    final colors = Theme.of(context).colorScheme;
     return TextField(
       controller: controller,
       obscureText: obscure,
       keyboardType: keyboardType,
-      style: const TextStyle(color: AppColors.textPrimary),
+      style: TextStyle(color: colors.onSurface),
       decoration: InputDecoration(
         hintText: hint,
-        hintStyle: const TextStyle(color: AppColors.textMuted),
-        prefixIcon: Icon(icon, color: AppColors.textMuted, size: 18),
+        hintStyle: TextStyle(color: colors.outline),
+        prefixIcon: Icon(icon, color: colors.outline, size: 18),
         suffixIcon: toggleObscure != null
             ? IconButton(
-                icon: Icon(obscure ? Icons.visibility_outlined : Icons.visibility_off_outlined, color: AppColors.textMuted, size: 18),
+                icon: Icon(obscure ? Icons.visibility_outlined : Icons.visibility_off_outlined, color: colors.outline, size: 18),
                 onPressed: toggleObscure,
               )
             : null,
         filled: true,
-        fillColor: AppColors.glassWhite,
+        fillColor: colors.surface,
         border: OutlineInputBorder(borderRadius: BorderRadius.circular(12), borderSide: BorderSide.none),
       ),
     );

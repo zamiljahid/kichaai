@@ -3,7 +3,6 @@ import 'package:flutter_animate/flutter_animate.dart';
 import 'package:provider/provider.dart';
 import '../core/utils/app_strings.dart';
 import '../services/catalog_service.dart';
-import '../theme/app_theme.dart';
 import '../widgets/animated_background.dart';
 import 'courses_screen.dart';
 import 'grocery_screen.dart';
@@ -167,6 +166,7 @@ class _ServiceSelectionScreenState extends State<ServiceSelectionScreen> {
   }
 
   Widget _buildHeader(BuildContext context, bool isBn) {
+    final colors = Theme.of(context).colorScheme;
     return Padding(
       padding: const EdgeInsets.fromLTRB(20, 16, 20, 20),
       child: Row(
@@ -177,19 +177,19 @@ class _ServiceSelectionScreenState extends State<ServiceSelectionScreen> {
               width: 40,
               height: 40,
               decoration: BoxDecoration(
-                color: AppColors.glassWhite,
+                color: colors.surface,
                 borderRadius: BorderRadius.circular(12),
-                border: Border.all(color: AppColors.glassBorder, width: 1.5),
+                border: Border.all(color: colors.outlineVariant, width: 1.5),
               ),
-              child: const Icon(Icons.arrow_back_ios_new_rounded, color: AppColors.textPrimary, size: 18),
+              child: Icon(Icons.arrow_back_ios_new_rounded, color: colors.onSurface, size: 18),
             ),
           ),
           const SizedBox(width: 16),
           Column(
             crossAxisAlignment: CrossAxisAlignment.start,
             children: [
-              Text(isBn ? 'সকল সেবা বিভাগ' : 'All Service Categories', style: const TextStyle(color: AppColors.textPrimary, fontSize: 20, fontWeight: FontWeight.w700)),
-              Text(isBn ? 'All Service Categories' : 'সকল সেবা বিভাগ', style: const TextStyle(color: AppColors.textMuted, fontSize: 12)),
+              Text(isBn ? 'সকল সেবা বিভাগ' : 'All Service Categories', style: TextStyle(color: colors.onSurface, fontSize: 20, fontWeight: FontWeight.w700)),
+              Text(isBn ? 'All Service Categories' : 'সকল সেবা বিভাগ', style: TextStyle(color: colors.outline, fontSize: 12)),
             ],
           ),
         ],
@@ -198,13 +198,14 @@ class _ServiceSelectionScreenState extends State<ServiceSelectionScreen> {
   }
 
   Widget _buildCard(BuildContext context, _Service s, int index, bool isBn) {
+    final colors = Theme.of(context).colorScheme;
     return GestureDetector(
       onTap: () => _navigate(context, s),
       child: Container(
         decoration: BoxDecoration(
-          color: AppColors.glassWhite,
+          color: colors.surface,
           borderRadius: BorderRadius.circular(16),
-          border: Border.all(color: AppColors.glassBorder, width: 1.5),
+          border: Border.all(color: colors.outlineVariant, width: 1.5),
         ),
         padding: const EdgeInsets.all(12),
         child: Row(
@@ -220,9 +221,9 @@ class _ServiceSelectionScreenState extends State<ServiceSelectionScreen> {
                         end: Alignment.bottomRight,
                       )
                     : null,
-                color: s.imagePath != null ? AppColors.glassWhite : null,
+                color: s.imagePath != null ? colors.surface : null,
                 borderRadius: BorderRadius.circular(14),
-                border: s.imagePath != null ? Border.all(color: AppColors.glassBorder) : null,
+                border: s.imagePath != null ? Border.all(color: colors.outlineVariant) : null,
                 boxShadow: s.imagePath == null
                     ? [BoxShadow(color: s.color.withValues(alpha: 0.4), blurRadius: 10, offset: const Offset(0, 4))]
                     : null,
@@ -242,14 +243,14 @@ class _ServiceSelectionScreenState extends State<ServiceSelectionScreen> {
                 children: [
                   Text(
                     isBn ? s.label : s.sublabel,
-                    style: const TextStyle(color: AppColors.textPrimary, fontSize: 14, fontWeight: FontWeight.w700),
+                    style: TextStyle(color: colors.onSurface, fontSize: 14, fontWeight: FontWeight.w700),
                     maxLines: 1,
                     overflow: TextOverflow.ellipsis,
                   ),
                   const SizedBox(height: 2),
                   Text(
                     isBn ? s.sublabel : s.label,
-                    style: TextStyle(color: AppColors.textMuted, fontSize: 11),
+                    style: TextStyle(color: colors.outline, fontSize: 11),
                     maxLines: 1,
                     overflow: TextOverflow.ellipsis,
                   ),

@@ -11,7 +11,8 @@ import '../core/utils/jwt_utils.dart';
 import '../models/dispatch_model.dart';
 import '../services/catalog_service.dart';
 import '../services/dispatch_service.dart';
-import '../theme/app_theme.dart';
+import '../theme/app_gradients.dart';
+import '../theme/status_colors.dart';
 import '../widgets/animated_background.dart';
 import '../widgets/glass_button.dart';
 import '../widgets/glass_card.dart';
@@ -497,6 +498,7 @@ class _JobRequestScreenState extends State<JobRequestScreen> {
   }
 
   Future<void> _submit() async {
+    final colors = Theme.of(context).colorScheme;
     final description = _commonIssues.isNotEmpty
         ? (_selectedIssue == _customLabel
             ? _customController.text.trim()
@@ -659,7 +661,7 @@ class _JobRequestScreenState extends State<JobRequestScreen> {
       }
 
       ScaffoldMessenger.of(context).showSnackBar(SnackBar(
-        content: Text(_isBn ? 'আপনার অনুরোধ পাঠানো হয়েছে!' : 'Your request has been sent!', style: const TextStyle(color: AppColors.ivory, fontWeight: FontWeight.w600)),
+        content: Text(_isBn ? 'আপনার অনুরোধ পাঠানো হয়েছে!' : 'Your request has been sent!', style: TextStyle(color: colors.onPrimary, fontWeight: FontWeight.w600)),
         backgroundColor: const Color(0xFF22C55E),
         behavior: SnackBarBehavior.floating,
         shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
@@ -677,31 +679,32 @@ class _JobRequestScreenState extends State<JobRequestScreen> {
   }
 
   Future<bool?> _confirmNoOneOnline([String? message]) {
+    final colors = Theme.of(context).colorScheme;
     return showDialog<bool>(
       context: context,
       builder: (ctx) => AlertDialog(
-        backgroundColor: AppColors.bgMid,
+        backgroundColor: colors.surface,
         shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)),
         title: Text(
           _isBn ? 'কেউ অনলাইন নেই' : 'No one is online',
-          style: const TextStyle(color: AppColors.textPrimary, fontSize: 16, fontWeight: FontWeight.w700),
+          style: TextStyle(color: colors.onSurface, fontSize: 16, fontWeight: FontWeight.w700),
         ),
         content: Text(
           message ??
               (_isBn
                   ? 'এই মুহূর্তে এই কাজের কোনো টেকনিশিয়ান অনলাইন নেই — অনুরোধ পাঠালে অপেক্ষা করতে হতে পারে।'
                   : 'No technician for this job is online right now — sending the request may mean a wait.'),
-          style: const TextStyle(color: AppColors.textSecondary, fontSize: 13.5, height: 1.5),
+          style: TextStyle(color: colors.onSurfaceVariant, fontSize: 13.5, height: 1.5),
         ),
         actions: [
           TextButton(
             onPressed: () => Navigator.of(ctx).pop(false),
-            child: Text(_isBn ? 'বাতিল' : 'Cancel', style: const TextStyle(color: AppColors.textMuted)),
+            child: Text(_isBn ? 'বাতিল' : 'Cancel', style: TextStyle(color: colors.outline)),
           ),
           TextButton(
             onPressed: () => Navigator.of(ctx).pop(true),
             child: Text(_isBn ? 'তবুও পাঠান' : 'Send anyway',
-                style: const TextStyle(color: AppColors.deepBlue, fontWeight: FontWeight.w700)),
+                style: TextStyle(color: colors.primary, fontWeight: FontWeight.w700)),
           ),
         ],
       ),
@@ -709,9 +712,10 @@ class _JobRequestScreenState extends State<JobRequestScreen> {
   }
 
   void _showError(String message) {
+    final colors = Theme.of(context).colorScheme;
     if (!mounted) return;
     ScaffoldMessenger.of(context).showSnackBar(SnackBar(
-      content: Text(message, style: const TextStyle(color: AppColors.ivory)),
+      content: Text(message, style: TextStyle(color: colors.onPrimary)),
       backgroundColor: const Color(0xFFEF4444),
       behavior: SnackBarBehavior.floating,
       shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
@@ -842,6 +846,7 @@ class _JobRequestScreenState extends State<JobRequestScreen> {
   }
 
   Widget _buildHeader(BuildContext context) {
+    final colors = Theme.of(context).colorScheme;
     return Padding(
       padding: const EdgeInsets.fromLTRB(20, 16, 20, 20),
       child: Row(
@@ -850,8 +855,8 @@ class _JobRequestScreenState extends State<JobRequestScreen> {
             onTap: () => Navigator.of(context).pop(),
             child: Container(
               width: 40, height: 40,
-              decoration: BoxDecoration(color: AppColors.glassWhite, borderRadius: BorderRadius.circular(12), border: Border.all(color: AppColors.glassBorder, width: 1.5)),
-              child: const Icon(Icons.arrow_back_ios_new_rounded, color: AppColors.textPrimary, size: 18),
+              decoration: BoxDecoration(color: colors.surface, borderRadius: BorderRadius.circular(12), border: Border.all(color: colors.outlineVariant, width: 1.5)),
+              child: Icon(Icons.arrow_back_ios_new_rounded, color: colors.onSurface, size: 18),
             ),
           ),
           const SizedBox(width: 16),
@@ -859,8 +864,8 @@ class _JobRequestScreenState extends State<JobRequestScreen> {
             child: Column(
               crossAxisAlignment: CrossAxisAlignment.start,
               children: [
-                Text(widget.serviceLabel, style: const TextStyle(color: AppColors.textPrimary, fontSize: 18, fontWeight: FontWeight.w700), overflow: TextOverflow.ellipsis),
-                Text(_isBn ? 'সেবার অনুরোধ' : 'Service request', style: const TextStyle(color: AppColors.textMuted, fontSize: 12)),
+                Text(widget.serviceLabel, style: TextStyle(color: colors.onSurface, fontSize: 18, fontWeight: FontWeight.w700), overflow: TextOverflow.ellipsis),
+                Text(_isBn ? 'সেবার অনুরোধ' : 'Service request', style: TextStyle(color: colors.outline, fontSize: 12)),
               ],
             ),
           ),
@@ -869,10 +874,13 @@ class _JobRequestScreenState extends State<JobRequestScreen> {
     ).animate().fadeIn(duration: 400.ms).slideY(begin: -0.1);
   }
 
-  Widget _sectionLabel(String label) => Align(
+  Widget _sectionLabel(String label) {
+    final colors = Theme.of(context).colorScheme;
+    return Align(
     alignment: Alignment.centerLeft,
-    child: Text(label, style: const TextStyle(color: AppColors.textSecondary, fontSize: 13, fontWeight: FontWeight.w600)),
+    child: Text(label, style: TextStyle(color: colors.onSurfaceVariant, fontSize: 13, fontWeight: FontWeight.w600)),
   );
+  }
 
   // ── Nearby-providers preview map ─────────────────────────────────
   // Shows online providers of this exact serviceKind as pins on a small map,
@@ -880,11 +888,12 @@ class _JobRequestScreenState extends State<JobRequestScreen> {
   // No tap-to-book — the actual match still goes through broadcast (nearest-first)
   // or, for advance-booking kinds, the browse-and-confirm screen.
   Widget _buildNearbyProvidersMap() {
+    final colors = Theme.of(context).colorScheme;
     if (_isLoadingNearby) {
-      return const Padding(
+      return Padding(
         padding: EdgeInsets.symmetric(vertical: 12),
         child: Center(
-          child: SizedBox(width: 20, height: 20, child: CircularProgressIndicator(strokeWidth: 2, color: AppColors.deepBlue)),
+          child: SizedBox(width: 20, height: 20, child: CircularProgressIndicator(strokeWidth: 2, color: colors.primary)),
         ),
       );
     }
@@ -917,7 +926,7 @@ class _JobRequestScreenState extends State<JobRequestScreen> {
             Icon(
               Icons.circle,
               size: 9,
-              color: count > 0 ? const Color(0xFF22C55E) : AppColors.textMuted,
+              color: count > 0 ? const Color(0xFF22C55E) : colors.outline,
             ),
             const SizedBox(width: 7),
             Expanded(
@@ -926,7 +935,7 @@ class _JobRequestScreenState extends State<JobRequestScreen> {
                     ? (_isBn ? '${_bnDigits(count)} জন এখন অনলাইন আছেন — কাছেরজনের কাছে অনুরোধ যাবে' : '$count online now — the request goes to the nearest one')
                     : (_isBn ? 'এই মুহূর্তে কেউ অনলাইন নেই — অনুরোধ পাঠালে অপেক্ষা করতে হতে পারে' : 'No one is online right now — sending a request may mean a wait'),
                 style: TextStyle(
-                  color: count > 0 ? const Color(0xFF067A57) : AppColors.textMuted,
+                  color: count > 0 ? const Color(0xFF067A57) : colors.outline,
                   fontSize: 12,
                   fontWeight: FontWeight.w600,
                 ),
@@ -956,26 +965,27 @@ class _JobRequestScreenState extends State<JobRequestScreen> {
   // ── Caregiver-only fields ─────────────────────────────────────────
 
   Widget _buildPatientFields() {
+    final colors = Theme.of(context).colorScheme;
     return Column(
       crossAxisAlignment: CrossAxisAlignment.stretch,
       children: [
         TextFormField(
           controller: _patientConditionCtrl,
           maxLines: 2,
-          style: const TextStyle(color: AppColors.textPrimary, fontSize: 14),
+          style: TextStyle(color: colors.onSurface, fontSize: 14),
           decoration: InputDecoration(
             hintText: _isBn ? 'রোগীর সমস্যা/অসুখ কী?' : "What's the patient's condition?",
-            prefixIcon: const Icon(Icons.medical_information_rounded, color: AppColors.textMuted, size: 20),
+            prefixIcon: Icon(Icons.medical_information_rounded, color: colors.outline, size: 20),
           ),
         ),
         const SizedBox(height: 12),
         TextFormField(
           controller: _patientAgeCtrl,
           keyboardType: TextInputType.number,
-          style: const TextStyle(color: AppColors.textPrimary, fontSize: 14),
+          style: TextStyle(color: colors.onSurface, fontSize: 14),
           decoration: InputDecoration(
             hintText: _isBn ? 'রোগীর বয়স' : "Patient's age",
-            prefixIcon: const Icon(Icons.cake_rounded, color: AppColors.textMuted, size: 20),
+            prefixIcon: Icon(Icons.cake_rounded, color: colors.outline, size: 20),
           ),
         ),
       ],
@@ -985,6 +995,7 @@ class _JobRequestScreenState extends State<JobRequestScreen> {
   // Two-segment toggle — same visual pattern as match_requests_inbox_screen.dart's
   // _buildModeToggle(): deepBlue-filled active side, glassWhite inactive side.
   Widget _buildCaregiverModeToggle() {
+    final colors = Theme.of(context).colorScheme;
     return Row(children: [
       Expanded(
         child: GestureDetector(
@@ -993,14 +1004,14 @@ class _JobRequestScreenState extends State<JobRequestScreen> {
             padding: const EdgeInsets.symmetric(vertical: 10),
             alignment: Alignment.center,
             decoration: BoxDecoration(
-              color: _caregiverBookingMode == 'now' ? AppColors.deepBlue : AppColors.glassWhite,
+              color: _caregiverBookingMode == 'now' ? colors.primary : colors.surface,
               borderRadius: const BorderRadius.horizontal(left: Radius.circular(12)),
-              border: Border.all(color: AppColors.glassBorder),
+              border: Border.all(color: colors.outlineVariant),
             ),
             child: Text(
               _isBn ? 'এখনই দরকার' : 'Need it now',
               style: TextStyle(
-                color: _caregiverBookingMode == 'now' ? Colors.white : AppColors.textSecondary,
+                color: _caregiverBookingMode == 'now' ? Colors.white : colors.onSurfaceVariant,
                 fontSize: 13,
                 fontWeight: FontWeight.w600,
               ),
@@ -1015,14 +1026,14 @@ class _JobRequestScreenState extends State<JobRequestScreen> {
             padding: const EdgeInsets.symmetric(vertical: 10),
             alignment: Alignment.center,
             decoration: BoxDecoration(
-              color: _caregiverBookingMode == 'schedule' ? AppColors.deepBlue : AppColors.glassWhite,
+              color: _caregiverBookingMode == 'schedule' ? colors.primary : colors.surface,
               borderRadius: const BorderRadius.horizontal(right: Radius.circular(12)),
-              border: Border.all(color: AppColors.glassBorder),
+              border: Border.all(color: colors.outlineVariant),
             ),
             child: Text(
               _isBn ? 'পরে বুকিং' : 'Pre-book for later',
               style: TextStyle(
-                color: _caregiverBookingMode == 'schedule' ? Colors.white : AppColors.textSecondary,
+                color: _caregiverBookingMode == 'schedule' ? Colors.white : colors.onSurfaceVariant,
                 fontSize: 13,
                 fontWeight: FontWeight.w600,
               ),
@@ -1052,6 +1063,7 @@ class _JobRequestScreenState extends State<JobRequestScreen> {
   }
 
   Widget _buildCaregiverDateRangePicker() {
+    final colors = Theme.of(context).colorScheme;
     final hasRange = _eventDate != null && _eventEndDate != null;
     final label = hasRange
         ? '${_formatDateOnly(_eventDate!)}  →  ${_formatDateOnly(_eventEndDate!)}'
@@ -1061,28 +1073,28 @@ class _JobRequestScreenState extends State<JobRequestScreen> {
       child: Container(
         padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 14),
         decoration: BoxDecoration(
-          color: AppColors.glassWhite,
+          color: colors.surface,
           borderRadius: BorderRadius.circular(14),
           border: Border.all(
-            color: hasRange ? AppColors.deepBlue : AppColors.glassBorder,
+            color: hasRange ? colors.primary : colors.outlineVariant,
             width: hasRange ? 1.5 : 1,
           ),
         ),
         child: Row(
           children: [
-            const Icon(Icons.date_range_rounded, color: AppColors.textMuted, size: 20),
+            Icon(Icons.date_range_rounded, color: colors.outline, size: 20),
             const SizedBox(width: 10),
             Expanded(
               child: Text(
                 label,
                 style: TextStyle(
-                  color: hasRange ? AppColors.textPrimary : AppColors.textMuted,
+                  color: hasRange ? colors.onSurface : colors.outline,
                   fontSize: 13.5,
                   fontWeight: hasRange ? FontWeight.w600 : FontWeight.w400,
                 ),
               ),
             ),
-            const Icon(Icons.chevron_right_rounded, color: AppColors.textMuted, size: 20),
+            Icon(Icons.chevron_right_rounded, color: colors.outline, size: 20),
           ],
         ),
       ),
@@ -1098,6 +1110,7 @@ class _JobRequestScreenState extends State<JobRequestScreen> {
   ];
 
   Widget _buildGenderPreferenceChips() {
+    final colors = Theme.of(context).colorScheme;
     return Wrap(
       spacing: 8,
       runSpacing: 8,
@@ -1110,15 +1123,15 @@ class _JobRequestScreenState extends State<JobRequestScreen> {
             duration: const Duration(milliseconds: 160),
             padding: const EdgeInsets.symmetric(horizontal: 13, vertical: 8),
             decoration: BoxDecoration(
-              gradient: isSelected ? AppColors.blueGradient : null,
-              color: isSelected ? null : AppColors.glassWhite,
+              gradient: isSelected ? AppGradients.primary(colors) : null,
+              color: isSelected ? null : colors.surface,
               borderRadius: BorderRadius.circular(20),
-              border: Border.all(color: isSelected ? AppColors.deepBlue : AppColors.glassBorder, width: isSelected ? 1.5 : 1),
+              border: Border.all(color: isSelected ? colors.primary : colors.outlineVariant, width: isSelected ? 1.5 : 1),
             ),
             child: Text(
               _isBn ? labelBn : labelEn,
               style: TextStyle(
-                color: isSelected ? AppColors.ivory : AppColors.textSecondary,
+                color: isSelected ? colors.onPrimary : colors.onSurfaceVariant,
                 fontSize: 12.5,
                 fontWeight: isSelected ? FontWeight.w700 : FontWeight.w500,
               ),
@@ -1132,23 +1145,24 @@ class _JobRequestScreenState extends State<JobRequestScreen> {
   // ── Ride: destination + vehicle ─────────────────────────────────
 
   Widget _buildDestinationCard() {
+    final colors = Theme.of(context).colorScheme;
     final picked = _dropLatitude != null && _dropLongitude != null;
     return GestureDetector(
       onTap: _pickDestination,
       child: Container(
         padding: const EdgeInsets.all(14),
         decoration: BoxDecoration(
-          color: AppColors.glassWhite,
+          color: colors.surface,
           borderRadius: BorderRadius.circular(14),
           border: Border.all(
-            color: picked ? AppColors.deepBlue : AppColors.glassBorder,
+            color: picked ? colors.primary : colors.outlineVariant,
             width: picked ? 1.5 : 1,
           ),
         ),
         child: Row(
           children: [
             Icon(picked ? Icons.flag_rounded : Icons.add_location_alt_outlined,
-                color: picked ? AppColors.deepBlue : AppColors.textMuted, size: 20),
+                color: picked ? colors.primary : colors.outline, size: 20),
             const SizedBox(width: 12),
             Expanded(
               child: Column(
@@ -1160,7 +1174,7 @@ class _JobRequestScreenState extends State<JobRequestScreen> {
                             '${_dropLatitude!.toStringAsFixed(4)}, ${_dropLongitude!.toStringAsFixed(4)}')
                         : (_isBn ? 'ম্যাপে গন্তব্য দেখিয়ে দিন' : 'Pick your destination on the map'),
                     style: TextStyle(
-                      color: picked ? AppColors.textPrimary : AppColors.textMuted,
+                      color: picked ? colors.onSurface : colors.outline,
                       fontSize: 13.5,
                       fontWeight: picked ? FontWeight.w600 : FontWeight.w400,
                     ),
@@ -1173,14 +1187,14 @@ class _JobRequestScreenState extends State<JobRequestScreen> {
                       _isBn
                           ? 'প্রায় ${_rideDistanceKm!.toStringAsFixed(1)} কিমি'
                           : 'About ${_rideDistanceKm!.toStringAsFixed(1)} km',
-                      style: const TextStyle(color: AppColors.textMuted, fontSize: 11.5),
+                      style: TextStyle(color: colors.outline, fontSize: 11.5),
                     ),
                   ],
                 ],
               ),
             ),
             Icon(picked ? Icons.edit_rounded : Icons.chevron_right_rounded,
-                color: AppColors.deepBlue, size: 18),
+                color: colors.primary, size: 18),
           ],
         ),
       ),
@@ -1214,9 +1228,10 @@ class _JobRequestScreenState extends State<JobRequestScreen> {
 ''';
 
   Widget _buildRideScaffold(BuildContext context) {
+    final colors = Theme.of(context).colorScheme;
     final size = MediaQuery.of(context).size;
     return Scaffold(
-      backgroundColor: AppColors.bgDark,
+      backgroundColor: colors.surfaceContainerHighest,
       body: Stack(
         children: [
           // The map fills the screen; the sheet floats over its lower half. Camera padding
@@ -1238,12 +1253,13 @@ class _JobRequestScreenState extends State<JobRequestScreen> {
   /// The shared header assumes an opaque page behind it. Over a live map it needs its own
   /// scrim, or the title disappears against pale roads.
   Widget _buildRideHeader(BuildContext context) {
+    final colors = Theme.of(context).colorScheme;
     return Container(
       decoration: BoxDecoration(
         gradient: LinearGradient(
           begin: Alignment.topCenter,
           end: Alignment.bottomCenter,
-          colors: [AppColors.bgDark, AppColors.bgDark.withOpacity(0.0)],
+          colors: [colors.surfaceContainerHighest, colors.surfaceContainerHighest.withOpacity(0.0)],
         ),
       ),
       child: _buildHeader(context),
@@ -1251,6 +1267,7 @@ class _JobRequestScreenState extends State<JobRequestScreen> {
   }
 
   Widget _buildRideMap({required double bottomPadding}) {
+    final colors = Theme.of(context).colorScheme;
     final pickup = _latitude != null && _longitude != null ? LatLng(_latitude!, _longitude!) : null;
     final drop = _dropLatitude != null && _dropLongitude != null
         ? LatLng(_dropLatitude!, _dropLongitude!)
@@ -1298,7 +1315,7 @@ class _JobRequestScreenState extends State<JobRequestScreen> {
           Polyline(
             polylineId: const PolylineId('route'),
             points: [pickup, drop],
-            color: AppColors.deepBlue,
+            color: colors.primary,
             width: 4,
             // Dashed deliberately: there is no routing API behind this, so a solid line would
             // claim a road-accurate route nobody computed. The fare is the same kind of
@@ -1349,11 +1366,12 @@ class _JobRequestScreenState extends State<JobRequestScreen> {
   }
 
   Widget _buildRideSheet() {
+    final colors = Theme.of(context).colorScheme;
     return Container(
       decoration: BoxDecoration(
-        color: AppColors.bgMid,
+        color: colors.surface,
         borderRadius: const BorderRadius.vertical(top: Radius.circular(24)),
-        border: Border.all(color: AppColors.glassBorder, width: 1),
+        border: Border.all(color: colors.outlineVariant, width: 1),
         boxShadow: [
           BoxShadow(color: Colors.black.withOpacity(0.08), blurRadius: 24, offset: const Offset(0, -6)),
         ],
@@ -1368,7 +1386,7 @@ class _JobRequestScreenState extends State<JobRequestScreen> {
               width: 40,
               height: 4,
               decoration: BoxDecoration(
-                color: AppColors.glassBorder,
+                color: colors.outlineVariant,
                 borderRadius: BorderRadius.circular(2),
               ),
             ),
@@ -1406,6 +1424,7 @@ class _JobRequestScreenState extends State<JobRequestScreen> {
   /// "Is anyone even out there" — scoped to the chosen vehicle once a quote exists, and to the
   /// (already vehicle-filtered) pin list before that.
   Widget _buildRideAvailabilityLine() {
+    final colors = Theme.of(context).colorScheme;
     final quoted = _rideQuote?.forVehicle(_vehicleType);
     final count = quoted?.onlineCount ?? _nearbyProviders.length;
     final vehicle = _isBn ? kRideVehicleLabelsBn[_vehicleType]! : kRideVehicleLabelsEn[_vehicleType]!;
@@ -1413,7 +1432,7 @@ class _JobRequestScreenState extends State<JobRequestScreen> {
 
     return Row(
       children: [
-        Icon(Icons.circle, size: 9, color: count > 0 ? const Color(0xFF22C55E) : AppColors.textMuted),
+        Icon(Icons.circle, size: 9, color: count > 0 ? const Color(0xFF22C55E) : colors.outline),
         const SizedBox(width: 7),
         Expanded(
           child: Text(
@@ -1425,7 +1444,7 @@ class _JobRequestScreenState extends State<JobRequestScreen> {
                     ? 'এই মুহূর্তে কোনো $vehicle চালক অনলাইন নেই'
                     : 'No $vehicle driver is online right now'),
             style: TextStyle(
-              color: count > 0 ? const Color(0xFF067A57) : AppColors.textMuted,
+              color: count > 0 ? const Color(0xFF067A57) : colors.outline,
               fontSize: 12.5,
               fontWeight: FontWeight.w600,
             ),
@@ -1437,13 +1456,13 @@ class _JobRequestScreenState extends State<JobRequestScreen> {
           Container(
             padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 3),
             decoration: BoxDecoration(
-              color: AppColors.softAmber.withOpacity(0.12),
+              color: StatusColors.amber.withOpacity(0.12),
               borderRadius: BorderRadius.circular(20),
-              border: Border.all(color: AppColors.softAmber.withOpacity(0.4)),
+              border: Border.all(color: StatusColors.amber.withOpacity(0.4)),
             ),
             child: Text(
               _isBn ? 'চাহিদা বেশি' : 'High demand',
-              style: const TextStyle(color: AppColors.softAmber, fontSize: 10.5, fontWeight: FontWeight.w700),
+              style: const TextStyle(color: StatusColors.amber, fontSize: 10.5, fontWeight: FontWeight.w700),
             ),
           ),
       ],
@@ -1453,16 +1472,17 @@ class _JobRequestScreenState extends State<JobRequestScreen> {
   /// Compact pickup row. The shared _buildLocationWidget is a full section with its own labels;
   /// inside the sheet the pickup is one line of a two-line route, so it reads as the first stop.
   Widget _buildRidePickupCard() {
+    final colors = Theme.of(context).colorScheme;
     final detected = _locationDetected && _latitude != null && _longitude != null;
     return GestureDetector(
       onTap: _pickOnMap,
       child: Container(
         padding: const EdgeInsets.all(14),
         decoration: BoxDecoration(
-          color: AppColors.glassWhite,
+          color: colors.surface,
           borderRadius: BorderRadius.circular(14),
           border: Border.all(
-            color: detected ? const Color(0xFF22C55E).withOpacity(0.5) : AppColors.glassBorder,
+            color: detected ? const Color(0xFF22C55E).withOpacity(0.5) : colors.outlineVariant,
             width: detected ? 1.5 : 1,
           ),
         ),
@@ -1470,7 +1490,7 @@ class _JobRequestScreenState extends State<JobRequestScreen> {
           children: [
             Icon(
               detected ? Icons.trip_origin_rounded : Icons.location_off_rounded,
-              color: detected ? const Color(0xFF22C55E) : AppColors.textMuted,
+              color: detected ? const Color(0xFF22C55E) : colors.outline,
               size: 20,
             ),
             const SizedBox(width: 12),
@@ -1482,7 +1502,7 @@ class _JobRequestScreenState extends State<JobRequestScreen> {
                         ? (_address ?? '${_latitude!.toStringAsFixed(4)}, ${_longitude!.toStringAsFixed(4)}')
                         : (_isBn ? 'যাত্রা শুরুর জায়গা দেখিয়ে দিন' : 'Set your pickup point'),
                 style: TextStyle(
-                  color: detected ? AppColors.textPrimary : AppColors.textMuted,
+                  color: detected ? colors.onSurface : colors.outline,
                   fontSize: 13.5,
                   fontWeight: detected ? FontWeight.w600 : FontWeight.w400,
                 ),
@@ -1492,7 +1512,7 @@ class _JobRequestScreenState extends State<JobRequestScreen> {
             ),
             GestureDetector(
               onTap: _detectLocation,
-              child: const Icon(Icons.my_location_rounded, color: AppColors.deepBlue, size: 18),
+              child: Icon(Icons.my_location_rounded, color: colors.primary, size: 18),
             ),
           ],
         ),
@@ -1501,6 +1521,7 @@ class _JobRequestScreenState extends State<JobRequestScreen> {
   }
 
   Widget _buildVehicleTypeSelector() {
+    final colors = Theme.of(context).colorScheme;
     // Three per row. With six classes a single row leaves each chip too narrow to read
     // the fare, which is the whole point of showing them side by side.
     const perRow = 3;
@@ -1528,11 +1549,11 @@ class _JobRequestScreenState extends State<JobRequestScreen> {
                     duration: const Duration(milliseconds: 160),
                     padding: const EdgeInsets.symmetric(vertical: 11, horizontal: 6),
                     decoration: BoxDecoration(
-                      gradient: isSelected ? AppColors.blueGradient : null,
-                      color: isSelected ? null : AppColors.glassWhite,
+                      gradient: isSelected ? AppGradients.primary(colors) : null,
+                      color: isSelected ? null : colors.surface,
                       borderRadius: BorderRadius.circular(14),
                       border: Border.all(
-                        color: isSelected ? AppColors.deepBlue : AppColors.glassBorder,
+                        color: isSelected ? colors.primary : colors.outlineVariant,
                         width: isSelected ? 1.5 : 1,
                       ),
                     ),
@@ -1543,12 +1564,12 @@ class _JobRequestScreenState extends State<JobRequestScreen> {
                       child: Column(
                         children: [
                           Icon(_vehicleIcon(type),
-                              color: isSelected ? AppColors.ivory : AppColors.textSecondary, size: 22),
+                              color: isSelected ? colors.onPrimary : colors.onSurfaceVariant, size: 22),
                           const SizedBox(height: 5),
                           Text(
                             _isBn ? kRideVehicleLabelsBn[type]! : kRideVehicleLabelsEn[type]!,
                             style: TextStyle(
-                              color: isSelected ? AppColors.ivory : AppColors.textPrimary,
+                              color: isSelected ? colors.onPrimary : colors.onSurface,
                               fontSize: 12,
                               fontWeight: FontWeight.w700,
                             ),
@@ -1560,7 +1581,7 @@ class _JobRequestScreenState extends State<JobRequestScreen> {
                             Text(
                               '৳${_num(quoted!.fareMin!)}–${_num(quoted.fareMax!)}',
                               style: TextStyle(
-                                color: isSelected ? AppColors.ivory : AppColors.textPrimary,
+                                color: isSelected ? colors.onPrimary : colors.onSurface,
                                 fontSize: 11.5,
                                 fontWeight: FontWeight.w700,
                               ),
@@ -1572,7 +1593,7 @@ class _JobRequestScreenState extends State<JobRequestScreen> {
                               height: 11,
                               child: CircularProgressIndicator(
                                 strokeWidth: 1.6,
-                                color: isSelected ? AppColors.ivory : AppColors.textMuted,
+                                color: isSelected ? colors.onPrimary : colors.outline,
                               ),
                             ),
                             const SizedBox(height: 3),
@@ -1586,8 +1607,8 @@ class _JobRequestScreenState extends State<JobRequestScreen> {
                                   : (_isBn ? 'কেউ নেই' : 'None nearby'),
                               style: TextStyle(
                                 color: isSelected
-                                    ? AppColors.ivory.withOpacity(0.85)
-                                    : (quoted.hasDrivers ? AppColors.textMuted : AppColors.softAmber),
+                                    ? colors.onPrimary.withOpacity(0.85)
+                                    : (quoted.hasDrivers ? colors.outline : StatusColors.amber),
                                 fontSize: 10.5,
                                 fontWeight: FontWeight.w600,
                               ),
@@ -1610,7 +1631,7 @@ class _JobRequestScreenState extends State<JobRequestScreen> {
               : (_isBn
                   ? 'আনুমানিক ভাড়া ও সময় — রাস্তার অবস্থাভেদে কিছুটা বদলাতে পারে'
                   : 'Estimated fare and time — road conditions can shift both a little'),
-          style: const TextStyle(color: AppColors.textMuted, fontSize: 11.5),
+          style: TextStyle(color: colors.outline, fontSize: 11.5),
         ),
       ],
     );
@@ -1650,6 +1671,7 @@ class _JobRequestScreenState extends State<JobRequestScreen> {
     required String label,
     required String hint,
   }) {
+    final colors = Theme.of(context).colorScheme;
     final isSelected = _paymentMethod == value;
     return GestureDetector(
       onTap: () => setState(() => _paymentMethod = value),
@@ -1657,16 +1679,16 @@ class _JobRequestScreenState extends State<JobRequestScreen> {
         duration: const Duration(milliseconds: 160),
         padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 10),
         decoration: BoxDecoration(
-          color: isSelected ? AppColors.glassBlue : AppColors.glassWhite,
+          color: isSelected ? colors.primary.withValues(alpha: 0.08) : colors.surface,
           borderRadius: BorderRadius.circular(12),
           border: Border.all(
-            color: isSelected ? AppColors.deepBlue : AppColors.glassBorder,
+            color: isSelected ? colors.primary : colors.outlineVariant,
             width: isSelected ? 1.5 : 1,
           ),
         ),
         child: Row(
           children: [
-            Icon(icon, size: 18, color: isSelected ? AppColors.deepBlue : AppColors.textMuted),
+            Icon(icon, size: 18, color: isSelected ? colors.primary : colors.outline),
             const SizedBox(width: 9),
             Expanded(
               child: Column(
@@ -1676,14 +1698,14 @@ class _JobRequestScreenState extends State<JobRequestScreen> {
                   Text(
                     label,
                     style: TextStyle(
-                      color: isSelected ? AppColors.deepBlue : AppColors.textPrimary,
+                      color: isSelected ? colors.primary : colors.onSurface,
                       fontSize: 12.5,
                       fontWeight: FontWeight.w700,
                     ),
                   ),
                   Text(
                     hint,
-                    style: const TextStyle(color: AppColors.textMuted, fontSize: 10.5),
+                    style: TextStyle(color: colors.outline, fontSize: 10.5),
                     maxLines: 1,
                     overflow: TextOverflow.ellipsis,
                   ),
@@ -1697,6 +1719,7 @@ class _JobRequestScreenState extends State<JobRequestScreen> {
   }
 
   Widget _buildRideBottomBar() {
+    final colors = Theme.of(context).colorScheme;
     final hasPickup = _latitude != null && _longitude != null;
     final hasDrop = _dropLatitude != null && _dropLongitude != null;
     final ready = hasPickup && hasDrop;
@@ -1705,8 +1728,8 @@ class _JobRequestScreenState extends State<JobRequestScreen> {
 
     return Container(
       padding: const EdgeInsets.fromLTRB(16, 10, 16, 10),
-      decoration: const BoxDecoration(
-        border: Border(top: BorderSide(color: AppColors.glassBorder)),
+      decoration: BoxDecoration(
+        border: Border(top: BorderSide(color: colors.outlineVariant)),
       ),
       child: Column(
         mainAxisSize: MainAxisSize.min,
@@ -1714,15 +1737,15 @@ class _JobRequestScreenState extends State<JobRequestScreen> {
           if (ready && quoted?.fare != null && distance != null) ...[
             Row(
               children: [
-                Icon(_vehicleIcon(_vehicleType), color: AppColors.textMuted, size: 16),
+                Icon(_vehicleIcon(_vehicleType), color: colors.outline, size: 16),
                 const SizedBox(width: 6),
                 Expanded(
                   child: Text(
                     _isBn
                         ? '${_num(distance)} কিমি • প্রায় ৳${_num(quoted!.fare!)}'
                         : '${distance.toStringAsFixed(1)} km • about ৳${_num(quoted!.fare!)}',
-                    style: const TextStyle(
-                        color: AppColors.textPrimary, fontSize: 13, fontWeight: FontWeight.w700),
+                    style: TextStyle(
+                        color: colors.onSurface, fontSize: 13, fontWeight: FontWeight.w700),
                   ),
                 ),
               ],
@@ -1738,7 +1761,7 @@ class _JobRequestScreenState extends State<JobRequestScreen> {
                     ? (_isBn ? 'গন্তব্য বেছে নিন' : 'Choose a destination')
                     : (_isBn ? 'অনুরোধ পাঠান' : 'Send request'),
             isLoading: _isSubmitting,
-            color: ready ? null : AppColors.textMuted,
+            color: ready ? null : colors.outline,
             onPressed: ready
                 ? _submit
                 : hasPickup
@@ -1771,6 +1794,7 @@ class _JobRequestScreenState extends State<JobRequestScreen> {
   }
 
   Widget _buildEventDatePicker() {
+    final colors = Theme.of(context).colorScheme;
     final label = _eventDate == null
         ? (_isBn ? 'তারিখ ও সময় বেছে নিন' : 'Choose date and time')
         : _formatEventDate(_eventDate!);
@@ -1779,28 +1803,28 @@ class _JobRequestScreenState extends State<JobRequestScreen> {
       child: Container(
         padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 14),
         decoration: BoxDecoration(
-          color: AppColors.glassWhite,
+          color: colors.surface,
           borderRadius: BorderRadius.circular(14),
           border: Border.all(
-            color: _eventDate == null ? AppColors.glassBorder : AppColors.deepBlue,
+            color: _eventDate == null ? colors.outlineVariant : colors.primary,
             width: _eventDate == null ? 1 : 1.5,
           ),
         ),
         child: Row(
           children: [
-            const Icon(Icons.event_rounded, color: AppColors.textMuted, size: 20),
+            Icon(Icons.event_rounded, color: colors.outline, size: 20),
             const SizedBox(width: 10),
             Expanded(
               child: Text(
                 label,
                 style: TextStyle(
-                  color: _eventDate == null ? AppColors.textMuted : AppColors.textPrimary,
+                  color: _eventDate == null ? colors.outline : colors.onSurface,
                   fontSize: 14,
                   fontWeight: _eventDate == null ? FontWeight.w400 : FontWeight.w600,
                 ),
               ),
             ),
-            const Icon(Icons.chevron_right_rounded, color: AppColors.textMuted, size: 20),
+            Icon(Icons.chevron_right_rounded, color: colors.outline, size: 20),
           ],
         ),
       ),
@@ -1808,6 +1832,7 @@ class _JobRequestScreenState extends State<JobRequestScreen> {
   }
 
   Widget _buildDurationPicker() {
+    final colors = Theme.of(context).colorScheme;
     void bump(int delta) {
       final next = (_durationHours + delta).clamp(1, 24);
       setState(() => _durationHours = next);
@@ -1815,9 +1840,9 @@ class _JobRequestScreenState extends State<JobRequestScreen> {
     return Container(
       padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 8),
       decoration: BoxDecoration(
-        color: AppColors.glassWhite,
+        color: colors.surface,
         borderRadius: BorderRadius.circular(14),
-        border: Border.all(color: AppColors.glassBorder),
+        border: Border.all(color: colors.outlineVariant),
       ),
       child: Row(
         children: [
@@ -1826,8 +1851,8 @@ class _JobRequestScreenState extends State<JobRequestScreen> {
             child: Text(
               _isBn ? '$_durationHours ঘণ্টা' : '$_durationHours hours',
               textAlign: TextAlign.center,
-              style: const TextStyle(
-                color: AppColors.textPrimary,
+              style: TextStyle(
+                color: colors.onSurface,
                 fontSize: 16,
                 fontWeight: FontWeight.w700,
               ),
@@ -1840,17 +1865,18 @@ class _JobRequestScreenState extends State<JobRequestScreen> {
   }
 
   Widget _stepButton({required IconData icon, required VoidCallback onTap, bool primary = false}) {
+    final colors = Theme.of(context).colorScheme;
     return GestureDetector(
       onTap: onTap,
       child: Container(
         width: 36,
         height: 36,
         decoration: BoxDecoration(
-          gradient: primary ? AppColors.blueGradient : null,
-          color: primary ? null : AppColors.deepBlue.withValues(alpha: 0.2),
+          gradient: primary ? AppGradients.primary(colors) : null,
+          color: primary ? null : colors.primary.withValues(alpha: 0.2),
           borderRadius: BorderRadius.circular(10),
         ),
-        child: Icon(icon, color: primary ? AppColors.ivory : AppColors.textPrimary, size: 18),
+        child: Icon(icon, color: primary ? colors.onPrimary : colors.onSurface, size: 18),
       ),
     );
   }
@@ -1878,10 +1904,11 @@ class _JobRequestScreenState extends State<JobRequestScreen> {
   }
 
   Widget _buildDescriptionSection() {
+    final colors = Theme.of(context).colorScheme;
     if (_isLoadingIssues) {
-      return const SizedBox(
+      return SizedBox(
         height: 48,
-        child: Center(child: SizedBox(width: 20, height: 20, child: CircularProgressIndicator(strokeWidth: 2, color: AppColors.deepBlue))),
+        child: Center(child: SizedBox(width: 20, height: 20, child: CircularProgressIndicator(strokeWidth: 2, color: colors.primary))),
       );
     }
 
@@ -1908,15 +1935,15 @@ class _JobRequestScreenState extends State<JobRequestScreen> {
                 duration: const Duration(milliseconds: 180),
                 padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 8),
                 decoration: BoxDecoration(
-                  gradient: isSelected ? AppColors.blueGradient : null,
-                  color: isSelected ? null : AppColors.glassWhite,
+                  gradient: isSelected ? AppGradients.primary(colors) : null,
+                  color: isSelected ? null : colors.surface,
                   borderRadius: BorderRadius.circular(20),
                   border: Border.all(
-                    color: isSelected ? AppColors.deepBlue : AppColors.glassBorder,
+                    color: isSelected ? colors.primary : colors.outlineVariant,
                     width: isSelected ? 2 : 1.5,
                   ),
                   boxShadow: isSelected
-                      ? [BoxShadow(color: AppColors.deepBlue.withOpacity(0.25), blurRadius: 6, offset: const Offset(0, 2))]
+                      ? [BoxShadow(color: colors.primary.withOpacity(0.25), blurRadius: 6, offset: const Offset(0, 2))]
                       : null,
                 ),
                 child: Row(
@@ -1925,12 +1952,12 @@ class _JobRequestScreenState extends State<JobRequestScreen> {
                     if (isCustom)
                       Padding(
                         padding: const EdgeInsets.only(right: 6),
-                        child: Icon(Icons.edit_rounded, size: 13, color: isSelected ? Colors.white : AppColors.textMuted),
+                        child: Icon(Icons.edit_rounded, size: 13, color: isSelected ? Colors.white : colors.outline),
                       ),
                     Text(
                       _issueLabel(issue),
                       style: TextStyle(
-                        color: isSelected ? Colors.white : AppColors.textSecondary,
+                        color: isSelected ? Colors.white : colors.onSurfaceVariant,
                         fontSize: 13,
                         fontWeight: isSelected ? FontWeight.w700 : FontWeight.w500,
                       ),
@@ -1946,13 +1973,13 @@ class _JobRequestScreenState extends State<JobRequestScreen> {
           TextFormField(
             controller: _customController,
             maxLines: 4,
-            style: const TextStyle(color: AppColors.textPrimary, fontSize: 15),
+            style: TextStyle(color: colors.onSurface, fontSize: 15),
             autofocus: true,
             decoration: InputDecoration(
               hintText: _isBn ? 'সমস্যার বিস্তারিত বিবরণ লিখুন...' : 'Describe the issue in detail...',
               prefixIcon: Padding(
                 padding: EdgeInsets.only(bottom: 60),
-                child: Icon(Icons.notes_rounded, color: AppColors.textMuted, size: 20),
+                child: Icon(Icons.notes_rounded, color: colors.outline, size: 20),
               ),
             ),
           ),
@@ -1962,15 +1989,16 @@ class _JobRequestScreenState extends State<JobRequestScreen> {
   }
 
   Widget _buildFallbackTextField() {
+    final colors = Theme.of(context).colorScheme;
     return TextFormField(
       controller: _customController,
       maxLines: 4,
-      style: const TextStyle(color: AppColors.textPrimary, fontSize: 15),
-      decoration: const InputDecoration(
+      style: TextStyle(color: colors.onSurface, fontSize: 15),
+      decoration: InputDecoration(
         hintText: 'সমস্যার বিস্তারিত বিবরণ লিখুন...',
         prefixIcon: Padding(
           padding: EdgeInsets.only(bottom: 60),
-          child: Icon(Icons.notes_rounded, color: AppColors.textMuted, size: 20),
+          child: Icon(Icons.notes_rounded, color: colors.outline, size: 20),
         ),
       ),
     );
@@ -1981,13 +2009,14 @@ class _JobRequestScreenState extends State<JobRequestScreen> {
   // `specialization` on POST /dispatch/jobs. Coexists with taskCategory —
   // specialization is WHO fixes it, taskCategory is the PRICE.
   Widget _buildSpecializationSection() {
+    final colors = Theme.of(context).colorScheme;
     if (_isLoadingSpecs) {
-      return const Padding(
+      return Padding(
         padding: EdgeInsets.symmetric(vertical: 12),
         child: Center(
           child: SizedBox(
             width: 20, height: 20,
-            child: CircularProgressIndicator(strokeWidth: 2, color: AppColors.deepBlue),
+            child: CircularProgressIndicator(strokeWidth: 2, color: colors.primary),
           ),
         ),
       );
@@ -2006,6 +2035,7 @@ class _JobRequestScreenState extends State<JobRequestScreen> {
   }
 
   Widget _buildSpecGroupTiles(TechnicianSpecializationTaxonomy tax) {
+    final colors = Theme.of(context).colorScheme;
     return GridView.count(
       shrinkWrap: true,
       physics: const NeverScrollableScrollPhysics(),
@@ -2030,16 +2060,16 @@ class _JobRequestScreenState extends State<JobRequestScreen> {
             duration: const Duration(milliseconds: 180),
             padding: const EdgeInsets.all(12),
             decoration: BoxDecoration(
-              color: AppColors.glassWhite,
+              color: colors.surface,
               borderRadius: BorderRadius.circular(14),
-              border: Border.all(color: AppColors.glassBorder, width: 1.5),
+              border: Border.all(color: colors.outlineVariant, width: 1.5),
             ),
             child: Row(
               children: [
                 Container(
                   width: 42, height: 42,
                   decoration: BoxDecoration(
-                    gradient: AppColors.blueGradient,
+                    gradient: AppGradients.primary(colors),
                     borderRadius: BorderRadius.circular(12),
                   ),
                   child: Icon(technicianSpecIcon(g.icon), color: Colors.white, size: 22),
@@ -2052,8 +2082,8 @@ class _JobRequestScreenState extends State<JobRequestScreen> {
                     children: [
                       Text(
                         _isBn ? g.bn : g.en,
-                        style: const TextStyle(
-                            color: AppColors.textPrimary,
+                        style: TextStyle(
+                            color: colors.onSurface,
                             fontSize: 13,
                             fontWeight: FontWeight.w700),
                         maxLines: 2,
@@ -2062,8 +2092,8 @@ class _JobRequestScreenState extends State<JobRequestScreen> {
                       const SizedBox(height: 2),
                       Text(
                         _isBn ? '${n.types.length} টি বিকল্প' : '${n.types.length} options',
-                        style: const TextStyle(
-                            color: AppColors.textMuted, fontSize: 11),
+                        style: TextStyle(
+                            color: colors.outline, fontSize: 11),
                       ),
                     ],
                   ),
@@ -2077,6 +2107,7 @@ class _JobRequestScreenState extends State<JobRequestScreen> {
   }
 
   Widget _buildSpecTypesStep(TechnicianSpecTreeNode node) {
+    final colors = Theme.of(context).colorScheme;
     return Column(
       crossAxisAlignment: CrossAxisAlignment.stretch,
       children: [
@@ -2092,23 +2123,23 @@ class _JobRequestScreenState extends State<JobRequestScreen> {
               child: Container(
                 padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 6),
                 decoration: BoxDecoration(
-                  color: AppColors.glassWhite,
+                  color: colors.surface,
                   borderRadius: BorderRadius.circular(10),
-                  border: Border.all(color: AppColors.glassBorder),
+                  border: Border.all(color: colors.outlineVariant),
                 ),
                 child: Row(
                   mainAxisSize: MainAxisSize.min,
                   children: [
-                    const Icon(Icons.arrow_back_rounded,
-                        color: AppColors.textMuted, size: 14),
+                    Icon(Icons.arrow_back_rounded,
+                        color: colors.outline, size: 14),
                     const SizedBox(width: 6),
                     Icon(technicianSpecIcon(node.group.icon),
-                        color: AppColors.deepBlue, size: 15),
+                        color: colors.primary, size: 15),
                     const SizedBox(width: 6),
                     Text(
                       _isBn ? node.group.bn : node.group.en,
-                      style: const TextStyle(
-                          color: AppColors.textSecondary,
+                      style: TextStyle(
+                          color: colors.onSurfaceVariant,
                           fontSize: 12,
                           fontWeight: FontWeight.w700),
                     ),
@@ -2141,13 +2172,13 @@ class _JobRequestScreenState extends State<JobRequestScreen> {
                 duration: const Duration(milliseconds: 180),
                 padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 9),
                 decoration: BoxDecoration(
-                  gradient: isSelected ? AppColors.blueGradient : null,
-                  color: isSelected ? null : AppColors.glassWhite,
+                  gradient: isSelected ? AppGradients.primary(colors) : null,
+                  color: isSelected ? null : colors.surface,
                   borderRadius: BorderRadius.circular(20),
                   border: Border.all(
                     color: isSelected
-                        ? AppColors.deepBlue
-                        : AppColors.glassBorder,
+                        ? colors.primary
+                        : colors.outlineVariant,
                     width: 1.5,
                   ),
                 ),
@@ -2163,7 +2194,7 @@ class _JobRequestScreenState extends State<JobRequestScreen> {
                       _isBn ? t.bn : t.en,
                       style: TextStyle(
                         color:
-                            isSelected ? Colors.white : AppColors.textSecondary,
+                            isSelected ? Colors.white : colors.onSurfaceVariant,
                         fontSize: 13,
                         fontWeight: FontWeight.w600,
                       ),
@@ -2186,9 +2217,9 @@ class _JobRequestScreenState extends State<JobRequestScreen> {
       return Container(
         padding: const EdgeInsets.all(12),
         decoration: BoxDecoration(
-          color: const Color(0x14D98A0B),
+          color: StatusColors.amber.withValues(alpha: 0.08),
           borderRadius: BorderRadius.circular(12),
-          border: Border.all(color: const Color(0x40D98A0B)),
+          border: Border.all(color: StatusColors.amber.withValues(alpha: 0.25)),
         ),
         child: Row(children: [
           const Icon(Icons.info_outline_rounded, size: 18, color: Color(0xFFB27107)),
@@ -2253,10 +2284,11 @@ class _JobRequestScreenState extends State<JobRequestScreen> {
   // Task-category chips + live platform price. Picking one sets `taskCategory`, which the backend
   // uses to resolve estimatedAmount (and therefore the commission).
   Widget _buildCategorySection() {
+    final colors = Theme.of(context).colorScheme;
     if (_isLoadingRates) {
-      return const Padding(
+      return Padding(
         padding: EdgeInsets.symmetric(vertical: 12),
-        child: Center(child: SizedBox(width: 20, height: 20, child: CircularProgressIndicator(strokeWidth: 2, color: AppColors.deepBlue))),
+        child: Center(child: SizedBox(width: 20, height: 20, child: CircularProgressIndicator(strokeWidth: 2, color: colors.primary))),
       );
     }
     if (_visibleRates.isEmpty) return const SizedBox.shrink();
@@ -2275,23 +2307,23 @@ class _JobRequestScreenState extends State<JobRequestScreen> {
                 duration: const Duration(milliseconds: 180),
                 padding: const EdgeInsets.symmetric(vertical: 9, horizontal: 14),
                 decoration: BoxDecoration(
-                  gradient: isSelected ? AppColors.blueGradient : null,
-                  color: isSelected ? null : AppColors.glassWhite,
+                  gradient: isSelected ? AppGradients.primary(colors) : null,
+                  color: isSelected ? null : colors.surface,
                   borderRadius: BorderRadius.circular(20),
-                  border: Border.all(color: isSelected ? AppColors.deepBlue : AppColors.glassBorder, width: 1.5),
+                  border: Border.all(color: isSelected ? colors.primary : colors.outlineVariant, width: 1.5),
                 ),
                 child: Column(
                   mainAxisSize: MainAxisSize.min,
                   children: [
                     Text(r.labelBn,
                         style: TextStyle(
-                            color: isSelected ? AppColors.ivory : AppColors.textSecondary,
+                            color: isSelected ? colors.onPrimary : colors.onSurfaceVariant,
                             fontSize: 12.5,
                             fontWeight: FontWeight.w600)),
                     const SizedBox(height: 2),
                     Text('৳${r.fixedPrice.toStringAsFixed(0)}',
                         style: TextStyle(
-                            color: isSelected ? AppColors.ivory.withOpacity(0.9) : AppColors.deepBlue,
+                            color: isSelected ? colors.onPrimary.withOpacity(0.9) : colors.primary,
                             fontSize: 11,
                             fontWeight: FontWeight.w700)),
                   ],
@@ -2305,24 +2337,24 @@ class _JobRequestScreenState extends State<JobRequestScreen> {
           Container(
             padding: const EdgeInsets.all(13),
             decoration: BoxDecoration(
-              color: AppColors.deepBlue.withOpacity(0.07),
+              color: colors.primary.withOpacity(0.07),
               borderRadius: BorderRadius.circular(12),
-              border: Border.all(color: AppColors.deepBlue.withOpacity(0.35)),
+              border: Border.all(color: colors.primary.withOpacity(0.35)),
             ),
             child: Row(
               children: [
-                const Icon(Icons.receipt_long_rounded, color: AppColors.deepBlue, size: 20),
+                Icon(Icons.receipt_long_rounded, color: colors.primary, size: 20),
                 const SizedBox(width: 10),
                 Expanded(
                   child: Column(
                     crossAxisAlignment: CrossAxisAlignment.start,
                     children: [
                       Text('আনুমানিক ৳${_selectedRate!.fixedPrice.toStringAsFixed(0)}',
-                          style: const TextStyle(color: AppColors.deepBlue, fontSize: 16, fontWeight: FontWeight.w800)),
+                          style: TextStyle(color: colors.primary, fontSize: 16, fontWeight: FontWeight.w800)),
                       const SizedBox(height: 2),
                       Text(
                         'ভিজিটিং ফি ৳${_selectedRate!.visitingFee.toStringAsFixed(0)} • কিছু টেকনিশিয়ান কাজ দেখে দাম দেবেন, আপনি অনুমোদন করবেন',
-                        style: const TextStyle(color: AppColors.textMuted, fontSize: 11, height: 1.4),
+                        style: TextStyle(color: colors.outline, fontSize: 11, height: 1.4),
                       ),
                     ],
                   ),
@@ -2337,6 +2369,7 @@ class _JobRequestScreenState extends State<JobRequestScreen> {
 
   // Errand chips (ওষুধ আনা, বাজার, ব্যাংক লাইন…) for কাজের লোক.
   Widget _buildRunnerCategorySection() {
+    final colors = Theme.of(context).colorScheme;
     return Wrap(
       spacing: 8,
       runSpacing: 8,
@@ -2353,14 +2386,14 @@ class _JobRequestScreenState extends State<JobRequestScreen> {
             duration: const Duration(milliseconds: 180),
             padding: const EdgeInsets.symmetric(vertical: 9, horizontal: 14),
             decoration: BoxDecoration(
-              gradient: isSelected ? AppColors.blueGradient : null,
-              color: isSelected ? null : AppColors.glassWhite,
+              gradient: isSelected ? AppGradients.primary(colors) : null,
+              color: isSelected ? null : colors.surface,
               borderRadius: BorderRadius.circular(20),
-              border: Border.all(color: isSelected ? AppColors.deepBlue : AppColors.glassBorder, width: 1.5),
+              border: Border.all(color: isSelected ? colors.primary : colors.outlineVariant, width: 1.5),
             ),
             child: Text(label,
                 style: TextStyle(
-                    color: isSelected ? AppColors.ivory : AppColors.textSecondary,
+                    color: isSelected ? colors.onPrimary : colors.onSurfaceVariant,
                     fontSize: 12.5,
                     fontWeight: FontWeight.w600)),
           ),
@@ -2371,18 +2404,19 @@ class _JobRequestScreenState extends State<JobRequestScreen> {
 
   /// Child details, revealed only for an errand the backend flags as baby sitting.
   Widget _buildBabySittingSection() {
+    final colors = Theme.of(context).colorScheme;
     InputDecoration deco(String hint) => InputDecoration(
           hintText: hint,
-          hintStyle: const TextStyle(color: AppColors.textMuted, fontSize: 13),
+          hintStyle: TextStyle(color: colors.outline, fontSize: 13),
           filled: true,
-          fillColor: AppColors.glassWhite,
+          fillColor: colors.surface,
           border: OutlineInputBorder(
             borderRadius: BorderRadius.circular(12),
-            borderSide: const BorderSide(color: AppColors.glassBorder),
+            borderSide: BorderSide(color: colors.outlineVariant),
           ),
           enabledBorder: OutlineInputBorder(
             borderRadius: BorderRadius.circular(12),
-            borderSide: const BorderSide(color: AppColors.glassBorder),
+            borderSide: BorderSide(color: colors.outlineVariant),
           ),
           contentPadding: const EdgeInsets.symmetric(horizontal: 14, vertical: 12),
         );
@@ -2392,15 +2426,15 @@ class _JobRequestScreenState extends State<JobRequestScreen> {
       children: [
         const SizedBox(height: 14),
         Text(_isBn ? 'শিশুর তথ্য' : "Child details",
-            style: const TextStyle(
-                color: AppColors.textPrimary, fontSize: 13.5, fontWeight: FontWeight.w700)),
+            style: TextStyle(
+                color: colors.onSurface, fontSize: 13.5, fontWeight: FontWeight.w700)),
         const SizedBox(height: 8),
         Row(children: [
           Expanded(
             child: TextField(
               controller: _childAgeCtrl,
               keyboardType: TextInputType.number,
-              style: const TextStyle(color: AppColors.textPrimary, fontSize: 14),
+              style: TextStyle(color: colors.onSurface, fontSize: 14),
               decoration: deco(_isBn ? 'বয়স (বছর) *' : 'Age in years *'),
             ),
           ),
@@ -2409,14 +2443,14 @@ class _JobRequestScreenState extends State<JobRequestScreen> {
             child: TextField(
               controller: _childCountCtrl,
               keyboardType: TextInputType.number,
-              style: const TextStyle(color: AppColors.textPrimary, fontSize: 14),
+              style: TextStyle(color: colors.onSurface, fontSize: 14),
               decoration: deco(_isBn ? 'কতজন শিশু' : 'How many children'),
             ),
           ),
         ]),
         const SizedBox(height: 10),
         Text(_isBn ? 'কত ঘণ্টা' : 'For how many hours',
-            style: const TextStyle(color: AppColors.textSecondary, fontSize: 12.5)),
+            style: TextStyle(color: colors.onSurfaceVariant, fontSize: 12.5)),
         const SizedBox(height: 6),
         Wrap(
           spacing: 8,
@@ -2427,15 +2461,15 @@ class _JobRequestScreenState extends State<JobRequestScreen> {
               child: Container(
                 padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
                 decoration: BoxDecoration(
-                  gradient: sel ? AppColors.blueGradient : null,
-                  color: sel ? null : AppColors.glassWhite,
+                  gradient: sel ? AppGradients.primary(colors) : null,
+                  color: sel ? null : colors.surface,
                   borderRadius: BorderRadius.circular(20),
                   border: Border.all(
-                      color: sel ? AppColors.deepBlue : AppColors.glassBorder, width: 1.5),
+                      color: sel ? colors.primary : colors.outlineVariant, width: 1.5),
                 ),
                 child: Text('$h ' + (_isBn ? 'ঘণ্টা' : 'hr'),
                     style: TextStyle(
-                        color: sel ? AppColors.ivory : AppColors.textSecondary,
+                        color: sel ? colors.onPrimary : colors.onSurfaceVariant,
                         fontSize: 12.5,
                         fontWeight: FontWeight.w600)),
               ),
@@ -2444,7 +2478,7 @@ class _JobRequestScreenState extends State<JobRequestScreen> {
         ),
         const SizedBox(height: 12),
         Text(_isBn ? 'কোথায়' : 'Where',
-            style: const TextStyle(color: AppColors.textSecondary, fontSize: 12.5)),
+            style: TextStyle(color: colors.onSurfaceVariant, fontSize: 12.5)),
         const SizedBox(height: 6),
         Row(children: [
           for (final opt in const [
@@ -2459,20 +2493,20 @@ class _JobRequestScreenState extends State<JobRequestScreen> {
                   alignment: Alignment.center,
                   margin: const EdgeInsets.only(right: 8),
                   decoration: BoxDecoration(
-                    gradient: _sittingLocation == opt.$1 ? AppColors.blueGradient : null,
-                    color: _sittingLocation == opt.$1 ? null : AppColors.glassWhite,
+                    gradient: _sittingLocation == opt.$1 ? AppGradients.primary(colors) : null,
+                    color: _sittingLocation == opt.$1 ? null : colors.surface,
                     borderRadius: BorderRadius.circular(12),
                     border: Border.all(
                         color: _sittingLocation == opt.$1
-                            ? AppColors.deepBlue
-                            : AppColors.glassBorder,
+                            ? colors.primary
+                            : colors.outlineVariant,
                         width: 1.5),
                   ),
                   child: Text(_isBn ? opt.$2 : opt.$3,
                       style: TextStyle(
                           color: _sittingLocation == opt.$1
-                              ? AppColors.ivory
-                              : AppColors.textSecondary,
+                              ? colors.onPrimary
+                              : colors.onSurfaceVariant,
                           fontSize: 12.5,
                           fontWeight: FontWeight.w600)),
                 ),
@@ -2483,14 +2517,14 @@ class _JobRequestScreenState extends State<JobRequestScreen> {
         const SizedBox(height: 10),
         TextField(
           controller: _allergiesCtrl,
-          style: const TextStyle(color: AppColors.textPrimary, fontSize: 14),
+          style: TextStyle(color: colors.onSurface, fontSize: 14),
           decoration: deco(_isBn ? 'অ্যালার্জি (থাকলে)' : 'Allergies, if any'),
         ),
         const SizedBox(height: 10),
         TextField(
           controller: _sittingNotesCtrl,
           maxLines: 2,
-          style: const TextStyle(color: AppColors.textPrimary, fontSize: 14),
+          style: TextStyle(color: colors.onSurface, fontSize: 14),
           decoration: deco(_isBn
               ? 'বিশেষ নির্দেশনা (খাওয়ানো, ঘুম, ওষুধ…)'
               : 'Special instructions (food, nap, medicine…)'),
@@ -2500,6 +2534,7 @@ class _JobRequestScreenState extends State<JobRequestScreen> {
   }
 
   Widget _buildUrgencySelector() {
+    final colors = Theme.of(context).colorScheme;
     return Row(
       children: _urgencyOptions.map((option) {
         final (value, labelBn, labelEn) = option;
@@ -2514,14 +2549,14 @@ class _JobRequestScreenState extends State<JobRequestScreen> {
                 duration: const Duration(milliseconds: 200),
                 padding: const EdgeInsets.symmetric(vertical: 10, horizontal: 4),
                 decoration: BoxDecoration(
-                  gradient: isSelected ? AppColors.blueGradient : null,
-                  color: isSelected ? null : AppColors.glassWhite,
+                  gradient: isSelected ? AppGradients.primary(colors) : null,
+                  color: isSelected ? null : colors.surface,
                   borderRadius: BorderRadius.circular(12),
-                  border: Border.all(color: isSelected ? AppColors.deepBlue : AppColors.glassBorder, width: 1.5),
-                  boxShadow: isSelected ? [BoxShadow(color: AppColors.deepBlue.withOpacity(0.3), blurRadius: 8)] : null,
+                  border: Border.all(color: isSelected ? colors.primary : colors.outlineVariant, width: 1.5),
+                  boxShadow: isSelected ? [BoxShadow(color: colors.primary.withOpacity(0.3), blurRadius: 8)] : null,
                 ),
                 child: Text(label, textAlign: TextAlign.center, maxLines: 1, overflow: TextOverflow.ellipsis,
-                  style: TextStyle(color: isSelected ? AppColors.ivory : AppColors.textMuted, fontSize: 11, fontWeight: FontWeight.w600)),
+                  style: TextStyle(color: isSelected ? colors.onPrimary : colors.outline, fontSize: 11, fontWeight: FontWeight.w600)),
               ),
             ),
           ),
@@ -2531,11 +2566,12 @@ class _JobRequestScreenState extends State<JobRequestScreen> {
   }
 
   Widget _buildLocationWidget() {
+    final colors = Theme.of(context).colorScheme;
     if (_isLocating) {
       return Row(children: [
-        const SizedBox(width: 18, height: 18, child: CircularProgressIndicator(strokeWidth: 2, color: AppColors.deepBlue)),
+        SizedBox(width: 18, height: 18, child: CircularProgressIndicator(strokeWidth: 2, color: colors.primary)),
         const SizedBox(width: 10),
-        Text(_isBn ? '📍 বর্তমান অবস্থান নেওয়া হচ্ছে...' : '📍 Getting your location...', style: const TextStyle(color: AppColors.textMuted, fontSize: 13)),
+        Text(_isBn ? '📍 বর্তমান অবস্থান নেওয়া হচ্ছে...' : '📍 Getting your location...', style: TextStyle(color: colors.outline, fontSize: 13)),
       ]);
     }
     if (_locationDetected) {
@@ -2555,13 +2591,13 @@ class _JobRequestScreenState extends State<JobRequestScreen> {
                 Text(_isBn ? 'বর্তমান অবস্থান শনাক্ত হয়েছে' : 'Current location detected', style: const TextStyle(color: Color(0xFF22C55E), fontSize: 13, fontWeight: FontWeight.w600)),
                 Text(
                   _address ?? '${_latitude!.toStringAsFixed(4)}, ${_longitude!.toStringAsFixed(4)}',
-                  style: const TextStyle(color: AppColors.textSecondary, fontSize: 12, height: 1.35),
+                  style: TextStyle(color: colors.onSurfaceVariant, fontSize: 12, height: 1.35),
                   maxLines: 2,
                   overflow: TextOverflow.ellipsis,
                 ),
               ]),
             ),
-            GestureDetector(onTap: _detectLocation, child: const Icon(Icons.refresh_rounded, color: AppColors.deepBlue, size: 18)),
+            GestureDetector(onTap: _detectLocation, child: Icon(Icons.refresh_rounded, color: colors.primary, size: 18)),
           ],
         ),
       );
@@ -2569,12 +2605,12 @@ class _JobRequestScreenState extends State<JobRequestScreen> {
     return Column(crossAxisAlignment: CrossAxisAlignment.stretch, children: [
       Container(
         padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 10),
-        decoration: BoxDecoration(color: AppColors.glassWhite, borderRadius: BorderRadius.circular(12), border: Border.all(color: AppColors.glassBorder, width: 1.5)),
+        decoration: BoxDecoration(color: colors.surface, borderRadius: BorderRadius.circular(12), border: Border.all(color: colors.outlineVariant, width: 1.5)),
         child: Row(children: [
-          const Icon(Icons.location_off_rounded, color: AppColors.textMuted, size: 18),
+          Icon(Icons.location_off_rounded, color: colors.outline, size: 18),
           const SizedBox(width: 8),
-          Expanded(child: Text(_isBn ? 'অবস্থান পাওয়া যায়নি' : 'Location not found', style: const TextStyle(color: AppColors.textMuted, fontSize: 12))),
-          GestureDetector(onTap: _detectLocation, child: const Icon(Icons.refresh_rounded, color: AppColors.deepBlue, size: 18)),
+          Expanded(child: Text(_isBn ? 'অবস্থান পাওয়া যায়নি' : 'Location not found', style: TextStyle(color: colors.outline, fontSize: 12))),
+          GestureDetector(onTap: _detectLocation, child: Icon(Icons.refresh_rounded, color: colors.primary, size: 18)),
         ]),
       ),
       const SizedBox(height: 10),
@@ -2583,14 +2619,14 @@ class _JobRequestScreenState extends State<JobRequestScreen> {
         child: Container(
           padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 13),
           decoration: BoxDecoration(
-            color: AppColors.deepBlue.withOpacity(0.08),
+            color: colors.primary.withOpacity(0.08),
             borderRadius: BorderRadius.circular(12),
-            border: Border.all(color: AppColors.deepBlue.withOpacity(0.4), width: 1.5),
+            border: Border.all(color: colors.primary.withOpacity(0.4), width: 1.5),
           ),
           child: Row(mainAxisAlignment: MainAxisAlignment.center, children: [
-            const Icon(Icons.map_rounded, color: AppColors.deepBlue, size: 18),
+            Icon(Icons.map_rounded, color: colors.primary, size: 18),
             const SizedBox(width: 8),
-            Text(_isBn ? 'ম্যাপে দেখিয়ে দিন' : 'Pick on map', style: const TextStyle(color: AppColors.deepBlue, fontSize: 14, fontWeight: FontWeight.w700)),
+            Text(_isBn ? 'ম্যাপে দেখিয়ে দিন' : 'Pick on map', style: TextStyle(color: colors.primary, fontSize: 14, fontWeight: FontWeight.w700)),
           ]),
         ),
       ),

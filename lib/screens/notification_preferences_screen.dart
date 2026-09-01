@@ -5,7 +5,6 @@ import '../core/network/api_client.dart';
 import '../core/utils/app_strings.dart';
 import '../models/notification_model.dart';
 import '../services/notification_service.dart';
-import '../theme/app_theme.dart';
 import '../widgets/glass_button.dart';
 
 class NotificationPreferencesScreen extends StatefulWidget {
@@ -87,22 +86,23 @@ class _NotificationPreferencesScreenState extends State<NotificationPreferencesS
 
   @override
   Widget build(BuildContext context) {
+    final colors = Theme.of(context).colorScheme;
     _isBn = context.watch<LanguageNotifier>().isBengali;
     return Scaffold(
-      backgroundColor: AppColors.bgDark,
+      backgroundColor: colors.surfaceContainerHighest,
       appBar: AppBar(
         backgroundColor: Colors.transparent,
         elevation: 0,
-        title: Text(_isBn ? 'নোটিফিকেশন সেটিংস' : 'Notification Settings', style: const TextStyle(color: AppColors.textPrimary, fontSize: 18, fontWeight: FontWeight.w700)),
+        title: Text(_isBn ? 'নোটিফিকেশন সেটিংস' : 'Notification Settings', style: TextStyle(color: colors.onSurface, fontSize: 18, fontWeight: FontWeight.w700)),
         leading: IconButton(
-          icon: const Icon(Icons.arrow_back_ios_new_rounded, color: AppColors.textPrimary, size: 18),
+          icon: Icon(Icons.arrow_back_ios_new_rounded, color: colors.onSurface, size: 18),
           onPressed: () => Navigator.pop(context),
         ),
       ),
       body: _isLoading
-          ? const Center(child: CircularProgressIndicator(color: AppColors.deepBlue))
+          ? Center(child: CircularProgressIndicator(color: colors.primary))
           : _prefs == null
-              ? Center(child: Text(_isBn ? 'লোড করা যায়নি' : 'Could not load', style: const TextStyle(color: AppColors.textMuted)))
+              ? Center(child: Text(_isBn ? 'লোড করা যায়নি' : 'Could not load', style: TextStyle(color: colors.outline)))
               : ListView(
                   padding: const EdgeInsets.fromLTRB(16, 8, 16, 120),
                   children: [
@@ -165,8 +165,8 @@ class _NotificationPreferencesScreenState extends State<NotificationPreferencesS
           : Container(
               padding: const EdgeInsets.fromLTRB(16, 12, 16, 32),
               decoration: BoxDecoration(
-                color: AppColors.bgDark,
-                border: Border(top: BorderSide(color: AppColors.glassBorder)),
+                color: colors.surfaceContainerHighest,
+                border: Border(top: BorderSide(color: colors.outlineVariant)),
               ),
               child: GlassButton(
                 label: _isSaving ? (_isBn ? 'সংরক্ষণ হচ্ছে...' : 'Saving...') : (_isBn ? 'সংরক্ষণ করুন' : 'Save'),
@@ -177,11 +177,12 @@ class _NotificationPreferencesScreenState extends State<NotificationPreferencesS
   }
 
   Widget _sectionHeader(String text) {
+    final colors = Theme.of(context).colorScheme;
     return Padding(
       padding: const EdgeInsets.only(bottom: 10),
       child: Text(
         text,
-        style: const TextStyle(color: AppColors.textMuted, fontSize: 12, fontWeight: FontWeight.w600, letterSpacing: 1),
+        style: TextStyle(color: colors.outline, fontSize: 12, fontWeight: FontWeight.w600, letterSpacing: 1),
       ),
     );
   }
@@ -193,12 +194,13 @@ class _NotificationPreferencesScreenState extends State<NotificationPreferencesS
     required bool value,
     required ValueChanged<bool> onChanged,
   }) {
+    final colors = Theme.of(context).colorScheme;
     return Container(
       margin: const EdgeInsets.only(bottom: 10),
       decoration: BoxDecoration(
-        color: AppColors.bgMid,
+        color: colors.surface,
         borderRadius: BorderRadius.circular(16),
-        border: Border.all(color: AppColors.glassBorder),
+        border: Border.all(color: colors.outlineVariant),
       ),
       child: ClipRRect(
         borderRadius: BorderRadius.circular(16),
@@ -207,18 +209,18 @@ class _NotificationPreferencesScreenState extends State<NotificationPreferencesS
           child: SwitchListTile(
             value: value,
             onChanged: onChanged,
-            activeColor: AppColors.deepBlue,
+            activeColor: colors.primary,
             secondary: Container(
               width: 40,
               height: 40,
               decoration: BoxDecoration(
-                color: (value ? AppColors.deepBlue : AppColors.textMuted).withOpacity(0.1),
+                color: (value ? colors.primary : colors.outline).withOpacity(0.1),
                 borderRadius: BorderRadius.circular(12),
               ),
-              child: Icon(icon, color: value ? AppColors.deepBlue : AppColors.textMuted, size: 20),
+              child: Icon(icon, color: value ? colors.primary : colors.outline, size: 20),
             ),
-            title: Text(label, style: const TextStyle(color: AppColors.textPrimary, fontSize: 14, fontWeight: FontWeight.w600)),
-            subtitle: Text(subtitle, style: const TextStyle(color: AppColors.textMuted, fontSize: 11)),
+            title: Text(label, style: TextStyle(color: colors.onSurface, fontSize: 14, fontWeight: FontWeight.w600)),
+            subtitle: Text(subtitle, style: TextStyle(color: colors.outline, fontSize: 11)),
             contentPadding: const EdgeInsets.symmetric(horizontal: 14, vertical: 4),
           ),
         ),

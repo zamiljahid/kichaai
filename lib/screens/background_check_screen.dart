@@ -5,7 +5,6 @@ import 'package:image_picker/image_picker.dart';
 import 'package:provider/provider.dart';
 import '../core/network/api_client.dart';
 import '../core/utils/app_strings.dart';
-import '../theme/app_theme.dart';
 import '../widgets/glass_button.dart';
 
 class BackgroundCheckScreen extends StatefulWidget {
@@ -112,22 +111,23 @@ class _BackgroundCheckScreenState extends State<BackgroundCheckScreen> {
 
   @override
   Widget build(BuildContext context) {
+    final colors = Theme.of(context).colorScheme;
     _isBn = context.watch<LanguageNotifier>().isBengali;
     final status = _checkData?['status'] as String?;
 
     return Scaffold(
-      backgroundColor: AppColors.bgDark,
+      backgroundColor: colors.surfaceContainerHighest,
       appBar: AppBar(
         backgroundColor: Colors.transparent,
         elevation: 0,
-        title: Text(_isBn ? 'ব্যাকগ্রাউন্ড চেক' : 'Background Check', style: const TextStyle(color: AppColors.textPrimary, fontSize: 18, fontWeight: FontWeight.w700)),
+        title: Text(_isBn ? 'ব্যাকগ্রাউন্ড চেক' : 'Background Check', style: TextStyle(color: colors.onSurface, fontSize: 18, fontWeight: FontWeight.w700)),
         leading: IconButton(
-          icon: const Icon(Icons.arrow_back_ios_new_rounded, color: AppColors.textPrimary, size: 18),
+          icon: Icon(Icons.arrow_back_ios_new_rounded, color: colors.onSurface, size: 18),
           onPressed: () => Navigator.pop(context),
         ),
       ),
       body: _isLoading
-          ? const Center(child: CircularProgressIndicator(color: AppColors.deepBlue))
+          ? Center(child: CircularProgressIndicator(color: colors.primary))
           : SingleChildScrollView(
               padding: const EdgeInsets.fromLTRB(16, 16, 16, 100),
               child: Column(
@@ -145,6 +145,7 @@ class _BackgroundCheckScreenState extends State<BackgroundCheckScreen> {
   }
 
   Widget _buildStatusBanner(String status) {
+    final colors = Theme.of(context).colorScheme;
     final cfg = _isBn
         ? switch (status) {
             'VERIFIED' => (const Color(0xFF10B981), Icons.verified_rounded, 'যাচাই সম্পন্ন', 'আপনার ব্যাকগ্রাউন্ড চেক সফলভাবে সম্পন্ন হয়েছে।'),
@@ -170,17 +171,18 @@ class _BackgroundCheckScreenState extends State<BackgroundCheckScreen> {
         Expanded(child: Column(crossAxisAlignment: CrossAxisAlignment.start, children: [
           Text(cfg.$3, style: TextStyle(color: cfg.$1, fontSize: 16, fontWeight: FontWeight.w700)),
           const SizedBox(height: 4),
-          Text(cfg.$4, style: const TextStyle(color: AppColors.textMuted, fontSize: 12)),
+          Text(cfg.$4, style: TextStyle(color: colors.outline, fontSize: 12)),
         ])),
       ]),
     ).animate().fadeIn();
   }
 
   Widget _buildForm() {
+    final colors = Theme.of(context).colorScheme;
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
-        Text(_isBn ? 'আবেদন ফর্ম' : 'Application Form', style: const TextStyle(color: AppColors.textMuted, fontSize: 12, fontWeight: FontWeight.w600, letterSpacing: 1)),
+        Text(_isBn ? 'আবেদন ফর্ম' : 'Application Form', style: TextStyle(color: colors.outline, fontSize: 12, fontWeight: FontWeight.w600, letterSpacing: 1)),
         const SizedBox(height: 16),
         _label(_isBn ? 'পূর্ণ নাম' : 'Full Name'),
         _field(_fullNameCtrl, _isBn ? 'আপনার পূর্ণ নাম' : 'Your full name', Icons.person_outline_rounded),
@@ -203,13 +205,13 @@ class _BackgroundCheckScreenState extends State<BackgroundCheckScreen> {
         TextField(
           controller: _addressCtrl,
           maxLines: 2,
-          style: const TextStyle(color: AppColors.textPrimary),
+          style: TextStyle(color: colors.onSurface),
           decoration: InputDecoration(
             hintText: _isBn ? 'আপনার বর্তমান ঠিকানা' : 'Your current address',
-            hintStyle: const TextStyle(color: AppColors.textMuted),
-            prefixIcon: const Icon(Icons.location_on_outlined, color: AppColors.textMuted, size: 18),
+            hintStyle: TextStyle(color: colors.outline),
+            prefixIcon: Icon(Icons.location_on_outlined, color: colors.outline, size: 18),
             filled: true,
-            fillColor: AppColors.glassWhite,
+            fillColor: colors.surface,
             border: OutlineInputBorder(borderRadius: BorderRadius.circular(12), borderSide: BorderSide.none),
           ),
         ),
@@ -230,41 +232,46 @@ class _BackgroundCheckScreenState extends State<BackgroundCheckScreen> {
     );
   }
 
-  Widget _label(String text) => Padding(
+  Widget _label(String text) {
+    final colors = Theme.of(context).colorScheme;
+    return Padding(
     padding: const EdgeInsets.only(bottom: 8),
-    child: Text(text, style: const TextStyle(color: AppColors.textMuted, fontSize: 12, fontWeight: FontWeight.w600)),
+    child: Text(text, style: TextStyle(color: colors.outline, fontSize: 12, fontWeight: FontWeight.w600)),
   );
+  }
 
   Widget _field(TextEditingController ctrl, String hint, IconData icon) {
+    final colors = Theme.of(context).colorScheme;
     return TextField(
       controller: ctrl,
-      style: const TextStyle(color: AppColors.textPrimary),
+      style: TextStyle(color: colors.onSurface),
       decoration: InputDecoration(
         hintText: hint,
-        hintStyle: const TextStyle(color: AppColors.textMuted),
-        prefixIcon: Icon(icon, color: AppColors.textMuted, size: 18),
+        hintStyle: TextStyle(color: colors.outline),
+        prefixIcon: Icon(icon, color: colors.outline, size: 18),
         filled: true,
-        fillColor: AppColors.glassWhite,
+        fillColor: colors.surface,
         border: OutlineInputBorder(borderRadius: BorderRadius.circular(12), borderSide: BorderSide.none),
       ),
     );
   }
 
   Widget _imagePicker(String label, XFile? file, VoidCallback onTap) {
+    final colors = Theme.of(context).colorScheme;
     return GestureDetector(
       onTap: onTap,
       child: Container(
         height: 100,
         decoration: BoxDecoration(
-          color: AppColors.glassWhite,
+          color: colors.surface,
           borderRadius: BorderRadius.circular(12),
-          border: Border.all(color: file != null ? AppColors.deepBlue : AppColors.glassBorder),
+          border: Border.all(color: file != null ? colors.primary : colors.outlineVariant),
         ),
         child: Column(mainAxisAlignment: MainAxisAlignment.center, children: [
           Icon(file != null ? Icons.check_circle_rounded : Icons.add_photo_alternate_outlined,
-            color: file != null ? AppColors.deepBlue : AppColors.textMuted, size: 28),
+            color: file != null ? colors.primary : colors.outline, size: 28),
           const SizedBox(height: 6),
-          Text(file != null ? (_isBn ? 'নির্বাচিত' : 'Selected') : label, style: TextStyle(color: file != null ? AppColors.deepBlue : AppColors.textMuted, fontSize: 11)),
+          Text(file != null ? (_isBn ? 'নির্বাচিত' : 'Selected') : label, style: TextStyle(color: file != null ? colors.primary : colors.outline, fontSize: 11)),
         ]),
       ),
     );

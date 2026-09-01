@@ -7,7 +7,6 @@ import '../core/network/api_client.dart';
 import '../core/utils/app_strings.dart';
 import '../services/dispatch_service.dart';
 import '../services/scrap_service.dart';
-import '../theme/app_theme.dart';
 import '../widgets/glass_button.dart';
 
 // ---------------------------------------------------------------------------
@@ -239,22 +238,23 @@ class _ScrapScreenState extends State<ScrapScreen>
 
   @override
   Widget build(BuildContext context) {
+    final colors = Theme.of(context).colorScheme;
     _isBn = context.watch<LanguageNotifier>().isBengali;
     return Scaffold(
-      backgroundColor: AppColors.bgDark,
+      backgroundColor: colors.surfaceContainerHighest,
       appBar: AppBar(
-        backgroundColor: AppColors.bgMid,
+        backgroundColor: colors.surface,
         elevation: 0,
         leading: IconButton(
-          icon: const Icon(Icons.arrow_back_ios_new_rounded, color: AppColors.textPrimary, size: 18),
+          icon: Icon(Icons.arrow_back_ios_new_rounded, color: colors.onSurface, size: 18),
           onPressed: () => Navigator.of(context).pop(),
         ),
-        title: Text(_isBn ? 'স্ক্র্যাপ সংগ্রহ' : 'Scrap Collection', style: const TextStyle(color: AppColors.textPrimary, fontSize: 18, fontWeight: FontWeight.w700)),
+        title: Text(_isBn ? 'স্ক্র্যাপ সংগ্রহ' : 'Scrap Collection', style: TextStyle(color: colors.onSurface, fontSize: 18, fontWeight: FontWeight.w700)),
         bottom: TabBar(
           controller: _tabController,
-          labelColor: AppColors.deepBlue,
-          unselectedLabelColor: AppColors.textMuted,
-          indicatorColor: AppColors.deepBlue,
+          labelColor: colors.primary,
+          unselectedLabelColor: colors.outline,
+          indicatorColor: colors.primary,
           indicatorWeight: 2.5,
           labelStyle: const TextStyle(fontSize: 14, fontWeight: FontWeight.w600),
           unselectedLabelStyle: const TextStyle(fontSize: 14, fontWeight: FontWeight.w400),
@@ -311,86 +311,93 @@ class _ScrapScreenState extends State<ScrapScreen>
   }
 
   Widget _buildSectionLabel(String label, IconData icon) {
+    final colors = Theme.of(context).colorScheme;
     return Row(
       children: [
-        Icon(icon, color: AppColors.deepBlue, size: 16),
+        Icon(icon, color: colors.primary, size: 16),
         const SizedBox(width: 6),
-        Text(label, style: const TextStyle(color: AppColors.textPrimary, fontSize: 13, fontWeight: FontWeight.w600)),
+        Text(label, style: TextStyle(color: colors.onSurface, fontSize: 13, fontWeight: FontWeight.w600)),
       ],
     );
   }
 
-  InputDecoration _fieldDeco({String? hint, String? suffixText}) => InputDecoration(
+  InputDecoration _fieldDeco({String? hint, String? suffixText}) {
+    final colors = Theme.of(context).colorScheme;
+    return InputDecoration(
         hintText: hint,
-        hintStyle: const TextStyle(color: AppColors.textMuted, fontSize: 14),
+        hintStyle: TextStyle(color: colors.outline, fontSize: 14),
         suffixText: suffixText,
-        suffixStyle: const TextStyle(color: AppColors.textMuted, fontSize: 13, fontWeight: FontWeight.w500),
+        suffixStyle: TextStyle(color: colors.outline, fontSize: 13, fontWeight: FontWeight.w500),
         filled: true,
-        fillColor: AppColors.glassWhite,
+        fillColor: colors.surface,
         contentPadding: const EdgeInsets.symmetric(horizontal: 20, vertical: 16),
-        border: OutlineInputBorder(borderRadius: BorderRadius.circular(16), borderSide: const BorderSide(color: AppColors.glassBorder, width: 1)),
-        enabledBorder: OutlineInputBorder(borderRadius: BorderRadius.circular(16), borderSide: const BorderSide(color: AppColors.glassBorder, width: 1)),
-        focusedBorder: OutlineInputBorder(borderRadius: BorderRadius.circular(16), borderSide: const BorderSide(color: AppColors.deepBlue, width: 1.5)),
+        border: OutlineInputBorder(borderRadius: BorderRadius.circular(16), borderSide: BorderSide(color: colors.outlineVariant, width: 1)),
+        enabledBorder: OutlineInputBorder(borderRadius: BorderRadius.circular(16), borderSide: BorderSide(color: colors.outlineVariant, width: 1)),
+        focusedBorder: OutlineInputBorder(borderRadius: BorderRadius.circular(16), borderSide: BorderSide(color: colors.primary, width: 1.5)),
         errorBorder: OutlineInputBorder(borderRadius: BorderRadius.circular(16), borderSide: const BorderSide(color: Color(0xFFEF4444), width: 1)),
         focusedErrorBorder: OutlineInputBorder(borderRadius: BorderRadius.circular(16), borderSide: const BorderSide(color: Color(0xFFEF4444), width: 1.5)),
         errorStyle: const TextStyle(color: Color(0xFFEF4444), fontSize: 11),
       );
+  }
 
   Widget _buildCategoryDropdown() {
+    final colors = Theme.of(context).colorScheme;
     if (_ratesLoading) {
       return Container(
         height: 56,
-        decoration: BoxDecoration(color: AppColors.glassWhite, borderRadius: BorderRadius.circular(16), border: Border.all(color: AppColors.glassBorder)),
-        child: const Center(child: SizedBox(width: 20, height: 20, child: CircularProgressIndicator(strokeWidth: 2, color: AppColors.deepBlue))),
+        decoration: BoxDecoration(color: colors.surface, borderRadius: BorderRadius.circular(16), border: Border.all(color: colors.outlineVariant)),
+        child: Center(child: SizedBox(width: 20, height: 20, child: CircularProgressIndicator(strokeWidth: 2, color: colors.primary))),
       );
     }
 
     if (_rates.isEmpty) {
       return Container(
         padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 16),
-        decoration: BoxDecoration(color: AppColors.glassWhite, borderRadius: BorderRadius.circular(16), border: Border.all(color: AppColors.glassBorder)),
-        child: Text(_isBn ? 'কোনো ক্যাটাগরি পাওয়া যায়নি' : 'No category found', style: const TextStyle(color: AppColors.textMuted, fontSize: 14)),
+        decoration: BoxDecoration(color: colors.surface, borderRadius: BorderRadius.circular(16), border: Border.all(color: colors.outlineVariant)),
+        child: Text(_isBn ? 'কোনো ক্যাটাগরি পাওয়া যায়নি' : 'No category found', style: TextStyle(color: colors.outline, fontSize: 14)),
       );
     }
 
     return DropdownButtonFormField<ScrapRateModel>(
       value: _selectedType,
       decoration: _fieldDeco(hint: _isBn ? 'একটি ক্যাটাগরি বেছে নিন' : 'Choose a category'),
-      dropdownColor: AppColors.bgMid,
-      iconEnabledColor: AppColors.textMuted,
-      style: const TextStyle(color: AppColors.textPrimary, fontSize: 14, fontWeight: FontWeight.w500),
-      items: _rates.map((r) => DropdownMenuItem(value: r, child: Text(r.labelBn, style: const TextStyle(color: AppColors.textPrimary, fontSize: 14)))).toList(),
+      dropdownColor: colors.surface,
+      iconEnabledColor: colors.outline,
+      style: TextStyle(color: colors.onSurface, fontSize: 14, fontWeight: FontWeight.w500),
+      items: _rates.map((r) => DropdownMenuItem(value: r, child: Text(r.labelBn, style: TextStyle(color: colors.onSurface, fontSize: 14)))).toList(),
       onChanged: (val) => setState(() => _selectedType = val),
       validator: (val) => val == null ? (_isBn ? 'একটি ক্যাটাগরি বেছে নিন' : 'Choose a category') : null,
     );
   }
 
   Widget _buildPriceHint() {
+    final colors = Theme.of(context).colorScheme;
     final price = _estimatedPrice;
     return Container(
       padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 10),
       decoration: BoxDecoration(
-        color: AppColors.deepBlue.withOpacity(0.12),
+        color: colors.primary.withOpacity(0.12),
         borderRadius: BorderRadius.circular(12),
-        border: Border.all(color: AppColors.deepBlue.withOpacity(0.3)),
+        border: Border.all(color: colors.primary.withOpacity(0.3)),
       ),
       child: Row(
         children: [
-          const Icon(Icons.info_outline_rounded, color: AppColors.deepBlue, size: 16),
+          Icon(Icons.info_outline_rounded, color: colors.primary, size: 16),
           const SizedBox(width: 8),
-          Text(_isBn ? 'আনুমানিক মূল্য: ৳${price.toStringAsFixed(0)}' : 'Estimated price: ৳${price.toStringAsFixed(0)}', style: const TextStyle(color: AppColors.deepBlue, fontSize: 13, fontWeight: FontWeight.w600)),
+          Text(_isBn ? 'আনুমানিক মূল্য: ৳${price.toStringAsFixed(0)}' : 'Estimated price: ৳${price.toStringAsFixed(0)}', style: TextStyle(color: colors.primary, fontSize: 13, fontWeight: FontWeight.w600)),
           const SizedBox(width: 4),
-          Text(_isBn ? '(৳${_selectedType!.ratePerKg.toStringAsFixed(0)}/কেজি)' : '(৳${_selectedType!.ratePerKg.toStringAsFixed(0)}/kg)', style: const TextStyle(color: AppColors.textMuted, fontSize: 11)),
+          Text(_isBn ? '(৳${_selectedType!.ratePerKg.toStringAsFixed(0)}/কেজি)' : '(৳${_selectedType!.ratePerKg.toStringAsFixed(0)}/kg)', style: TextStyle(color: colors.outline, fontSize: 11)),
         ],
       ),
     ).animate().fadeIn(duration: 250.ms).scale(begin: const Offset(0.97, 0.97));
   }
 
   Widget _buildWeightField() {
+    final colors = Theme.of(context).colorScheme;
     return TextFormField(
       controller: _weightCtrl,
       keyboardType: const TextInputType.numberWithOptions(decimal: true),
-      style: const TextStyle(color: AppColors.textPrimary, fontSize: 14),
+      style: TextStyle(color: colors.onSurface, fontSize: 14),
       decoration: _fieldDeco(hint: _isBn ? 'যেমন: ১৫' : 'e.g. 15', suffixText: _isBn ? 'কেজি' : 'kg'),
       validator: (val) {
         if (val == null || val.trim().isEmpty) return _isBn ? 'ওজন লিখুন' : 'Enter the weight';
@@ -403,12 +410,13 @@ class _ScrapScreenState extends State<ScrapScreen>
   }
 
   Widget _buildAddressField() {
+    final colors = Theme.of(context).colorScheme;
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
         TextFormField(
           controller: _addressCtrl,
-          style: const TextStyle(color: AppColors.textPrimary, fontSize: 14),
+          style: TextStyle(color: colors.onSurface, fontSize: 14),
           decoration: _fieldDeco(hint: _isBn ? 'সম্পূর্ণ ঠিকানা লিখুন' : 'Enter the full address'),
           validator: (val) => (val == null || val.trim().isEmpty) ? (_isBn ? 'ঠিকানা লিখুন' : 'Enter an address') : null,
         ),
@@ -418,11 +426,11 @@ class _ScrapScreenState extends State<ScrapScreen>
             child: OutlinedButton.icon(
               onPressed: _isLocating ? null : _detectLocation,
               icon: _isLocating
-                  ? const SizedBox(width: 14, height: 14, child: CircularProgressIndicator(strokeWidth: 2, color: AppColors.deepBlue))
-                  : const Icon(Icons.my_location_rounded, size: 16, color: AppColors.deepBlue),
-              label: Text(_isBn ? 'বর্তমান অবস্থান' : 'Current location', style: const TextStyle(color: AppColors.deepBlue, fontSize: 12, fontWeight: FontWeight.w600)),
+                  ? SizedBox(width: 14, height: 14, child: CircularProgressIndicator(strokeWidth: 2, color: colors.primary))
+                  : Icon(Icons.my_location_rounded, size: 16, color: colors.primary),
+              label: Text(_isBn ? 'বর্তমান অবস্থান' : 'Current location', style: TextStyle(color: colors.primary, fontSize: 12, fontWeight: FontWeight.w600)),
               style: OutlinedButton.styleFrom(
-                side: const BorderSide(color: AppColors.glassBorder),
+                side: BorderSide(color: colors.outlineVariant),
                 padding: const EdgeInsets.symmetric(vertical: 10),
                 shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
               ),
@@ -432,10 +440,10 @@ class _ScrapScreenState extends State<ScrapScreen>
           Expanded(
             child: OutlinedButton.icon(
               onPressed: _isLocating ? null : _pickOnMap,
-              icon: const Icon(Icons.map_outlined, size: 16, color: AppColors.deepBlue),
-              label: Text(_isBn ? 'ম্যাপে দেখান' : 'Show on map', style: const TextStyle(color: AppColors.deepBlue, fontSize: 12, fontWeight: FontWeight.w600)),
+              icon: Icon(Icons.map_outlined, size: 16, color: colors.primary),
+              label: Text(_isBn ? 'ম্যাপে দেখান' : 'Show on map', style: TextStyle(color: colors.primary, fontSize: 12, fontWeight: FontWeight.w600)),
               style: OutlinedButton.styleFrom(
-                side: const BorderSide(color: AppColors.glassBorder),
+                side: BorderSide(color: colors.outlineVariant),
                 padding: const EdgeInsets.symmetric(vertical: 10),
                 shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
               ),
@@ -447,23 +455,24 @@ class _ScrapScreenState extends State<ScrapScreen>
   }
 
   Widget _buildDatePicker() {
+    final colors = Theme.of(context).colorScheme;
     return GestureDetector(
       onTap: _pickPreferredDate,
       child: Container(
         padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 16),
         decoration: BoxDecoration(
-          color: AppColors.glassWhite,
+          color: colors.surface,
           borderRadius: BorderRadius.circular(16),
-          border: Border.all(color: AppColors.glassBorder),
+          border: Border.all(color: colors.outlineVariant),
         ),
         child: Row(
           children: [
-            const Icon(Icons.calendar_today_outlined, color: AppColors.textMuted, size: 16),
+            Icon(Icons.calendar_today_outlined, color: colors.outline, size: 16),
             const SizedBox(width: 10),
             Text(
               _preferredDate == null ? (_isBn ? 'তারিখ বেছে নিন' : 'Choose a date') : _formatDate(_preferredDate!),
               style: TextStyle(
-                color: _preferredDate == null ? AppColors.textMuted : AppColors.textPrimary,
+                color: _preferredDate == null ? colors.outline : colors.onSurface,
                 fontSize: 14,
                 fontWeight: _preferredDate == null ? FontWeight.w400 : FontWeight.w600,
               ),
@@ -479,16 +488,17 @@ class _ScrapScreenState extends State<ScrapScreen>
   // ---------------------------------------------------------------------------
 
   Widget _buildMyRequestsTab() {
+    final colors = Theme.of(context).colorScheme;
     if (_requestsLoading) {
-      return const Center(child: CircularProgressIndicator(color: AppColors.deepBlue));
+      return Center(child: CircularProgressIndicator(color: colors.primary));
     }
     if (_myRequests.isEmpty) {
       return _buildEmptyState();
     }
     return RefreshIndicator(
       onRefresh: _loadMyRequests,
-      color: AppColors.deepBlue,
-      backgroundColor: AppColors.bgMid,
+      color: colors.primary,
+      backgroundColor: colors.surface,
       child: ListView.builder(
         padding: const EdgeInsets.fromLTRB(16, 16, 16, 40),
         itemCount: _myRequests.length,
@@ -498,31 +508,33 @@ class _ScrapScreenState extends State<ScrapScreen>
   }
 
   Widget _buildEmptyState() {
+    final colors = Theme.of(context).colorScheme;
     return Center(
       child: Column(
         mainAxisSize: MainAxisSize.min,
         children: [
           Container(
             width: 80, height: 80,
-            decoration: BoxDecoration(color: AppColors.glassWhite, shape: BoxShape.circle, border: Border.all(color: AppColors.glassBorder)),
-            child: const Icon(Icons.recycling_rounded, color: AppColors.textMuted, size: 36),
+            decoration: BoxDecoration(color: colors.surface, shape: BoxShape.circle, border: Border.all(color: colors.outlineVariant)),
+            child: Icon(Icons.recycling_rounded, color: colors.outline, size: 36),
           ),
           const SizedBox(height: 16),
-          Text(_isBn ? 'কোনো অনুরোধ নেই' : 'No requests yet', style: const TextStyle(color: AppColors.textMuted, fontSize: 15, fontWeight: FontWeight.w500)),
+          Text(_isBn ? 'কোনো অনুরোধ নেই' : 'No requests yet', style: TextStyle(color: colors.outline, fontSize: 15, fontWeight: FontWeight.w500)),
           const SizedBox(height: 6),
-          Text(_isBn ? 'নতুন অনুরোধ ট্যাবে যান এবং স্ক্র্যাপ সংগ্রহের জন্য অনুরোধ করুন।' : 'Go to the New Request tab and request a scrap pickup.', textAlign: TextAlign.center, style: const TextStyle(color: AppColors.textMuted, fontSize: 12)),
+          Text(_isBn ? 'নতুন অনুরোধ ট্যাবে যান এবং স্ক্র্যাপ সংগ্রহের জন্য অনুরোধ করুন।' : 'Go to the New Request tab and request a scrap pickup.', textAlign: TextAlign.center, style: TextStyle(color: colors.outline, fontSize: 12)),
         ],
       ),
     ).animate().fadeIn(duration: 400.ms).scale(begin: const Offset(0.95, 0.95));
   }
 
   Widget _buildRequestCard(ScrapRequestModel req, int index) {
+    final colors = Theme.of(context).colorScheme;
     final statusConfig = _statusConfig(req.status);
 
     return Container(
       margin: const EdgeInsets.only(bottom: 12),
       padding: const EdgeInsets.all(16),
-      decoration: BoxDecoration(color: AppColors.bgMid, borderRadius: BorderRadius.circular(16), border: Border.all(color: AppColors.glassBorder)),
+      decoration: BoxDecoration(color: colors.surface, borderRadius: BorderRadius.circular(16), border: Border.all(color: colors.outlineVariant)),
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
@@ -531,17 +543,17 @@ class _ScrapScreenState extends State<ScrapScreen>
             children: [
               Container(
                 width: 40, height: 40,
-                decoration: BoxDecoration(color: AppColors.deepBlue.withOpacity(0.12), borderRadius: BorderRadius.circular(12)),
-                child: const Icon(Icons.recycling_rounded, color: AppColors.deepBlue, size: 20),
+                decoration: BoxDecoration(color: colors.primary.withOpacity(0.12), borderRadius: BorderRadius.circular(12)),
+                child: Icon(Icons.recycling_rounded, color: colors.primary, size: 20),
               ),
               const SizedBox(width: 12),
               Expanded(
                 child: Column(
                   crossAxisAlignment: CrossAxisAlignment.start,
                   children: [
-                    Text(req.scrapTypesLabelBn, style: const TextStyle(color: AppColors.textPrimary, fontSize: 14, fontWeight: FontWeight.w700)),
+                    Text(req.scrapTypesLabelBn, style: TextStyle(color: colors.onSurface, fontSize: 14, fontWeight: FontWeight.w700)),
                     const SizedBox(height: 2),
-                    Text(_isBn ? '${req.estimatedWeightKg.toStringAsFixed(1)} কেজি' : '${req.estimatedWeightKg.toStringAsFixed(1)} kg', style: const TextStyle(color: AppColors.textMuted, fontSize: 12)),
+                    Text(_isBn ? '${req.estimatedWeightKg.toStringAsFixed(1)} কেজি' : '${req.estimatedWeightKg.toStringAsFixed(1)} kg', style: TextStyle(color: colors.outline, fontSize: 12)),
                   ],
                 ),
               ),
@@ -574,17 +586,19 @@ class _ScrapScreenState extends State<ScrapScreen>
   }
 
   Widget _buildInfoRow(IconData icon, String text) {
+    final colors = Theme.of(context).colorScheme;
     return Row(
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
-        Icon(icon, color: AppColors.textMuted, size: 13),
+        Icon(icon, color: colors.outline, size: 13),
         const SizedBox(width: 6),
-        Expanded(child: Text(text, style: const TextStyle(color: AppColors.textMuted, fontSize: 12), maxLines: 2, overflow: TextOverflow.ellipsis)),
+        Expanded(child: Text(text, style: TextStyle(color: colors.outline, fontSize: 12), maxLines: 2, overflow: TextOverflow.ellipsis)),
       ],
     );
   }
 
   ({String label, Color color}) _statusConfig(String status) {
+    final colors = Theme.of(context).colorScheme;
     if (_isBn) {
       switch (status) {
         case 'COLLECTED':
@@ -592,7 +606,7 @@ class _ScrapScreenState extends State<ScrapScreen>
         case 'CANCELLED':
           return (label: 'বাতিল', color: const Color(0xFFEF4444));
         case 'SCHEDULED':
-          return (label: 'সময়সূচি নির্ধারিত', color: AppColors.deepBlue);
+          return (label: 'সময়সূচি নির্ধারিত', color: colors.primary);
         default:
           return (label: 'অপেক্ষমাণ', color: const Color(0xFFF59E0B));
       }
@@ -603,7 +617,7 @@ class _ScrapScreenState extends State<ScrapScreen>
       case 'CANCELLED':
         return (label: 'Cancelled', color: const Color(0xFFEF4444));
       case 'SCHEDULED':
-        return (label: 'Scheduled', color: AppColors.deepBlue);
+        return (label: 'Scheduled', color: colors.primary);
       default:
         return (label: 'Pending', color: const Color(0xFFF59E0B));
     }
@@ -627,15 +641,16 @@ class _ScrapPinPickerScreenState extends State<_ScrapPinPickerScreen> {
 
   @override
   Widget build(BuildContext context) {
+    final colors = Theme.of(context).colorScheme;
     _isBn = context.watch<LanguageNotifier>().isBengali;
     return Scaffold(
-      backgroundColor: AppColors.bgDark,
+      backgroundColor: colors.surfaceContainerHighest,
       appBar: AppBar(
-        backgroundColor: AppColors.bgMid,
+        backgroundColor: colors.surface,
         elevation: 0,
-        title: Text(_isBn ? 'ম্যাপে দেখান' : 'Show on Map', style: const TextStyle(color: AppColors.textPrimary, fontSize: 17, fontWeight: FontWeight.w700)),
+        title: Text(_isBn ? 'ম্যাপে দেখান' : 'Show on Map', style: TextStyle(color: colors.onSurface, fontSize: 17, fontWeight: FontWeight.w700)),
         leading: IconButton(
-          icon: const Icon(Icons.arrow_back_ios_new_rounded, color: AppColors.textPrimary, size: 18),
+          icon: Icon(Icons.arrow_back_ios_new_rounded, color: colors.onSurface, size: 18),
           onPressed: () => Navigator.pop(context),
         ),
       ),
@@ -657,7 +672,7 @@ class _ScrapPinPickerScreenState extends State<_ScrapPinPickerScreen> {
             child: Container(
               padding: const EdgeInsets.symmetric(vertical: 15),
               decoration: BoxDecoration(
-                color: _pin == null ? AppColors.textMuted : AppColors.deepBlue,
+                color: _pin == null ? colors.outline : colors.primary,
                 borderRadius: BorderRadius.circular(14),
               ),
               child: Center(

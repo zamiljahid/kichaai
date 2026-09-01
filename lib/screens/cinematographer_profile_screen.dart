@@ -5,7 +5,7 @@ import 'package:provider/provider.dart';
 import '../core/network/api_client.dart';
 import '../core/utils/app_strings.dart';
 import '../services/onboarding_service.dart';
-import '../theme/app_theme.dart';
+import '../theme/app_gradients.dart';
 import '../widgets/animated_background.dart';
 import '../widgets/glass_button.dart';
 import 'photographer_profile_screen.dart' show sectionCard, labeledField, brandDropdown, uploadRow, equipmentLabel, shootTypeLabel;
@@ -256,13 +256,14 @@ class _CinematographerProfileScreenState extends State<CinematographerProfileScr
   }
 
   Widget _tagField({required TextEditingController ctrl, required List<String> list, required String hint}) {
+    final colors = Theme.of(context).colorScheme;
     return Column(crossAxisAlignment: CrossAxisAlignment.start, children: [
       Row(children: [
         Expanded(
           child: TextField(
             controller: ctrl,
             onSubmitted: (_) => _addTag(ctrl, list),
-            style: const TextStyle(color: AppColors.textPrimary, fontSize: 14),
+            style: TextStyle(color: colors.onSurface, fontSize: 14),
             decoration: InputDecoration(hintText: hint),
           ),
         ),
@@ -274,7 +275,7 @@ class _CinematographerProfileScreenState extends State<CinematographerProfileScr
         Wrap(spacing: 6, runSpacing: 6, children: list.map((s) => Chip(
           label: Text(s, style: const TextStyle(fontSize: 12.5)),
           onDeleted: () => setState(() => list.remove(s)),
-          backgroundColor: AppColors.deepBlue.withOpacity(0.08),
+          backgroundColor: colors.primary.withOpacity(0.08),
         )).toList()),
       ],
     ]);
@@ -282,6 +283,7 @@ class _CinematographerProfileScreenState extends State<CinematographerProfileScr
 
   @override
   Widget build(BuildContext context) {
+    final colors = Theme.of(context).colorScheme;
     _isBn = context.watch<LanguageNotifier>().isBengali;
     return Scaffold(
       body: AnimatedBackground(
@@ -291,8 +293,8 @@ class _CinematographerProfileScreenState extends State<CinematographerProfileScr
               Padding(
                 padding: const EdgeInsets.fromLTRB(8, 8, 16, 4),
                 child: Row(children: [
-                  IconButton(icon: const Icon(Icons.arrow_back_rounded, color: AppColors.textPrimary), onPressed: () => Navigator.of(context).pop()),
-                  Text(_isBn ? 'গিয়ার প্রোফাইল' : 'Gear Profile', style: const TextStyle(color: AppColors.textPrimary, fontSize: 18, fontWeight: FontWeight.w700)),
+                  IconButton(icon: Icon(Icons.arrow_back_rounded, color: colors.onSurface), onPressed: () => Navigator.of(context).pop()),
+                  Text(_isBn ? 'গিয়ার প্রোফাইল' : 'Gear Profile', style: TextStyle(color: colors.onSurface, fontSize: 18, fontWeight: FontWeight.w700)),
                 ]),
               ),
               Expanded(
@@ -300,22 +302,24 @@ class _CinematographerProfileScreenState extends State<CinematographerProfileScr
                   padding: const EdgeInsets.fromLTRB(16, 8, 16, 32),
                   child: Column(crossAxisAlignment: CrossAxisAlignment.stretch, children: [
                     sectionCard(
-                      title: _isBn ? 'পোর্টফোলিও' : 'Portfolio',
+colors: colors,
+title: _isBn ? 'পোর্টফোলিও' : 'Portfolio',
                       child: Column(crossAxisAlignment: CrossAxisAlignment.start, children: [
-                        labeledField(controller: _sampleDriveCtrl, hint: _isBn ? 'Google Drive / Dropbox লিংক' : 'Google Drive / Dropbox link'),
+                        labeledField(colors: colors, controller: _sampleDriveCtrl, hint: _isBn ? 'Google Drive / Dropbox লিংক' : 'Google Drive / Dropbox link'),
                         const SizedBox(height: 10),
-                        labeledField(controller: _reelCtrl, hint: _isBn ? 'শোরিল লিংক (ঐচ্ছিক)' : 'Showreel link (optional)'),
+                        labeledField(colors: colors, controller: _reelCtrl, hint: _isBn ? 'শোরিল লিংক (ঐচ্ছিক)' : 'Showreel link (optional)'),
                       ]),
                     ),
                     const SizedBox(height: 14),
                     sectionCard(
-                      title: _isBn ? 'ক্যামেরা' : 'Camera',
+colors: colors,
+title: _isBn ? 'ক্যামেরা' : 'Camera',
                       child: Column(crossAxisAlignment: CrossAxisAlignment.start, children: [
-                        brandDropdown(value: _cameraBrand, options: _cameraBrands, isBn: _isBn, onChanged: (v) => setState(() => _cameraBrand = v)),
+                        brandDropdown(colors: colors, value: _cameraBrand, options: _cameraBrands, isBn: _isBn, onChanged: (v) => setState(() => _cameraBrand = v)),
                         const SizedBox(height: 10),
-                        labeledField(controller: _cameraModelCtrl, hint: _isBn ? 'মডেল (যেমন: FX3)' : 'Model (e.g. FX3)'),
+                        labeledField(colors: colors, controller: _cameraModelCtrl, hint: _isBn ? 'মডেল (যেমন: FX3)' : 'Model (e.g. FX3)'),
                         const SizedBox(height: 10),
-                        uploadRow(
+                        uploadRow(colors: colors, 
                           label: _cameraBodyPhotoUrl != null ? (_isBn ? 'আপলোড হয়েছে ✓' : 'Uploaded ✓') : (_isBn ? 'ক্যামেরার ছবি আপলোড করুন' : 'Upload a photo of your camera'),
                           uploaded: _cameraBodyPhotoUrl != null,
                           loading: _uploadingCameraPhoto,
@@ -325,34 +329,38 @@ class _CinematographerProfileScreenState extends State<CinematographerProfileScr
                     ),
                     const SizedBox(height: 14),
                     sectionCard(
-                      title: _isBn ? 'ড্রোন ও জিম্বাল (ঐচ্ছিক)' : 'Drone & Gimbal (optional)',
+colors: colors,
+title: _isBn ? 'ড্রোন ও জিম্বাল (ঐচ্ছিক)' : 'Drone & Gimbal (optional)',
                       child: Column(crossAxisAlignment: CrossAxisAlignment.start, children: [
-                        labeledField(controller: _droneModelCtrl, hint: _isBn ? 'ড্রোন মডেল' : 'Drone model'),
+                        labeledField(colors: colors, controller: _droneModelCtrl, hint: _isBn ? 'ড্রোন মডেল' : 'Drone model'),
                         const SizedBox(height: 10),
-                        labeledField(controller: _gimbalModelCtrl, hint: _isBn ? 'জিম্বাল মডেল' : 'Gimbal model'),
+                        labeledField(colors: colors, controller: _gimbalModelCtrl, hint: _isBn ? 'জিম্বাল মডেল' : 'Gimbal model'),
                       ]),
                     ),
                     const SizedBox(height: 14),
                     sectionCard(
-                      title: _isBn ? 'শুটিং স্টাইল' : 'Shooting styles',
+colors: colors,
+title: _isBn ? 'শুটিং স্টাইল' : 'Shooting styles',
                       child: _tagField(ctrl: _styleCtrl, list: _shootingStyles, hint: _isBn ? 'যেমন: সিনেম্যাটিক, ডকুমেন্টারি' : 'e.g. Cinematic, Documentary'),
                     ),
                     const SizedBox(height: 14),
                     sectionCard(
-                      title: _isBn ? 'এডিটিং সফটওয়্যার' : 'Editing software',
+colors: colors,
+title: _isBn ? 'এডিটিং সফটওয়্যার' : 'Editing software',
                       child: _tagField(ctrl: _softwareCtrl, list: _editingSoftware, hint: _isBn ? 'যেমন: Premiere Pro, DaVinci Resolve' : 'e.g. Premiere Pro, DaVinci Resolve'),
                     ),
                     const SizedBox(height: 14),
                     sectionCard(
-                      title: _isBn ? 'লেন্স (ঐচ্ছিক)' : 'Lenses (optional)',
+colors: colors,
+title: _isBn ? 'লেন্স (ঐচ্ছিক)' : 'Lenses (optional)',
                       child: Column(crossAxisAlignment: CrossAxisAlignment.start, children: [
                         ..._lenses.asMap().entries.map((e) => Padding(
                               padding: const EdgeInsets.only(bottom: 10),
                               child: Row(children: [
-                                Expanded(flex: 2, child: brandDropdown(value: e.value.brand, options: _lensBrands, isBn: _isBn, onChanged: (v) => setState(() => e.value.brand = v))),
+                                Expanded(flex: 2, child: brandDropdown(colors: colors, value: e.value.brand, options: _lensBrands, isBn: _isBn, onChanged: (v) => setState(() => e.value.brand = v))),
                                 const SizedBox(width: 8),
-                                Expanded(flex: 3, child: labeledField(controller: e.value.focalLengthCtrl, hint: _isBn ? 'ফোকাল লেংথ' : 'Focal length')),
-                                IconButton(icon: const Icon(Icons.close_rounded, size: 18, color: AppColors.textMuted), onPressed: () => setState(() => _lenses.removeAt(e.key))),
+                                Expanded(flex: 3, child: labeledField(colors: colors, controller: e.value.focalLengthCtrl, hint: _isBn ? 'ফোকাল লেংথ' : 'Focal length')),
+                                IconButton(icon: Icon(Icons.close_rounded, size: 18, color: colors.outline), onPressed: () => setState(() => _lenses.removeAt(e.key))),
                               ]),
                             )),
                         TextButton.icon(
@@ -364,7 +372,8 @@ class _CinematographerProfileScreenState extends State<CinematographerProfileScr
                     ),
                     const SizedBox(height: 14),
                     sectionCard(
-                      title: _isBn ? 'অতিরিক্ত সরঞ্জাম (ঐচ্ছিক)' : 'Additional equipment (optional)',
+colors: colors,
+title: _isBn ? 'অতিরিক্ত সরঞ্জাম (ঐচ্ছিক)' : 'Additional equipment (optional)',
                       child: Wrap(
                         spacing: 8,
                         runSpacing: 8,
@@ -375,12 +384,12 @@ class _CinematographerProfileScreenState extends State<CinematographerProfileScr
                             child: Container(
                               padding: const EdgeInsets.symmetric(horizontal: 13, vertical: 8),
                               decoration: BoxDecoration(
-                                gradient: active ? AppColors.blueGradient : null,
-                                color: active ? null : const Color(0xFFF9F7F0),
+                                gradient: active ? AppGradients.primary(colors) : null,
+                                color: active ? null : colors.surfaceContainerLow,
                                 borderRadius: BorderRadius.circular(20),
-                                border: Border.all(color: active ? AppColors.deepBlue : AppColors.glassBorder, width: active ? 1.5 : 1),
+                                border: Border.all(color: active ? colors.primary : colors.outlineVariant, width: active ? 1.5 : 1),
                               ),
-                              child: Text(equipmentLabel(code, _isBn), style: TextStyle(color: active ? Colors.white : AppColors.textSecondary, fontSize: 12.5, fontWeight: active ? FontWeight.w700 : FontWeight.w500)),
+                              child: Text(equipmentLabel(code, _isBn), style: TextStyle(color: active ? Colors.white : colors.onSurfaceVariant, fontSize: 12.5, fontWeight: active ? FontWeight.w700 : FontWeight.w500)),
                             ),
                           );
                         }).toList(),
@@ -388,18 +397,20 @@ class _CinematographerProfileScreenState extends State<CinematographerProfileScr
                     ),
                     const SizedBox(height: 14),
                     sectionCard(
-                      title: _isBn ? 'অর্জন (ঐচ্ছিক)' : 'Achievements (optional)',
+colors: colors,
+title: _isBn ? 'অর্জন (ঐচ্ছিক)' : 'Achievements (optional)',
                       child: TextField(
                         controller: _achievementsCtrl,
                         maxLines: 3,
-                        style: const TextStyle(color: AppColors.textPrimary, fontSize: 14),
+                        style: TextStyle(color: colors.onSurface, fontSize: 14),
                         decoration: InputDecoration(hintText: _isBn ? 'পুরস্কার, প্রদর্শনী, উল্লেখযোগ্য কাজ...' : 'Awards, exhibitions, notable work...'),
                       ),
                     ),
                     const SizedBox(height: 14),
                     sectionCard(
-                      title: _isBn ? 'অভিজ্ঞতার বছর' : 'Years of experience',
-                      child: labeledField(
+colors: colors,
+title: _isBn ? 'অভিজ্ঞতার বছর' : 'Years of experience',
+                      child: labeledField(colors: colors, 
                         controller: _experienceYearsCtrl,
                         hint: _isBn ? 'যেমন: ৩' : 'e.g. 3',
                         keyboardType: TextInputType.number,
@@ -407,7 +418,8 @@ class _CinematographerProfileScreenState extends State<CinematographerProfileScr
                     ),
                     const SizedBox(height: 14),
                     sectionCard(
-                      title: _isBn ? 'কাজের এলাকা' : 'Locations you can work in',
+colors: colors,
+title: _isBn ? 'কাজের এলাকা' : 'Locations you can work in',
                       child: _tagField(
                         ctrl: _workLocationCtrl,
                         list: _workLocations,
@@ -416,7 +428,8 @@ class _CinematographerProfileScreenState extends State<CinematographerProfileScr
                     ),
                     const SizedBox(height: 14),
                     sectionCard(
-                      title: _isBn ? 'শুটের ধরন' : 'Shoot types',
+colors: colors,
+title: _isBn ? 'শুটের ধরন' : 'Shoot types',
                       child: Column(crossAxisAlignment: CrossAxisAlignment.start, children: [
                         Wrap(
                           spacing: 8,
@@ -429,12 +442,12 @@ class _CinematographerProfileScreenState extends State<CinematographerProfileScr
                                 child: Container(
                                   padding: const EdgeInsets.symmetric(horizontal: 13, vertical: 8),
                                   decoration: BoxDecoration(
-                                    gradient: active ? AppColors.blueGradient : null,
-                                    color: active ? null : const Color(0xFFF9F7F0),
+                                    gradient: active ? AppGradients.primary(colors) : null,
+                                    color: active ? null : colors.surfaceContainerLow,
                                     borderRadius: BorderRadius.circular(20),
-                                    border: Border.all(color: active ? AppColors.deepBlue : AppColors.glassBorder, width: active ? 1.5 : 1),
+                                    border: Border.all(color: active ? colors.primary : colors.outlineVariant, width: active ? 1.5 : 1),
                                   ),
-                                  child: Text(shootTypeLabel(code, _isBn), style: TextStyle(color: active ? Colors.white : AppColors.textSecondary, fontSize: 12.5, fontWeight: active ? FontWeight.w700 : FontWeight.w500)),
+                                  child: Text(shootTypeLabel(code, _isBn), style: TextStyle(color: active ? Colors.white : colors.onSurfaceVariant, fontSize: 12.5, fontWeight: active ? FontWeight.w700 : FontWeight.w500)),
                                 ),
                               );
                             }),
@@ -443,12 +456,12 @@ class _CinematographerProfileScreenState extends State<CinematographerProfileScr
                               child: Container(
                                 padding: const EdgeInsets.symmetric(horizontal: 13, vertical: 8),
                                 decoration: BoxDecoration(
-                                  gradient: _showOtherShootType ? AppColors.blueGradient : null,
-                                  color: _showOtherShootType ? null : const Color(0xFFF9F7F0),
+                                  gradient: _showOtherShootType ? AppGradients.primary(colors) : null,
+                                  color: _showOtherShootType ? null : colors.surfaceContainerLow,
                                   borderRadius: BorderRadius.circular(20),
-                                  border: Border.all(color: _showOtherShootType ? AppColors.deepBlue : AppColors.glassBorder, width: _showOtherShootType ? 1.5 : 1),
+                                  border: Border.all(color: _showOtherShootType ? colors.primary : colors.outlineVariant, width: _showOtherShootType ? 1.5 : 1),
                                 ),
-                                child: Text(shootTypeLabel('OTHER', _isBn), style: TextStyle(color: _showOtherShootType ? Colors.white : AppColors.textSecondary, fontSize: 12.5, fontWeight: _showOtherShootType ? FontWeight.w700 : FontWeight.w500)),
+                                child: Text(shootTypeLabel('OTHER', _isBn), style: TextStyle(color: _showOtherShootType ? Colors.white : colors.onSurfaceVariant, fontSize: 12.5, fontWeight: _showOtherShootType ? FontWeight.w700 : FontWeight.w500)),
                               ),
                             ),
                           ],
@@ -465,28 +478,30 @@ class _CinematographerProfileScreenState extends State<CinematographerProfileScr
                     ),
                     const SizedBox(height: 14),
                     sectionCard(
-                      title: _isBn ? 'টিম অভিজ্ঞতা (ঐচ্ছিক)' : 'Team experience (optional)',
+colors: colors,
+title: _isBn ? 'টিম অভিজ্ঞতা (ঐচ্ছিক)' : 'Team experience (optional)',
                       child: Column(crossAxisAlignment: CrossAxisAlignment.start, children: [
                         Text(
                           _isBn ? 'ঐচ্ছিক — যোগ করলে প্রোফাইল আরও সমৃদ্ধ হবে' : 'Optional — adds more detail to your profile',
-                          style: const TextStyle(color: AppColors.textMuted, fontSize: 12),
+                          style: TextStyle(color: colors.outline, fontSize: 12),
                         ),
                         const SizedBox(height: 10),
                         Row(children: [
-                          Expanded(child: labeledField(controller: _teamFromCtrl, hint: _isBn ? 'কত সাল/মাস থেকে' : 'From (year/month)')),
+                          Expanded(child: labeledField(colors: colors, controller: _teamFromCtrl, hint: _isBn ? 'কত সাল/মাস থেকে' : 'From (year/month)')),
                           const SizedBox(width: 8),
-                          Expanded(child: labeledField(controller: _teamToCtrl, hint: _isBn ? 'কত সাল/মাস পর্যন্ত' : 'To (year/month)')),
+                          Expanded(child: labeledField(colors: colors, controller: _teamToCtrl, hint: _isBn ? 'কত সাল/মাস পর্যন্ত' : 'To (year/month)')),
                         ]),
                         const SizedBox(height: 10),
-                        labeledField(controller: _teamNameCtrl, hint: _isBn ? 'টিমের নাম' : 'Team name'),
+                        labeledField(colors: colors, controller: _teamNameCtrl, hint: _isBn ? 'টিমের নাম' : 'Team name'),
                         const SizedBox(height: 10),
-                        labeledField(controller: _teamFbCtrl, hint: _isBn ? 'টিমের ফেসবুক পেজ লিংক' : 'Team Facebook page link'),
+                        labeledField(colors: colors, controller: _teamFbCtrl, hint: _isBn ? 'টিমের ফেসবুক পেজ লিংক' : 'Team Facebook page link'),
                       ]),
                     ),
                     const SizedBox(height: 14),
                     sectionCard(
-                      title: _isBn ? 'সার্টিফিকেট (ঐচ্ছিক)' : 'Certificate (optional)',
-                      child: uploadRow(
+colors: colors,
+title: _isBn ? 'সার্টিফিকেট (ঐচ্ছিক)' : 'Certificate (optional)',
+                      child: uploadRow(colors: colors, 
                         label: _certificateUrl != null ? (_isBn ? 'আপলোড হয়েছে ✓' : 'Uploaded ✓') : (_isBn ? 'সার্টিফিকেট আপলোড করুন' : 'Upload a certificate'),
                         uploaded: _certificateUrl != null,
                         loading: _uploadingCertificate,
@@ -495,12 +510,13 @@ class _CinematographerProfileScreenState extends State<CinematographerProfileScr
                     ),
                     const SizedBox(height: 14),
                     sectionCard(
-                      title: _isBn ? 'মূল্য মডেল' : 'Pricing model',
+colors: colors,
+title: _isBn ? 'মূল্য মডেল' : 'Pricing model',
                       child: Column(crossAxisAlignment: CrossAxisAlignment.start, children: [
                         CheckboxListTile(
                           value: _pricingHourly,
                           onChanged: (v) => setState(() => _pricingHourly = v ?? false),
-                          title: Text(_isBn ? 'ঘণ্টাপ্রতি' : 'Hourly', style: const TextStyle(color: AppColors.textPrimary, fontSize: 13)),
+                          title: Text(_isBn ? 'ঘণ্টাপ্রতি' : 'Hourly', style: TextStyle(color: colors.onSurface, fontSize: 13)),
                           controlAffinity: ListTileControlAffinity.leading,
                           contentPadding: EdgeInsets.zero,
                           dense: true,
@@ -509,24 +525,24 @@ class _CinematographerProfileScreenState extends State<CinematographerProfileScr
                           Padding(
                             padding: const EdgeInsets.only(bottom: 10),
                             child: Row(children: [
-                              Expanded(child: labeledField(controller: _hourlyMinCtrl, hint: _isBn ? 'সর্বনিম্ন ৳' : 'Min ৳', keyboardType: TextInputType.number)),
+                              Expanded(child: labeledField(colors: colors, controller: _hourlyMinCtrl, hint: _isBn ? 'সর্বনিম্ন ৳' : 'Min ৳', keyboardType: TextInputType.number)),
                               const SizedBox(width: 8),
-                              Expanded(child: labeledField(controller: _hourlyMaxCtrl, hint: _isBn ? 'সর্বোচ্চ ৳' : 'Max ৳', keyboardType: TextInputType.number)),
+                              Expanded(child: labeledField(colors: colors, controller: _hourlyMaxCtrl, hint: _isBn ? 'সর্বোচ্চ ৳' : 'Max ৳', keyboardType: TextInputType.number)),
                             ]),
                           ),
                         CheckboxListTile(
                           value: _pricingPackage,
                           onChanged: (v) => setState(() => _pricingPackage = v ?? false),
-                          title: Text(_isBn ? 'প্যাকেজ ভিত্তিক' : 'Package-based', style: const TextStyle(color: AppColors.textPrimary, fontSize: 13)),
+                          title: Text(_isBn ? 'প্যাকেজ ভিত্তিক' : 'Package-based', style: TextStyle(color: colors.onSurface, fontSize: 13)),
                           controlAffinity: ListTileControlAffinity.leading,
                           contentPadding: EdgeInsets.zero,
                           dense: true,
                         ),
                         if (_pricingPackage)
                           Row(children: [
-                            Expanded(child: labeledField(controller: _packageMinCtrl, hint: _isBn ? 'সর্বনিম্ন ৳' : 'Min ৳', keyboardType: TextInputType.number)),
+                            Expanded(child: labeledField(colors: colors, controller: _packageMinCtrl, hint: _isBn ? 'সর্বনিম্ন ৳' : 'Min ৳', keyboardType: TextInputType.number)),
                             const SizedBox(width: 8),
-                            Expanded(child: labeledField(controller: _packageMaxCtrl, hint: _isBn ? 'সর্বোচ্চ ৳' : 'Max ৳', keyboardType: TextInputType.number)),
+                            Expanded(child: labeledField(colors: colors, controller: _packageMaxCtrl, hint: _isBn ? 'সর্বোচ্চ ৳' : 'Max ৳', keyboardType: TextInputType.number)),
                           ]),
                       ]),
                     ),

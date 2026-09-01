@@ -4,7 +4,6 @@ import 'package:flutter_animate/flutter_animate.dart';
 import 'package:provider/provider.dart';
 import '../core/network/api_client.dart';
 import '../core/utils/app_strings.dart';
-import '../theme/app_theme.dart';
 import '../widgets/glass_button.dart';
 
 class DisputeScreen extends StatefulWidget {
@@ -54,6 +53,7 @@ class _DisputeScreenState extends State<DisputeScreen> with SingleTickerProvider
   }
 
   void _showNewDisputeSheet() {
+    final colors = Theme.of(context).colorScheme;
     final jobIdCtrl = TextEditingController();
     final descCtrl = TextEditingController();
     String selectedReason = 'POOR_QUALITY';
@@ -81,27 +81,27 @@ class _DisputeScreenState extends State<DisputeScreen> with SingleTickerProvider
             child: BackdropFilter(
               filter: ImageFilter.blur(sigmaX: 12, sigmaY: 12),
               child: Container(
-                color: AppColors.bgMid,
+                color: colors.surface,
                 padding: const EdgeInsets.fromLTRB(20, 20, 20, 32),
                 child: Column(
                   mainAxisSize: MainAxisSize.min,
                   crossAxisAlignment: CrossAxisAlignment.start,
                   children: [
-                    Center(child: Container(width: 40, height: 4, decoration: BoxDecoration(color: AppColors.glassBorder, borderRadius: BorderRadius.circular(2)))),
+                    Center(child: Container(width: 40, height: 4, decoration: BoxDecoration(color: colors.outlineVariant, borderRadius: BorderRadius.circular(2)))),
                     const SizedBox(height: 16),
-                    Text(_isBn ? 'অভিযোগ দাখিল করুন' : 'File a dispute', style: const TextStyle(color: AppColors.textPrimary, fontSize: 18, fontWeight: FontWeight.w700)),
+                    Text(_isBn ? 'অভিযোগ দাখিল করুন' : 'File a dispute', style: TextStyle(color: colors.onSurface, fontSize: 18, fontWeight: FontWeight.w700)),
                     const SizedBox(height: 16),
                     _sheetField(jobIdCtrl, _isBn ? 'জব আইডি' : 'Job ID', Icons.work_outline_rounded),
                     const SizedBox(height: 12),
-                    Text(_isBn ? 'কারণ' : 'Reason', style: const TextStyle(color: AppColors.textMuted, fontSize: 12, fontWeight: FontWeight.w600)),
+                    Text(_isBn ? 'কারণ' : 'Reason', style: TextStyle(color: colors.outline, fontSize: 12, fontWeight: FontWeight.w600)),
                     const SizedBox(height: 8),
                     DropdownButtonFormField<String>(
                       value: selectedReason,
-                      dropdownColor: AppColors.bgMid,
-                      style: const TextStyle(color: AppColors.textPrimary),
+                      dropdownColor: colors.surface,
+                      style: TextStyle(color: colors.onSurface),
                       decoration: InputDecoration(
                         filled: true,
-                        fillColor: AppColors.glassWhite,
+                        fillColor: colors.surface,
                         border: OutlineInputBorder(borderRadius: BorderRadius.circular(12), borderSide: BorderSide.none),
                         contentPadding: const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
                       ),
@@ -112,12 +112,12 @@ class _DisputeScreenState extends State<DisputeScreen> with SingleTickerProvider
                     TextField(
                       controller: descCtrl,
                       maxLines: 3,
-                      style: const TextStyle(color: AppColors.textPrimary),
+                      style: TextStyle(color: colors.onSurface),
                       decoration: InputDecoration(
                         hintText: _isBn ? 'বিস্তারিত বিবরণ দিন...' : 'Describe in detail...',
-                        hintStyle: const TextStyle(color: AppColors.textMuted),
+                        hintStyle: TextStyle(color: colors.outline),
                         filled: true,
-                        fillColor: AppColors.glassWhite,
+                        fillColor: colors.surface,
                         border: OutlineInputBorder(borderRadius: BorderRadius.circular(12), borderSide: BorderSide.none),
                       ),
                     ),
@@ -166,15 +166,16 @@ class _DisputeScreenState extends State<DisputeScreen> with SingleTickerProvider
   }
 
   Widget _sheetField(TextEditingController ctrl, String hint, IconData icon) {
+    final colors = Theme.of(context).colorScheme;
     return TextField(
       controller: ctrl,
-      style: const TextStyle(color: AppColors.textPrimary),
+      style: TextStyle(color: colors.onSurface),
       decoration: InputDecoration(
         hintText: hint,
-        hintStyle: const TextStyle(color: AppColors.textMuted),
-        prefixIcon: Icon(icon, color: AppColors.textMuted, size: 18),
+        hintStyle: TextStyle(color: colors.outline),
+        prefixIcon: Icon(icon, color: colors.outline, size: 18),
         filled: true,
-        fillColor: AppColors.glassWhite,
+        fillColor: colors.surface,
         border: OutlineInputBorder(borderRadius: BorderRadius.circular(12), borderSide: BorderSide.none),
       ),
     );
@@ -182,30 +183,31 @@ class _DisputeScreenState extends State<DisputeScreen> with SingleTickerProvider
 
   @override
   Widget build(BuildContext context) {
+    final colors = Theme.of(context).colorScheme;
     _isBn = context.watch<LanguageNotifier>().isBengali;
     final open = _disputes.where((d) => (d['status'] ?? '') != 'resolved' && (d['status'] ?? '') != 'closed').toList();
     final resolved = _disputes.where((d) => (d['status'] ?? '') == 'resolved' || (d['status'] ?? '') == 'closed').toList();
 
     return Scaffold(
-      backgroundColor: AppColors.bgDark,
+      backgroundColor: colors.surfaceContainerHighest,
       appBar: AppBar(
         backgroundColor: Colors.transparent,
         elevation: 0,
-        title: Text(_isBn ? 'অভিযোগ' : 'Disputes', style: const TextStyle(color: AppColors.textPrimary, fontSize: 18, fontWeight: FontWeight.w700)),
+        title: Text(_isBn ? 'অভিযোগ' : 'Disputes', style: TextStyle(color: colors.onSurface, fontSize: 18, fontWeight: FontWeight.w700)),
         leading: IconButton(
-          icon: const Icon(Icons.arrow_back_ios_new_rounded, color: AppColors.textPrimary, size: 18),
+          icon: Icon(Icons.arrow_back_ios_new_rounded, color: colors.onSurface, size: 18),
           onPressed: () => Navigator.pop(context),
         ),
         bottom: TabBar(
           controller: _tabController,
-          labelColor: AppColors.deepBlue,
-          unselectedLabelColor: AppColors.textMuted,
-          indicatorColor: AppColors.deepBlue,
+          labelColor: colors.primary,
+          unselectedLabelColor: colors.outline,
+          indicatorColor: colors.primary,
           tabs: [Tab(text: _isBn ? 'চলমান' : 'Open'), Tab(text: _isBn ? 'সমাধান হয়েছে' : 'Resolved')],
         ),
       ),
       body: _isLoading
-          ? const Center(child: CircularProgressIndicator(color: AppColors.deepBlue))
+          ? Center(child: CircularProgressIndicator(color: colors.primary))
           : TabBarView(
               controller: _tabController,
               children: [
@@ -223,12 +225,13 @@ class _DisputeScreenState extends State<DisputeScreen> with SingleTickerProvider
   }
 
   Widget _buildList(List<dynamic> items) {
+    final colors = Theme.of(context).colorScheme;
     if (items.isEmpty) {
-      return Center(child: Text(_isBn ? 'কোনো অভিযোগ নেই' : 'No disputes', style: const TextStyle(color: AppColors.textMuted)));
+      return Center(child: Text(_isBn ? 'কোনো অভিযোগ নেই' : 'No disputes', style: TextStyle(color: colors.outline)));
     }
     return RefreshIndicator(
-      color: AppColors.deepBlue,
-      backgroundColor: AppColors.bgMid,
+      color: colors.primary,
+      backgroundColor: colors.surface,
       onRefresh: _load,
       child: ListView.builder(
         padding: const EdgeInsets.fromLTRB(16, 12, 16, 100),
@@ -239,7 +242,7 @@ class _DisputeScreenState extends State<DisputeScreen> with SingleTickerProvider
           final statusColor = switch (status) {
             'resolved' => const Color(0xFF10B981),
             'closed' => const Color(0xFF6B7280),
-            'under_review' => AppColors.deepBlue,
+            'under_review' => colors.primary,
             _ => const Color(0xFFF59E0B),
           };
           final statusLabel = _isBn
@@ -260,9 +263,9 @@ class _DisputeScreenState extends State<DisputeScreen> with SingleTickerProvider
             margin: const EdgeInsets.only(bottom: 12),
             padding: const EdgeInsets.all(16),
             decoration: BoxDecoration(
-              color: AppColors.bgMid,
+              color: colors.surface,
               borderRadius: BorderRadius.circular(16),
-              border: Border.all(color: AppColors.glassBorder),
+              border: Border.all(color: colors.outlineVariant),
             ),
             child: Column(
               crossAxisAlignment: CrossAxisAlignment.start,
@@ -274,16 +277,16 @@ class _DisputeScreenState extends State<DisputeScreen> with SingleTickerProvider
                     child: Text(statusLabel, style: TextStyle(color: statusColor, fontSize: 11, fontWeight: FontWeight.w600)),
                   ),
                   const Spacer(),
-                  Text(d['createdAt']?.toString().substring(0, 10) ?? '', style: const TextStyle(color: AppColors.textMuted, fontSize: 11)),
+                  Text(d['createdAt']?.toString().substring(0, 10) ?? '', style: TextStyle(color: colors.outline, fontSize: 11)),
                 ]),
                 const SizedBox(height: 10),
                 Text(
                   _reasonLabel((d['category'] ?? d['reason'])?.toString() ?? ''),
-                  style: const TextStyle(color: AppColors.textPrimary, fontSize: 14, fontWeight: FontWeight.w600),
+                  style: TextStyle(color: colors.onSurface, fontSize: 14, fontWeight: FontWeight.w600),
                 ),
                 if (d['description'] != null) ...[
                   const SizedBox(height: 4),
-                  Text(d['description'] as String, style: const TextStyle(color: AppColors.textMuted, fontSize: 12), maxLines: 2, overflow: TextOverflow.ellipsis),
+                  Text(d['description'] as String, style: TextStyle(color: colors.outline, fontSize: 12), maxLines: 2, overflow: TextOverflow.ellipsis),
                 ],
                 if (d['resolution'] != null) ...[
                   const SizedBox(height: 10),

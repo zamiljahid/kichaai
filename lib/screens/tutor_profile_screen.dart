@@ -5,7 +5,7 @@ import 'package:provider/provider.dart';
 import '../core/network/api_client.dart';
 import '../core/utils/app_strings.dart';
 import '../services/onboarding_service.dart';
-import '../theme/app_theme.dart';
+import '../theme/app_gradients.dart';
 import '../widgets/animated_background.dart';
 import '../widgets/glass_button.dart';
 import '../widgets/glass_card.dart';
@@ -124,6 +124,7 @@ class _TutorProfileScreenState extends State<TutorProfileScreen> {
 
   @override
   Widget build(BuildContext context) {
+    final colors = Theme.of(context).colorScheme;
     _isBn = context.watch<LanguageNotifier>().isBengali;
     return Scaffold(
       body: AnimatedBackground(
@@ -143,7 +144,7 @@ class _TutorProfileScreenState extends State<TutorProfileScreen> {
                             child: TextField(
                               controller: _subjectController,
                               onSubmitted: (_) => _addSubject(),
-                              style: const TextStyle(color: AppColors.textPrimary, fontSize: 14),
+                              style: TextStyle(color: colors.onSurface, fontSize: 14),
                               decoration: InputDecoration(hintText: _isBn ? 'যেমন: গণিত' : 'e.g. Math'),
                             ),
                           ),
@@ -155,7 +156,7 @@ class _TutorProfileScreenState extends State<TutorProfileScreen> {
                           Wrap(spacing: 6, runSpacing: 6, children: _subjects.map((s) => Chip(
                             label: Text(s, style: const TextStyle(fontSize: 12.5)),
                             onDeleted: () => setState(() => _subjects.remove(s)),
-                            backgroundColor: AppColors.deepBlue.withOpacity(0.08),
+                            backgroundColor: colors.primary.withOpacity(0.08),
                           )).toList()),
                         ],
                       ]),
@@ -173,12 +174,12 @@ class _TutorProfileScreenState extends State<TutorProfileScreen> {
                             child: Container(
                               padding: const EdgeInsets.symmetric(horizontal: 13, vertical: 8),
                               decoration: BoxDecoration(
-                                gradient: active ? AppColors.blueGradient : null,
-                                color: active ? null : const Color(0xFFF9F7F0),
+                                gradient: active ? AppGradients.primary(colors) : null,
+                                color: active ? null : colors.surfaceContainerLow,
                                 borderRadius: BorderRadius.circular(20),
-                                border: Border.all(color: active ? AppColors.deepBlue : AppColors.glassBorder, width: active ? 1.5 : 1),
+                                border: Border.all(color: active ? colors.primary : colors.outlineVariant, width: active ? 1.5 : 1),
                               ),
-                              child: Text(level, style: TextStyle(color: active ? Colors.white : AppColors.textSecondary, fontSize: 12.5, fontWeight: active ? FontWeight.w700 : FontWeight.w500)),
+                              child: Text(level, style: TextStyle(color: active ? Colors.white : colors.onSurfaceVariant, fontSize: 12.5, fontWeight: active ? FontWeight.w700 : FontWeight.w500)),
                             ),
                           );
                         }).toList(),
@@ -210,7 +211,7 @@ class _TutorProfileScreenState extends State<TutorProfileScreen> {
                           const SizedBox(height: 8),
                           Text(
                             _isBn ? '${_certificateUrls.length}টি সার্টিফিকেট যোগ হয়েছে' : '${_certificateUrls.length} certificate(s) added',
-                            style: const TextStyle(color: AppColors.textMuted, fontSize: 12),
+                            style: TextStyle(color: colors.outline, fontSize: 12),
                           ),
                         ],
                       ]),
@@ -227,43 +228,52 @@ class _TutorProfileScreenState extends State<TutorProfileScreen> {
     );
   }
 
-  Widget _header() => Padding(
+  Widget _header() {
+    final colors = Theme.of(context).colorScheme;
+    return Padding(
         padding: const EdgeInsets.fromLTRB(8, 8, 16, 4),
         child: Row(children: [
           IconButton(
-            icon: const Icon(Icons.arrow_back_rounded, color: AppColors.textPrimary),
+            icon: Icon(Icons.arrow_back_rounded, color: colors.onSurface),
             onPressed: () => Navigator.of(context).pop(),
           ),
-          Text(_isBn ? 'টিউটর প্রোফাইল' : 'Tutor Profile', style: const TextStyle(color: AppColors.textPrimary, fontSize: 18, fontWeight: FontWeight.w700)),
+          Text(_isBn ? 'টিউটর প্রোফাইল' : 'Tutor Profile', style: TextStyle(color: colors.onSurface, fontSize: 18, fontWeight: FontWeight.w700)),
         ]),
       );
+  }
 
-  Widget _sectionCard({required String title, required Widget child}) => GlassCard(
+  Widget _sectionCard({required String title, required Widget child}) {
+    final colors = Theme.of(context).colorScheme;
+    return GlassCard(
         padding: const EdgeInsets.all(16),
         child: Column(crossAxisAlignment: CrossAxisAlignment.start, children: [
-          Text(title, style: const TextStyle(color: AppColors.textPrimary, fontSize: 14.5, fontWeight: FontWeight.w700)),
+          Text(title, style: TextStyle(color: colors.onSurface, fontSize: 14.5, fontWeight: FontWeight.w700)),
           const SizedBox(height: 12),
           child,
         ]),
       );
+  }
 
-  Widget _uploadRow({required String label, required bool uploaded, required bool loading, required VoidCallback onTap}) => GestureDetector(
+  Widget _uploadRow({required String label, required bool uploaded, required bool loading, required VoidCallback onTap}) {
+    final colors = Theme.of(context).colorScheme;
+    return GestureDetector(
         onTap: loading ? null : onTap,
         child: Container(
           padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 12),
           decoration: BoxDecoration(
-            color: const Color(0xFFF9F7F0),
+            color: colors.surfaceContainerLow,
             borderRadius: BorderRadius.circular(12),
-            border: Border.all(color: uploaded ? const Color(0xFF10B981) : AppColors.glassBorder),
+            border: Border.all(color: uploaded ? const Color(0xFF10B981) : colors.outlineVariant),
           ),
           child: Row(children: [
             if (loading)
-              const SizedBox(width: 18, height: 18, child: CircularProgressIndicator(strokeWidth: 2, color: AppColors.deepBlue))
+              SizedBox(width: 18, height: 18, child: CircularProgressIndicator(strokeWidth: 2, color: colors.primary))
             else
-              Icon(uploaded ? Icons.check_circle_rounded : Icons.upload_file_rounded, color: uploaded ? const Color(0xFF10B981) : AppColors.textMuted, size: 20),
+              Icon(uploaded ? Icons.check_circle_rounded : Icons.upload_file_rounded, color: uploaded ? const Color(0xFF10B981) : colors.outline, size: 20),
             const SizedBox(width: 10),
-            Text(label, style: TextStyle(color: uploaded ? const Color(0xFF10B981) : AppColors.textSecondary, fontSize: 13, fontWeight: FontWeight.w600)),
+            Text(label, style: TextStyle(color: uploaded ? const Color(0xFF10B981) : colors.onSurfaceVariant, fontSize: 13, fontWeight: FontWeight.w600)),
           ]),
         ),
       );
+  }
 }

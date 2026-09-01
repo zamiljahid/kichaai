@@ -10,7 +10,6 @@ import '../core/utils/app_strings.dart';
 import '../services/onboarding_service.dart';
 import '../services/auth_service.dart';
 import '../widgets/availability_calendar.dart';
-import '../theme/app_theme.dart';
 
 class PortfolioScreen extends StatefulWidget {
   const PortfolioScreen({super.key});
@@ -90,6 +89,7 @@ class _PortfolioScreenState extends State<PortfolioScreen> {
   }
 
   Future<void> _addImage() async {
+    final colors = Theme.of(context).colorScheme;
     if (_serviceType == null) {
       ScaffoldMessenger.of(context).showSnackBar(
         SnackBar(content: Text(_isBn ? 'এই ফিচারটি ফটোগ্রাফার/সিনেমাটোগ্রাফারদের জন্য' : 'This feature is for photographers/cinematographers', style: const TextStyle(color: Colors.white)), backgroundColor: const Color(0xFFEF4444), behavior: SnackBarBehavior.floating),
@@ -103,22 +103,22 @@ class _PortfolioScreenState extends State<PortfolioScreen> {
     final caption = await showDialog<String>(
       context: context,
       builder: (ctx) => AlertDialog(
-        backgroundColor: AppColors.bgMid,
-        title: Text(_isBn ? 'ছবির বিবরণ' : 'Image Details', style: const TextStyle(color: AppColors.textPrimary)),
+        backgroundColor: colors.surface,
+        title: Text(_isBn ? 'ছবির বিবরণ' : 'Image Details', style: TextStyle(color: colors.onSurface)),
         content: TextField(
           controller: _captionCtrl,
-          style: const TextStyle(color: AppColors.textPrimary),
+          style: TextStyle(color: colors.onSurface),
           decoration: InputDecoration(
             hintText: _isBn ? 'ক্যাপশন (ঐচ্ছিক)' : 'Caption (optional)',
-            hintStyle: const TextStyle(color: AppColors.textMuted),
+            hintStyle: TextStyle(color: colors.outline),
             filled: true,
-            fillColor: AppColors.glassWhite,
+            fillColor: colors.surface,
             border: const OutlineInputBorder(borderRadius: BorderRadius.all(Radius.circular(10)), borderSide: BorderSide.none),
           ),
         ),
         actions: [
-          TextButton(onPressed: () => Navigator.pop(ctx, ''), child: Text(_isBn ? 'বাদ দিন' : 'Skip', style: const TextStyle(color: AppColors.textMuted))),
-          TextButton(onPressed: () => Navigator.pop(ctx, _captionCtrl.text), child: Text(_isBn ? 'আপলোড' : 'Upload', style: const TextStyle(color: AppColors.deepBlue))),
+          TextButton(onPressed: () => Navigator.pop(ctx, ''), child: Text(_isBn ? 'বাদ দিন' : 'Skip', style: TextStyle(color: colors.outline))),
+          TextButton(onPressed: () => Navigator.pop(ctx, _captionCtrl.text), child: Text(_isBn ? 'আপলোড' : 'Upload', style: TextStyle(color: colors.primary))),
         ],
       ),
     );
@@ -163,14 +163,15 @@ class _PortfolioScreenState extends State<PortfolioScreen> {
   }
 
   Future<void> _delete(String id) async {
+    final colors = Theme.of(context).colorScheme;
     final confirm = await showDialog<bool>(
       context: context,
       builder: (ctx) => AlertDialog(
-        backgroundColor: AppColors.bgMid,
-        title: Text(_isBn ? 'ছবি মুছুন?' : 'Delete image?', style: const TextStyle(color: AppColors.textPrimary)),
-        content: Text(_isBn ? 'এই ছবিটি মুছে ফেলতে চান?' : 'Do you want to delete this image?', style: const TextStyle(color: AppColors.textMuted)),
+        backgroundColor: colors.surface,
+        title: Text(_isBn ? 'ছবি মুছুন?' : 'Delete image?', style: TextStyle(color: colors.onSurface)),
+        content: Text(_isBn ? 'এই ছবিটি মুছে ফেলতে চান?' : 'Do you want to delete this image?', style: TextStyle(color: colors.outline)),
         actions: [
-          TextButton(onPressed: () => Navigator.pop(ctx, false), child: Text(_isBn ? 'বাতিল' : 'Cancel', style: const TextStyle(color: AppColors.textMuted))),
+          TextButton(onPressed: () => Navigator.pop(ctx, false), child: Text(_isBn ? 'বাতিল' : 'Cancel', style: TextStyle(color: colors.outline))),
           TextButton(onPressed: () => Navigator.pop(ctx, true), child: Text(_isBn ? 'মুছুন' : 'Delete', style: const TextStyle(color: Color(0xFFEF4444)))),
         ],
       ),
@@ -183,6 +184,7 @@ class _PortfolioScreenState extends State<PortfolioScreen> {
   }
 
   void _showImageOptions(Map<String, dynamic> item) {
+    final colors = Theme.of(context).colorScheme;
     final id = item['id'] as String? ?? '';
     final isCover = item['isCover'] as bool? ?? false;
     showModalBottomSheet(
@@ -193,17 +195,17 @@ class _PortfolioScreenState extends State<PortfolioScreen> {
         child: BackdropFilter(
           filter: ImageFilter.blur(sigmaX: 12, sigmaY: 12),
           child: Container(
-            color: AppColors.bgMid,
+            color: colors.surface,
             padding: const EdgeInsets.fromLTRB(16, 12, 16, 32),
             child: Column(
               mainAxisSize: MainAxisSize.min,
               children: [
-                Container(width: 40, height: 4, decoration: BoxDecoration(color: AppColors.glassBorder, borderRadius: BorderRadius.circular(2))),
+                Container(width: 40, height: 4, decoration: BoxDecoration(color: colors.outlineVariant, borderRadius: BorderRadius.circular(2))),
                 const SizedBox(height: 16),
                 if (!isCover)
                   ListTile(
                     leading: const Icon(Icons.star_rounded, color: Color(0xFFF59E0B)),
-                    title: Text(_isBn ? 'কভার হিসেবে সেট করুন' : 'Set as cover', style: const TextStyle(color: AppColors.textPrimary)),
+                    title: Text(_isBn ? 'কভার হিসেবে সেট করুন' : 'Set as cover', style: TextStyle(color: colors.onSurface)),
                     onTap: () { Navigator.pop(ctx); _setCover(id); },
                   ),
                 ListTile(
@@ -221,23 +223,24 @@ class _PortfolioScreenState extends State<PortfolioScreen> {
 
   @override
   Widget build(BuildContext context) {
+    final colors = Theme.of(context).colorScheme;
     _isBn = context.watch<LanguageNotifier>().isBengali;
     return Scaffold(
-      backgroundColor: AppColors.bgDark,
+      backgroundColor: colors.surfaceContainerHighest,
       appBar: AppBar(
         backgroundColor: Colors.transparent,
         elevation: 0,
-        title: Text(_isBn ? 'পোর্টফোলিও' : 'Portfolio', style: const TextStyle(color: AppColors.textPrimary, fontSize: 18, fontWeight: FontWeight.w700)),
+        title: Text(_isBn ? 'পোর্টফোলিও' : 'Portfolio', style: TextStyle(color: colors.onSurface, fontSize: 18, fontWeight: FontWeight.w700)),
         leading: IconButton(
-          icon: const Icon(Icons.arrow_back_ios_new_rounded, color: AppColors.textPrimary, size: 18),
+          icon: Icon(Icons.arrow_back_ios_new_rounded, color: colors.onSurface, size: 18),
           onPressed: () => Navigator.pop(context),
         ),
       ),
       body: _isLoading
-          ? const Center(child: CircularProgressIndicator(color: AppColors.deepBlue))
+          ? Center(child: CircularProgressIndicator(color: colors.primary))
           : RefreshIndicator(
-              color: AppColors.deepBlue,
-              backgroundColor: AppColors.bgMid,
+              color: colors.primary,
+              backgroundColor: colors.surface,
               onRefresh: _init,
               child: ListView(
                 padding: const EdgeInsets.fromLTRB(16, 12, 16, 100),
@@ -245,13 +248,13 @@ class _PortfolioScreenState extends State<PortfolioScreen> {
                   _buildHeaderCard(),
                   const SizedBox(height: 20),
                   Text(_isBn ? 'কাজের নমুনা (পোর্টফোলিও)' : 'Work Samples (Portfolio)',
-                      style: const TextStyle(color: AppColors.textPrimary, fontSize: 14, fontWeight: FontWeight.w700)),
+                      style: TextStyle(color: colors.onSurface, fontSize: 14, fontWeight: FontWeight.w700)),
                   const SizedBox(height: 10),
                   _buildPortfolioGrid(),
                   if (_userId != null) ...[
                     const SizedBox(height: 24),
                     Text(_isBn ? 'আসন্ন সময়সূচী' : 'Upcoming Schedule',
-                        style: const TextStyle(color: AppColors.textPrimary, fontSize: 14, fontWeight: FontWeight.w700)),
+                        style: TextStyle(color: colors.onSurface, fontSize: 14, fontWeight: FontWeight.w700)),
                     const SizedBox(height: 10),
                     AvailabilityCalendar(providerId: _userId!, interactive: true),
                   ],
@@ -261,30 +264,31 @@ class _PortfolioScreenState extends State<PortfolioScreen> {
       floatingActionButton: _isUploading
           ? FloatingActionButton(
               onPressed: null,
-              backgroundColor: AppColors.deepBlue,
+              backgroundColor: colors.primary,
               child: const SizedBox(width: 24, height: 24, child: CircularProgressIndicator(color: Colors.white, strokeWidth: 2)),
             )
           : FloatingActionButton(
               onPressed: _addImage,
-              backgroundColor: AppColors.deepBlue,
+              backgroundColor: colors.primary,
               child: const Icon(Icons.add_a_photo_rounded, color: Colors.white),
             ),
     );
   }
 
   Widget _buildHeaderCard() {
+    final colors = Theme.of(context).colorScheme;
     return Container(
       padding: const EdgeInsets.all(16),
       decoration: BoxDecoration(
-        color: AppColors.glassWhite,
+        color: colors.surface,
         borderRadius: BorderRadius.circular(16),
-        border: Border.all(color: AppColors.glassBorder, width: 1.2),
+        border: Border.all(color: colors.outlineVariant, width: 1.2),
       ),
       child: Row(
         children: [
           CircleAvatar(
             radius: 28,
-            backgroundColor: AppColors.deepBlue,
+            backgroundColor: colors.primary,
             backgroundImage: (_avatarUrl != null && _avatarUrl!.isNotEmpty) ? NetworkImage(_avatarUrl!) : null,
             child: (_avatarUrl == null || _avatarUrl!.isEmpty)
                 ? Text((_name?.isNotEmpty ?? false) ? _name![0].toUpperCase() : '?',
@@ -296,24 +300,24 @@ class _PortfolioScreenState extends State<PortfolioScreen> {
             child: Column(
               crossAxisAlignment: CrossAxisAlignment.start,
               children: [
-                Text(_name ?? '—', style: const TextStyle(color: AppColors.textPrimary, fontSize: 16, fontWeight: FontWeight.w700)),
+                Text(_name ?? '—', style: TextStyle(color: colors.onSurface, fontSize: 16, fontWeight: FontWeight.w700)),
                 const SizedBox(height: 4),
                 Row(
                   children: [
                     const Icon(Icons.star_rounded, color: Color(0xFFF59E0B), size: 15),
                     const SizedBox(width: 3),
                     Text(_rating == null ? '—' : _rating!.toStringAsFixed(2),
-                        style: const TextStyle(color: AppColors.textSecondary, fontSize: 12, fontWeight: FontWeight.w700)),
+                        style: TextStyle(color: colors.onSurfaceVariant, fontSize: 12, fontWeight: FontWeight.w700)),
                     if (_level != null) ...[
                       const SizedBox(width: 8),
                       Container(
                         padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 2),
                         decoration: BoxDecoration(
-                          color: AppColors.glassWhite,
+                          color: colors.surface,
                           borderRadius: BorderRadius.circular(6),
-                          border: Border.all(color: AppColors.glassBorder),
+                          border: Border.all(color: colors.outlineVariant),
                         ),
-                        child: Text(_level!, style: const TextStyle(color: AppColors.textMuted, fontSize: 10, fontWeight: FontWeight.w600)),
+                        child: Text(_level!, style: TextStyle(color: colors.outline, fontSize: 10, fontWeight: FontWeight.w600)),
                       ),
                     ],
                   ],
@@ -327,16 +331,17 @@ class _PortfolioScreenState extends State<PortfolioScreen> {
   }
 
   Widget _buildPortfolioGrid() {
+    final colors = Theme.of(context).colorScheme;
     if (_portfolio.isEmpty) {
       return Container(
         padding: const EdgeInsets.symmetric(vertical: 32),
         alignment: Alignment.center,
         child: Column(children: [
-          const Icon(Icons.photo_library_outlined, color: AppColors.textMuted, size: 48),
+          Icon(Icons.photo_library_outlined, color: colors.outline, size: 48),
           const SizedBox(height: 10),
-          Text(_isBn ? 'পোর্টফোলিও খালি' : 'Portfolio is empty', style: const TextStyle(color: AppColors.textMuted, fontSize: 14)),
+          Text(_isBn ? 'পোর্টফোলিও খালি' : 'Portfolio is empty', style: TextStyle(color: colors.outline, fontSize: 14)),
           const SizedBox(height: 6),
-          TextButton(onPressed: _addImage, child: Text(_isBn ? 'ছবি যোগ করুন' : 'Add Image', style: const TextStyle(color: AppColors.deepBlue))),
+          TextButton(onPressed: _addImage, child: Text(_isBn ? 'ছবি যোগ করুন' : 'Add Image', style: TextStyle(color: colors.primary))),
         ]),
       );
     }
@@ -362,7 +367,7 @@ class _PortfolioScreenState extends State<PortfolioScreen> {
               child: Stack(
                 fit: StackFit.expand,
                 children: [
-                  Image.network(imageUrl, fit: BoxFit.cover, errorBuilder: (_, __, ___) => Container(color: AppColors.bgMid, child: const Icon(Icons.image_outlined, color: AppColors.textMuted))),
+                  Image.network(imageUrl, fit: BoxFit.cover, errorBuilder: (_, __, ___) => Container(color: colors.surface, child: Icon(Icons.image_outlined, color: colors.outline))),
                   if (isCover)
                     Positioned(top: 8, right: 8, child: Container(
                       padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),

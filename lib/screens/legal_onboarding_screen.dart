@@ -7,7 +7,7 @@ import '../core/network/api_client.dart';
 import '../core/utils/app_strings.dart';
 import '../services/auth_service.dart';
 import '../services/onboarding_service.dart';
-import '../theme/app_theme.dart';
+import '../theme/app_gradients.dart';
 import '../widgets/animated_background.dart';
 import '../widgets/glass_button.dart';
 import '../widgets/glass_card.dart';
@@ -228,16 +228,17 @@ class _LegalOnboardingScreenState extends State<LegalOnboardingScreen> {
   }
 
   void _showSuccess() {
+    final colors = Theme.of(context).colorScheme;
     showDialog(
       context: context,
       builder: (_) => AlertDialog(
-        backgroundColor: AppColors.bgMid,
-        title: Text(_isBn ? 'জমা হয়েছে ✅' : 'Submitted ✅', style: const TextStyle(color: AppColors.textPrimary)),
+        backgroundColor: colors.surface,
+        title: Text(_isBn ? 'জমা হয়েছে ✅' : 'Submitted ✅', style: TextStyle(color: colors.onSurface)),
         content: Text(
           _isBn
               ? 'আপনার তথ্য জমা হয়েছে। অ্যাডমিন যাচাই করে ফি নির্ধারণ করলে আপনি গ্রাহকদের কাছে দৃশ্যমান হবেন।'
               : 'Your information has been submitted. Once admin verifies and sets your fee, you\'ll be visible to customers.',
-          style: const TextStyle(color: AppColors.textSecondary),
+          style: TextStyle(color: colors.onSurfaceVariant),
         ),
         actions: [
           TextButton(
@@ -245,7 +246,7 @@ class _LegalOnboardingScreenState extends State<LegalOnboardingScreen> {
               Navigator.of(context).pop();
               Navigator.of(context).pop();
             },
-            child: Text(_isBn ? 'ঠিক আছে' : 'OK', style: const TextStyle(color: AppColors.deepBlue)),
+            child: Text(_isBn ? 'ঠিক আছে' : 'OK', style: TextStyle(color: colors.primary)),
           ),
         ],
       ),
@@ -265,6 +266,7 @@ class _LegalOnboardingScreenState extends State<LegalOnboardingScreen> {
 
   @override
   Widget build(BuildContext context) {
+    final colors = Theme.of(context).colorScheme;
     _isBn = context.watch<LanguageNotifier>().isBengali;
     return Scaffold(
       body: AnimatedBackground(
@@ -274,7 +276,7 @@ class _LegalOnboardingScreenState extends State<LegalOnboardingScreen> {
               _appBar(),
               Expanded(
                 child: _loading
-                    ? const Center(child: CircularProgressIndicator(color: AppColors.deepBlue))
+                    ? Center(child: CircularProgressIndicator(color: colors.primary))
                     : SingleChildScrollView(
                         padding: const EdgeInsets.fromLTRB(20, 8, 20, 32),
                         child: Column(
@@ -316,21 +318,26 @@ class _LegalOnboardingScreenState extends State<LegalOnboardingScreen> {
     );
   }
 
-  Widget _appBar() => Padding(
+  Widget _appBar() {
+    final colors = Theme.of(context).colorScheme;
+    return Padding(
         padding: const EdgeInsets.fromLTRB(8, 8, 16, 4),
         child: Row(
           children: [
             IconButton(
-              icon: const Icon(Icons.arrow_back_rounded, color: AppColors.textPrimary),
+              icon: Icon(Icons.arrow_back_rounded, color: colors.onSurface),
               onPressed: () => Navigator.of(context).pop(),
             ),
             Text(_isBn ? 'আইনজীবী হিসেবে যুক্ত হন' : 'Join as a Lawyer',
-                style: const TextStyle(color: AppColors.textPrimary, fontSize: 18, fontWeight: FontWeight.w700)),
+                style: TextStyle(color: colors.onSurface, fontSize: 18, fontWeight: FontWeight.w700)),
           ],
         ),
       );
+  }
 
-  Widget _photoSection() => GlassCard(
+  Widget _photoSection() {
+    final colors = Theme.of(context).colorScheme;
+    return GlassCard(
         child: Row(
           children: [
             GestureDetector(
@@ -340,14 +347,14 @@ class _LegalOnboardingScreenState extends State<LegalOnboardingScreen> {
                 height: 72,
                 decoration: BoxDecoration(
                   shape: BoxShape.circle,
-                  color: AppColors.glassWhite,
-                  border: Border.all(color: AppColors.glassBorder),
+                  color: colors.surface,
+                  border: Border.all(color: colors.outlineVariant),
                   image: _photoBase64 != null
                       ? DecorationImage(image: MemoryImage(base64Decode(_photoBase64!)), fit: BoxFit.cover)
                       : null,
                 ),
                 child: _photoBase64 == null
-                    ? const Icon(Icons.add_a_photo_rounded, color: AppColors.textMuted)
+                    ? Icon(Icons.add_a_photo_rounded, color: colors.outline)
                     : null,
               ),
             ),
@@ -356,22 +363,25 @@ class _LegalOnboardingScreenState extends State<LegalOnboardingScreen> {
               child: Column(
                 crossAxisAlignment: CrossAxisAlignment.start,
                 children: [
-                  Text(_isBn ? 'প্রোফাইল ছবি' : 'Profile photo', style: const TextStyle(color: AppColors.textPrimary, fontSize: 15, fontWeight: FontWeight.w600)),
+                  Text(_isBn ? 'প্রোফাইল ছবি' : 'Profile photo', style: TextStyle(color: colors.onSurface, fontSize: 15, fontWeight: FontWeight.w600)),
                   const SizedBox(height: 4),
                   Text(_isBn ? 'গ্রাহকরা আপনার প্রোফাইলে এই ছবি দেখবে (ঐচ্ছিক)' : 'Customers will see this photo on your profile (optional)',
-                      style: const TextStyle(color: AppColors.textMuted, fontSize: 12)),
+                      style: TextStyle(color: colors.outline, fontSize: 12)),
                 ],
               ),
             ),
           ],
         ),
       );
+  }
 
-  Widget _roleSection() => GlassCard(
+  Widget _roleSection() {
+    final colors = Theme.of(context).colorScheme;
+    return GlassCard(
         child: Column(
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
-            Text(_isBn ? 'আপনি কে?' : 'Who are you?', style: const TextStyle(color: AppColors.textPrimary, fontSize: 15, fontWeight: FontWeight.w600)),
+            Text(_isBn ? 'আপনি কে?' : 'Who are you?', style: TextStyle(color: colors.onSurface, fontSize: 15, fontWeight: FontWeight.w600)),
             const SizedBox(height: 10),
             Row(
               children: [
@@ -392,8 +402,10 @@ class _LegalOnboardingScreenState extends State<LegalOnboardingScreen> {
           ],
         ),
       );
+  }
 
   Widget _roleTab(String code, String label, String sub) {
+    final colors = Theme.of(context).colorScheme;
     final sel = _role == code;
     return Expanded(
       child: GestureDetector(
@@ -402,16 +414,16 @@ class _LegalOnboardingScreenState extends State<LegalOnboardingScreen> {
           duration: const Duration(milliseconds: 200),
           padding: const EdgeInsets.symmetric(vertical: 12, horizontal: 8),
           decoration: BoxDecoration(
-            gradient: sel ? AppColors.blueGradient : null,
-            color: sel ? null : AppColors.glassWhite,
+            gradient: sel ? AppGradients.primary(colors) : null,
+            color: sel ? null : colors.surface,
             borderRadius: BorderRadius.circular(12),
-            border: Border.all(color: sel ? Colors.transparent : AppColors.glassBorder),
+            border: Border.all(color: sel ? Colors.transparent : colors.outlineVariant),
           ),
           child: Column(
             children: [
-              Text(label, style: TextStyle(color: sel ? Colors.white : AppColors.textPrimary, fontSize: 13, fontWeight: FontWeight.w700)),
+              Text(label, style: TextStyle(color: sel ? Colors.white : colors.onSurface, fontSize: 13, fontWeight: FontWeight.w700)),
               const SizedBox(height: 2),
-              Text(sub, style: TextStyle(color: sel ? Colors.white70 : AppColors.textMuted, fontSize: 11)),
+              Text(sub, style: TextStyle(color: sel ? Colors.white70 : colors.outline, fontSize: 11)),
             ],
           ),
         ),
@@ -419,16 +431,19 @@ class _LegalOnboardingScreenState extends State<LegalOnboardingScreen> {
     );
   }
 
-  Widget _chipsCard(String title, List<Map<String, dynamic>> items, Set<String> selected) => GlassCard(
+  Widget _chipsCard(String title, List<Map<String, dynamic>> items, Set<String> selected) {
+    final colors = Theme.of(context).colorScheme;
+    return GlassCard(
         child: Column(
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
-            Text(title, style: const TextStyle(color: AppColors.textPrimary, fontSize: 15, fontWeight: FontWeight.w600)),
+            Text(title, style: TextStyle(color: colors.onSurface, fontSize: 15, fontWeight: FontWeight.w600)),
             const SizedBox(height: 12),
             Wrap(
               spacing: 8,
               runSpacing: 8,
               children: items.map((it) {
+    final colors = Theme.of(context).colorScheme;
                 final code = it['code'] as String;
                 final label = ((_isBn ? it['bn'] : it['en']) ?? it['bn'] ?? it['en'] ?? code).toString();
                 final sel = selected.contains(code);
@@ -437,12 +452,12 @@ class _LegalOnboardingScreenState extends State<LegalOnboardingScreen> {
                   child: Container(
                     padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 8),
                     decoration: BoxDecoration(
-                      gradient: sel ? AppColors.blueGradient : null,
-                      color: sel ? null : AppColors.glassWhite,
+                      gradient: sel ? AppGradients.primary(colors) : null,
+                      color: sel ? null : colors.surface,
                       borderRadius: BorderRadius.circular(100),
-                      border: Border.all(color: sel ? Colors.transparent : AppColors.glassBorder),
+                      border: Border.all(color: sel ? Colors.transparent : colors.outlineVariant),
                     ),
-                    child: Text(label, style: TextStyle(color: sel ? Colors.white : AppColors.textSecondary, fontSize: 13, fontWeight: FontWeight.w600)),
+                    child: Text(label, style: TextStyle(color: sel ? Colors.white : colors.onSurfaceVariant, fontSize: 13, fontWeight: FontWeight.w600)),
                   ),
                 );
               }).toList(),
@@ -450,29 +465,33 @@ class _LegalOnboardingScreenState extends State<LegalOnboardingScreen> {
           ],
         ),
       );
+  }
 
-  Widget _modesCard() => GlassCard(
+  Widget _modesCard() {
+    final colors = Theme.of(context).colorScheme;
+    return GlassCard(
         child: Column(
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
-            Text(_isBn ? 'পরামর্শের মাধ্যম' : 'Consultation methods', style: const TextStyle(color: AppColors.textPrimary, fontSize: 15, fontWeight: FontWeight.w600)),
+            Text(_isBn ? 'পরামর্শের মাধ্যম' : 'Consultation methods', style: TextStyle(color: colors.onSurface, fontSize: 15, fontWeight: FontWeight.w600)),
             const SizedBox(height: 12),
             Wrap(
               spacing: 8,
               runSpacing: 8,
               children: _modes.map((m) {
+    final colors = Theme.of(context).colorScheme;
                 final sel = _selectedModes.contains(m.code);
                 return GestureDetector(
                   onTap: () => setState(() => sel ? _selectedModes.remove(m.code) : _selectedModes.add(m.code)),
                   child: Container(
                     padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 8),
                     decoration: BoxDecoration(
-                      gradient: sel ? AppColors.blueGradient : null,
-                      color: sel ? null : AppColors.glassWhite,
+                      gradient: sel ? AppGradients.primary(colors) : null,
+                      color: sel ? null : colors.surface,
                       borderRadius: BorderRadius.circular(100),
-                      border: Border.all(color: sel ? Colors.transparent : AppColors.glassBorder),
+                      border: Border.all(color: sel ? Colors.transparent : colors.outlineVariant),
                     ),
-                    child: Text(_isBn ? m.bn : m.en, style: TextStyle(color: sel ? Colors.white : AppColors.textSecondary, fontSize: 13, fontWeight: FontWeight.w600)),
+                    child: Text(_isBn ? m.bn : m.en, style: TextStyle(color: sel ? Colors.white : colors.onSurfaceVariant, fontSize: 13, fontWeight: FontWeight.w600)),
                   ),
                 );
               }).toList(),
@@ -480,8 +499,11 @@ class _LegalOnboardingScreenState extends State<LegalOnboardingScreen> {
           ],
         ),
       );
+  }
 
-  Widget _detailsCard() => GlassCard(
+  Widget _detailsCard() {
+    final colors = Theme.of(context).colorScheme;
+    return GlassCard(
         child: Column(
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
@@ -501,7 +523,7 @@ class _LegalOnboardingScreenState extends State<LegalOnboardingScreen> {
             ],
             const SizedBox(height: 12),
             Text(_isBn ? 'যে প্রতিষ্ঠানে পড়েছেন — কোন সাল থেকে কোন সাল পর্যন্ত' : 'Institute studied at — from year to year',
-                style: const TextStyle(color: AppColors.textMuted, fontSize: 12, fontWeight: FontWeight.w600)),
+                style: TextStyle(color: colors.outline, fontSize: 12, fontWeight: FontWeight.w600)),
             const SizedBox(height: 8),
             Row(
               children: [
@@ -513,22 +535,25 @@ class _LegalOnboardingScreenState extends State<LegalOnboardingScreen> {
           ],
         ),
       );
+  }
 
-  Widget _certificatesCard() => GlassCard(
+  Widget _certificatesCard() {
+    final colors = Theme.of(context).colorScheme;
+    return GlassCard(
         child: Column(
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
             Text(_isBn ? 'শিক্ষাগত সার্টিফিকেট (আবশ্যক)' : 'Educational certificates (required)',
-                style: const TextStyle(color: AppColors.textPrimary, fontSize: 15, fontWeight: FontWeight.w600)),
+                style: TextStyle(color: colors.onSurface, fontSize: 15, fontWeight: FontWeight.w600)),
             const SizedBox(height: 4),
             Text(
                 _isBn
                     ? 'আইনজীবী হিসেবে যাচাইয়ের জন্য HSC ও স্নাতক/LLB সার্টিফিকেটের ছবি আপলোড করুন'
                     : 'Upload photos of your HSC and Bachelor\'s/LLB certificates for advocate verification',
-                style: const TextStyle(color: AppColors.textMuted, fontSize: 12)),
+                style: TextStyle(color: colors.outline, fontSize: 12)),
             const SizedBox(height: 12),
             Text(_isBn ? 'HSC সার্টিফিকেট' : 'HSC certificate',
-                style: const TextStyle(color: AppColors.textSecondary, fontSize: 13, fontWeight: FontWeight.w600)),
+                style: TextStyle(color: colors.onSurfaceVariant, fontSize: 13, fontWeight: FontWeight.w600)),
             const SizedBox(height: 8),
             _certPickBox(
               preview: _hscPreview,
@@ -538,7 +563,7 @@ class _LegalOnboardingScreenState extends State<LegalOnboardingScreen> {
             ),
             const SizedBox(height: 16),
             Text(_isBn ? 'স্নাতক/LLB সার্টিফিকেট' : 'Bachelor\'s/LLB certificate',
-                style: const TextStyle(color: AppColors.textSecondary, fontSize: 13, fontWeight: FontWeight.w600)),
+                style: TextStyle(color: colors.onSurfaceVariant, fontSize: 13, fontWeight: FontWeight.w600)),
             const SizedBox(height: 8),
             _certPickBox(
               preview: _bachelorPreview,
@@ -549,6 +574,7 @@ class _LegalOnboardingScreenState extends State<LegalOnboardingScreen> {
           ],
         ),
       );
+  }
 
   // Same visual pattern as _photoSection's picker, but as a full-width box
   // that uploads to the backend and stores the real fileUrl (matching the
@@ -559,19 +585,20 @@ class _LegalOnboardingScreenState extends State<LegalOnboardingScreen> {
     required bool isBusy,
     required bool uploaded,
     required VoidCallback onTap,
-  }) =>
-      GestureDetector(
+  }) {
+    final colors = Theme.of(context).colorScheme;
+    return GestureDetector(
         onTap: isBusy ? null : onTap,
         child: Container(
           height: 130,
           width: double.infinity,
           decoration: BoxDecoration(
-            color: AppColors.glassWhite,
+            color: colors.surface,
             borderRadius: BorderRadius.circular(14),
-            border: Border.all(color: uploaded ? AppColors.deepBlue : AppColors.glassBorder, width: 1.5),
+            border: Border.all(color: uploaded ? colors.primary : colors.outlineVariant, width: 1.5),
           ),
           child: isBusy
-              ? const Center(child: CircularProgressIndicator(color: AppColors.deepBlue, strokeWidth: 2))
+              ? Center(child: CircularProgressIndicator(color: colors.primary, strokeWidth: 2))
               : preview != null
                   ? ClipRRect(
                       borderRadius: BorderRadius.circular(13),
@@ -583,7 +610,7 @@ class _LegalOnboardingScreenState extends State<LegalOnboardingScreen> {
                             right: 8,
                             child: Container(
                               padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
-                              decoration: BoxDecoration(color: AppColors.deepBlue, borderRadius: BorderRadius.circular(8)),
+                              decoration: BoxDecoration(color: colors.primary, borderRadius: BorderRadius.circular(8)),
                               child: Text(_isBn ? 'পরিবর্তন করুন' : 'Change',
                                   style: const TextStyle(color: Colors.white, fontSize: 10, fontWeight: FontWeight.w600)),
                             ),
@@ -594,26 +621,32 @@ class _LegalOnboardingScreenState extends State<LegalOnboardingScreen> {
                   : Column(
                       mainAxisAlignment: MainAxisAlignment.center,
                       children: [
-                        const Icon(Icons.cloud_upload_outlined, color: AppColors.textMuted, size: 28),
+                        Icon(Icons.cloud_upload_outlined, color: colors.outline, size: 28),
                         const SizedBox(height: 6),
                         Text(_isBn ? 'ট্যাপ করে ছবি বেছে নিন' : 'Tap to choose a photo',
-                            style: const TextStyle(color: AppColors.textSecondary, fontSize: 13)),
+                            style: TextStyle(color: colors.onSurfaceVariant, fontSize: 13)),
                       ],
                     ),
         ),
       );
+  }
 
-  Widget _field(TextEditingController c, String hint, {TextInputType? keyboard}) => TextField(
+  Widget _field(TextEditingController c, String hint, {TextInputType? keyboard}) {
+    final colors = Theme.of(context).colorScheme;
+    return TextField(
         controller: c,
         keyboardType: keyboard,
-        style: const TextStyle(color: AppColors.textPrimary, fontSize: 15),
+        style: TextStyle(color: colors.onSurface, fontSize: 15),
         decoration: InputDecoration(hintText: hint),
       );
+  }
 
-  Widget _dropdown() => DropdownButtonFormField<String>(
+  Widget _dropdown() {
+    final colors = Theme.of(context).colorScheme;
+    return DropdownButtonFormField<String>(
         initialValue: _llbStatus,
-        dropdownColor: AppColors.bgMid,
-        style: const TextStyle(color: AppColors.textPrimary, fontSize: 15),
+        dropdownColor: colors.surface,
+        style: TextStyle(color: colors.onSurface, fontSize: 15),
         decoration: InputDecoration(labelText: _isBn ? 'অবস্থা' : 'Status'),
         items: [
           DropdownMenuItem(value: 'student', child: Text(_isBn ? 'ছাত্র' : 'Student')),
@@ -622,4 +655,5 @@ class _LegalOnboardingScreenState extends State<LegalOnboardingScreen> {
         ],
         onChanged: (v) => setState(() => _llbStatus = v ?? 'graduate'),
       );
+  }
 }

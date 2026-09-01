@@ -6,10 +6,11 @@ import '../core/network/api_client.dart';
 import '../core/utils/app_strings.dart';
 import '../models/micro_learning_model.dart';
 import '../services/micro_learning_service.dart';
-import '../theme/app_theme.dart';
+import '../theme/app_gradients.dart';
 import '../widgets/animated_background.dart';
 import '../widgets/glass_button.dart';
 import '../widgets/glass_card.dart';
+import '../theme/status_colors.dart';
 
 /// Instructor-facing course authoring: list my courses, create a course,
 /// then manage its lessons + schedule a live session.
@@ -72,13 +73,14 @@ class _CourseAuthoringScreenState extends State<CourseAuthoringScreen> {
 
   @override
   Widget build(BuildContext context) {
+    final colors = Theme.of(context).colorScheme;
     _isBn = context.watch<LanguageNotifier>().isBengali;
     return Scaffold(
       floatingActionButton: FloatingActionButton.extended(
         onPressed: _showCreateCourse,
-        backgroundColor: AppColors.deepBlue,
-        icon: const Icon(Icons.add_rounded, color: AppColors.ivory),
-        label: Text(_isBn ? 'নতুন কোর্স' : 'New Course', style: const TextStyle(color: AppColors.ivory, fontWeight: FontWeight.w700)),
+        backgroundColor: colors.primary,
+        icon: Icon(Icons.add_rounded, color: colors.onPrimary),
+        label: Text(_isBn ? 'নতুন কোর্স' : 'New Course', style: TextStyle(color: colors.onPrimary, fontWeight: FontWeight.w700)),
       ),
       body: AnimatedBackground(
         child: SafeArea(
@@ -93,7 +95,9 @@ class _CourseAuthoringScreenState extends State<CourseAuthoringScreen> {
     );
   }
 
-  Widget _header() => Padding(
+  Widget _header() {
+    final colors = Theme.of(context).colorScheme;
+    return Padding(
         padding: const EdgeInsets.fromLTRB(16, 14, 20, 12),
         child: Row(children: [
           GestureDetector(
@@ -101,29 +105,31 @@ class _CourseAuthoringScreenState extends State<CourseAuthoringScreen> {
             child: Container(
               width: 40, height: 40,
               decoration: BoxDecoration(
-                color: AppColors.glassWhite,
+                color: colors.surface,
                 borderRadius: BorderRadius.circular(12),
-                border: Border.all(color: AppColors.glassBorder, width: 1.5),
+                border: Border.all(color: colors.outlineVariant, width: 1.5),
               ),
-              child: const Icon(Icons.arrow_back_ios_new_rounded, color: AppColors.textPrimary, size: 18),
+              child: Icon(Icons.arrow_back_ios_new_rounded, color: colors.onSurface, size: 18),
             ),
           ),
           const SizedBox(width: 16),
           Expanded(
-            child: Text(_isBn ? 'আমার কোর্স' : 'My Courses', style: const TextStyle(color: AppColors.textPrimary, fontSize: 20, fontWeight: FontWeight.w700)),
+            child: Text(_isBn ? 'আমার কোর্স' : 'My Courses', style: TextStyle(color: colors.onSurface, fontSize: 20, fontWeight: FontWeight.w700)),
           ),
         ]),
       );
+  }
 
   Widget _body() {
-    if (_loading) return const Center(child: CircularProgressIndicator(color: AppColors.deepBlue));
+    final colors = Theme.of(context).colorScheme;
+    if (_loading) return Center(child: CircularProgressIndicator(color: colors.primary));
     if (_error != null) {
       return Center(child: Padding(
         padding: const EdgeInsets.all(24),
         child: Column(mainAxisSize: MainAxisSize.min, children: [
-          const Icon(Icons.error_outline_rounded, color: AppColors.textMuted, size: 40),
+          Icon(Icons.error_outline_rounded, color: colors.outline, size: 40),
           const SizedBox(height: 12),
-          Text(_error!, textAlign: TextAlign.center, style: const TextStyle(color: AppColors.textMuted)),
+          Text(_error!, textAlign: TextAlign.center, style: TextStyle(color: colors.outline)),
           const SizedBox(height: 16),
           TextButton(onPressed: _load, child: Text(_isBn ? 'আবার চেষ্টা করুন' : 'Try again')),
         ]),
@@ -131,16 +137,16 @@ class _CourseAuthoringScreenState extends State<CourseAuthoringScreen> {
     }
     if (_courses.isEmpty) {
       return Center(child: Column(mainAxisSize: MainAxisSize.min, children: [
-        const Icon(Icons.menu_book_rounded, color: AppColors.textMuted, size: 56),
+        Icon(Icons.menu_book_rounded, color: colors.outline, size: 56),
         const SizedBox(height: 14),
-        Text(_isBn ? 'এখনো কোনো কোর্স নেই' : 'No courses yet', style: const TextStyle(color: AppColors.textMuted, fontSize: 15)),
+        Text(_isBn ? 'এখনো কোনো কোর্স নেই' : 'No courses yet', style: TextStyle(color: colors.outline, fontSize: 15)),
         const SizedBox(height: 6),
-        Text(_isBn ? '"নতুন কোর্স" দিয়ে শুরু করুন' : 'Start with "New Course"', style: const TextStyle(color: AppColors.textMuted, fontSize: 12)),
+        Text(_isBn ? '"নতুন কোর্স" দিয়ে শুরু করুন' : 'Start with "New Course"', style: TextStyle(color: colors.outline, fontSize: 12)),
       ]));
     }
     return RefreshIndicator(
-      color: AppColors.deepBlue,
-      backgroundColor: AppColors.bgMid,
+      color: colors.primary,
+      backgroundColor: colors.surface,
       onRefresh: _load,
       child: ListView.builder(
         padding: const EdgeInsets.fromLTRB(16, 0, 16, 100),
@@ -158,13 +164,14 @@ class _CourseAuthoringScreenState extends State<CourseAuthoringScreen> {
   };
 
   Widget _courseCard(CourseModel c, int index) {
+    final colors = Theme.of(context).colorScheme;
     final statusColor = c.status == 'published'
         ? const Color(0xFF10B981)
         : c.status == 'pending_review'
             ? const Color(0xFFF59E0B)
             : c.status == 'archived'
                 ? const Color(0xFFEF4444)
-                : AppColors.textMuted;
+                : colors.outline;
     return Padding(
       padding: const EdgeInsets.only(bottom: 12),
       child: GestureDetector(
@@ -180,14 +187,14 @@ class _CourseAuthoringScreenState extends State<CourseAuthoringScreen> {
             Row(children: [
               Container(
                 width: 46, height: 46,
-                decoration: BoxDecoration(gradient: AppColors.blueGradient, borderRadius: BorderRadius.circular(12)),
-                child: const Icon(Icons.play_lesson_rounded, color: AppColors.ivory, size: 22),
+                decoration: BoxDecoration(gradient: AppGradients.primary(colors), borderRadius: BorderRadius.circular(12)),
+                child: Icon(Icons.play_lesson_rounded, color: colors.onPrimary, size: 22),
               ),
               const SizedBox(width: 14),
               Expanded(
                 child: Column(crossAxisAlignment: CrossAxisAlignment.start, children: [
                   Text(c.title, maxLines: 1, overflow: TextOverflow.ellipsis,
-                      style: const TextStyle(color: AppColors.textPrimary, fontSize: 15, fontWeight: FontWeight.w700)),
+                      style: TextStyle(color: colors.onSurface, fontSize: 15, fontWeight: FontWeight.w700)),
                   const SizedBox(height: 4),
                   Row(children: [
                     Container(
@@ -197,13 +204,13 @@ class _CourseAuthoringScreenState extends State<CourseAuthoringScreen> {
                     ),
                     const SizedBox(width: 8),
                     Text(_isBn ? '${c.lessons.isNotEmpty ? c.lessons.length : (c.totalLessons ?? 0)} লেসন' : '${c.lessons.isNotEmpty ? c.lessons.length : (c.totalLessons ?? 0)} lessons',
-                        style: const TextStyle(color: AppColors.textMuted, fontSize: 11)),
+                        style: TextStyle(color: colors.outline, fontSize: 11)),
                     const SizedBox(width: 8),
-                    Text('৳${c.price.toStringAsFixed(0)}', style: const TextStyle(color: AppColors.deepBlue, fontSize: 12, fontWeight: FontWeight.w700)),
+                    Text('৳${c.price.toStringAsFixed(0)}', style: TextStyle(color: colors.primary, fontSize: 12, fontWeight: FontWeight.w700)),
                   ]),
                 ]),
               ),
-              const Icon(Icons.arrow_forward_ios_rounded, color: AppColors.textMuted, size: 14),
+              Icon(Icons.arrow_forward_ios_rounded, color: colors.outline, size: 14),
             ]),
             if (c.status == 'draft' && c.rejectionReason != null) ...[
               const SizedBox(height: 10),
@@ -220,10 +227,10 @@ class _CourseAuthoringScreenState extends State<CourseAuthoringScreen> {
                 builder: (_) => _CourseEnrollmentsScreen(courseId: c.id, courseTitle: c.title),
               )),
               child: Row(children: [
-                const Icon(Icons.people_alt_rounded, color: AppColors.deepBlue, size: 15),
+                Icon(Icons.people_alt_rounded, color: colors.primary, size: 15),
                 const SizedBox(width: 6),
                 Text(_isBn ? '${c.enrollmentCount ?? 0} জন শিক্ষার্থী — তালিকা দেখুন' : '${c.enrollmentCount ?? 0} students — view list',
-                    style: const TextStyle(color: AppColors.deepBlue, fontSize: 12, fontWeight: FontWeight.w600)),
+                    style: TextStyle(color: colors.primary, fontSize: 12, fontWeight: FontWeight.w600)),
               ]),
             ),
             // Providers self-publish directly — no admin approval step. Without this button a
@@ -235,8 +242,8 @@ class _CourseAuthoringScreenState extends State<CourseAuthoringScreen> {
                 child: OutlinedButton(
                   onPressed: () => _publishCourse(c),
                   style: OutlinedButton.styleFrom(
-                    foregroundColor: AppColors.deepBlue,
-                    side: const BorderSide(color: AppColors.deepBlue),
+                    foregroundColor: colors.primary,
+                    side: BorderSide(color: colors.primary),
                     padding: const EdgeInsets.symmetric(vertical: 10),
                   ),
                   child: Text(_isBn ? 'প্রকাশ করুন' : 'Publish', style: const TextStyle(fontSize: 13, fontWeight: FontWeight.w600)),
@@ -265,6 +272,7 @@ class _CourseAuthoringScreenState extends State<CourseAuthoringScreen> {
 
   /// Long-press a course card → edit its metadata (PATCH, only changed fields).
   void _showEditCourse(CourseModel c) {
+    final colors = Theme.of(context).colorScheme;
     final titleCtrl = TextEditingController(text: c.title);
     final descCtrl = TextEditingController(text: c.description);
     final priceCtrl = TextEditingController(text: c.price.toStringAsFixed(0));
@@ -278,22 +286,22 @@ class _CourseAuthoringScreenState extends State<CourseAuthoringScreen> {
         builder: (ctx, setS) => Padding(
           padding: EdgeInsets.only(bottom: MediaQuery.of(ctx).viewInsets.bottom),
           child: Container(
-            decoration: const BoxDecoration(
-              color: AppColors.bgMid,
+            decoration: BoxDecoration(
+              color: colors.surface,
               borderRadius: BorderRadius.vertical(top: Radius.circular(24)),
             ),
             padding: const EdgeInsets.all(20),
             child: SingleChildScrollView(
               child: Column(mainAxisSize: MainAxisSize.min, crossAxisAlignment: CrossAxisAlignment.start, children: [
-                Center(child: Container(width: 40, height: 4, decoration: BoxDecoration(color: AppColors.glassBorder, borderRadius: BorderRadius.circular(2)))),
+                Center(child: Container(width: 40, height: 4, decoration: BoxDecoration(color: colors.outlineVariant, borderRadius: BorderRadius.circular(2)))),
                 const SizedBox(height: 18),
-                Text(_isBn ? 'কোর্স সম্পাদনা করুন' : 'Edit Course', style: const TextStyle(color: AppColors.textPrimary, fontSize: 18, fontWeight: FontWeight.w700)),
+                Text(_isBn ? 'কোর্স সম্পাদনা করুন' : 'Edit Course', style: TextStyle(color: colors.onSurface, fontSize: 18, fontWeight: FontWeight.w700)),
                 const SizedBox(height: 18),
-                _field(titleCtrl, _isBn ? 'কোর্সের নাম' : 'Course name'),
+                _field(colors, titleCtrl, _isBn ? 'কোর্সের নাম' : 'Course name'),
                 const SizedBox(height: 12),
-                _field(descCtrl, _isBn ? 'বিবরণ' : 'Description', maxLines: 3),
+                _field(colors, descCtrl, _isBn ? 'বিবরণ' : 'Description', maxLines: 3),
                 const SizedBox(height: 12),
-                _field(priceCtrl, _isBn ? 'মূল্য (৳)' : 'Price (৳)', keyboard: TextInputType.number),
+                _field(colors, priceCtrl, _isBn ? 'মূল্য (৳)' : 'Price (৳)', keyboard: TextInputType.number),
                 const SizedBox(height: 22),
                 GlassButton(
                   label: _isBn ? 'সংরক্ষণ করুন' : 'Save',
@@ -338,6 +346,7 @@ class _CourseAuthoringScreenState extends State<CourseAuthoringScreen> {
   }
 
   void _showCreateCourse() {
+    final colors = Theme.of(context).colorScheme;
     final titleCtrl = TextEditingController();
     final descCtrl = TextEditingController();
     final priceCtrl = TextEditingController();
@@ -357,22 +366,22 @@ class _CourseAuthoringScreenState extends State<CourseAuthoringScreen> {
         builder: (ctx, setS) => Padding(
           padding: EdgeInsets.only(bottom: MediaQuery.of(ctx).viewInsets.bottom),
           child: Container(
-            decoration: const BoxDecoration(
-              color: AppColors.bgMid,
+            decoration: BoxDecoration(
+              color: colors.surface,
               borderRadius: BorderRadius.vertical(top: Radius.circular(24)),
             ),
             padding: const EdgeInsets.all(20),
             child: SingleChildScrollView(
               child: Column(mainAxisSize: MainAxisSize.min, crossAxisAlignment: CrossAxisAlignment.start, children: [
-                Center(child: Container(width: 40, height: 4, decoration: BoxDecoration(color: AppColors.glassBorder, borderRadius: BorderRadius.circular(2)))),
+                Center(child: Container(width: 40, height: 4, decoration: BoxDecoration(color: colors.outlineVariant, borderRadius: BorderRadius.circular(2)))),
                 const SizedBox(height: 18),
-                Text(_isBn ? 'নতুন কোর্স তৈরি করুন' : 'Create a New Course', style: const TextStyle(color: AppColors.textPrimary, fontSize: 18, fontWeight: FontWeight.w700)),
+                Text(_isBn ? 'নতুন কোর্স তৈরি করুন' : 'Create a New Course', style: TextStyle(color: colors.onSurface, fontSize: 18, fontWeight: FontWeight.w700)),
                 const SizedBox(height: 18),
-                _field(titleCtrl, _isBn ? 'কোর্সের নাম' : 'Course name'),
+                _field(colors, titleCtrl, _isBn ? 'কোর্সের নাম' : 'Course name'),
                 const SizedBox(height: 12),
-                _field(descCtrl, _isBn ? 'বিবরণ' : 'Description', maxLines: 3),
+                _field(colors, descCtrl, _isBn ? 'বিবরণ' : 'Description', maxLines: 3),
                 const SizedBox(height: 12),
-                Text(_isBn ? 'বিভাগ' : 'Category', style: const TextStyle(color: AppColors.textMuted, fontSize: 12)),
+                Text(_isBn ? 'বিভাগ' : 'Category', style: TextStyle(color: colors.outline, fontSize: 12)),
                 const SizedBox(height: 8),
                 Wrap(spacing: 8, runSpacing: 8, children: _categories.map((cat) {
                   final sel = category == cat[0];
@@ -381,35 +390,35 @@ class _CourseAuthoringScreenState extends State<CourseAuthoringScreen> {
                     child: Container(
                       padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 8),
                       decoration: BoxDecoration(
-                        gradient: sel ? AppColors.blueGradient : null,
-                        color: sel ? null : AppColors.glassWhite,
+                        gradient: sel ? AppGradients.primary(colors) : null,
+                        color: sel ? null : colors.surface,
                         borderRadius: BorderRadius.circular(100),
-                        border: Border.all(color: sel ? Colors.transparent : AppColors.glassBorder),
+                        border: Border.all(color: sel ? Colors.transparent : colors.outlineVariant),
                       ),
-                      child: Text(_isBn ? cat[1] : cat[2], style: TextStyle(color: sel ? Colors.white : AppColors.textSecondary, fontSize: 13, fontWeight: FontWeight.w600)),
+                      child: Text(_isBn ? cat[1] : cat[2], style: TextStyle(color: sel ? Colors.white : colors.onSurfaceVariant, fontSize: 13, fontWeight: FontWeight.w600)),
                     ),
                   );
                 }).toList()),
                 const SizedBox(height: 12),
                 Row(children: [
-                  Expanded(child: _field(priceCtrl, _isBn ? 'মূল্য (৳)' : 'Price (৳)', keyboard: TextInputType.number)),
+                  Expanded(child: _field(colors, priceCtrl, _isBn ? 'মূল্য (৳)' : 'Price (৳)', keyboard: TextInputType.number)),
                   const SizedBox(width: 12),
-                  Expanded(child: _field(discountCtrl, _isBn ? 'ছাড় মূল্য (ঐচ্ছিক)' : 'Discount price (optional)', keyboard: TextInputType.number)),
+                  Expanded(child: _field(colors, discountCtrl, _isBn ? 'ছাড় মূল্য (ঐচ্ছিক)' : 'Discount price (optional)', keyboard: TextInputType.number)),
                 ]),
                 const SizedBox(height: 16),
-                Text(_isBn ? 'কোর্সের ধরন' : 'Course type', style: const TextStyle(color: AppColors.textMuted, fontSize: 12)),
+                Text(_isBn ? 'কোর্সের ধরন' : 'Course type', style: TextStyle(color: colors.outline, fontSize: 12)),
                 const SizedBox(height: 8),
                 Row(children: [
-                  Expanded(child: _typeChip(_isBn ? 'রেকর্ডেড ভিডিও' : 'Recorded Video', 'recorded', courseType, (v) => setS(() => courseType = v))),
+                  Expanded(child: _typeChip(colors, _isBn ? 'রেকর্ডেড ভিডিও' : 'Recorded Video', 'recorded', courseType, (v) => setS(() => courseType = v))),
                   const SizedBox(width: 8),
-                  Expanded(child: _typeChip(_isBn ? 'লাইভ সেশন' : 'Live Session', 'live_cohort', courseType, (v) => setS(() => courseType = v))),
+                  Expanded(child: _typeChip(colors, _isBn ? 'লাইভ সেশন' : 'Live Session', 'live_cohort', courseType, (v) => setS(() => courseType = v))),
                 ]),
                 if (courseType == 'live_cohort') ...[
                   const SizedBox(height: 10),
                   Text(_isBn ? 'ভিডিও লেসন নেই — যথেষ্ট শিক্ষার্থী ভর্তি হলে আপনি একটা লাইভ ক্লাস করাবেন।' : 'No video lessons — you\'ll run a live class once enough students enroll.',
-                      style: TextStyle(color: AppColors.textMuted, fontSize: 11)),
+                      style: TextStyle(color: colors.outline, fontSize: 11)),
                   const SizedBox(height: 10),
-                  _field(minEnrollCtrl, _isBn ? 'কতজন ভর্তি হলে সেশন খোলা হবে' : 'How many enrollments to open the session', keyboard: TextInputType.number),
+                  _field(colors, minEnrollCtrl, _isBn ? 'কতজন ভর্তি হলে সেশন খোলা হবে' : 'How many enrollments to open the session', keyboard: TextInputType.number),
                 ],
                 const SizedBox(height: 22),
                 GlassButton(
@@ -459,25 +468,25 @@ class _CourseAuthoringScreenState extends State<CourseAuthoringScreen> {
     );
   }
 
-  static Widget _field(TextEditingController c, String hint, {int maxLines = 1, TextInputType? keyboard}) {
+  static Widget _field(ColorScheme colors, TextEditingController c, String hint, {int maxLines = 1, TextInputType? keyboard}) {
     return TextField(
       controller: c,
       maxLines: maxLines,
       keyboardType: keyboard,
-      style: const TextStyle(color: AppColors.textPrimary, fontSize: 14),
+      style: TextStyle(color: colors.onSurface, fontSize: 14),
       decoration: InputDecoration(
         hintText: hint,
-        hintStyle: const TextStyle(color: AppColors.textMuted, fontSize: 13),
+        hintStyle: TextStyle(color: colors.outline, fontSize: 13),
         filled: true,
-        fillColor: AppColors.glassWhite,
-        border: OutlineInputBorder(borderRadius: BorderRadius.circular(12), borderSide: const BorderSide(color: AppColors.glassBorder)),
-        enabledBorder: OutlineInputBorder(borderRadius: BorderRadius.circular(12), borderSide: const BorderSide(color: AppColors.glassBorder)),
-        focusedBorder: OutlineInputBorder(borderRadius: BorderRadius.circular(12), borderSide: const BorderSide(color: AppColors.deepBlue)),
+        fillColor: colors.surface,
+        border: OutlineInputBorder(borderRadius: BorderRadius.circular(12), borderSide: BorderSide(color: colors.outlineVariant)),
+        enabledBorder: OutlineInputBorder(borderRadius: BorderRadius.circular(12), borderSide: BorderSide(color: colors.outlineVariant)),
+        focusedBorder: OutlineInputBorder(borderRadius: BorderRadius.circular(12), borderSide: BorderSide(color: colors.primary)),
       ),
     );
   }
 
-  static Widget _typeChip(String label, String value, String current, void Function(String) onTap) {
+  static Widget _typeChip(ColorScheme colors, String label, String value, String current, void Function(String) onTap) {
     final sel = current == value;
     return GestureDetector(
       onTap: () => onTap(value),
@@ -485,12 +494,12 @@ class _CourseAuthoringScreenState extends State<CourseAuthoringScreen> {
         padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 10),
         alignment: Alignment.center,
         decoration: BoxDecoration(
-          gradient: sel ? AppColors.blueGradient : null,
-          color: sel ? null : AppColors.glassWhite,
+          gradient: sel ? AppGradients.primary(colors) : null,
+          color: sel ? null : colors.surface,
           borderRadius: BorderRadius.circular(12),
-          border: Border.all(color: sel ? Colors.transparent : AppColors.glassBorder),
+          border: Border.all(color: sel ? Colors.transparent : colors.outlineVariant),
         ),
-        child: Text(label, style: TextStyle(color: sel ? Colors.white : AppColors.textSecondary, fontSize: 13, fontWeight: FontWeight.w600)),
+        child: Text(label, style: TextStyle(color: sel ? Colors.white : colors.onSurfaceVariant, fontSize: 13, fontWeight: FontWeight.w600)),
       ),
     );
   }
@@ -570,13 +579,14 @@ class _CourseLessonsScreenState extends State<_CourseLessonsScreen> {
 
   @override
   Widget build(BuildContext context) {
+    final colors = Theme.of(context).colorScheme;
     _isBn = context.watch<LanguageNotifier>().isBengali;
     return Scaffold(
       floatingActionButton: FloatingActionButton.extended(
         onPressed: () => _showLessonSheet(),
-        backgroundColor: AppColors.deepBlue,
-        icon: const Icon(Icons.add_rounded, color: AppColors.ivory),
-        label: Text(_isBn ? 'লেসন' : 'Lesson', style: const TextStyle(color: AppColors.ivory, fontWeight: FontWeight.w700)),
+        backgroundColor: colors.primary,
+        icon: Icon(Icons.add_rounded, color: colors.onPrimary),
+        label: Text(_isBn ? 'লেসন' : 'Lesson', style: TextStyle(color: colors.onPrimary, fontWeight: FontWeight.w700)),
       ),
       body: AnimatedBackground(
         child: SafeArea(
@@ -588,13 +598,13 @@ class _CourseLessonsScreenState extends State<_CourseLessonsScreen> {
                   onTap: () => Navigator.pop(context),
                   child: Container(
                     width: 40, height: 40,
-                    decoration: BoxDecoration(color: AppColors.glassWhite, borderRadius: BorderRadius.circular(12), border: Border.all(color: AppColors.glassBorder, width: 1.5)),
-                    child: const Icon(Icons.arrow_back_ios_new_rounded, color: AppColors.textPrimary, size: 18),
+                    decoration: BoxDecoration(color: colors.surface, borderRadius: BorderRadius.circular(12), border: Border.all(color: colors.outlineVariant, width: 1.5)),
+                    child: Icon(Icons.arrow_back_ios_new_rounded, color: colors.onSurface, size: 18),
                   ),
                 ),
                 const SizedBox(width: 16),
                 Expanded(child: Text(widget.courseTitle, maxLines: 1, overflow: TextOverflow.ellipsis,
-                    style: const TextStyle(color: AppColors.textPrimary, fontSize: 18, fontWeight: FontWeight.w700))),
+                    style: TextStyle(color: colors.onSurface, fontSize: 18, fontWeight: FontWeight.w700))),
               ]),
             ),
             if (_courseType == 'live_cohort') _liveSessionSection(),
@@ -608,24 +618,25 @@ class _CourseLessonsScreenState extends State<_CourseLessonsScreen> {
   /// Close out a scheduled live session. Without this the card sat on "scheduled"
   /// forever — the completed branch below it was unreachable.
   Future<void> _completeLiveSession() async {
+    final colors = Theme.of(context).colorScheme;
     final ok = await showDialog<bool>(
       context: context,
       builder: (ctx) => AlertDialog(
-        backgroundColor: AppColors.bgMid,
+        backgroundColor: colors.surface,
         title: Text(_isBn ? 'সেশন সম্পন্ন?' : 'Session finished?',
-            style: const TextStyle(
-                color: AppColors.textPrimary, fontSize: 17, fontWeight: FontWeight.w700)),
+            style: TextStyle(
+                color: colors.onSurface, fontSize: 17, fontWeight: FontWeight.w700)),
         content: Text(
           _isBn
               ? 'শিক্ষার্থীরা এই কোর্সটি সম্পন্ন হিসেবে দেখবে।'
               : 'Learners will see this course as completed.',
-          style: const TextStyle(color: AppColors.textSecondary, fontSize: 13),
+          style: TextStyle(color: colors.onSurfaceVariant, fontSize: 13),
         ),
         actions: [
           TextButton(
             onPressed: () => Navigator.pop(ctx, false),
             child: Text(_isBn ? 'বাতিল' : 'Cancel',
-                style: const TextStyle(color: AppColors.textMuted)),
+                style: TextStyle(color: colors.outline)),
           ),
           TextButton(
             onPressed: () => Navigator.pop(ctx, true),
@@ -650,6 +661,7 @@ class _CourseLessonsScreenState extends State<_CourseLessonsScreen> {
   }
 
   Widget _liveSessionSection() {
+    final colors = Theme.of(context).colorScheme;
     final status = _liveSession?['status'] as String?;
     Widget content;
     if (status == null) {
@@ -675,15 +687,15 @@ class _CourseLessonsScreenState extends State<_CourseLessonsScreen> {
       content = GlassCard(
         padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 12),
         child: Row(children: [
-          const Icon(Icons.videocam_rounded, color: AppColors.deepBlue, size: 20),
+          Icon(Icons.videocam_rounded, color: colors.primary, size: 20),
           const SizedBox(width: 10),
           Expanded(
             child: Column(crossAxisAlignment: CrossAxisAlignment.start, children: [
-              Text(_isBn ? 'লাইভ সেশন শিডিউল হয়েছে' : 'Live session scheduled', style: const TextStyle(color: AppColors.textPrimary, fontSize: 13, fontWeight: FontWeight.w700)),
+              Text(_isBn ? 'লাইভ সেশন শিডিউল হয়েছে' : 'Live session scheduled', style: TextStyle(color: colors.onSurface, fontSize: 13, fontWeight: FontWeight.w700)),
               if (scheduledAt != null)
-                Text(scheduledAt.substring(0, 16).replaceFirst('T', ' '), style: const TextStyle(color: AppColors.textMuted, fontSize: 12)),
+                Text(scheduledAt.substring(0, 16).replaceFirst('T', ' '), style: TextStyle(color: colors.outline, fontSize: 12)),
               if (meetingUrl != null)
-                Text(meetingUrl, maxLines: 1, overflow: TextOverflow.ellipsis, style: const TextStyle(color: AppColors.textMuted, fontSize: 12)),
+                Text(meetingUrl, maxLines: 1, overflow: TextOverflow.ellipsis, style: TextStyle(color: colors.outline, fontSize: 12)),
               const SizedBox(height: 8),
               GlassButton(
                 label: _isBn ? 'সেশন সম্পন্ন করুন' : 'Mark session complete',
@@ -702,7 +714,7 @@ class _CourseLessonsScreenState extends State<_CourseLessonsScreen> {
         child: Row(children: [
           const Icon(Icons.check_circle_rounded, color: Color(0xFF10B981), size: 20),
           const SizedBox(width: 10),
-          Text(_isBn ? 'লাইভ সেশন সম্পন্ন হয়েছে' : 'Live session completed', style: const TextStyle(color: AppColors.textPrimary, fontSize: 13, fontWeight: FontWeight.w700)),
+          Text(_isBn ? 'লাইভ সেশন সম্পন্ন হয়েছে' : 'Live session completed', style: TextStyle(color: colors.onSurface, fontSize: 13, fontWeight: FontWeight.w700)),
         ]),
       );
     }
@@ -713,16 +725,17 @@ class _CourseLessonsScreenState extends State<_CourseLessonsScreen> {
   }
 
   Widget _body() {
-    if (_loading) return const Center(child: CircularProgressIndicator(color: AppColors.deepBlue));
+    final colors = Theme.of(context).colorScheme;
+    if (_loading) return Center(child: CircularProgressIndicator(color: colors.primary));
     if (_lessons.isEmpty) {
       return Center(child: Padding(
         padding: const EdgeInsets.all(24),
-        child: Text(_isBn ? 'এখনো কোনো লেসন নেই — "লেসন" বাটনে যোগ করুন' : 'No lessons yet — add one with the "Lesson" button', textAlign: TextAlign.center, style: const TextStyle(color: AppColors.textMuted)),
+        child: Text(_isBn ? 'এখনো কোনো লেসন নেই — "লেসন" বাটনে যোগ করুন' : 'No lessons yet — add one with the "Lesson" button', textAlign: TextAlign.center, style: TextStyle(color: colors.outline)),
       ));
     }
     return RefreshIndicator(
-      color: AppColors.deepBlue,
-      backgroundColor: AppColors.bgMid,
+      color: colors.primary,
+      backgroundColor: colors.surface,
       onRefresh: _load,
       child: ListView.builder(
         padding: const EdgeInsets.fromLTRB(16, 0, 16, 100),
@@ -733,6 +746,7 @@ class _CourseLessonsScreenState extends State<_CourseLessonsScreen> {
   }
 
   Widget _lessonTile(LessonModel l, int index) {
+    final colors = Theme.of(context).colorScheme;
     return Padding(
       padding: const EdgeInsets.only(bottom: 10),
       child: GlassCard(
@@ -741,20 +755,20 @@ class _CourseLessonsScreenState extends State<_CourseLessonsScreen> {
           Container(
             width: 30, height: 30,
             alignment: Alignment.center,
-            decoration: BoxDecoration(color: AppColors.glassWhite, borderRadius: BorderRadius.circular(8), border: Border.all(color: AppColors.glassBorder)),
-            child: Text('${index + 1}', style: const TextStyle(color: AppColors.textSecondary, fontSize: 13, fontWeight: FontWeight.w700)),
+            decoration: BoxDecoration(color: colors.surface, borderRadius: BorderRadius.circular(8), border: Border.all(color: colors.outlineVariant)),
+            child: Text('${index + 1}', style: TextStyle(color: colors.onSurfaceVariant, fontSize: 13, fontWeight: FontWeight.w700)),
           ),
           const SizedBox(width: 12),
           Expanded(
             child: Column(crossAxisAlignment: CrossAxisAlignment.start, children: [
               Text(l.title, maxLines: 1, overflow: TextOverflow.ellipsis,
-                  style: const TextStyle(color: AppColors.textPrimary, fontSize: 14, fontWeight: FontWeight.w600)),
+                  style: TextStyle(color: colors.onSurface, fontSize: 14, fontWeight: FontWeight.w600)),
               const SizedBox(height: 2),
               Row(children: [
                 if (l.durationMinutes != null) ...[
-                  const Icon(Icons.schedule_rounded, color: AppColors.textMuted, size: 12),
+                  Icon(Icons.schedule_rounded, color: colors.outline, size: 12),
                   const SizedBox(width: 3),
-                  Text(_isBn ? '${l.durationMinutes} মিনিট' : '${l.durationMinutes} min', style: const TextStyle(color: AppColors.textMuted, fontSize: 11)),
+                  Text(_isBn ? '${l.durationMinutes} মিনিট' : '${l.durationMinutes} min', style: TextStyle(color: colors.outline, fontSize: 11)),
                   const SizedBox(width: 8),
                 ],
                 if (l.isFree) ...[
@@ -762,14 +776,14 @@ class _CourseLessonsScreenState extends State<_CourseLessonsScreen> {
                   const SizedBox(width: 8),
                 ],
                 if (l.videoProcessingStatus == 'processing' || l.videoProcessingStatus == 'uploaded')
-                  Text(_isBn ? 'ওয়াটারমার্ক প্রসেসিং হচ্ছে...' : 'Watermark processing...', style: const TextStyle(color: Color(0xFFD98A0B), fontSize: 11)),
+                  Text(_isBn ? 'ওয়াটারমার্ক প্রসেসিং হচ্ছে...' : 'Watermark processing...', style: const TextStyle(color: StatusColors.amber, fontSize: 11)),
                 if (l.videoProcessingStatus == 'failed')
                   Text(_isBn ? 'ভিডিও প্রসেসিং ব্যর্থ হয়েছে' : 'Video processing failed', style: const TextStyle(color: Color(0xFFEF4444), fontSize: 11)),
               ]),
             ]),
           ),
           IconButton(
-            icon: const Icon(Icons.edit_outlined, color: AppColors.textMuted, size: 18),
+            icon: Icon(Icons.edit_outlined, color: colors.outline, size: 18),
             onPressed: () => _showLessonSheet(existing: l),
           ),
           IconButton(
@@ -782,15 +796,16 @@ class _CourseLessonsScreenState extends State<_CourseLessonsScreen> {
   }
 
   Future<void> _deleteLesson(LessonModel l) async {
+    final colors = Theme.of(context).colorScheme;
     final ok = await showDialog<bool>(
       context: context,
       builder: (ctx) => AlertDialog(
-        backgroundColor: AppColors.bgMid,
+        backgroundColor: colors.surface,
         shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)),
-        title: Text(_isBn ? 'লেসন মুছবেন?' : 'Delete lesson?', style: const TextStyle(color: AppColors.textPrimary, fontSize: 16, fontWeight: FontWeight.w700)),
-        content: Text(_isBn ? '"${l.title}" মুছে ফেলা হবে।' : '"${l.title}" will be deleted.', style: const TextStyle(color: AppColors.textSecondary, fontSize: 14)),
+        title: Text(_isBn ? 'লেসন মুছবেন?' : 'Delete lesson?', style: TextStyle(color: colors.onSurface, fontSize: 16, fontWeight: FontWeight.w700)),
+        content: Text(_isBn ? '"${l.title}" মুছে ফেলা হবে।' : '"${l.title}" will be deleted.', style: TextStyle(color: colors.onSurfaceVariant, fontSize: 14)),
         actions: [
-          TextButton(onPressed: () => Navigator.pop(ctx, false), child: Text(_isBn ? 'বাতিল' : 'Cancel', style: const TextStyle(color: AppColors.textMuted))),
+          TextButton(onPressed: () => Navigator.pop(ctx, false), child: Text(_isBn ? 'বাতিল' : 'Cancel', style: TextStyle(color: colors.outline))),
           TextButton(onPressed: () => Navigator.pop(ctx, true), child: Text(_isBn ? 'মুছুন' : 'Delete', style: const TextStyle(color: Color(0xFFEF4444), fontWeight: FontWeight.w700))),
         ],
       ),
@@ -806,6 +821,7 @@ class _CourseLessonsScreenState extends State<_CourseLessonsScreen> {
   }
 
   void _showLessonSheet({LessonModel? existing}) {
+    final colors = Theme.of(context).colorScheme;
     final titleCtrl = TextEditingController(text: existing?.title ?? '');
     final videoCtrl = TextEditingController(text: existing?.videoUrl ?? '');
     final durationCtrl = TextEditingController(text: existing?.durationMinutes?.toString() ?? '');
@@ -822,19 +838,19 @@ class _CourseLessonsScreenState extends State<_CourseLessonsScreen> {
         builder: (ctx, setS) => Padding(
           padding: EdgeInsets.only(bottom: MediaQuery.of(ctx).viewInsets.bottom),
           child: Container(
-            decoration: const BoxDecoration(color: AppColors.bgMid, borderRadius: BorderRadius.vertical(top: Radius.circular(24))),
+            decoration: BoxDecoration(color: colors.surface, borderRadius: BorderRadius.vertical(top: Radius.circular(24))),
             padding: const EdgeInsets.all(20),
             child: SingleChildScrollView(
               child: Column(mainAxisSize: MainAxisSize.min, crossAxisAlignment: CrossAxisAlignment.start, children: [
-              Center(child: Container(width: 40, height: 4, decoration: BoxDecoration(color: AppColors.glassBorder, borderRadius: BorderRadius.circular(2)))),
+              Center(child: Container(width: 40, height: 4, decoration: BoxDecoration(color: colors.outlineVariant, borderRadius: BorderRadius.circular(2)))),
               const SizedBox(height: 18),
               Text(existing == null ? (_isBn ? 'নতুন লেসন' : 'New Lesson') : (_isBn ? 'লেসন সম্পাদনা' : 'Edit Lesson'),
-                  style: const TextStyle(color: AppColors.textPrimary, fontSize: 18, fontWeight: FontWeight.w700)),
+                  style: TextStyle(color: colors.onSurface, fontSize: 18, fontWeight: FontWeight.w700)),
               const SizedBox(height: 18),
-              _CourseAuthoringScreenState._field(titleCtrl, _isBn ? 'লেসনের নাম' : 'Lesson name'),
+              _CourseAuthoringScreenState._field(colors, titleCtrl, _isBn ? 'লেসনের নাম' : 'Lesson name'),
               const SizedBox(height: 12),
               Text(_isBn ? 'ভিডিও (আপলোড করলে স্বয়ংক্রিয়ভাবে KiChaai ওয়াটারমার্ক যুক্ত হয়)' : 'Video (uploading automatically adds a KiChaai watermark)',
-                  style: const TextStyle(color: AppColors.textMuted, fontSize: 12)),
+                  style: TextStyle(color: colors.outline, fontSize: 12)),
               const SizedBox(height: 8),
               GestureDetector(
                 onTap: uploadStage != null ? null : () async {
@@ -843,10 +859,10 @@ class _CourseLessonsScreenState extends State<_CourseLessonsScreen> {
                 },
                 child: Container(
                   padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 14),
-                  decoration: BoxDecoration(color: AppColors.glassWhite, borderRadius: BorderRadius.circular(12), border: Border.all(color: AppColors.glassBorder)),
+                  decoration: BoxDecoration(color: colors.surface, borderRadius: BorderRadius.circular(12), border: Border.all(color: colors.outlineVariant)),
                   child: Row(children: [
                     Icon(pickedVideo != null ? Icons.check_circle_rounded : Icons.upload_file_rounded,
-                        color: pickedVideo != null ? const Color(0xFF10B981) : AppColors.textMuted, size: 18),
+                        color: pickedVideo != null ? const Color(0xFF10B981) : colors.outline, size: 18),
                     const SizedBox(width: 10),
                     Expanded(
                       child: Text(
@@ -856,7 +872,7 @@ class _CourseLessonsScreenState extends State<_CourseLessonsScreen> {
                                 ? (_isBn ? 'ভিডিও সেট করা আছে — বদলাতে চাপুন' : 'Video is set — tap to change')
                                 : (_isBn ? 'ভিডিও ফাইল বাছুন' : 'Choose a video file')),
                         maxLines: 1, overflow: TextOverflow.ellipsis,
-                        style: TextStyle(color: pickedVideo != null ? AppColors.textPrimary : AppColors.textMuted, fontSize: 14),
+                        style: TextStyle(color: pickedVideo != null ? colors.onSurface : colors.outline, fontSize: 14),
                       ),
                     ),
                   ]),
@@ -864,20 +880,20 @@ class _CourseLessonsScreenState extends State<_CourseLessonsScreen> {
               ),
               if (existing != null && (existing.videoProcessingStatus == 'processing' || existing.videoProcessingStatus == 'uploaded')) ...[
                 const SizedBox(height: 6),
-                Text(_isBn ? 'আগের ভিডিওটি এখনো ওয়াটারমার্ক প্রসেসিং হচ্ছে...' : 'The previous video is still watermark-processing...', style: const TextStyle(color: Color(0xFFD98A0B), fontSize: 11)),
+                Text(_isBn ? 'আগের ভিডিওটি এখনো ওয়াটারমার্ক প্রসেসিং হচ্ছে...' : 'The previous video is still watermark-processing...', style: const TextStyle(color: StatusColors.amber, fontSize: 11)),
               ],
               const SizedBox(height: 12),
               Text(_isBn ? 'অথবা বাইরের ভিডিও লিংক (YouTube/Drive) — এতে কোনো সুরক্ষা/watermark থাকবে না' : 'Or an external video link (YouTube/Drive) — this has no protection/watermark',
-                  style: const TextStyle(color: AppColors.textMuted, fontSize: 11)),
+                  style: TextStyle(color: colors.outline, fontSize: 11)),
               const SizedBox(height: 6),
-              _CourseAuthoringScreenState._field(videoCtrl, _isBn ? 'ভিডিও লিংক (ঐচ্ছিক)' : 'Video link (optional)', keyboard: TextInputType.url),
+              _CourseAuthoringScreenState._field(colors, videoCtrl, _isBn ? 'ভিডিও লিংক (ঐচ্ছিক)' : 'Video link (optional)', keyboard: TextInputType.url),
               const SizedBox(height: 12),
-              _CourseAuthoringScreenState._field(durationCtrl, _isBn ? 'সময়কাল (মিনিট)' : 'Duration (minutes)', keyboard: TextInputType.number),
+              _CourseAuthoringScreenState._field(colors, durationCtrl, _isBn ? 'সময়কাল (মিনিট)' : 'Duration (minutes)', keyboard: TextInputType.number),
               const SizedBox(height: 8),
               SwitchListTile(
                 contentPadding: EdgeInsets.zero,
-                activeColor: AppColors.deepBlue,
-                title: Text(_isBn ? 'ফ্রি প্রিভিউ' : 'Free Preview', style: const TextStyle(color: AppColors.textPrimary, fontSize: 14)),
+                activeColor: colors.primary,
+                title: Text(_isBn ? 'ফ্রি প্রিভিউ' : 'Free Preview', style: TextStyle(color: colors.onSurface, fontSize: 14)),
                 value: isFree,
                 onChanged: (v) => setS(() => isFree = v),
               ),
@@ -946,6 +962,7 @@ class _CourseLessonsScreenState extends State<_CourseLessonsScreen> {
   }
 
   void _showScheduleLive() {
+    final colors = Theme.of(context).colorScheme;
     final urlCtrl = TextEditingController();
     DateTime? when;
     bool saving = false;
@@ -958,12 +975,12 @@ class _CourseLessonsScreenState extends State<_CourseLessonsScreen> {
         builder: (ctx, setS) => Padding(
           padding: EdgeInsets.only(bottom: MediaQuery.of(ctx).viewInsets.bottom),
           child: Container(
-            decoration: const BoxDecoration(color: AppColors.bgMid, borderRadius: BorderRadius.vertical(top: Radius.circular(24))),
+            decoration: BoxDecoration(color: colors.surface, borderRadius: BorderRadius.vertical(top: Radius.circular(24))),
             padding: const EdgeInsets.all(20),
             child: Column(mainAxisSize: MainAxisSize.min, crossAxisAlignment: CrossAxisAlignment.start, children: [
-              Center(child: Container(width: 40, height: 4, decoration: BoxDecoration(color: AppColors.glassBorder, borderRadius: BorderRadius.circular(2)))),
+              Center(child: Container(width: 40, height: 4, decoration: BoxDecoration(color: colors.outlineVariant, borderRadius: BorderRadius.circular(2)))),
               const SizedBox(height: 18),
-              Text(_isBn ? 'লাইভ সেশন শিডিউল' : 'Schedule Live Session', style: const TextStyle(color: AppColors.textPrimary, fontSize: 18, fontWeight: FontWeight.w700)),
+              Text(_isBn ? 'লাইভ সেশন শিডিউল' : 'Schedule Live Session', style: TextStyle(color: colors.onSurface, fontSize: 18, fontWeight: FontWeight.w700)),
               const SizedBox(height: 18),
               GestureDetector(
                 onTap: () async {
@@ -976,17 +993,17 @@ class _CourseLessonsScreenState extends State<_CourseLessonsScreen> {
                 },
                 child: Container(
                   padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 14),
-                  decoration: BoxDecoration(color: AppColors.glassWhite, borderRadius: BorderRadius.circular(12), border: Border.all(color: AppColors.glassBorder)),
+                  decoration: BoxDecoration(color: colors.surface, borderRadius: BorderRadius.circular(12), border: Border.all(color: colors.outlineVariant)),
                   child: Row(children: [
-                    const Icon(Icons.calendar_today_outlined, color: AppColors.textMuted, size: 18),
+                    Icon(Icons.calendar_today_outlined, color: colors.outline, size: 18),
                     const SizedBox(width: 10),
                     Text(when == null ? (_isBn ? 'তারিখ ও সময় বাছুন' : 'Choose date and time') : when!.toString().substring(0, 16),
-                        style: TextStyle(color: when == null ? AppColors.textMuted : AppColors.textPrimary, fontSize: 14)),
+                        style: TextStyle(color: when == null ? colors.outline : colors.onSurface, fontSize: 14)),
                   ]),
                 ),
               ),
               const SizedBox(height: 12),
-              _CourseAuthoringScreenState._field(urlCtrl, _isBn ? 'মিটিং লিংক (Google Meet/Zoom)' : 'Meeting link (Google Meet/Zoom)', keyboard: TextInputType.url),
+              _CourseAuthoringScreenState._field(colors, urlCtrl, _isBn ? 'মিটিং লিংক (Google Meet/Zoom)' : 'Meeting link (Google Meet/Zoom)', keyboard: TextInputType.url),
               const SizedBox(height: 22),
               GlassButton(
                 label: _isBn ? 'শিডিউল করুন' : 'Schedule',
@@ -1060,6 +1077,7 @@ class _CourseEnrollmentsScreenState extends State<_CourseEnrollmentsScreen> {
 
   @override
   Widget build(BuildContext context) {
+    final colors = Theme.of(context).colorScheme;
     _isBn = context.watch<LanguageNotifier>().isBengali;
     return Scaffold(
       body: AnimatedBackground(
@@ -1072,15 +1090,15 @@ class _CourseEnrollmentsScreenState extends State<_CourseEnrollmentsScreen> {
                   onTap: () => Navigator.pop(context),
                   child: Container(
                     width: 40, height: 40,
-                    decoration: BoxDecoration(color: AppColors.glassWhite, borderRadius: BorderRadius.circular(12), border: Border.all(color: AppColors.glassBorder, width: 1.5)),
-                    child: const Icon(Icons.arrow_back_ios_new_rounded, color: AppColors.textPrimary, size: 18),
+                    decoration: BoxDecoration(color: colors.surface, borderRadius: BorderRadius.circular(12), border: Border.all(color: colors.outlineVariant, width: 1.5)),
+                    child: Icon(Icons.arrow_back_ios_new_rounded, color: colors.onSurface, size: 18),
                   ),
                 ),
                 const SizedBox(width: 16),
                 Expanded(
                   child: Column(crossAxisAlignment: CrossAxisAlignment.start, children: [
-                    Text(_isBn ? 'শিক্ষার্থী তালিকা' : 'Student List', style: const TextStyle(color: AppColors.textPrimary, fontSize: 18, fontWeight: FontWeight.w700)),
-                    Text(widget.courseTitle, maxLines: 1, overflow: TextOverflow.ellipsis, style: const TextStyle(color: AppColors.textMuted, fontSize: 12)),
+                    Text(_isBn ? 'শিক্ষার্থী তালিকা' : 'Student List', style: TextStyle(color: colors.onSurface, fontSize: 18, fontWeight: FontWeight.w700)),
+                    Text(widget.courseTitle, maxLines: 1, overflow: TextOverflow.ellipsis, style: TextStyle(color: colors.outline, fontSize: 12)),
                   ]),
                 ),
               ]),
@@ -1093,14 +1111,15 @@ class _CourseEnrollmentsScreenState extends State<_CourseEnrollmentsScreen> {
   }
 
   Widget _body() {
-    if (_loading) return const Center(child: CircularProgressIndicator(color: AppColors.deepBlue));
+    final colors = Theme.of(context).colorScheme;
+    if (_loading) return Center(child: CircularProgressIndicator(color: colors.primary));
     if (_error != null) {
       return Center(child: Padding(
         padding: const EdgeInsets.all(24),
         child: Column(mainAxisSize: MainAxisSize.min, children: [
-          const Icon(Icons.error_outline_rounded, color: AppColors.textMuted, size: 40),
+          Icon(Icons.error_outline_rounded, color: colors.outline, size: 40),
           const SizedBox(height: 12),
-          Text(_error!, textAlign: TextAlign.center, style: const TextStyle(color: AppColors.textMuted)),
+          Text(_error!, textAlign: TextAlign.center, style: TextStyle(color: colors.outline)),
           const SizedBox(height: 16),
           TextButton(onPressed: _load, child: Text(_isBn ? 'আবার চেষ্টা করুন' : 'Try again')),
         ]),
@@ -1108,14 +1127,14 @@ class _CourseEnrollmentsScreenState extends State<_CourseEnrollmentsScreen> {
     }
     if (_enrollments.isEmpty) {
       return Center(child: Column(mainAxisSize: MainAxisSize.min, children: [
-        const Icon(Icons.people_outline_rounded, color: AppColors.textMuted, size: 56),
+        Icon(Icons.people_outline_rounded, color: colors.outline, size: 56),
         const SizedBox(height: 14),
-        Text(_isBn ? 'এখনো কেউ ভর্তি হননি' : 'No one has enrolled yet', style: const TextStyle(color: AppColors.textMuted, fontSize: 15)),
+        Text(_isBn ? 'এখনো কেউ ভর্তি হননি' : 'No one has enrolled yet', style: TextStyle(color: colors.outline, fontSize: 15)),
       ]));
     }
     return RefreshIndicator(
-      color: AppColors.deepBlue,
-      backgroundColor: AppColors.bgMid,
+      color: colors.primary,
+      backgroundColor: colors.surface,
       onRefresh: _load,
       child: ListView.builder(
         padding: const EdgeInsets.fromLTRB(16, 0, 16, 24),
@@ -1126,6 +1145,7 @@ class _CourseEnrollmentsScreenState extends State<_CourseEnrollmentsScreen> {
   }
 
   Widget _tile(Map<String, dynamic> e, int index) {
+    final colors = Theme.of(context).colorScheme;
     final name = e['studentName'] as String? ?? (_isBn ? 'অজানা শিক্ষার্থী' : 'Unknown student');
     final paidAmount = _asDouble(e['paidAmount']);
     final paidAt = DateTime.tryParse(e['paidAt'] as String? ?? '');
@@ -1137,7 +1157,7 @@ class _CourseEnrollmentsScreenState extends State<_CourseEnrollmentsScreen> {
         child: Row(children: [
           CircleAvatar(
             radius: 20,
-            backgroundColor: AppColors.deepBlue,
+            backgroundColor: colors.primary,
             child: Text(name.isNotEmpty ? name[0].toUpperCase() : '?',
                 style: const TextStyle(color: Colors.white, fontWeight: FontWeight.w700)),
           ),
@@ -1145,14 +1165,14 @@ class _CourseEnrollmentsScreenState extends State<_CourseEnrollmentsScreen> {
           Expanded(
             child: Column(crossAxisAlignment: CrossAxisAlignment.start, children: [
               Text(name, maxLines: 1, overflow: TextOverflow.ellipsis,
-                  style: const TextStyle(color: AppColors.textPrimary, fontSize: 14, fontWeight: FontWeight.w600)),
+                  style: TextStyle(color: colors.onSurface, fontSize: 14, fontWeight: FontWeight.w600)),
               const SizedBox(height: 2),
               if (paidAt != null)
-                Text(_isBn ? '${paidAt.day}/${paidAt.month}/${paidAt.year} তারিখে ভর্তি' : 'Enrolled ${paidAt.day}/${paidAt.month}/${paidAt.year}', style: const TextStyle(color: AppColors.textMuted, fontSize: 11)),
+                Text(_isBn ? '${paidAt.day}/${paidAt.month}/${paidAt.year} তারিখে ভর্তি' : 'Enrolled ${paidAt.day}/${paidAt.month}/${paidAt.year}', style: TextStyle(color: colors.outline, fontSize: 11)),
             ]),
           ),
           Column(crossAxisAlignment: CrossAxisAlignment.end, children: [
-            Text('৳${paidAmount.toStringAsFixed(0)}', style: const TextStyle(color: AppColors.deepBlue, fontSize: 13, fontWeight: FontWeight.w700)),
+            Text('৳${paidAmount.toStringAsFixed(0)}', style: TextStyle(color: colors.primary, fontSize: 13, fontWeight: FontWeight.w700)),
             if (completed) ...[
               const SizedBox(height: 2),
               Text(_isBn ? 'সম্পন্ন' : 'Completed', style: const TextStyle(color: Color(0xFF10B981), fontSize: 10, fontWeight: FontWeight.w600)),

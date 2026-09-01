@@ -4,7 +4,6 @@ import 'package:flutter_animate/flutter_animate.dart';
 import 'package:provider/provider.dart';
 import '../core/network/api_client.dart';
 import '../core/utils/app_strings.dart';
-import '../theme/app_theme.dart';
 
 class CommissionScreen extends StatefulWidget {
   const CommissionScreen({super.key});
@@ -73,33 +72,34 @@ class _CommissionScreenState extends State<CommissionScreen> {
 
   @override
   Widget build(BuildContext context) {
+    final colors = Theme.of(context).colorScheme;
     _isBn = context.watch<LanguageNotifier>().isBengali;
     return Scaffold(
-      backgroundColor: AppColors.bgDark,
+      backgroundColor: colors.surfaceContainerHighest,
       appBar: AppBar(
         backgroundColor: Colors.transparent,
         elevation: 0,
-        title: Text(_isBn ? 'কমিশন' : 'Commission', style: const TextStyle(color: AppColors.textPrimary, fontSize: 18, fontWeight: FontWeight.w700)),
+        title: Text(_isBn ? 'কমিশন' : 'Commission', style: TextStyle(color: colors.onSurface, fontSize: 18, fontWeight: FontWeight.w700)),
         leading: IconButton(
-          icon: const Icon(Icons.arrow_back_ios_new_rounded, color: AppColors.textPrimary, size: 18),
+          icon: Icon(Icons.arrow_back_ios_new_rounded, color: colors.onSurface, size: 18),
           onPressed: () => Navigator.pop(context),
         ),
       ),
       body: _isLoading
-          ? const Center(child: CircularProgressIndicator(color: AppColors.deepBlue))
+          ? Center(child: CircularProgressIndicator(color: colors.primary))
           : RefreshIndicator(
-              color: AppColors.deepBlue,
-              backgroundColor: AppColors.bgMid,
+              color: colors.primary,
+              backgroundColor: colors.surface,
               onRefresh: _load,
               child: ListView(
                 padding: const EdgeInsets.fromLTRB(16, 12, 16, 100),
                 children: [
                   _buildPendingCard(),
                   const SizedBox(height: 16),
-                  Text(_isBn ? 'কমিশন ইতিহাস' : 'Commission History', style: const TextStyle(color: AppColors.textMuted, fontSize: 12, fontWeight: FontWeight.w600, letterSpacing: 1)),
+                  Text(_isBn ? 'কমিশন ইতিহাস' : 'Commission History', style: TextStyle(color: colors.outline, fontSize: 12, fontWeight: FontWeight.w600, letterSpacing: 1)),
                   const SizedBox(height: 10),
                   if (_commissions.isEmpty)
-                    Center(child: Padding(padding: const EdgeInsets.all(32), child: Text(_isBn ? 'কোনো কমিশন নেই' : 'No commissions', style: const TextStyle(color: AppColors.textMuted))))
+                    Center(child: Padding(padding: const EdgeInsets.all(32), child: Text(_isBn ? 'কোনো কমিশন নেই' : 'No commissions', style: TextStyle(color: colors.outline))))
                   else
                     ..._commissions.asMap().entries.map((entry) {
                       final i = entry.key;
@@ -109,9 +109,9 @@ class _CommissionScreenState extends State<CommissionScreen> {
                       return Container(
                         margin: const EdgeInsets.only(bottom: 10),
                         decoration: BoxDecoration(
-                          color: AppColors.bgMid,
+                          color: colors.surface,
                           borderRadius: BorderRadius.circular(14),
-                          border: Border.all(color: AppColors.glassBorder),
+                          border: Border.all(color: colors.outlineVariant),
                         ),
                         child: ClipRRect(
                           borderRadius: BorderRadius.circular(14),
@@ -125,13 +125,13 @@ class _CommissionScreenState extends State<CommissionScreen> {
                                 decoration: BoxDecoration(color: color.withOpacity(0.1), borderRadius: BorderRadius.circular(12)),
                                 child: Icon(status == 'paid' ? Icons.check_circle_outline_rounded : Icons.schedule_rounded, color: color, size: 22),
                               ),
-                              title: Text('${_isBn ? 'জব' : 'Job'} #${(c['jobId'] as String? ?? '').substring(0, 8.clamp(0, (c['jobId'] as String? ?? '').length))}', style: const TextStyle(color: AppColors.textPrimary, fontSize: 13, fontWeight: FontWeight.w600)),
-                              subtitle: Text(c['dueAt']?.toString().substring(0, 10) ?? '', style: const TextStyle(color: AppColors.textMuted, fontSize: 11)),
+                              title: Text('${_isBn ? 'জব' : 'Job'} #${(c['jobId'] as String? ?? '').substring(0, 8.clamp(0, (c['jobId'] as String? ?? '').length))}', style: TextStyle(color: colors.onSurface, fontSize: 13, fontWeight: FontWeight.w600)),
+                              subtitle: Text(c['dueAt']?.toString().substring(0, 10) ?? '', style: TextStyle(color: colors.outline, fontSize: 11)),
                               trailing: Column(
                                 mainAxisAlignment: MainAxisAlignment.center,
                                 crossAxisAlignment: CrossAxisAlignment.end,
                                 children: [
-                                  Text('৳${(double.tryParse('${c['commissionAmount']}') ?? 0).toStringAsFixed(0)}', style: const TextStyle(color: AppColors.textPrimary, fontSize: 14, fontWeight: FontWeight.w700)),
+                                  Text('৳${(double.tryParse('${c['commissionAmount']}') ?? 0).toStringAsFixed(0)}', style: TextStyle(color: colors.onSurface, fontSize: 14, fontWeight: FontWeight.w700)),
                                   Container(
                                     margin: const EdgeInsets.only(top: 4),
                                     padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 2),

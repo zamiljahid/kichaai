@@ -5,7 +5,7 @@ import '../core/network/api_client.dart';
 import '../core/utils/app_strings.dart';
 import '../models/micro_learning_model.dart';
 import '../services/micro_learning_service.dart';
-import '../theme/app_theme.dart';
+import '../theme/app_gradients.dart';
 import '../widgets/animated_background.dart';
 import '../widgets/glass_button.dart';
 import '../widgets/glass_card.dart';
@@ -89,6 +89,7 @@ class _LessonPlayerScreenState extends State<LessonPlayerScreen> {
   }
 
   Future<void> _markComplete() async {
+    final colors = Theme.of(context).colorScheme;
     setState(() => _isMarking = true);
     try {
       await MicroLearningService.instance.markLessonComplete(
@@ -107,7 +108,7 @@ class _LessonPlayerScreenState extends State<LessonPlayerScreen> {
     } catch (e) {
       if (mounted) {
         ScaffoldMessenger.of(context).showSnackBar(SnackBar(
-          content: Text(ApiClient.mapError(e).localized(_isBn), style: const TextStyle(color: AppColors.ivory)),
+          content: Text(ApiClient.mapError(e).localized(_isBn), style: TextStyle(color: colors.onPrimary)),
           backgroundColor: const Color(0xFFEF4444),
           behavior: SnackBarBehavior.floating,
           shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
@@ -119,17 +120,18 @@ class _LessonPlayerScreenState extends State<LessonPlayerScreen> {
   }
 
   void _showCertificateBanner() {
+    final colors = Theme.of(context).colorScheme;
     showDialog(
       context: context,
       builder: (_) => AlertDialog(
-        backgroundColor: AppColors.bgMid,
+        backgroundColor: colors.surface,
         shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(20)),
         content: Column(mainAxisSize: MainAxisSize.min, children: [
           const Icon(Icons.workspace_premium_rounded, color: Color(0xFFFFC107), size: 72),
           const SizedBox(height: 16),
-          Text(_isBn ? 'অভিনন্দন!' : 'Congratulations!', textAlign: TextAlign.center, style: const TextStyle(color: AppColors.textPrimary, fontSize: 22, fontWeight: FontWeight.w800)),
+          Text(_isBn ? 'অভিনন্দন!' : 'Congratulations!', textAlign: TextAlign.center, style: TextStyle(color: colors.onSurface, fontSize: 22, fontWeight: FontWeight.w800)),
           const SizedBox(height: 8),
-          Text(_isBn ? 'আপনি সফলভাবে কোর্সটি সম্পন্ন করেছেন!' : 'You have successfully completed the course!', textAlign: TextAlign.center, style: const TextStyle(color: AppColors.textSecondary, fontSize: 14)),
+          Text(_isBn ? 'আপনি সফলভাবে কোর্সটি সম্পন্ন করেছেন!' : 'You have successfully completed the course!', textAlign: TextAlign.center, style: TextStyle(color: colors.onSurfaceVariant, fontSize: 14)),
           const SizedBox(height: 24),
           GlassButton(label: _isBn ? 'হোমে ফিরুন' : 'Back to Home', onPressed: () => Navigator.of(context).popUntil((r) => r.isFirst)),
         ]),
@@ -139,6 +141,7 @@ class _LessonPlayerScreenState extends State<LessonPlayerScreen> {
 
   @override
   Widget build(BuildContext context) {
+    final colors = Theme.of(context).colorScheme;
     _isBn = context.watch<LanguageNotifier>().isBengali;
     final isCompleted = _completedIds.contains(_currentLesson.id);
 
@@ -163,10 +166,10 @@ class _LessonPlayerScreenState extends State<LessonPlayerScreen> {
                             child: Column(
                               crossAxisAlignment: CrossAxisAlignment.stretch,
                               children: [
-                                Text(_currentLesson.title, style: const TextStyle(color: AppColors.textPrimary, fontSize: 16, fontWeight: FontWeight.w700)),
+                                Text(_currentLesson.title, style: TextStyle(color: colors.onSurface, fontSize: 16, fontWeight: FontWeight.w700)),
                                 if (_currentLesson.description?.isNotEmpty ?? false) ...[
                                   const SizedBox(height: 8),
-                                  Text(_currentLesson.description!, style: const TextStyle(color: AppColors.textSecondary, fontSize: 13, height: 1.6)),
+                                  Text(_currentLesson.description!, style: TextStyle(color: colors.onSurfaceVariant, fontSize: 13, height: 1.6)),
                                 ],
                                 const SizedBox(height: 16),
                                 if (isCompleted)
@@ -206,6 +209,7 @@ class _LessonPlayerScreenState extends State<LessonPlayerScreen> {
   }
 
   Widget _buildHeader(BuildContext context) {
+    final colors = Theme.of(context).colorScheme;
     return Padding(
       padding: const EdgeInsets.fromLTRB(16, 16, 16, 12),
       child: Row(
@@ -214,15 +218,15 @@ class _LessonPlayerScreenState extends State<LessonPlayerScreen> {
             onTap: () => Navigator.of(context).pop(),
             child: Container(
               width: 40, height: 40,
-              decoration: BoxDecoration(color: AppColors.glassWhite, borderRadius: BorderRadius.circular(12), border: Border.all(color: AppColors.glassBorder, width: 1.5)),
-              child: const Icon(Icons.arrow_back_ios_new_rounded, color: AppColors.textPrimary, size: 18),
+              decoration: BoxDecoration(color: colors.surface, borderRadius: BorderRadius.circular(12), border: Border.all(color: colors.outlineVariant, width: 1.5)),
+              child: Icon(Icons.arrow_back_ios_new_rounded, color: colors.onSurface, size: 18),
             ),
           ),
           const SizedBox(width: 14),
           Expanded(
             child: Column(crossAxisAlignment: CrossAxisAlignment.start, children: [
-              Text(_currentLesson.title, style: const TextStyle(color: AppColors.textPrimary, fontSize: 14, fontWeight: FontWeight.w700), maxLines: 1, overflow: TextOverflow.ellipsis),
-              Text(_isBn ? '${_completedIds.length}/${widget.lessons.length} সম্পন্ন' : '${_completedIds.length}/${widget.lessons.length} completed', style: TextStyle(color: AppColors.textMuted, fontSize: 12)),
+              Text(_currentLesson.title, style: TextStyle(color: colors.onSurface, fontSize: 14, fontWeight: FontWeight.w700), maxLines: 1, overflow: TextOverflow.ellipsis),
+              Text(_isBn ? '${_completedIds.length}/${widget.lessons.length} সম্পন্ন' : '${_completedIds.length}/${widget.lessons.length} completed', style: TextStyle(color: colors.outline, fontSize: 12)),
             ]),
           ),
         ],
@@ -231,18 +235,19 @@ class _LessonPlayerScreenState extends State<LessonPlayerScreen> {
   }
 
   Widget _buildVideoPlayer() {
+    final colors = Theme.of(context).colorScheme;
     if (_playUrlStatus == 'none') {
       return Container(
         height: 200,
         decoration: BoxDecoration(
-          color: AppColors.glassWhite,
+          color: colors.surface,
           borderRadius: BorderRadius.circular(16),
-          border: Border.all(color: AppColors.glassBorder),
+          border: Border.all(color: colors.outlineVariant),
         ),
         child: Column(mainAxisAlignment: MainAxisAlignment.center, children: [
-          const Icon(Icons.videocam_off_rounded, color: AppColors.textMuted, size: 48),
+          Icon(Icons.videocam_off_rounded, color: colors.outline, size: 48),
           const SizedBox(height: 8),
-          Text(_isBn ? 'ভিডিও পাওয়া যায়নি' : 'Video not found', style: TextStyle(color: AppColors.textMuted, fontSize: 13)),
+          Text(_isBn ? 'ভিডিও পাওয়া যায়নি' : 'Video not found', style: TextStyle(color: colors.outline, fontSize: 13)),
         ]),
       );
     }
@@ -251,16 +256,16 @@ class _LessonPlayerScreenState extends State<LessonPlayerScreen> {
       return Container(
         height: 200,
         decoration: BoxDecoration(
-          color: AppColors.glassWhite,
+          color: colors.surface,
           borderRadius: BorderRadius.circular(16),
-          border: Border.all(color: AppColors.glassBorder),
+          border: Border.all(color: colors.outlineVariant),
         ),
         child: Column(mainAxisAlignment: MainAxisAlignment.center, children: [
-          const Icon(Icons.hourglass_top_rounded, color: AppColors.textMuted, size: 40),
+          Icon(Icons.hourglass_top_rounded, color: colors.outline, size: 40),
           const SizedBox(height: 8),
-          Text(_isBn ? 'ভিডিও প্রস্তুত হচ্ছে — একটু পর আবার চেষ্টা করুন' : 'Video is being prepared — try again shortly', textAlign: TextAlign.center, style: TextStyle(color: AppColors.textMuted, fontSize: 13)),
+          Text(_isBn ? 'ভিডিও প্রস্তুত হচ্ছে — একটু পর আবার চেষ্টা করুন' : 'Video is being prepared — try again shortly', textAlign: TextAlign.center, style: TextStyle(color: colors.outline, fontSize: 13)),
           const SizedBox(height: 10),
-          GestureDetector(onTap: _initVideo, child: Text(_isBn ? 'আবার চেষ্টা করুন' : 'Try again', style: const TextStyle(color: AppColors.deepBlue, fontWeight: FontWeight.w600))),
+          GestureDetector(onTap: _initVideo, child: Text(_isBn ? 'আবার চেষ্টা করুন' : 'Try again', style: TextStyle(color: colors.primary, fontWeight: FontWeight.w600))),
         ]),
       );
     }
@@ -269,16 +274,16 @@ class _LessonPlayerScreenState extends State<LessonPlayerScreen> {
       return Container(
         height: 200,
         decoration: BoxDecoration(
-          color: AppColors.glassWhite,
+          color: colors.surface,
           borderRadius: BorderRadius.circular(16),
-          border: Border.all(color: AppColors.glassBorder),
+          border: Border.all(color: colors.outlineVariant),
         ),
         child: Column(mainAxisAlignment: MainAxisAlignment.center, children: [
           const Icon(Icons.error_outline_rounded, color: Color(0xFFEF4444), size: 40),
           const SizedBox(height: 8),
-          Text(_isBn ? 'ভিডিও লোড করা যায়নি' : 'Could not load video', style: TextStyle(color: AppColors.textMuted, fontSize: 13)),
+          Text(_isBn ? 'ভিডিও লোড করা যায়নি' : 'Could not load video', style: TextStyle(color: colors.outline, fontSize: 13)),
           const SizedBox(height: 10),
-          GestureDetector(onTap: _initVideo, child: Text(_isBn ? 'আবার চেষ্টা করুন' : 'Try again', style: const TextStyle(color: AppColors.deepBlue, fontWeight: FontWeight.w600))),
+          GestureDetector(onTap: _initVideo, child: Text(_isBn ? 'আবার চেষ্টা করুন' : 'Try again', style: TextStyle(color: colors.primary, fontWeight: FontWeight.w600))),
         ]),
       );
     }
@@ -287,7 +292,7 @@ class _LessonPlayerScreenState extends State<LessonPlayerScreen> {
       return Container(
         height: 200,
         decoration: BoxDecoration(color: Colors.black, borderRadius: BorderRadius.circular(16)),
-        child: const Center(child: CircularProgressIndicator(color: AppColors.deepBlue)),
+        child: Center(child: CircularProgressIndicator(color: colors.primary)),
       );
     }
 
@@ -299,7 +304,7 @@ class _LessonPlayerScreenState extends State<LessonPlayerScreen> {
           alignment: Alignment.bottomCenter,
           children: [
             VideoPlayer(_videoController!),
-            VideoProgressIndicator(_videoController!, allowScrubbing: true, colors: const VideoProgressColors(playedColor: AppColors.deepBlue)),
+            VideoProgressIndicator(_videoController!, allowScrubbing: true, colors: VideoProgressColors(playedColor: colors.primary)),
             Positioned(
               bottom: 24,
               child: GestureDetector(
@@ -327,6 +332,7 @@ class _LessonPlayerScreenState extends State<LessonPlayerScreen> {
   }
 
   Widget _buildLessonList() {
+    final colors = Theme.of(context).colorScheme;
     return Container(
       width: 64,
       color: Colors.transparent,
@@ -344,18 +350,18 @@ class _LessonPlayerScreenState extends State<LessonPlayerScreen> {
               margin: const EdgeInsets.only(bottom: 8),
               width: 48, height: 48,
               decoration: BoxDecoration(
-                gradient: isCurrent ? AppColors.blueGradient : null,
-                color: isCurrent ? null : (isDone ? const Color(0xFF22C55E).withOpacity(0.1) : AppColors.glassWhite),
+                gradient: isCurrent ? AppGradients.primary(colors) : null,
+                color: isCurrent ? null : (isDone ? const Color(0xFF22C55E).withOpacity(0.1) : colors.surface),
                 borderRadius: BorderRadius.circular(12),
                 border: Border.all(
-                  color: isCurrent ? AppColors.deepBlue : (isDone ? const Color(0xFF22C55E) : AppColors.glassBorder),
+                  color: isCurrent ? colors.primary : (isDone ? const Color(0xFF22C55E) : colors.outlineVariant),
                   width: 1.5,
                 ),
               ),
               child: Center(
                 child: isDone && !isCurrent
                     ? const Icon(Icons.check_rounded, color: Color(0xFF22C55E), size: 18)
-                    : Text('${i + 1}', style: TextStyle(color: isCurrent ? AppColors.ivory : AppColors.textMuted, fontSize: 13, fontWeight: FontWeight.w700)),
+                    : Text('${i + 1}', style: TextStyle(color: isCurrent ? colors.onPrimary : colors.outline, fontSize: 13, fontWeight: FontWeight.w700)),
               ),
             ),
           );

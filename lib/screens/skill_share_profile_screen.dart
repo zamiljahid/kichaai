@@ -5,7 +5,6 @@ import 'package:provider/provider.dart';
 import '../core/network/api_client.dart';
 import '../core/utils/app_strings.dart';
 import '../services/onboarding_service.dart';
-import '../theme/app_theme.dart';
 import '../widgets/animated_background.dart';
 import '../widgets/glass_button.dart';
 import 'photographer_profile_screen.dart' show sectionCard, uploadRow;
@@ -99,6 +98,7 @@ class _SkillShareProfileScreenState extends State<SkillShareProfileScreen> {
 
   @override
   Widget build(BuildContext context) {
+    final colors = Theme.of(context).colorScheme;
     _isBn = context.watch<LanguageNotifier>().isBengali;
     return Scaffold(
       body: AnimatedBackground(
@@ -108,8 +108,8 @@ class _SkillShareProfileScreenState extends State<SkillShareProfileScreen> {
               Padding(
                 padding: const EdgeInsets.fromLTRB(8, 8, 16, 4),
                 child: Row(children: [
-                  IconButton(icon: const Icon(Icons.arrow_back_rounded, color: AppColors.textPrimary), onPressed: () => Navigator.of(context).pop()),
-                  Text(_isBn ? 'স্কিল শেয়ার প্রোফাইল' : 'Skill Share Profile', style: const TextStyle(color: AppColors.textPrimary, fontSize: 18, fontWeight: FontWeight.w700)),
+                  IconButton(icon: Icon(Icons.arrow_back_rounded, color: colors.onSurface), onPressed: () => Navigator.of(context).pop()),
+                  Text(_isBn ? 'স্কিল শেয়ার প্রোফাইল' : 'Skill Share Profile', style: TextStyle(color: colors.onSurface, fontSize: 18, fontWeight: FontWeight.w700)),
                 ]),
               ),
               Expanded(
@@ -117,8 +117,9 @@ class _SkillShareProfileScreenState extends State<SkillShareProfileScreen> {
                   padding: const EdgeInsets.fromLTRB(16, 8, 16, 32),
                   child: Column(crossAxisAlignment: CrossAxisAlignment.stretch, children: [
                     sectionCard(
+                      colors: colors,
                       title: _isBn ? 'শিক্ষাগত সনদ / বিশ্ববিদ্যালয় আইডি' : 'Education certificate / University ID',
-                      child: uploadRow(
+                      child: uploadRow(colors: colors, 
                         label: _universityIdUrl != null
                             ? (_isBn ? 'আপলোড হয়েছে ✓' : 'Uploaded ✓')
                             : (_isBn ? 'ছবি আপলোড করুন' : 'Upload a photo'),
@@ -129,9 +130,10 @@ class _SkillShareProfileScreenState extends State<SkillShareProfileScreen> {
                     ),
                     const SizedBox(height: 14),
                     sectionCard(
+                      colors: colors,
                       title: _isBn ? 'অতিরিক্ত সার্টিফিকেট (ঐচ্ছিক)' : 'Additional certificates (optional)',
                       child: Column(crossAxisAlignment: CrossAxisAlignment.start, children: [
-                        uploadRow(
+                        uploadRow(colors: colors, 
                           label: _isBn ? 'সার্টিফিকেট যোগ করুন' : 'Add a certificate',
                           uploaded: false,
                           loading: _uploadingCertificate,
@@ -141,7 +143,7 @@ class _SkillShareProfileScreenState extends State<SkillShareProfileScreen> {
                           const SizedBox(height: 8),
                           Text(
                             _isBn ? '${_certificateUrls.length}টি সার্টিফিকেট যোগ হয়েছে' : '${_certificateUrls.length} certificate(s) added',
-                            style: const TextStyle(color: AppColors.textMuted, fontSize: 12),
+                            style: TextStyle(color: colors.outline, fontSize: 12),
                           ),
                         ],
                       ]),

@@ -6,7 +6,6 @@ import '../core/network/api_client.dart';
 import '../core/utils/app_strings.dart';
 import '../models/catalog_model.dart';
 import '../services/catalog_service.dart';
-import '../theme/app_theme.dart';
 import '../widgets/glass_card.dart';
 import '../widgets/glass_button.dart';
 
@@ -57,20 +56,21 @@ class _BundlesScreenState extends State<BundlesScreen> {
   }
 
   Future<void> _delete(BundleModel b) async {
+    final colors = Theme.of(context).colorScheme;
     final ok = await showDialog<bool>(
       context: context,
       builder: (ctx) => AlertDialog(
-        backgroundColor: AppColors.bgMid,
+        backgroundColor: colors.surface,
         title: Text(_isBn ? 'প্যাকেজ মুছবেন?' : 'Delete this bundle?',
-            style: const TextStyle(
-                color: AppColors.textPrimary, fontSize: 17, fontWeight: FontWeight.w700)),
+            style: TextStyle(
+                color: colors.onSurface, fontSize: 17, fontWeight: FontWeight.w700)),
         content: Text(b.title,
-            style: const TextStyle(color: AppColors.textSecondary, fontSize: 13)),
+            style: TextStyle(color: colors.onSurfaceVariant, fontSize: 13)),
         actions: [
           TextButton(
             onPressed: () => Navigator.pop(ctx, false),
             child: Text(_isBn ? 'বাতিল' : 'Cancel',
-                style: const TextStyle(color: AppColors.textMuted)),
+                style: TextStyle(color: colors.outline)),
           ),
           TextButton(
             onPressed: () => Navigator.pop(ctx, true),
@@ -104,23 +104,24 @@ class _BundlesScreenState extends State<BundlesScreen> {
 
   @override
   Widget build(BuildContext context) {
+    final colors = Theme.of(context).colorScheme;
     _isBn = context.watch<LanguageNotifier>().isBengali;
     return Scaffold(
-      backgroundColor: AppColors.bgDark,
+      backgroundColor: colors.surfaceContainerHighest,
       appBar: AppBar(
         backgroundColor: Colors.transparent,
         elevation: 0,
         title: Text(_isBn ? 'আমার প্যাকেজ' : 'My bundles',
-            style: const TextStyle(
-                color: AppColors.textPrimary, fontSize: 18, fontWeight: FontWeight.w700)),
+            style: TextStyle(
+                color: colors.onSurface, fontSize: 18, fontWeight: FontWeight.w700)),
         leading: IconButton(
-          icon: const Icon(Icons.arrow_back_ios_new_rounded,
-              color: AppColors.textPrimary, size: 18),
+          icon: Icon(Icons.arrow_back_ios_new_rounded,
+              color: colors.onSurface, size: 18),
           onPressed: () => Navigator.pop(context),
         ),
       ),
       body: _loading
-          ? const Center(child: CircularProgressIndicator(color: AppColors.deepBlue))
+          ? Center(child: CircularProgressIndicator(color: colors.primary))
           : _error != null
               ? Center(
                   child: Padding(
@@ -128,7 +129,7 @@ class _BundlesScreenState extends State<BundlesScreen> {
                     child: Column(mainAxisSize: MainAxisSize.min, children: [
                       Text(_error!,
                           textAlign: TextAlign.center,
-                          style: const TextStyle(color: AppColors.textMuted)),
+                          style: TextStyle(color: colors.outline)),
                       const SizedBox(height: 12),
                       GlassButton(
                           label: _isBn ? 'আবার চেষ্টা' : 'Retry',
@@ -138,8 +139,8 @@ class _BundlesScreenState extends State<BundlesScreen> {
                   ),
                 )
               : RefreshIndicator(
-                  color: AppColors.deepBlue,
-                  backgroundColor: AppColors.bgMid,
+                  color: colors.primary,
+                  backgroundColor: colors.surface,
                   onRefresh: _load,
                   child: _bundles.isEmpty
                       ? ListView(children: [
@@ -151,8 +152,8 @@ class _BundlesScreenState extends State<BundlesScreen> {
                                   ? 'এখনো কোনো প্যাকেজ নেই।\n\nকয়েকটা সেবা একসাথে ছাড়ে দিলে গ্রাহক একবারেই বেশি কাজ দেন।'
                                   : 'No bundles yet.\n\nOffering a few services together at a discount gets customers to book more in one go.',
                               textAlign: TextAlign.center,
-                              style: const TextStyle(
-                                  color: AppColors.textMuted, fontSize: 13.5, height: 1.6),
+                              style: TextStyle(
+                                  color: colors.outline, fontSize: 13.5, height: 1.6),
                             ),
                           ),
                         ])
@@ -164,7 +165,7 @@ class _BundlesScreenState extends State<BundlesScreen> {
                 ),
       floatingActionButton: FloatingActionButton.extended(
         onPressed: _showCreateSheet,
-        backgroundColor: AppColors.deepBlue,
+        backgroundColor: colors.primary,
         icon: const Icon(Icons.add_rounded, color: Colors.white),
         label: Text(_isBn ? 'নতুন প্যাকেজ' : 'New bundle',
             style: const TextStyle(color: Colors.white, fontWeight: FontWeight.w600)),
@@ -173,6 +174,7 @@ class _BundlesScreenState extends State<BundlesScreen> {
   }
 
   Widget _card(BundleModel b, int i) {
+    final colors = Theme.of(context).colorScheme;
     final saving = b.originalPrice != null && b.originalPrice! > b.price
         ? b.originalPrice! - b.price
         : 0.0;
@@ -184,16 +186,16 @@ class _BundlesScreenState extends State<BundlesScreen> {
           Row(children: [
             Expanded(
               child: Text(b.displayTitle(_isBn ? 'bn' : 'en'),
-                  style: const TextStyle(
-                      color: AppColors.textPrimary,
+                  style: TextStyle(
+                      color: colors.onSurface,
                       fontSize: 15,
                       fontWeight: FontWeight.w700)),
             ),
             if (_deleting.contains(b.id))
-              const SizedBox(
+              SizedBox(
                   width: 18,
                   height: 18,
-                  child: CircularProgressIndicator(strokeWidth: 2, color: AppColors.textMuted))
+                  child: CircularProgressIndicator(strokeWidth: 2, color: colors.outline))
             else
               GestureDetector(
                 onTap: () => _delete(b),
@@ -204,18 +206,18 @@ class _BundlesScreenState extends State<BundlesScreen> {
           if ((b.description ?? '').isNotEmpty) ...[
             const SizedBox(height: 4),
             Text(b.description!,
-                style: const TextStyle(color: AppColors.textSecondary, fontSize: 12.5)),
+                style: TextStyle(color: colors.onSurfaceVariant, fontSize: 12.5)),
           ],
           const SizedBox(height: 10),
           Row(children: [
             Text('৳ ${b.price.toStringAsFixed(0)}',
-                style: const TextStyle(
-                    color: AppColors.deepBlue, fontSize: 18, fontWeight: FontWeight.w800)),
+                style: TextStyle(
+                    color: colors.primary, fontSize: 18, fontWeight: FontWeight.w800)),
             const SizedBox(width: 8),
             if (b.originalPrice != null)
               Text('৳ ${b.originalPrice!.toStringAsFixed(0)}',
-                  style: const TextStyle(
-                      color: AppColors.textMuted,
+                  style: TextStyle(
+                      color: colors.outline,
                       fontSize: 13,
                       decoration: TextDecoration.lineThrough)),
             const Spacer(),
@@ -246,13 +248,13 @@ class _BundlesScreenState extends State<BundlesScreen> {
                   .map((s) => Container(
                         padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 3),
                         decoration: BoxDecoration(
-                          color: AppColors.glassWhite,
+                          color: colors.surface,
                           borderRadius: BorderRadius.circular(8),
-                          border: Border.all(color: AppColors.glassBorder),
+                          border: Border.all(color: colors.outlineVariant),
                         ),
                         child: Text(s.replaceAll('_', ' '),
-                            style: const TextStyle(
-                                color: AppColors.textSecondary, fontSize: 11)),
+                            style: TextStyle(
+                                color: colors.onSurfaceVariant, fontSize: 11)),
                       ))
                   .toList(),
             ),
@@ -265,6 +267,7 @@ class _BundlesScreenState extends State<BundlesScreen> {
   // ── Create ──────────────────────────────────────────────────────────
 
   Future<void> _showCreateSheet() async {
+    final colors = Theme.of(context).colorScheme;
     final nameCtrl = TextEditingController();
     final descCtrl = TextEditingController();
     final servicesCtrl = TextEditingController();
@@ -274,16 +277,16 @@ class _BundlesScreenState extends State<BundlesScreen> {
 
     InputDecoration deco(String hint) => InputDecoration(
           hintText: hint,
-          hintStyle: const TextStyle(color: AppColors.textMuted, fontSize: 13),
+          hintStyle: TextStyle(color: colors.outline, fontSize: 13),
           filled: true,
-          fillColor: AppColors.glassWhite,
+          fillColor: colors.surface,
           border: OutlineInputBorder(
             borderRadius: BorderRadius.circular(12),
-            borderSide: const BorderSide(color: AppColors.glassBorder),
+            borderSide: BorderSide(color: colors.outlineVariant),
           ),
           enabledBorder: OutlineInputBorder(
             borderRadius: BorderRadius.circular(12),
-            borderSide: const BorderSide(color: AppColors.glassBorder),
+            borderSide: BorderSide(color: colors.outlineVariant),
           ),
           contentPadding: const EdgeInsets.symmetric(horizontal: 14, vertical: 12),
         );
@@ -297,9 +300,9 @@ class _BundlesScreenState extends State<BundlesScreen> {
           padding: EdgeInsets.only(bottom: MediaQuery.of(ctx).viewInsets.bottom),
           child: Container(
             decoration: BoxDecoration(
-              color: AppColors.bgMid,
+              color: colors.surface,
               borderRadius: const BorderRadius.vertical(top: Radius.circular(24)),
-              border: Border.all(color: AppColors.glassBorder),
+              border: Border.all(color: colors.outlineVariant),
             ),
             padding: const EdgeInsets.all(22),
             child: SingleChildScrollView(
@@ -309,7 +312,7 @@ class _BundlesScreenState extends State<BundlesScreen> {
                     width: 40,
                     height: 4,
                     decoration: BoxDecoration(
-                      color: AppColors.glassBorder,
+                      color: colors.outlineVariant,
                       borderRadius: BorderRadius.circular(2),
                     ),
                   ),
@@ -318,26 +321,26 @@ class _BundlesScreenState extends State<BundlesScreen> {
                 Align(
                   alignment: Alignment.centerLeft,
                   child: Text(_isBn ? 'নতুন প্যাকেজ' : 'New bundle',
-                      style: const TextStyle(
-                          color: AppColors.textPrimary,
+                      style: TextStyle(
+                          color: colors.onSurface,
                           fontSize: 17,
                           fontWeight: FontWeight.w700)),
                 ),
                 const SizedBox(height: 14),
                 TextField(
                     controller: nameCtrl,
-                    style: const TextStyle(color: AppColors.textPrimary, fontSize: 14),
+                    style: TextStyle(color: colors.onSurface, fontSize: 14),
                     decoration: deco(_isBn ? 'প্যাকেজের নাম *' : 'Bundle name *')),
                 const SizedBox(height: 10),
                 TextField(
                     controller: descCtrl,
                     maxLines: 2,
-                    style: const TextStyle(color: AppColors.textPrimary, fontSize: 14),
+                    style: TextStyle(color: colors.onSurface, fontSize: 14),
                     decoration: deco(_isBn ? 'কী কী থাকছে, সংক্ষেপে *' : 'What it covers *')),
                 const SizedBox(height: 10),
                 TextField(
                     controller: servicesCtrl,
-                    style: const TextStyle(color: AppColors.textPrimary, fontSize: 14),
+                    style: TextStyle(color: colors.onSurface, fontSize: 14),
                     decoration: deco(_isBn
                         ? 'সেবার কোড, কমা দিয়ে (technician_electrical, ...)'
                         : 'Service codes, comma separated')),
@@ -347,7 +350,7 @@ class _BundlesScreenState extends State<BundlesScreen> {
                     child: TextField(
                         controller: originalCtrl,
                         keyboardType: TextInputType.number,
-                        style: const TextStyle(color: AppColors.textPrimary, fontSize: 14),
+                        style: TextStyle(color: colors.onSurface, fontSize: 14),
                         decoration: deco(_isBn ? 'আলাদা দাম ৳ *' : 'Normal price ৳ *')),
                   ),
                   const SizedBox(width: 10),
@@ -355,7 +358,7 @@ class _BundlesScreenState extends State<BundlesScreen> {
                     child: TextField(
                         controller: priceCtrl,
                         keyboardType: TextInputType.number,
-                        style: const TextStyle(color: AppColors.textPrimary, fontSize: 14),
+                        style: TextStyle(color: colors.onSurface, fontSize: 14),
                         decoration: deco(_isBn ? 'প্যাকেজ দাম ৳ *' : 'Bundle price ৳ *')),
                   ),
                 ]),

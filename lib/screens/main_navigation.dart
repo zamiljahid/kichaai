@@ -5,7 +5,6 @@ import '../core/network/api_client.dart';
 import '../core/utils/app_strings.dart';
 import '../services/auth_service.dart';
 import '../services/dispatch_service.dart';
-import '../theme/app_theme.dart';
 import '../theme/active_role_provider.dart';
 import '../widgets/animated_background.dart';
 import '../widgets/custom_bottom_nav.dart';
@@ -199,6 +198,7 @@ class _MainNavigationState extends State<MainNavigation> {
   }
 
   Widget _buildLangToggle(bool isBn) {
+    final colors = Theme.of(context).colorScheme;
     return GestureDetector(
       onTap: () => context.read<LanguageNotifier>().toggle(),
       child: ClipRRect(
@@ -208,14 +208,14 @@ class _MainNavigationState extends State<MainNavigation> {
           child: Container(
             padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 7),
             decoration: BoxDecoration(
-              color: AppColors.glassWhite,
+              color: colors.surface,
               borderRadius: BorderRadius.circular(10),
-              border: Border.all(color: AppColors.glassBorder),
+              border: Border.all(color: colors.outlineVariant),
             ),
             child: Text(
               isBn ? 'EN' : 'বাং',
-              style: const TextStyle(
-                color: AppColors.textPrimary,
+              style: TextStyle(
+                color: colors.onSurface,
                 fontSize: 12,
                 fontWeight: FontWeight.w700,
               ),

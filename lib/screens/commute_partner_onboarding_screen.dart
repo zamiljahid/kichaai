@@ -7,7 +7,7 @@ import '../core/utils/app_strings.dart';
 import '../services/auth_service.dart';
 import '../services/commute_service.dart';
 import '../services/onboarding_service.dart';
-import '../theme/app_theme.dart';
+import '../theme/app_gradients.dart';
 import '../widgets/animated_background.dart';
 import '../widgets/glass_button.dart';
 import 'photographer_profile_screen.dart' show sectionCard, labeledField, uploadRow;
@@ -187,6 +187,7 @@ class _CommutePartnerOnboardingScreenState extends State<CommutePartnerOnboardin
 
   @override
   Widget build(BuildContext context) {
+    final colors = Theme.of(context).colorScheme;
     _isBn = context.watch<LanguageNotifier>().isBengali;
     return Scaffold(
       body: AnimatedBackground(
@@ -199,6 +200,7 @@ class _CommutePartnerOnboardingScreenState extends State<CommutePartnerOnboardin
                   padding: const EdgeInsets.fromLTRB(16, 8, 16, 32),
                   child: Column(crossAxisAlignment: CrossAxisAlignment.stretch, children: [
                     sectionCard(
+                      colors: colors,
                       title: _isBn ? 'প্রোফাইল ছবি' : 'Profile picture',
                       child: Row(children: [
                         GestureDetector(
@@ -208,41 +210,43 @@ class _CommutePartnerOnboardingScreenState extends State<CommutePartnerOnboardin
                             height: 64,
                             decoration: BoxDecoration(
                               shape: BoxShape.circle,
-                              color: AppColors.glassWhite,
-                              border: Border.all(color: _profilePhotoUrl != null ? const Color(0xFF10B981) : AppColors.glassBorder, width: 1.5),
+                              color: colors.surface,
+                              border: Border.all(color: _profilePhotoUrl != null ? const Color(0xFF10B981) : colors.outlineVariant, width: 1.5),
                               image: _profilePhotoUrl != null ? DecorationImage(image: NetworkImage(_profilePhotoUrl!), fit: BoxFit.cover) : null,
                             ),
                             child: _uploadingProfilePhoto
                                 ? const Center(child: SizedBox(width: 20, height: 20, child: CircularProgressIndicator(strokeWidth: 2)))
-                                : (_profilePhotoUrl == null ? const Icon(Icons.add_a_photo_rounded, color: AppColors.textMuted, size: 24) : null),
+                                : (_profilePhotoUrl == null ? Icon(Icons.add_a_photo_rounded, color: colors.outline, size: 24) : null),
                           ),
                         ),
                         const SizedBox(width: 14),
                         Expanded(
                           child: Text(
                             _profilePhotoUrl != null ? (_isBn ? 'আপলোড হয়েছে ✓' : 'Uploaded ✓') : (_isBn ? 'একটি স্পষ্ট প্রোফাইল ছবি আপলোড করুন — গ্রাহকরা এটা দেখতে পাবেন' : 'Upload a clear profile photo — customers will see this'),
-                            style: TextStyle(color: _profilePhotoUrl != null ? const Color(0xFF10B981) : AppColors.textSecondary, fontSize: 13, fontWeight: FontWeight.w600),
+                            style: TextStyle(color: _profilePhotoUrl != null ? const Color(0xFF10B981) : colors.onSurfaceVariant, fontSize: 13, fontWeight: FontWeight.w600),
                           ),
                         ),
                       ]),
                     ),
                     const SizedBox(height: 14),
                     sectionCard(
+                      colors: colors,
                       title: _isBn ? 'আপনার ফোন নম্বর' : 'Your phone number',
-                      child: labeledField(controller: _ownPhoneCtrl, hint: _isBn ? 'নিজের ফোন নম্বর' : 'Your own phone number', keyboardType: TextInputType.phone),
+                      child: labeledField(colors: colors, controller: _ownPhoneCtrl, hint: _isBn ? 'নিজের ফোন নম্বর' : 'Your own phone number', keyboardType: TextInputType.phone),
                     ),
                     const SizedBox(height: 14),
                     sectionCard(
+                      colors: colors,
                       title: _isBn ? 'পরিচয় প্রমাণ' : 'Identity documents',
                       child: Column(crossAxisAlignment: CrossAxisAlignment.start, children: [
-                        uploadRow(
+                        uploadRow(colors: colors, 
                           label: _ownNidUrl != null ? (_isBn ? 'নিজের NID — আপলোড হয়েছে ✓' : 'Own NID — Uploaded ✓') : (_isBn ? 'নিজের NID আপলোড করুন' : 'Upload your own NID'),
                           uploaded: _ownNidUrl != null,
                           loading: _uploading.contains('ownNid'),
                           onTap: () => _pickAndUpload('ownNid', (u) => _ownNidUrl = u),
                         ),
                         const SizedBox(height: 10),
-                        uploadRow(
+                        uploadRow(colors: colors, 
                           label: _parentNidUrl != null ? (_isBn ? "বাবা/মায়ের NID — আপলোড হয়েছে ✓" : "Parent's NID — Uploaded ✓") : (_isBn ? 'বাবা/মায়ের NID আপলোড করুন' : "Upload your parent's (father's or mother's) NID"),
                           uploaded: _parentNidUrl != null,
                           loading: _uploading.contains('parentNid'),
@@ -252,23 +256,24 @@ class _CommutePartnerOnboardingScreenState extends State<CommutePartnerOnboardin
                     ),
                     const SizedBox(height: 14),
                     sectionCard(
+                      colors: colors,
                       title: _isBn ? 'যানবাহন ডকুমেন্ট' : 'Vehicle documents',
                       child: Column(crossAxisAlignment: CrossAxisAlignment.start, children: [
-                        uploadRow(
+                        uploadRow(colors: colors, 
                           label: _vehicleRegistrationUrl != null ? (_isBn ? 'গাড়ির রেজিস্ট্রেশন — আপলোড হয়েছে ✓' : 'Vehicle registration — Uploaded ✓') : (_isBn ? 'বাইক/গাড়ির রেজিস্ট্রেশন (আপনার নামে) আপলোড করুন' : "Upload the bike/car registration document (in your name)"),
                           uploaded: _vehicleRegistrationUrl != null,
                           loading: _uploading.contains('vehicleReg'),
                           onTap: () => _pickAndUpload('vehicleReg', (u) => _vehicleRegistrationUrl = u),
                         ),
                         const SizedBox(height: 10),
-                        uploadRow(
+                        uploadRow(colors: colors, 
                           label: _drivingLicenseUrl != null ? (_isBn ? 'ড্রাইভিং লাইসেন্স — আপলোড হয়েছে ✓' : 'Driving license — Uploaded ✓') : (_isBn ? 'নিজের ড্রাইভিং লাইসেন্স আপলোড করুন' : 'Upload your own driving license'),
                           uploaded: _drivingLicenseUrl != null,
                           loading: _uploading.contains('drivingLicense'),
                           onTap: () => _pickAndUpload('drivingLicense', (u) => _drivingLicenseUrl = u),
                         ),
                         const SizedBox(height: 10),
-                        uploadRow(
+                        uploadRow(colors: colors, 
                           label: _vehicleLicenseUrl != null ? (_isBn ? 'ভেহিকল লাইসেন্স — আপলোড হয়েছে ✓' : 'Vehicle license — Uploaded ✓') : (_isBn ? 'গাড়ির লাইসেন্স (কমার্শিয়াল/রুট পারমিট) আপলোড করুন' : 'Upload the vehicle license (commercial/route permit)'),
                           uploaded: _vehicleLicenseUrl != null,
                           loading: _uploading.contains('vehicleLicense'),
@@ -278,6 +283,7 @@ class _CommutePartnerOnboardingScreenState extends State<CommutePartnerOnboardin
                     ),
                     const SizedBox(height: 14),
                     sectionCard(
+                      colors: colors,
                       title: _isBn ? 'পেশাগত তথ্য' : 'Employment / Student status',
                       child: Column(crossAxisAlignment: CrossAxisAlignment.start, children: [
                         Row(children: [
@@ -287,15 +293,15 @@ class _CommutePartnerOnboardingScreenState extends State<CommutePartnerOnboardin
                         ]),
                         if (_employmentStatus == 'employed') ...[
                           const SizedBox(height: 14),
-                          labeledField(controller: _employerNameCtrl, hint: _isBn ? 'প্রতিষ্ঠান/কোম্পানির নাম' : 'Institution / company name'),
+                          labeledField(colors: colors, controller: _employerNameCtrl, hint: _isBn ? 'প্রতিষ্ঠান/কোম্পানির নাম' : 'Institution / company name'),
                           const SizedBox(height: 10),
-                          labeledField(controller: _jobIdCtrl, hint: _isBn ? 'জব আইডি' : 'Job ID'),
+                          labeledField(colors: colors, controller: _jobIdCtrl, hint: _isBn ? 'জব আইডি' : 'Job ID'),
                         ],
                         if (_employmentStatus == 'student') ...[
                           const SizedBox(height: 14),
-                          labeledField(controller: _instituteNameCtrl, hint: _isBn ? 'শিক্ষাপ্রতিষ্ঠানের নাম' : 'Institute name'),
+                          labeledField(colors: colors, controller: _instituteNameCtrl, hint: _isBn ? 'শিক্ষাপ্রতিষ্ঠানের নাম' : 'Institute name'),
                           const SizedBox(height: 10),
-                          labeledField(controller: _studentIdCtrl, hint: _isBn ? 'স্টুডেন্ট আইডি' : 'Student ID'),
+                          labeledField(colors: colors, controller: _studentIdCtrl, hint: _isBn ? 'স্টুডেন্ট আইডি' : 'Student ID'),
                         ],
                       ]),
                     ),
@@ -316,6 +322,7 @@ class _CommutePartnerOnboardingScreenState extends State<CommutePartnerOnboardin
   }
 
   Widget _toggleOption(String value, String label) {
+    final colors = Theme.of(context).colorScheme;
     final active = _employmentStatus == value;
     return GestureDetector(
       onTap: () => setState(() => _employmentStatus = value),
@@ -323,29 +330,32 @@ class _CommutePartnerOnboardingScreenState extends State<CommutePartnerOnboardin
         padding: const EdgeInsets.symmetric(vertical: 12),
         alignment: Alignment.center,
         decoration: BoxDecoration(
-          gradient: active ? AppColors.blueGradient : null,
-          color: active ? null : const Color(0xFFF9F7F0),
+          gradient: active ? AppGradients.primary(colors) : null,
+          color: active ? null : colors.surfaceContainerLow,
           borderRadius: BorderRadius.circular(12),
-          border: Border.all(color: active ? AppColors.deepBlue : AppColors.glassBorder, width: active ? 1.5 : 1),
+          border: Border.all(color: active ? colors.primary : colors.outlineVariant, width: active ? 1.5 : 1),
         ),
         child: Text(
           label,
-          style: TextStyle(color: active ? Colors.white : AppColors.textSecondary, fontSize: 13.5, fontWeight: active ? FontWeight.w700 : FontWeight.w600),
+          style: TextStyle(color: active ? Colors.white : colors.onSurfaceVariant, fontSize: 13.5, fontWeight: active ? FontWeight.w700 : FontWeight.w600),
         ),
       ),
     );
   }
 
-  Widget _header(String title) => Padding(
+  Widget _header(String title) {
+    final colors = Theme.of(context).colorScheme;
+    return Padding(
         padding: const EdgeInsets.fromLTRB(8, 8, 16, 4),
         child: Row(children: [
           IconButton(
-            icon: const Icon(Icons.arrow_back_rounded, color: AppColors.textPrimary),
+            icon: Icon(Icons.arrow_back_rounded, color: colors.onSurface),
             onPressed: () => Navigator.of(context).pop(),
           ),
           Expanded(
-            child: Text(title, style: const TextStyle(color: AppColors.textPrimary, fontSize: 18, fontWeight: FontWeight.w700)),
+            child: Text(title, style: TextStyle(color: colors.onSurface, fontSize: 18, fontWeight: FontWeight.w700)),
           ),
         ]),
       );
+  }
 }

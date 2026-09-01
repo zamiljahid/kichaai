@@ -7,7 +7,7 @@ import '../core/utils/app_strings.dart';
 import '../models/groceries_model.dart';
 import '../services/dispatch_service.dart';
 import '../services/groceries_service.dart';
-import '../theme/app_theme.dart';
+import '../theme/app_gradients.dart';
 import '../widgets/animated_background.dart';
 import '../widgets/glass_button.dart';
 import '../widgets/glass_card.dart';
@@ -138,9 +138,10 @@ class _GroceryCheckoutScreenState extends State<GroceryCheckoutScreen> {
   }
 
   void _showError(String msg) {
+    final colors = Theme.of(context).colorScheme;
     if (!mounted) return;
     ScaffoldMessenger.of(context).showSnackBar(SnackBar(
-      content: Text(msg, style: const TextStyle(color: AppColors.ivory)),
+      content: Text(msg, style: TextStyle(color: colors.onPrimary)),
       backgroundColor: const Color(0xFFEF4444),
       behavior: SnackBarBehavior.floating,
       shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
@@ -149,6 +150,7 @@ class _GroceryCheckoutScreenState extends State<GroceryCheckoutScreen> {
   }
 
   Future<void> _placeOrder() async {
+    final colors = Theme.of(context).colorScheme;
     if (!_agreedToPolicies) {
       _showError(_isBn ? 'শর্তাবলীতে সম্মত হন' : 'Please agree to the policies');
       return;
@@ -221,7 +223,7 @@ class _GroceryCheckoutScreenState extends State<GroceryCheckoutScreen> {
           _fulfillmentMethod == 'pickup'
               ? (_isBn ? 'অর্ডার দেওয়া হয়েছে! হাব থেকে সংগ্রহ করুন।' : 'Order placed! Collect it from the hub.')
               : (_isBn ? 'অর্ডার দেওয়া হয়েছে!' : 'Order placed!'),
-          style: const TextStyle(color: AppColors.ivory, fontWeight: FontWeight.w600),
+          style: TextStyle(color: colors.onPrimary, fontWeight: FontWeight.w600),
         ),
         backgroundColor: const Color(0xFF22C55E),
         behavior: SnackBarBehavior.floating,
@@ -236,6 +238,7 @@ class _GroceryCheckoutScreenState extends State<GroceryCheckoutScreen> {
 
   @override
   Widget build(BuildContext context) {
+    final colors = Theme.of(context).colorScheme;
     _isBn = context.watch<LanguageNotifier>().isBengali;
     return Scaffold(
       body: AnimatedBackground(
@@ -245,9 +248,9 @@ class _GroceryCheckoutScreenState extends State<GroceryCheckoutScreen> {
               _buildHeader(context),
               Expanded(
                 child: _isLoading
-                    ? const Center(child: CircularProgressIndicator(color: AppColors.deepBlue))
+                    ? Center(child: CircularProgressIndicator(color: colors.primary))
                     : (_cart == null || _cart!.isEmpty)
-                        ? Center(child: Text(_isBn ? 'কার্ট খালি' : 'Cart is empty', style: const TextStyle(color: AppColors.textMuted)))
+                        ? Center(child: Text(_isBn ? 'কার্ট খালি' : 'Cart is empty', style: TextStyle(color: colors.outline)))
                         : _buildBody(),
               ),
             ],
@@ -258,6 +261,7 @@ class _GroceryCheckoutScreenState extends State<GroceryCheckoutScreen> {
   }
 
   Widget _buildBody() {
+    final colors = Theme.of(context).colorScheme;
     final cart = _cart!;
     return SingleChildScrollView(
       padding: const EdgeInsets.fromLTRB(16, 0, 16, 24),
@@ -268,7 +272,7 @@ class _GroceryCheckoutScreenState extends State<GroceryCheckoutScreen> {
             child: Column(
               crossAxisAlignment: CrossAxisAlignment.start,
               children: [
-                Text(_isBn ? 'অর্ডার সারসংক্ষেপ' : 'Order Summary', style: const TextStyle(color: AppColors.textPrimary, fontSize: 16, fontWeight: FontWeight.w700)),
+                Text(_isBn ? 'অর্ডার সারসংক্ষেপ' : 'Order Summary', style: TextStyle(color: colors.onSurface, fontSize: 16, fontWeight: FontWeight.w700)),
                 const SizedBox(height: 16),
                 ...cart.items.map((item) => Padding(
                       padding: const EdgeInsets.only(bottom: 12),
@@ -278,21 +282,21 @@ class _GroceryCheckoutScreenState extends State<GroceryCheckoutScreen> {
                             child: Column(
                               crossAxisAlignment: CrossAxisAlignment.start,
                               children: [
-                                Text(item.productName, style: const TextStyle(color: AppColors.textPrimary, fontSize: 14, fontWeight: FontWeight.w500)),
-                                Text('${item.quantity.toStringAsFixed(0)}x ৳${item.unitPrice.toStringAsFixed(0)}', style: const TextStyle(color: AppColors.textMuted, fontSize: 12)),
+                                Text(item.productName, style: TextStyle(color: colors.onSurface, fontSize: 14, fontWeight: FontWeight.w500)),
+                                Text('${item.quantity.toStringAsFixed(0)}x ৳${item.unitPrice.toStringAsFixed(0)}', style: TextStyle(color: colors.outline, fontSize: 12)),
                               ],
                             ),
                           ),
-                          Text('৳${item.subtotal.toStringAsFixed(0)}', style: const TextStyle(color: AppColors.textPrimary, fontSize: 14, fontWeight: FontWeight.w600)),
+                          Text('৳${item.subtotal.toStringAsFixed(0)}', style: TextStyle(color: colors.onSurface, fontSize: 14, fontWeight: FontWeight.w600)),
                         ],
                       ),
                     )),
-                const Divider(color: AppColors.glassBorder),
+                Divider(color: colors.outlineVariant),
                 Row(
                   mainAxisAlignment: MainAxisAlignment.spaceBetween,
                   children: [
-                    Text(_isBn ? 'মোট' : 'Total', style: const TextStyle(color: AppColors.textPrimary, fontSize: 16, fontWeight: FontWeight.w700)),
-                    Text('৳${cart.totalAmount.toStringAsFixed(0)}', style: const TextStyle(color: AppColors.deepBlue, fontSize: 18, fontWeight: FontWeight.w700)),
+                    Text(_isBn ? 'মোট' : 'Total', style: TextStyle(color: colors.onSurface, fontSize: 16, fontWeight: FontWeight.w700)),
+                    Text('৳${cart.totalAmount.toStringAsFixed(0)}', style: TextStyle(color: colors.primary, fontSize: 18, fontWeight: FontWeight.w700)),
                   ],
                 ),
               ],
@@ -303,12 +307,12 @@ class _GroceryCheckoutScreenState extends State<GroceryCheckoutScreen> {
             child: Column(
               crossAxisAlignment: CrossAxisAlignment.start,
               children: [
-                Text(_isBn ? 'হাব বেছে নিন' : 'Choose a Hub', style: const TextStyle(color: AppColors.textPrimary, fontSize: 16, fontWeight: FontWeight.w700)),
+                Text(_isBn ? 'হাব বেছে নিন' : 'Choose a Hub', style: TextStyle(color: colors.onSurface, fontSize: 16, fontWeight: FontWeight.w700)),
                 const SizedBox(height: 4),
-                Text(_isBn ? 'আপনার অর্ডার এই হাব থেকেই প্রস্তুত হয়ে সংগ্রহ/ডেলিভারি হবে' : 'Your order will be prepared and collected/delivered from this hub', style: const TextStyle(color: AppColors.textMuted, fontSize: 11.5)),
+                Text(_isBn ? 'আপনার অর্ডার এই হাব থেকেই প্রস্তুত হয়ে সংগ্রহ/ডেলিভারি হবে' : 'Your order will be prepared and collected/delivered from this hub', style: TextStyle(color: colors.outline, fontSize: 11.5)),
                 const SizedBox(height: 12),
                 if (_hubs.isEmpty)
-                  Text(_isBn ? 'কোনো হাব পাওয়া যায়নি' : 'No hub found', style: const TextStyle(color: AppColors.textMuted, fontSize: 13))
+                  Text(_isBn ? 'কোনো হাব পাওয়া যায়নি' : 'No hub found', style: TextStyle(color: colors.outline, fontSize: 13))
                 else
                   ..._hubs.map((h) {
                     final selected = _selectedHub?.id == h.id;
@@ -319,25 +323,25 @@ class _GroceryCheckoutScreenState extends State<GroceryCheckoutScreen> {
                         child: Container(
                           padding: const EdgeInsets.all(12),
                           decoration: BoxDecoration(
-                            color: selected ? AppColors.deepBlue.withOpacity(0.1) : AppColors.glassWhite,
+                            color: selected ? colors.primary.withOpacity(0.1) : colors.surface,
                             borderRadius: BorderRadius.circular(12),
-                            border: Border.all(color: selected ? AppColors.deepBlue : AppColors.glassBorder, width: selected ? 1.5 : 1),
+                            border: Border.all(color: selected ? colors.primary : colors.outlineVariant, width: selected ? 1.5 : 1),
                           ),
                           child: Row(
                             children: [
-                              Icon(selected ? Icons.radio_button_checked_rounded : Icons.radio_button_off_rounded, color: selected ? AppColors.deepBlue : AppColors.textMuted, size: 18),
+                              Icon(selected ? Icons.radio_button_checked_rounded : Icons.radio_button_off_rounded, color: selected ? colors.primary : colors.outline, size: 18),
                               const SizedBox(width: 10),
                               Expanded(
                                 child: Column(
                                   crossAxisAlignment: CrossAxisAlignment.start,
                                   children: [
-                                    Text(h.name, style: const TextStyle(color: AppColors.textPrimary, fontSize: 13.5, fontWeight: FontWeight.w600)),
-                                    Text(h.address, style: const TextStyle(color: AppColors.textMuted, fontSize: 11), maxLines: 1, overflow: TextOverflow.ellipsis),
+                                    Text(h.name, style: TextStyle(color: colors.onSurface, fontSize: 13.5, fontWeight: FontWeight.w600)),
+                                    Text(h.address, style: TextStyle(color: colors.outline, fontSize: 11), maxLines: 1, overflow: TextOverflow.ellipsis),
                                   ],
                                 ),
                               ),
                               if (h.distanceKm != null)
-                                Text(_isBn ? '${h.distanceKm!.toStringAsFixed(1)} কিমি' : '${h.distanceKm!.toStringAsFixed(1)} km', style: const TextStyle(color: AppColors.deepBlue, fontSize: 11, fontWeight: FontWeight.w600)),
+                                Text(_isBn ? '${h.distanceKm!.toStringAsFixed(1)} কিমি' : '${h.distanceKm!.toStringAsFixed(1)} km', style: TextStyle(color: colors.primary, fontSize: 11, fontWeight: FontWeight.w600)),
                             ],
                           ),
                         ),
@@ -352,7 +356,7 @@ class _GroceryCheckoutScreenState extends State<GroceryCheckoutScreen> {
             child: Column(
               crossAxisAlignment: CrossAxisAlignment.start,
               children: [
-                Text(_isBn ? 'কীভাবে পেতে চান' : 'How do you want to receive it', style: const TextStyle(color: AppColors.textPrimary, fontSize: 16, fontWeight: FontWeight.w700)),
+                Text(_isBn ? 'কীভাবে পেতে চান' : 'How do you want to receive it', style: TextStyle(color: colors.onSurface, fontSize: 16, fontWeight: FontWeight.w700)),
                 const SizedBox(height: 12),
                 Row(children: [
                   Expanded(child: _fulfillmentTile('pickup', Icons.storefront_rounded, _isBn ? 'নিজে সংগ্রহ' : 'Self pickup', _isBn ? 'হাব থেকে নিজে নিয়ে যান' : 'Collect it from the hub yourself')),
@@ -364,18 +368,18 @@ class _GroceryCheckoutScreenState extends State<GroceryCheckoutScreen> {
                   Row(
                     mainAxisAlignment: MainAxisAlignment.spaceBetween,
                     children: [
-                      Text(_isBn ? 'ডেলিভারি ঠিকানা' : 'Delivery address', style: const TextStyle(color: AppColors.textPrimary, fontSize: 13, fontWeight: FontWeight.w600)),
+                      Text(_isBn ? 'ডেলিভারি ঠিকানা' : 'Delivery address', style: TextStyle(color: colors.onSurface, fontSize: 13, fontWeight: FontWeight.w600)),
                       GestureDetector(
                         onTap: _isLocating ? null : _useCurrentLocation,
                         child: Row(
                           mainAxisSize: MainAxisSize.min,
                           children: [
                             if (_isLocating)
-                              const SizedBox(width: 12, height: 12, child: CircularProgressIndicator(strokeWidth: 2, color: AppColors.deepBlue))
+                              SizedBox(width: 12, height: 12, child: CircularProgressIndicator(strokeWidth: 2, color: colors.primary))
                             else
-                              const Icon(Icons.my_location_rounded, color: AppColors.deepBlue, size: 14),
+                              Icon(Icons.my_location_rounded, color: colors.primary, size: 14),
                             const SizedBox(width: 5),
-                            Text(_isBn ? 'বর্তমান লোকেশন' : 'Current location', style: const TextStyle(color: AppColors.deepBlue, fontSize: 12, fontWeight: FontWeight.w700)),
+                            Text(_isBn ? 'বর্তমান লোকেশন' : 'Current location', style: TextStyle(color: colors.primary, fontSize: 12, fontWeight: FontWeight.w700)),
                           ],
                         ),
                       ),
@@ -385,10 +389,10 @@ class _GroceryCheckoutScreenState extends State<GroceryCheckoutScreen> {
                   TextField(
                     controller: _addressController,
                     maxLines: 3,
-                    style: const TextStyle(color: AppColors.textPrimary, fontSize: 14),
+                    style: TextStyle(color: colors.onSurface, fontSize: 14),
                     decoration: InputDecoration(
                       hintText: _isBn ? 'বাড়ি নম্বর, রাস্তা, এলাকা...' : 'House number, street, area...',
-                      prefixIcon: const Icon(Icons.location_on_rounded, color: AppColors.textMuted),
+                      prefixIcon: Icon(Icons.location_on_rounded, color: colors.outline),
                     ),
                     onChanged: (_) {
                       // Manual edit after auto-fill — the typed text and the captured
@@ -400,8 +404,8 @@ class _GroceryCheckoutScreenState extends State<GroceryCheckoutScreen> {
                   const SizedBox(height: 10),
                   Container(
                     padding: const EdgeInsets.all(10),
-                    decoration: BoxDecoration(color: AppColors.deepBlue.withOpacity(0.08), borderRadius: BorderRadius.circular(10)),
-                    child: Text(_isBn ? 'সাধারণত অর্ডারের পরের দিন হাবে পণ্য পৌঁছে যায় — তখন গিয়ে সংগ্রহ করতে পারবেন।' : 'Products usually arrive at the hub the day after ordering — you can collect them then.', style: const TextStyle(color: AppColors.textSecondary, fontSize: 11.5, height: 1.4)),
+                    decoration: BoxDecoration(color: colors.primary.withOpacity(0.08), borderRadius: BorderRadius.circular(10)),
+                    child: Text(_isBn ? 'সাধারণত অর্ডারের পরের দিন হাবে পণ্য পৌঁছে যায় — তখন গিয়ে সংগ্রহ করতে পারবেন।' : 'Products usually arrive at the hub the day after ordering — you can collect them then.', style: TextStyle(color: colors.onSurfaceVariant, fontSize: 11.5, height: 1.4)),
                   ),
                 ],
               ],
@@ -412,7 +416,7 @@ class _GroceryCheckoutScreenState extends State<GroceryCheckoutScreen> {
             child: Column(
               crossAxisAlignment: CrossAxisAlignment.start,
               children: [
-                Text(_isBn ? 'পেমেন্ট পদ্ধতি' : 'Payment Method', style: const TextStyle(color: AppColors.textPrimary, fontSize: 16, fontWeight: FontWeight.w700)),
+                Text(_isBn ? 'পেমেন্ট পদ্ধতি' : 'Payment Method', style: TextStyle(color: colors.onSurface, fontSize: 16, fontWeight: FontWeight.w700)),
                 const SizedBox(height: 12),
                 Wrap(
                   spacing: 8,
@@ -424,12 +428,12 @@ class _GroceryCheckoutScreenState extends State<GroceryCheckoutScreen> {
                       child: Container(
                         padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 9),
                         decoration: BoxDecoration(
-                          gradient: selected ? AppColors.blueGradient : null,
-                          color: selected ? null : AppColors.glassWhite,
+                          gradient: selected ? AppGradients.primary(colors) : null,
+                          color: selected ? null : colors.surface,
                           borderRadius: BorderRadius.circular(100),
-                          border: Border.all(color: selected ? Colors.transparent : AppColors.glassBorder),
+                          border: Border.all(color: selected ? Colors.transparent : colors.outlineVariant),
                         ),
-                        child: Text(_isBn ? m.label : m.labelEn, style: TextStyle(color: selected ? Colors.white : AppColors.textSecondary, fontSize: 13, fontWeight: FontWeight.w600)),
+                        child: Text(_isBn ? m.label : m.labelEn, style: TextStyle(color: selected ? Colors.white : colors.onSurfaceVariant, fontSize: 13, fontWeight: FontWeight.w600)),
                       ),
                     );
                   }).toList(),
@@ -455,24 +459,25 @@ class _GroceryCheckoutScreenState extends State<GroceryCheckoutScreen> {
   }
 
   Widget _fulfillmentTile(String value, IconData icon, String label, String sub) {
+    final colors = Theme.of(context).colorScheme;
     final selected = _fulfillmentMethod == value;
     return GestureDetector(
       onTap: () => setState(() => _fulfillmentMethod = value),
       child: Container(
         padding: const EdgeInsets.all(12),
         decoration: BoxDecoration(
-          gradient: selected ? AppColors.blueGradient : null,
-          color: selected ? null : AppColors.glassWhite,
+          gradient: selected ? AppGradients.primary(colors) : null,
+          color: selected ? null : colors.surface,
           borderRadius: BorderRadius.circular(14),
-          border: Border.all(color: selected ? Colors.transparent : AppColors.glassBorder),
+          border: Border.all(color: selected ? Colors.transparent : colors.outlineVariant),
         ),
         child: Column(
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
-            Icon(icon, color: selected ? Colors.white : AppColors.deepBlue, size: 20),
+            Icon(icon, color: selected ? Colors.white : colors.primary, size: 20),
             const SizedBox(height: 6),
-            Text(label, style: TextStyle(color: selected ? Colors.white : AppColors.textPrimary, fontSize: 13, fontWeight: FontWeight.w700)),
-            Text(sub, style: TextStyle(color: selected ? Colors.white.withOpacity(0.85) : AppColors.textMuted, fontSize: 10.5)),
+            Text(label, style: TextStyle(color: selected ? Colors.white : colors.onSurface, fontSize: 13, fontWeight: FontWeight.w700)),
+            Text(sub, style: TextStyle(color: selected ? Colors.white.withOpacity(0.85) : colors.outline, fontSize: 10.5)),
           ],
         ),
       ),
@@ -480,6 +485,7 @@ class _GroceryCheckoutScreenState extends State<GroceryCheckoutScreen> {
   }
 
   Widget _buildHeader(BuildContext context) {
+    final colors = Theme.of(context).colorScheme;
     return Padding(
       padding: const EdgeInsets.fromLTRB(20, 16, 20, 20),
       child: Row(
@@ -488,12 +494,12 @@ class _GroceryCheckoutScreenState extends State<GroceryCheckoutScreen> {
             onTap: () => Navigator.of(context).pop(),
             child: Container(
               width: 40, height: 40,
-              decoration: BoxDecoration(color: AppColors.glassWhite, borderRadius: BorderRadius.circular(12), border: Border.all(color: AppColors.glassBorder, width: 1.5)),
-              child: const Icon(Icons.arrow_back_rounded, color: AppColors.textPrimary, size: 20),
+              decoration: BoxDecoration(color: colors.surface, borderRadius: BorderRadius.circular(12), border: Border.all(color: colors.outlineVariant, width: 1.5)),
+              child: Icon(Icons.arrow_back_rounded, color: colors.onSurface, size: 20),
             ),
           ),
           const SizedBox(width: 16),
-          Text(_isBn ? 'চেকআউট' : 'Checkout', style: const TextStyle(color: AppColors.textPrimary, fontSize: 18, fontWeight: FontWeight.w700)),
+          Text(_isBn ? 'চেকআউট' : 'Checkout', style: TextStyle(color: colors.onSurface, fontSize: 18, fontWeight: FontWeight.w700)),
         ],
       ),
     );

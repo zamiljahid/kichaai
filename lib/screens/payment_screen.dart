@@ -3,7 +3,7 @@ import 'package:flutter_animate/flutter_animate.dart';
 import 'package:provider/provider.dart';
 import '../core/network/api_client.dart';
 import '../core/utils/app_strings.dart';
-import '../theme/app_theme.dart';
+import '../theme/app_gradients.dart';
 
 class PaymentScreen extends StatefulWidget {
   const PaymentScreen({super.key});
@@ -76,29 +76,30 @@ class _PaymentScreenState extends State<PaymentScreen> {
 
   @override
   Widget build(BuildContext context) {
+    final colors = Theme.of(context).colorScheme;
     _isBn = context.watch<LanguageNotifier>().isBengali;
     return Scaffold(
-      backgroundColor: AppColors.bgDark,
+      backgroundColor: colors.surfaceContainerHighest,
       appBar: AppBar(
         backgroundColor: Colors.transparent,
         elevation: 0,
-        title: Text(_isBn ? 'পেমেন্ট ইতিহাস' : 'Payment History', style: const TextStyle(color: AppColors.textPrimary, fontSize: 18, fontWeight: FontWeight.w700)),
+        title: Text(_isBn ? 'পেমেন্ট ইতিহাস' : 'Payment History', style: TextStyle(color: colors.onSurface, fontSize: 18, fontWeight: FontWeight.w700)),
         leading: IconButton(
-          icon: const Icon(Icons.arrow_back_ios_new_rounded, color: AppColors.textPrimary, size: 18),
+          icon: Icon(Icons.arrow_back_ios_new_rounded, color: colors.onSurface, size: 18),
           onPressed: () => Navigator.pop(context),
         ),
       ),
       body: _isLoading && _payments.isEmpty
-          ? const Center(child: CircularProgressIndicator(color: AppColors.deepBlue))
+          ? Center(child: CircularProgressIndicator(color: colors.primary))
           : _payments.isEmpty
-              ? Center(child: Text(_isBn ? 'কোনো পেমেন্ট নেই' : 'No payments', style: const TextStyle(color: AppColors.textMuted)))
+              ? Center(child: Text(_isBn ? 'কোনো পেমেন্ট নেই' : 'No payments', style: TextStyle(color: colors.outline)))
               : Column(
                   children: [
                     _buildSummaryCard(),
                     Expanded(
                       child: RefreshIndicator(
-                        color: AppColors.deepBlue,
-                        backgroundColor: AppColors.bgMid,
+                        color: colors.primary,
+                        backgroundColor: colors.surface,
                         onRefresh: () => _load(reset: true),
                         child: ListView.builder(
                           controller: _scrollCtrl,
@@ -106,9 +107,9 @@ class _PaymentScreenState extends State<PaymentScreen> {
                           itemCount: _payments.length + (_hasMore ? 1 : 0),
                           itemBuilder: (ctx, i) {
                             if (i == _payments.length) {
-                              return const Padding(
+                              return Padding(
                                 padding: EdgeInsets.all(16),
-                                child: Center(child: CircularProgressIndicator(color: AppColors.deepBlue, strokeWidth: 2)),
+                                child: Center(child: CircularProgressIndicator(color: colors.primary, strokeWidth: 2)),
                               );
                             }
                             return _buildPaymentTile(_payments[i] as Map<String, dynamic>, i);
@@ -122,12 +123,13 @@ class _PaymentScreenState extends State<PaymentScreen> {
   }
 
   Widget _buildSummaryCard() {
+    final colors = Theme.of(context).colorScheme;
     final total = _payments.fold<double>(0, (sum, p) => sum + ((p['amount'] ?? 0) as num).toDouble());
     return Container(
       margin: const EdgeInsets.all(16),
       padding: const EdgeInsets.all(20),
       decoration: BoxDecoration(
-        gradient: AppColors.blueGradient,
+        gradient: AppGradients.primary(colors),
         borderRadius: BorderRadius.circular(18),
       ),
       child: Row(children: [
@@ -144,6 +146,7 @@ class _PaymentScreenState extends State<PaymentScreen> {
   }
 
   Widget _buildPaymentTile(Map<String, dynamic> p, int index) {
+    final colors = Theme.of(context).colorScheme;
     final status = p['status'] as String? ?? 'completed';
     final statusColor = switch (status) {
       'completed' || 'success' => const Color(0xFF10B981),
@@ -173,9 +176,9 @@ class _PaymentScreenState extends State<PaymentScreen> {
       margin: const EdgeInsets.only(bottom: 10),
       padding: const EdgeInsets.all(14),
       decoration: BoxDecoration(
-        color: AppColors.bgMid,
+        color: colors.surface,
         borderRadius: BorderRadius.circular(14),
-        border: Border.all(color: AppColors.glassBorder),
+        border: Border.all(color: colors.outlineVariant),
       ),
       child: Row(children: [
         Container(
@@ -194,12 +197,12 @@ class _PaymentScreenState extends State<PaymentScreen> {
         const SizedBox(width: 12),
         Expanded(
           child: Column(crossAxisAlignment: CrossAxisAlignment.start, children: [
-            Text(p['description'] ?? (_isBn ? 'পেমেন্ট' : 'Payment'), style: const TextStyle(color: AppColors.textPrimary, fontSize: 13, fontWeight: FontWeight.w600), maxLines: 1, overflow: TextOverflow.ellipsis),
+            Text(p['description'] ?? (_isBn ? 'পেমেন্ট' : 'Payment'), style: TextStyle(color: colors.onSurface, fontSize: 13, fontWeight: FontWeight.w600), maxLines: 1, overflow: TextOverflow.ellipsis),
             const SizedBox(height: 2),
             Row(children: [
-              Text(method, style: const TextStyle(color: AppColors.textMuted, fontSize: 11)),
-              const Text(' · ', style: TextStyle(color: AppColors.textMuted, fontSize: 11)),
-              Text(p['createdAt']?.toString().substring(0, 10) ?? '', style: const TextStyle(color: AppColors.textMuted, fontSize: 11)),
+              Text(method, style: TextStyle(color: colors.outline, fontSize: 11)),
+              Text(' · ', style: TextStyle(color: colors.outline, fontSize: 11)),
+              Text(p['createdAt']?.toString().substring(0, 10) ?? '', style: TextStyle(color: colors.outline, fontSize: 11)),
             ]),
           ]),
         ),
@@ -221,6 +224,7 @@ class _PaymentScreenState extends State<PaymentScreen> {
   }
 
   void _showRefundSheet(Map<String, dynamic> p) {
+    final colors = Theme.of(context).colorScheme;
     final txnId = p['id']?.toString() ?? '';
     if (txnId.isEmpty) return;
     final maxAmount = ((p['amount'] ?? 0) as num).toDouble();
@@ -236,26 +240,26 @@ class _PaymentScreenState extends State<PaymentScreen> {
         builder: (ctx, setS) => Padding(
           padding: EdgeInsets.only(bottom: MediaQuery.of(ctx).viewInsets.bottom),
           child: Container(
-            decoration: const BoxDecoration(color: AppColors.bgMid, borderRadius: BorderRadius.vertical(top: Radius.circular(24))),
+            decoration: BoxDecoration(color: colors.surface, borderRadius: BorderRadius.vertical(top: Radius.circular(24))),
             padding: const EdgeInsets.all(20),
             child: Column(mainAxisSize: MainAxisSize.min, crossAxisAlignment: CrossAxisAlignment.start, children: [
-              Center(child: Container(width: 40, height: 4, decoration: BoxDecoration(color: AppColors.glassBorder, borderRadius: BorderRadius.circular(2)))),
+              Center(child: Container(width: 40, height: 4, decoration: BoxDecoration(color: colors.outlineVariant, borderRadius: BorderRadius.circular(2)))),
               const SizedBox(height: 18),
-              Text(_isBn ? 'রিফান্ডের আবেদন' : 'Request refund', style: const TextStyle(color: AppColors.textPrimary, fontSize: 18, fontWeight: FontWeight.w700)),
+              Text(_isBn ? 'রিফান্ডের আবেদন' : 'Request refund', style: TextStyle(color: colors.onSurface, fontSize: 18, fontWeight: FontWeight.w700)),
               const SizedBox(height: 4),
-              Text(_isBn ? 'অ্যাডমিন যাচাই করে অনুমোদন করলে টাকা ফেরত দেওয়া হবে।' : 'Refunded once an admin reviews and approves.', style: const TextStyle(color: AppColors.textMuted, fontSize: 12)),
+              Text(_isBn ? 'অ্যাডমিন যাচাই করে অনুমোদন করলে টাকা ফেরত দেওয়া হবে।' : 'Refunded once an admin reviews and approves.', style: TextStyle(color: colors.outline, fontSize: 12)),
               const SizedBox(height: 18),
               TextField(
                 controller: amountCtrl,
                 keyboardType: const TextInputType.numberWithOptions(decimal: true),
-                style: const TextStyle(color: AppColors.textPrimary, fontSize: 16, fontWeight: FontWeight.w700),
+                style: TextStyle(color: colors.onSurface, fontSize: 16, fontWeight: FontWeight.w700),
                 decoration: _dec(_isBn ? 'পরিমাণ (৳)' : 'Amount (৳)', prefix: '৳ '),
               ),
               const SizedBox(height: 12),
               TextField(
                 controller: reasonCtrl,
                 maxLines: 2,
-                style: const TextStyle(color: AppColors.textPrimary, fontSize: 14),
+                style: TextStyle(color: colors.onSurface, fontSize: 14),
                 decoration: _dec(_isBn ? 'কারণ (ঐচ্ছিক)' : 'Reason (optional)'),
               ),
               const SizedBox(height: 20),
@@ -292,17 +296,20 @@ class _PaymentScreenState extends State<PaymentScreen> {
     );
   }
 
-  InputDecoration _dec(String hint, {String? prefix}) => InputDecoration(
+  InputDecoration _dec(String hint, {String? prefix}) {
+    final colors = Theme.of(context).colorScheme;
+    return InputDecoration(
         hintText: hint,
         prefixText: prefix,
-        prefixStyle: const TextStyle(color: AppColors.deepBlue, fontSize: 16, fontWeight: FontWeight.w700),
-        hintStyle: const TextStyle(color: AppColors.textMuted, fontSize: 13),
+        prefixStyle: TextStyle(color: colors.primary, fontSize: 16, fontWeight: FontWeight.w700),
+        hintStyle: TextStyle(color: colors.outline, fontSize: 13),
         filled: true,
-        fillColor: AppColors.glassWhite,
-        border: OutlineInputBorder(borderRadius: BorderRadius.circular(12), borderSide: const BorderSide(color: AppColors.glassBorder)),
-        enabledBorder: OutlineInputBorder(borderRadius: BorderRadius.circular(12), borderSide: const BorderSide(color: AppColors.glassBorder)),
-        focusedBorder: OutlineInputBorder(borderRadius: BorderRadius.circular(12), borderSide: const BorderSide(color: AppColors.deepBlue)),
+        fillColor: colors.surface,
+        border: OutlineInputBorder(borderRadius: BorderRadius.circular(12), borderSide: BorderSide(color: colors.outlineVariant)),
+        enabledBorder: OutlineInputBorder(borderRadius: BorderRadius.circular(12), borderSide: BorderSide(color: colors.outlineVariant)),
+        focusedBorder: OutlineInputBorder(borderRadius: BorderRadius.circular(12), borderSide: BorderSide(color: colors.primary)),
       );
+  }
 
   void _snack(String msg, {bool error = false}) {
     if (!mounted) return;
@@ -323,13 +330,14 @@ class GlassRefundButton extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    final colors = Theme.of(context).colorScheme;
     return GestureDetector(
       onTap: saving ? null : onPressed,
       child: Container(
         width: double.infinity,
         padding: const EdgeInsets.symmetric(vertical: 15),
         alignment: Alignment.center,
-        decoration: BoxDecoration(gradient: AppColors.blueGradient, borderRadius: BorderRadius.circular(14)),
+        decoration: BoxDecoration(gradient: AppGradients.primary(colors), borderRadius: BorderRadius.circular(14)),
         child: saving
             ? const SizedBox(width: 20, height: 20, child: CircularProgressIndicator(strokeWidth: 2, color: Colors.white))
             : Text(label, style: const TextStyle(color: Colors.white, fontSize: 15, fontWeight: FontWeight.w700)),

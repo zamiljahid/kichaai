@@ -9,7 +9,7 @@ import '../core/utils/app_strings.dart';
 import '../services/auth_service.dart';
 import '../services/catalog_service.dart';
 import '../services/onboarding_service.dart';
-import '../theme/app_theme.dart';
+import '../theme/app_gradients.dart';
 import '../widgets/animated_background.dart';
 import '../widgets/glass_button.dart';
 import 'main_navigation.dart';
@@ -218,6 +218,7 @@ class _ProviderOnboardingScreenState extends State<ProviderOnboardingScreen> {
   }
 
   Widget _buildAppBar() {
+    final colors = Theme.of(context).colorScheme;
     final title = _isBn
         ? switch (_step) {
             _OBStep.success => 'আবেদন সফল!',
@@ -238,7 +239,7 @@ class _ProviderOnboardingScreenState extends State<ProviderOnboardingScreen> {
           IconButton(
             icon: Icon(
               _step == _OBStep.documentUpload ? Icons.arrow_back_rounded : Icons.close_rounded,
-              color: AppColors.textPrimary,
+              color: colors.onSurface,
               size: 22,
             ),
             onPressed: () {
@@ -252,7 +253,7 @@ class _ProviderOnboardingScreenState extends State<ProviderOnboardingScreen> {
           Expanded(
             child: Text(
               title,
-              style: const TextStyle(color: AppColors.textPrimary, fontSize: 18, fontWeight: FontWeight.w700),
+              style: TextStyle(color: colors.onSurface, fontSize: 18, fontWeight: FontWeight.w700),
               overflow: TextOverflow.ellipsis,
             ),
           ),
@@ -262,21 +263,22 @@ class _ProviderOnboardingScreenState extends State<ProviderOnboardingScreen> {
   }
 
   Widget _buildBody() {
+    final colors = Theme.of(context).colorScheme;
     switch (_step) {
       case _OBStep.loading:
         return Center(
           child: Column(mainAxisSize: MainAxisSize.min, children: [
-            const CircularProgressIndicator(color: AppColors.deepBlue),
+            CircularProgressIndicator(color: colors.primary),
             const SizedBox(height: 16),
-            Text(_isBn ? 'লোড হচ্ছে...' : 'Loading...', style: const TextStyle(color: AppColors.textSecondary)),
+            Text(_isBn ? 'লোড হচ্ছে...' : 'Loading...', style: TextStyle(color: colors.onSurfaceVariant)),
           ]),
         );
       case _OBStep.submitting:
         return Center(
           child: Column(mainAxisSize: MainAxisSize.min, children: [
-            const CircularProgressIndicator(color: AppColors.deepBlue),
+            CircularProgressIndicator(color: colors.primary),
             const SizedBox(height: 16),
-            Text(_isBn ? 'আবেদন জমা হচ্ছে...' : 'Submitting application...', style: const TextStyle(color: AppColors.textSecondary)),
+            Text(_isBn ? 'আবেদন জমা হচ্ছে...' : 'Submitting application...', style: TextStyle(color: colors.onSurfaceVariant)),
           ]),
         );
       case _OBStep.success:
@@ -300,6 +302,7 @@ class _ProviderOnboardingScreenState extends State<ProviderOnboardingScreen> {
   }
 
   Widget _buildSuccess() {
+    final colors = Theme.of(context).colorScheme;
     return Center(
       child: Padding(
         padding: const EdgeInsets.all(32),
@@ -309,22 +312,22 @@ class _ProviderOnboardingScreenState extends State<ProviderOnboardingScreen> {
             Container(
               width: 100, height: 100,
               decoration: BoxDecoration(
-                gradient: AppColors.blueGradient,
+                gradient: AppGradients.primary(colors),
                 shape: BoxShape.circle,
-                boxShadow: [BoxShadow(color: AppColors.deepBlue.withValues(alpha: 0.5), blurRadius: 30)],
+                boxShadow: [BoxShadow(color: colors.primary.withValues(alpha: 0.5), blurRadius: 30)],
               ),
-              child: const Icon(Icons.check_rounded, color: AppColors.ivory, size: 52),
+              child: Icon(Icons.check_rounded, color: colors.onPrimary, size: 52),
             ).animate().scale(duration: 500.ms, curve: Curves.elasticOut).fadeIn(),
             const SizedBox(height: 32),
             Text(
               _isBn ? 'আবেদন সফলভাবে জমা হয়েছে!' : 'Application submitted successfully!',
-              style: const TextStyle(color: AppColors.textPrimary, fontSize: 22, fontWeight: FontWeight.w700),
+              style: TextStyle(color: colors.onSurface, fontSize: 22, fontWeight: FontWeight.w700),
               textAlign: TextAlign.center,
             ).animate(delay: 300.ms).fadeIn().slideY(begin: 0.2),
             const SizedBox(height: 12),
             Text(
               _isBn ? 'Admin যাচাই করলে আপনি notification পাবেন।' : 'You\'ll get a notification once admin reviews it.',
-              style: const TextStyle(color: AppColors.textSecondary, fontSize: 14, height: 1.5),
+              style: TextStyle(color: colors.onSurfaceVariant, fontSize: 14, height: 1.5),
               textAlign: TextAlign.center,
             ).animate(delay: 500.ms).fadeIn(),
             const SizedBox(height: 48),
@@ -370,12 +373,13 @@ class _ServiceSelectStep extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    final colors = Theme.of(context).colorScheme;
     if (serviceTypes.isEmpty) {
       return Center(
         child: Column(mainAxisSize: MainAxisSize.min, children: [
-          const Icon(Icons.grid_view_rounded, color: AppColors.textMuted, size: 48),
+          Icon(Icons.grid_view_rounded, color: colors.outline, size: 48),
           const SizedBox(height: 16),
-          Text(isBn ? 'সেবার তালিকা পাওয়া যায়নি' : 'No services found', style: const TextStyle(color: AppColors.textSecondary, fontSize: 14)),
+          Text(isBn ? 'সেবার তালিকা পাওয়া যায়নি' : 'No services found', style: TextStyle(color: colors.onSurfaceVariant, fontSize: 14)),
         ]),
       );
     }
@@ -435,13 +439,14 @@ class _ServiceTile extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    final colors = Theme.of(context).colorScheme;
     return GestureDetector(
       onTap: onTap,
       child: Container(
         decoration: BoxDecoration(
-          color: AppColors.glassWhite,
+          color: colors.surface,
           borderRadius: BorderRadius.circular(16),
-          border: Border.all(color: AppColors.glassBorder, width: 1.5),
+          border: Border.all(color: colors.outlineVariant, width: 1.5),
         ),
         padding: const EdgeInsets.all(12),
         child: Column(
@@ -451,7 +456,7 @@ class _ServiceTile extends StatelessWidget {
             const SizedBox(height: 6),
             Text(
               name,
-              style: const TextStyle(color: AppColors.textPrimary, fontSize: 12, fontWeight: FontWeight.w700),
+              style: TextStyle(color: colors.onSurface, fontSize: 12, fontWeight: FontWeight.w700),
               textAlign: TextAlign.center,
               maxLines: 2,
               overflow: TextOverflow.ellipsis,
@@ -459,7 +464,7 @@ class _ServiceTile extends StatelessWidget {
             const SizedBox(height: 2),
             Text(
               nameEn,
-              style: const TextStyle(color: AppColors.textMuted, fontSize: 10),
+              style: TextStyle(color: colors.outline, fontSize: 10),
               textAlign: TextAlign.center,
               maxLines: 1,
               overflow: TextOverflow.ellipsis,
@@ -496,13 +501,14 @@ class _DocumentUploadStep extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    final colors = Theme.of(context).colorScheme;
     if (entries.isEmpty) {
       return Center(
         child: Padding(
           padding: const EdgeInsets.all(32),
           child: Text(
             isBn ? 'এই সেবার জন্য কোনো ডকুমেন্ট প্রয়োজন নেই।' : 'No documents are required for this service.',
-            style: const TextStyle(color: AppColors.textSecondary, fontSize: 14),
+            style: TextStyle(color: colors.onSurfaceVariant, fontSize: 14),
             textAlign: TextAlign.center,
           ),
         ),
@@ -518,7 +524,7 @@ class _DocumentUploadStep extends StatelessWidget {
                 padding: const EdgeInsets.only(bottom: 12, left: 4),
                 child: Text(
                   serviceTypeName,
-                  style: const TextStyle(color: AppColors.textMuted, fontSize: 13, fontWeight: FontWeight.w600),
+                  style: TextStyle(color: colors.outline, fontSize: 13, fontWeight: FontWeight.w600),
                 ),
               ),
               ...entries.map((e) => _DocCard(
@@ -566,6 +572,7 @@ class _DocCard extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    final colors = Theme.of(context).colorScheme;
     final body = switch (entry.code) {
       _kDocPortfolio => _PortfolioBody(entry: entry, onChanged: onChanged, isBn: isBn),
       _kDocEquipment => _EquipmentBody(entry: entry, serviceTypeId: serviceTypeId, onChanged: onChanged, isBn: isBn),
@@ -577,10 +584,10 @@ class _DocCard extends StatelessWidget {
       margin: const EdgeInsets.only(bottom: 16),
       padding: const EdgeInsets.all(16),
       decoration: BoxDecoration(
-        color: AppColors.glassWhite,
+        color: colors.surface,
         borderRadius: BorderRadius.circular(16),
         border: Border.all(
-          color: entry.isSatisfied ? AppColors.deepBlue : AppColors.glassBorder,
+          color: entry.isSatisfied ? colors.primary : colors.outlineVariant,
           width: entry.isSatisfied ? 1.5 : 1,
         ),
       ),
@@ -591,27 +598,27 @@ class _DocCard extends StatelessWidget {
             children: [
               Icon(
                 entry.isSatisfied ? Icons.check_circle_rounded : Icons.upload_file_rounded,
-                color: entry.isSatisfied ? AppColors.deepBlue : AppColors.textMuted,
+                color: entry.isSatisfied ? colors.primary : colors.outline,
                 size: 20,
               ),
               const SizedBox(width: 8),
               Expanded(
                 child: Text(
                   entry.name,
-                  style: const TextStyle(color: AppColors.textPrimary, fontSize: 15, fontWeight: FontWeight.w700),
+                  style: TextStyle(color: colors.onSurface, fontSize: 15, fontWeight: FontWeight.w700),
                 ),
               ),
               if (_showOptionalBadge)
                 Container(
                   padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 3),
                   decoration: BoxDecoration(
-                    color: AppColors.glassWhite,
+                    color: colors.surface,
                     borderRadius: BorderRadius.circular(8),
-                    border: Border.all(color: AppColors.glassBorder),
+                    border: Border.all(color: colors.outlineVariant),
                   ),
                   child: Text(
                     isBn ? 'ঐচ্ছিক' : 'Optional',
-                    style: const TextStyle(color: AppColors.textMuted, fontSize: 10, fontWeight: FontWeight.w700),
+                    style: TextStyle(color: colors.outline, fontSize: 10, fontWeight: FontWeight.w700),
                   ),
                 ),
             ],
@@ -691,6 +698,7 @@ class _PortfolioBody extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    final colors = Theme.of(context).colorScheme;
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
@@ -710,10 +718,10 @@ class _PortfolioBody extends StatelessWidget {
               entry.linkUrl = v;
               onChanged();
             },
-            style: const TextStyle(color: AppColors.textPrimary, fontSize: 14),
-            decoration: const InputDecoration(
+            style: TextStyle(color: colors.onSurface, fontSize: 14),
+            decoration: InputDecoration(
               hintText: 'Google Drive / Dropbox link',
-              prefixIcon: Icon(Icons.link_rounded, color: AppColors.textMuted, size: 20),
+              prefixIcon: Icon(Icons.link_rounded, color: colors.outline, size: 20),
             ),
           )
         else
@@ -742,6 +750,7 @@ class _ExperienceBody extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    final colors = Theme.of(context).colorScheme;
     return TextFormField(
       initialValue: entry.linkUrl,
       onChanged: (v) {
@@ -750,10 +759,10 @@ class _ExperienceBody extends StatelessWidget {
       },
       keyboardType: TextInputType.number,
       inputFormatters: [FilteringTextInputFormatter.digitsOnly],
-      style: const TextStyle(color: AppColors.textPrimary, fontSize: 14),
+      style: TextStyle(color: colors.onSurface, fontSize: 14),
       decoration: InputDecoration(
         hintText: isBn ? 'কত বছরের অভিজ্ঞতা?' : 'How many years of experience?',
-        prefixIcon: const Icon(Icons.timelapse_rounded, color: AppColors.textMuted, size: 20),
+        prefixIcon: Icon(Icons.timelapse_rounded, color: colors.outline, size: 20),
       ),
     );
   }
@@ -788,6 +797,7 @@ class _BscDiplomaBody extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    final colors = Theme.of(context).colorScheme;
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
@@ -806,7 +816,7 @@ class _BscDiplomaBody extends StatelessWidget {
                   entry.currentlyStudying
                       ? Icons.check_box_rounded
                       : Icons.check_box_outline_blank_rounded,
-                  color: entry.currentlyStudying ? AppColors.deepBlue : AppColors.textMuted,
+                  color: entry.currentlyStudying ? colors.primary : colors.outline,
                   size: 22,
                 ),
                 const SizedBox(width: 8),
@@ -815,7 +825,7 @@ class _BscDiplomaBody extends StatelessWidget {
                     isBn
                         ? 'আমি বর্তমানে বিশ্ববিদ্যালয়ে অধ্যয়নরত (এখনো সার্টিফিকেট নেই)'
                         : 'I am currently studying at university (no certificate yet)',
-                    style: const TextStyle(color: AppColors.textSecondary, fontSize: 13, height: 1.35),
+                    style: TextStyle(color: colors.onSurfaceVariant, fontSize: 13, height: 1.35),
                   ),
                 ),
               ],
@@ -955,14 +965,15 @@ class _EquipmentBodyState extends State<_EquipmentBody> {
 
   @override
   Widget build(BuildContext context) {
+    final colors = Theme.of(context).colorScheme;
     if (_loading) {
-      return const Padding(
+      return Padding(
         padding: EdgeInsets.symmetric(vertical: 24),
         child: Center(
           child: SizedBox(
             width: 24,
             height: 24,
-            child: CircularProgressIndicator(strokeWidth: 2, color: AppColors.deepBlue),
+            child: CircularProgressIndicator(strokeWidth: 2, color: colors.primary),
           ),
         ),
       );
@@ -984,7 +995,7 @@ class _EquipmentBodyState extends State<_EquipmentBody> {
               });
               _fetch();
             },
-            child: Text(widget.isBn ? 'আবার চেষ্টা করুন' : 'Try again', style: const TextStyle(color: AppColors.deepBlue)),
+            child: Text(widget.isBn ? 'আবার চেষ্টা করুন' : 'Try again', style: TextStyle(color: colors.primary)),
           ),
         ],
       );
@@ -1005,6 +1016,7 @@ class _EquipmentBodyState extends State<_EquipmentBody> {
   }
 
   Widget _buildCategory(EquipmentCategory cat) {
+    final colors = Theme.of(context).colorScheme;
     final sel = _selFor(cat.code);
     final showOther = cat.multiSelect
         ? sel.multi.any((c) => c.endsWith('_OTHER'))
@@ -1014,8 +1026,8 @@ class _EquipmentBodyState extends State<_EquipmentBody> {
       children: [
         Text(
           widget.isBn ? cat.bn : cat.en,
-          style: const TextStyle(
-            color: AppColors.textSecondary,
+          style: TextStyle(
+            color: colors.onSurfaceVariant,
             fontSize: 12,
             fontWeight: FontWeight.w700,
             letterSpacing: 0.4,
@@ -1032,12 +1044,13 @@ class _EquipmentBodyState extends State<_EquipmentBody> {
   }
 
   Widget _buildSingle(EquipmentCategory cat, _EqCategorySelection sel) {
+    final colors = Theme.of(context).colorScheme;
     return DropdownButtonFormField<String>(
       initialValue: sel.single,
       isExpanded: true,
-      dropdownColor: AppColors.bgMid,
-      icon: const Icon(Icons.arrow_drop_down_rounded, color: AppColors.textMuted),
-      style: const TextStyle(color: AppColors.textPrimary, fontSize: 14),
+      dropdownColor: colors.surface,
+      icon: Icon(Icons.arrow_drop_down_rounded, color: colors.outline),
+      style: TextStyle(color: colors.onSurface, fontSize: 14),
       decoration: InputDecoration(
         hintText: widget.isBn ? 'বেছে নিন' : 'Select',
       ),
@@ -1058,6 +1071,7 @@ class _EquipmentBodyState extends State<_EquipmentBody> {
   // Compact tap-to-open picker (was a large always-visible chip grid — with
   // real equipment models the list is now too long to show inline).
   Widget _buildMulti(EquipmentCategory cat, _EqCategorySelection sel) {
+    final colors = Theme.of(context).colorScheme;
     final labels = <String>[];
     for (final code in sel.multi) {
       if (code.endsWith('_OTHER')) {
@@ -1077,22 +1091,23 @@ class _EquipmentBodyState extends State<_EquipmentBody> {
         isEmpty: displayText.isEmpty,
         decoration: InputDecoration(
           hintText: widget.isBn ? 'বেছে নিন (একাধিক)' : 'Select (multiple)',
-          suffixIcon: const Icon(Icons.arrow_drop_down_rounded, color: AppColors.textMuted),
+          suffixIcon: Icon(Icons.arrow_drop_down_rounded, color: colors.outline),
         ),
         child: Text(
           displayText,
           maxLines: 1,
           overflow: TextOverflow.ellipsis,
-          style: const TextStyle(color: AppColors.textPrimary, fontSize: 14),
+          style: TextStyle(color: colors.onSurface, fontSize: 14),
         ),
       ),
     );
   }
 
   Future<void> _openMultiPicker(EquipmentCategory cat, _EqCategorySelection sel) async {
+    final colors = Theme.of(context).colorScheme;
     await showModalBottomSheet<void>(
       context: context,
-      backgroundColor: AppColors.bgMid,
+      backgroundColor: colors.surface,
       isScrollControlled: true,
       shape: const RoundedRectangleBorder(
         borderRadius: BorderRadius.vertical(top: Radius.circular(20)),
@@ -1112,7 +1127,7 @@ class _EquipmentBodyState extends State<_EquipmentBody> {
                         width: 36,
                         height: 4,
                         decoration: BoxDecoration(
-                          color: AppColors.glassBorder,
+                          color: colors.outlineVariant,
                           borderRadius: BorderRadius.circular(2),
                         ),
                       ),
@@ -1120,8 +1135,8 @@ class _EquipmentBodyState extends State<_EquipmentBody> {
                     const SizedBox(height: 12),
                     Text(
                       widget.isBn ? cat.bn : cat.en,
-                      style: const TextStyle(
-                        color: AppColors.textPrimary,
+                      style: TextStyle(
+                        color: colors.onSurface,
                         fontSize: 15,
                         fontWeight: FontWeight.w700,
                       ),
@@ -1129,7 +1144,7 @@ class _EquipmentBodyState extends State<_EquipmentBody> {
                     const SizedBox(height: 2),
                     Text(
                       widget.isBn ? 'একাধিক বেছে নিতে পারবেন' : 'You can select multiple',
-                      style: const TextStyle(color: AppColors.textMuted, fontSize: 12),
+                      style: TextStyle(color: colors.outline, fontSize: 12),
                     ),
                     const SizedBox(height: 4),
                     Flexible(
@@ -1141,11 +1156,11 @@ class _EquipmentBodyState extends State<_EquipmentBody> {
                             value: active,
                             dense: true,
                             controlAffinity: ListTileControlAffinity.leading,
-                            activeColor: AppColors.deepBlue,
-                            checkColor: AppColors.ivory,
+                            activeColor: colors.primary,
+                            checkColor: colors.onPrimary,
                             title: Text(
                               widget.isBn ? it.bn : it.en,
-                              style: const TextStyle(color: AppColors.textPrimary, fontSize: 13),
+                              style: TextStyle(color: colors.onSurface, fontSize: 13),
                             ),
                             onChanged: (v) {
                               setSheetState(() {
@@ -1175,13 +1190,13 @@ class _EquipmentBodyState extends State<_EquipmentBody> {
                       child: ElevatedButton(
                         onPressed: () => Navigator.of(ctx).pop(),
                         style: ElevatedButton.styleFrom(
-                          backgroundColor: AppColors.deepBlue,
+                          backgroundColor: colors.primary,
                           padding: const EdgeInsets.symmetric(vertical: 12),
                           shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(10)),
                         ),
                         child: Text(
                           widget.isBn ? 'হয়েছে' : 'Done',
-                          style: const TextStyle(color: AppColors.ivory, fontWeight: FontWeight.w700),
+                          style: TextStyle(color: colors.onPrimary, fontWeight: FontWeight.w700),
                         ),
                       ),
                     ),
@@ -1198,18 +1213,19 @@ class _EquipmentBodyState extends State<_EquipmentBody> {
   }
 
   Widget _buildOtherField(EquipmentCategory cat, _EqCategorySelection sel) {
+    final colors = Theme.of(context).colorScheme;
     return TextFormField(
       initialValue: sel.other,
       onChanged: (v) {
         sel.other = v;
         _onSelectionChanged();
       },
-      style: const TextStyle(color: AppColors.textPrimary, fontSize: 14),
+      style: TextStyle(color: colors.onSurface, fontSize: 14),
       decoration: InputDecoration(
         hintText: cat.multiSelect
             ? (widget.isBn ? 'অন্যান্য লেন্সের বিবরণ লিখুন' : 'Enter other lens details')
             : (widget.isBn ? '${cat.bn} মডেলের নাম লিখুন' : 'Enter ${cat.en} model name'),
-        prefixIcon: const Icon(Icons.edit_rounded, color: AppColors.textMuted, size: 20),
+        prefixIcon: Icon(Icons.edit_rounded, color: colors.outline, size: 20),
       ),
     );
   }
@@ -1230,6 +1246,7 @@ class _ModeToggle extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    final colors = Theme.of(context).colorScheme;
     Widget seg(String label, bool active, VoidCallback onTap) => Expanded(
           child: GestureDetector(
             onTap: onTap,
@@ -1237,7 +1254,7 @@ class _ModeToggle extends StatelessWidget {
               duration: const Duration(milliseconds: 180),
               padding: const EdgeInsets.symmetric(vertical: 8),
               decoration: BoxDecoration(
-                gradient: active ? AppColors.blueGradient : null,
+                gradient: active ? AppGradients.primary(colors) : null,
                 color: active ? null : Colors.transparent,
                 borderRadius: BorderRadius.circular(10),
               ),
@@ -1245,7 +1262,7 @@ class _ModeToggle extends StatelessWidget {
                 label,
                 textAlign: TextAlign.center,
                 style: TextStyle(
-                  color: active ? AppColors.ivory : AppColors.textSecondary,
+                  color: active ? colors.onPrimary : colors.onSurfaceVariant,
                   fontSize: 12,
                   fontWeight: FontWeight.w600,
                 ),
@@ -1256,9 +1273,9 @@ class _ModeToggle extends StatelessWidget {
     return Container(
       padding: const EdgeInsets.all(4),
       decoration: BoxDecoration(
-        color: AppColors.glassWhite,
+        color: colors.surface,
         borderRadius: BorderRadius.circular(12),
-        border: Border.all(color: AppColors.glassBorder),
+        border: Border.all(color: colors.outlineVariant),
       ),
       child: Row(
         children: [
@@ -1289,21 +1306,22 @@ class _ImagePickBox extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    final colors = Theme.of(context).colorScheme;
     return GestureDetector(
       onTap: isBusy ? null : onTap,
       child: Container(
         height: 140,
         width: double.infinity,
         decoration: BoxDecoration(
-          color: AppColors.glassWhite,
+          color: colors.surface,
           borderRadius: BorderRadius.circular(14),
           border: Border.all(
-            color: preview != null ? AppColors.deepBlue : AppColors.glassBorder,
+            color: preview != null ? colors.primary : colors.outlineVariant,
             width: 1.5,
           ),
         ),
         child: isBusy
-            ? const Center(child: CircularProgressIndicator(color: AppColors.deepBlue, strokeWidth: 2))
+            ? Center(child: CircularProgressIndicator(color: colors.primary, strokeWidth: 2))
             : preview != null
                 ? ClipRRect(
                     borderRadius: BorderRadius.circular(13),
@@ -1315,10 +1333,10 @@ class _ImagePickBox extends StatelessWidget {
                           right: 8,
                           child: Container(
                             padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
-                            decoration: BoxDecoration(color: AppColors.deepBlue, borderRadius: BorderRadius.circular(8)),
+                            decoration: BoxDecoration(color: colors.primary, borderRadius: BorderRadius.circular(8)),
                             child: Text(
                               isBn ? 'পরিবর্তন করুন' : 'Change',
-                              style: const TextStyle(color: AppColors.ivory, fontSize: 10, fontWeight: FontWeight.w600),
+                              style: TextStyle(color: colors.onPrimary, fontSize: 10, fontWeight: FontWeight.w600),
                             ),
                           ),
                         ),
@@ -1328,9 +1346,9 @@ class _ImagePickBox extends StatelessWidget {
                 : Column(
                     mainAxisAlignment: MainAxisAlignment.center,
                     children: [
-                      const Icon(Icons.cloud_upload_outlined, color: AppColors.textMuted, size: 32),
+                      Icon(Icons.cloud_upload_outlined, color: colors.outline, size: 32),
                       const SizedBox(height: 8),
-                      Text(hint, style: const TextStyle(color: AppColors.textSecondary, fontSize: 13)),
+                      Text(hint, style: TextStyle(color: colors.onSurfaceVariant, fontSize: 13)),
                     ],
                   ),
       ),
@@ -1353,6 +1371,7 @@ class _MultiImageGrid extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    final colors = Theme.of(context).colorScheme;
     return Wrap(
       spacing: 10,
       runSpacing: 10,
@@ -1385,19 +1404,19 @@ class _MultiImageGrid extends StatelessWidget {
               width: 80,
               height: 80,
               decoration: BoxDecoration(
-                color: AppColors.glassWhite,
+                color: colors.surface,
                 borderRadius: BorderRadius.circular(12),
-                border: Border.all(color: AppColors.glassBorder),
+                border: Border.all(color: colors.outlineVariant),
               ),
               child: isBusy
-                  ? const Center(
+                  ? Center(
                       child: SizedBox(
                         width: 20,
                         height: 20,
-                        child: CircularProgressIndicator(strokeWidth: 2, color: AppColors.deepBlue),
+                        child: CircularProgressIndicator(strokeWidth: 2, color: colors.primary),
                       ),
                     )
-                  : const Icon(Icons.add_rounded, color: AppColors.textMuted, size: 28),
+                  : Icon(Icons.add_rounded, color: colors.outline, size: 28),
             ),
           ),
       ],
@@ -1538,8 +1557,9 @@ String _inferMime(XFile f) {
 }
 
 void _snack(BuildContext context, String msg) {
+    final colors = Theme.of(context).colorScheme;
   ScaffoldMessenger.of(context).showSnackBar(SnackBar(
-    content: Text(msg, style: const TextStyle(color: AppColors.ivory)),
+    content: Text(msg, style: TextStyle(color: colors.onPrimary)),
     backgroundColor: const Color(0xFFEF4444),
     behavior: SnackBarBehavior.floating,
     shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),

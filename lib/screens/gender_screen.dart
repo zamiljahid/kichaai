@@ -3,7 +3,7 @@ import 'package:provider/provider.dart';
 import '../core/network/api_client.dart';
 import '../core/utils/app_strings.dart';
 import '../services/auth_service.dart';
-import '../theme/app_theme.dart';
+import '../theme/app_gradients.dart';
 import '../widgets/animated_background.dart';
 import '../widgets/glass_button.dart';
 import '../widgets/glass_card.dart';
@@ -111,18 +111,19 @@ class _GenderScreenState extends State<GenderScreen> {
   }
 
   Widget _buildAppBar() {
+    final colors = Theme.of(context).colorScheme;
     return Padding(
       padding: const EdgeInsets.fromLTRB(4, 8, 16, 4),
       child: Row(
         children: [
           IconButton(
-            icon: const Icon(Icons.arrow_back_rounded, color: AppColors.textPrimary),
+            icon: Icon(Icons.arrow_back_rounded, color: colors.onSurface),
             onPressed: () => Navigator.of(context).pop(),
           ),
           Expanded(
             child: Text(
               _isBn ? 'আমার Gender' : 'My Gender',
-              style: const TextStyle(color: AppColors.textPrimary, fontSize: 18, fontWeight: FontWeight.w700),
+              style: TextStyle(color: colors.onSurface, fontSize: 18, fontWeight: FontWeight.w700),
             ),
           ),
         ],
@@ -131,8 +132,9 @@ class _GenderScreenState extends State<GenderScreen> {
   }
 
   Widget _buildBody() {
+    final colors = Theme.of(context).colorScheme;
     if (_loading) {
-      return const Center(child: CircularProgressIndicator(color: AppColors.deepBlue));
+      return Center(child: CircularProgressIndicator(color: colors.primary));
     }
     if (_error != null) {
       return Padding(
@@ -143,7 +145,7 @@ class _GenderScreenState extends State<GenderScreen> {
             children: [
               const Icon(Icons.error_outline_rounded, color: Color(0xFFEF4444), size: 40),
               const SizedBox(height: 12),
-              Text(_error!, textAlign: TextAlign.center, style: const TextStyle(color: AppColors.textSecondary)),
+              Text(_error!, textAlign: TextAlign.center, style: TextStyle(color: colors.onSurfaceVariant)),
               const SizedBox(height: 16),
               GlassButton(label: _isBn ? 'আবার চেষ্টা করুন' : 'Try again', isOutlined: true, onPressed: _load),
             ],
@@ -163,10 +165,10 @@ class _GenderScreenState extends State<GenderScreen> {
                   width: 36,
                   height: 36,
                   decoration: BoxDecoration(
-                    color: AppColors.deepBlue.withValues(alpha: 0.12),
+                    color: colors.primary.withValues(alpha: 0.12),
                     borderRadius: BorderRadius.circular(10),
                   ),
-                  child: const Icon(Icons.wc_rounded, color: AppColors.deepBlue, size: 20),
+                  child: Icon(Icons.wc_rounded, color: colors.primary, size: 20),
                 ),
                 const SizedBox(width: 12),
                 Expanded(
@@ -174,7 +176,7 @@ class _GenderScreenState extends State<GenderScreen> {
                     _isBn
                         ? 'ক্যায়ারগিভার/ফটোগ্রাফার/সিনেমাটোগ্রাফার/মেকআপ আর্টিস্ট সার্ভিসে গ্রাহক Gender পছন্দ উল্লেখ করতে পারেন — এটি সঠিকভাবে সেট না করলে অনলাইন হতে পারবেন না।'
                         : 'Customers on caregiver/photographer/cinematographer/makeup artist can state a gender preference — you can\'t go online for these without setting this.',
-                    style: const TextStyle(color: AppColors.textSecondary, fontSize: 12.5, height: 1.4),
+                    style: TextStyle(color: colors.onSurfaceVariant, fontSize: 12.5, height: 1.4),
                   ),
                 ),
               ],
@@ -211,6 +213,7 @@ class _GenderScreenState extends State<GenderScreen> {
   }
 
   Widget _genderChip(String code, String label) {
+    final colors = Theme.of(context).colorScheme;
     final isSelected = _selected == code;
     return GestureDetector(
       onTap: () => setState(() => _selected = code),
@@ -218,10 +221,10 @@ class _GenderScreenState extends State<GenderScreen> {
         duration: const Duration(milliseconds: 180),
         padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 9),
         decoration: BoxDecoration(
-          gradient: isSelected ? AppColors.blueGradient : null,
-          color: isSelected ? null : AppColors.glassWhite,
+          gradient: isSelected ? AppGradients.primary(colors) : null,
+          color: isSelected ? null : colors.surface,
           borderRadius: BorderRadius.circular(100),
-          border: Border.all(color: isSelected ? AppColors.deepBlue : AppColors.glassBorder, width: 1.5),
+          border: Border.all(color: isSelected ? colors.primary : colors.outlineVariant, width: 1.5),
         ),
         child: Row(
           mainAxisSize: MainAxisSize.min,
@@ -233,7 +236,7 @@ class _GenderScreenState extends State<GenderScreen> {
             Text(
               label,
               style: TextStyle(
-                color: isSelected ? Colors.white : AppColors.textSecondary,
+                color: isSelected ? Colors.white : colors.onSurfaceVariant,
                 fontSize: 13,
                 fontWeight: FontWeight.w600,
               ),

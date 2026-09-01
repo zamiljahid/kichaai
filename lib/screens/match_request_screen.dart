@@ -5,7 +5,7 @@ import 'package:provider/provider.dart';
 import '../core/network/api_client.dart';
 import '../core/utils/app_strings.dart';
 import '../services/matchmaking_service.dart';
-import '../theme/app_theme.dart';
+import '../theme/app_gradients.dart';
 import '../widgets/animated_background.dart';
 import '../widgets/glass_button.dart';
 import '../widgets/glass_card.dart';
@@ -187,13 +187,14 @@ class _MatchRequestScreenState extends State<MatchRequestScreen> {
   }
 
   Future<void> _pickDate() async {
+    final colors = Theme.of(context).colorScheme;
     final picked = await showDatePicker(
       context: context,
       initialDate: DateTime.now().add(const Duration(days: 1)),
       firstDate: DateTime.now(),
       lastDate: DateTime.now().add(const Duration(days: 60)),
       builder: (context, child) => Theme(
-        data: ThemeData.dark().copyWith(colorScheme: const ColorScheme.dark(primary: AppColors.deepBlue)),
+        data: ThemeData.dark().copyWith(colorScheme: ColorScheme.dark(primary: colors.primary)),
         child: child!,
       ),
     );
@@ -201,6 +202,7 @@ class _MatchRequestScreenState extends State<MatchRequestScreen> {
   }
 
   Future<void> _submit() async {
+    final colors = Theme.of(context).colorScheme;
     if (_descController.text.trim().isEmpty) { _showError(_isBn ? 'বিবরণ লিখুন' : 'Enter a description'); return; }
 
     final serviceTypeId = _serviceTypeIds[widget.kind];
@@ -265,7 +267,7 @@ class _MatchRequestScreenState extends State<MatchRequestScreen> {
       await MatchmakingService.instance.publishRequest(request.id, expiresInDays: _expiresInDays);
       if (!mounted) return;
       ScaffoldMessenger.of(context).showSnackBar(SnackBar(
-        content: Text(_isBn ? 'অনুরোধ পাঠানো হয়েছে!' : 'Request sent!', style: const TextStyle(color: AppColors.ivory, fontWeight: FontWeight.w600)),
+        content: Text(_isBn ? 'অনুরোধ পাঠানো হয়েছে!' : 'Request sent!', style: TextStyle(color: colors.onPrimary, fontWeight: FontWeight.w600)),
         backgroundColor: const Color(0xFF22C55E),
         behavior: SnackBarBehavior.floating,
         shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
@@ -280,9 +282,10 @@ class _MatchRequestScreenState extends State<MatchRequestScreen> {
   }
 
   void _showError(String msg) {
+    final colors = Theme.of(context).colorScheme;
     if (!mounted) return;
     ScaffoldMessenger.of(context).showSnackBar(SnackBar(
-      content: Text(msg, style: const TextStyle(color: AppColors.ivory)),
+      content: Text(msg, style: TextStyle(color: colors.onPrimary)),
       backgroundColor: const Color(0xFFEF4444),
       behavior: SnackBarBehavior.floating,
       shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
@@ -292,6 +295,7 @@ class _MatchRequestScreenState extends State<MatchRequestScreen> {
 
   @override
   Widget build(BuildContext context) {
+    final colors = Theme.of(context).colorScheme;
     _isBn = context.watch<LanguageNotifier>().isBengali;
     return Scaffold(
       body: AnimatedBackground(
@@ -311,8 +315,8 @@ class _MatchRequestScreenState extends State<MatchRequestScreen> {
                       onPressed: () => Navigator.of(context).push(MaterialPageRoute(
                         builder: (_) => ProviderBrowseScreen(kind: widget.kind, label: (_isBn ? _titles[widget.kind] : _titlesEn[widget.kind]) ?? widget.kind),
                       )),
-                      icon: const Icon(Icons.search_rounded, size: 16, color: AppColors.deepBlue),
-                      label: Text(_isBn ? 'অথবা বিদ্যমান প্রোভাইডার ব্রাউজ করুন' : 'Or browse existing providers', style: const TextStyle(color: AppColors.deepBlue, fontSize: 12.5, fontWeight: FontWeight.w600)),
+                      icon: Icon(Icons.search_rounded, size: 16, color: colors.primary),
+                      label: Text(_isBn ? 'অথবা বিদ্যমান প্রোভাইডার ব্রাউজ করুন' : 'Or browse existing providers', style: TextStyle(color: colors.primary, fontSize: 12.5, fontWeight: FontWeight.w600)),
                       style: TextButton.styleFrom(padding: EdgeInsets.zero, minimumSize: Size.zero, tapTargetSize: MaterialTapTargetSize.shrinkWrap),
                     ),
                   ),
@@ -329,7 +333,7 @@ class _MatchRequestScreenState extends State<MatchRequestScreen> {
                         TextFormField(
                           controller: _descController,
                           maxLines: 4,
-                          style: const TextStyle(color: AppColors.textPrimary, fontSize: 15),
+                          style: TextStyle(color: colors.onSurface, fontSize: 15),
                           decoration: InputDecoration(hintText: _isBn ? 'আপনার প্রয়োজন বিস্তারিত লিখুন...' : 'Describe what you need...'),
                         ),
                         if (_isTutor) ..._buildTutorFields(),
@@ -342,18 +346,18 @@ class _MatchRequestScreenState extends State<MatchRequestScreen> {
                           child: Container(
                             padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 14),
                             decoration: BoxDecoration(
-                              color: AppColors.glassWhite,
+                              color: colors.surface,
                               borderRadius: BorderRadius.circular(12),
-                              border: Border.all(color: _preferredDate != null ? AppColors.deepBlue : AppColors.glassBorder, width: 1.5),
+                              border: Border.all(color: _preferredDate != null ? colors.primary : colors.outlineVariant, width: 1.5),
                             ),
                             child: Row(children: [
-                              Icon(Icons.calendar_today_rounded, color: _preferredDate != null ? AppColors.deepBlue : AppColors.textMuted, size: 20),
+                              Icon(Icons.calendar_today_rounded, color: _preferredDate != null ? colors.primary : colors.outline, size: 20),
                               const SizedBox(width: 12),
                               Text(
                                 _preferredDate != null
                                     ? '${_preferredDate!.day}/${_preferredDate!.month}/${_preferredDate!.year}'
                                     : (_isBn ? 'তারিখ বেছে নিন' : 'Choose a date'),
-                                style: TextStyle(color: _preferredDate != null ? AppColors.textPrimary : AppColors.textMuted, fontSize: 14),
+                                style: TextStyle(color: _preferredDate != null ? colors.onSurface : colors.outline, fontSize: 14),
                               ),
                             ]),
                           ),
@@ -364,10 +368,10 @@ class _MatchRequestScreenState extends State<MatchRequestScreen> {
                         TextFormField(
                           controller: _budgetController,
                           keyboardType: TextInputType.number,
-                          style: const TextStyle(color: AppColors.textPrimary, fontSize: 15),
+                          style: TextStyle(color: colors.onSurface, fontSize: 15),
                           decoration: InputDecoration(
                             hintText: _isBn ? 'আনুমানিক বাজেট' : 'Estimated budget',
-                            prefixIcon: const Icon(Icons.currency_exchange_rounded, color: AppColors.textMuted, size: 20),
+                            prefixIcon: Icon(Icons.currency_exchange_rounded, color: colors.outline, size: 20),
                           ),
                         ),
                         const SizedBox(height: 20),
@@ -383,18 +387,18 @@ class _MatchRequestScreenState extends State<MatchRequestScreen> {
                                 duration: const Duration(milliseconds: 160),
                                 padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 9),
                                 decoration: BoxDecoration(
-                                  gradient: active ? AppColors.blueGradient : null,
-                                  color: active ? null : AppColors.glassWhite,
+                                  gradient: active ? AppGradients.primary(colors) : null,
+                                  color: active ? null : colors.surface,
                                   borderRadius: BorderRadius.circular(20),
                                   border: Border.all(
-                                    color: active ? AppColors.deepBlue : AppColors.glassBorder,
+                                    color: active ? colors.primary : colors.outlineVariant,
                                     width: active ? 1.5 : 1,
                                   ),
                                 ),
                                 child: Text(
                                   _isBn ? '$days দিন' : '$days days',
                                   style: TextStyle(
-                                    color: active ? AppColors.ivory : AppColors.textSecondary,
+                                    color: active ? colors.onPrimary : colors.onSurfaceVariant,
                                     fontSize: 13,
                                     fontWeight: active ? FontWeight.w700 : FontWeight.w500,
                                   ),
@@ -408,9 +412,9 @@ class _MatchRequestScreenState extends State<MatchRequestScreen> {
                         const SizedBox(height: 8),
                         _isLocating
                             ? Row(children: [
-                                const SizedBox(width: 18, height: 18, child: CircularProgressIndicator(strokeWidth: 2, color: AppColors.deepBlue)),
+                                SizedBox(width: 18, height: 18, child: CircularProgressIndicator(strokeWidth: 2, color: colors.primary)),
                                 const SizedBox(width: 10),
-                                Text(_isBn ? 'অবস্থান খুঁজছে...' : 'Locating...', style: const TextStyle(color: AppColors.textMuted, fontSize: 13)),
+                                Text(_isBn ? 'অবস্থান খুঁজছে...' : 'Locating...', style: TextStyle(color: colors.outline, fontSize: 13)),
                               ])
                             : _locationDetected
                                 ? Container(
@@ -430,11 +434,11 @@ class _MatchRequestScreenState extends State<MatchRequestScreen> {
                                     onTap: _detectLocation,
                                     child: Container(
                                       padding: const EdgeInsets.all(12),
-                                      decoration: BoxDecoration(color: AppColors.glassWhite, borderRadius: BorderRadius.circular(12), border: Border.all(color: AppColors.glassBorder, width: 1.5)),
+                                      decoration: BoxDecoration(color: colors.surface, borderRadius: BorderRadius.circular(12), border: Border.all(color: colors.outlineVariant, width: 1.5)),
                                       child: Row(children: [
-                                        const Icon(Icons.location_off_rounded, color: AppColors.textMuted, size: 18),
+                                        Icon(Icons.location_off_rounded, color: colors.outline, size: 18),
                                         const SizedBox(width: 8),
-                                        Text(_isBn ? 'অবস্থান চালু করুন' : 'Turn on location', style: const TextStyle(color: AppColors.textMuted, fontSize: 13)),
+                                        Text(_isBn ? 'অবস্থান চালু করুন' : 'Turn on location', style: TextStyle(color: colors.outline, fontSize: 13)),
                                       ]),
                                     ),
                                   ),
@@ -453,6 +457,7 @@ class _MatchRequestScreenState extends State<MatchRequestScreen> {
   }
 
   Widget _buildHeader(BuildContext context) {
+    final colors = Theme.of(context).colorScheme;
     return Padding(
       padding: const EdgeInsets.fromLTRB(20, 16, 20, 20),
       child: Row(
@@ -461,21 +466,24 @@ class _MatchRequestScreenState extends State<MatchRequestScreen> {
             onTap: () => Navigator.of(context).pop(),
             child: Container(
               width: 40, height: 40,
-              decoration: BoxDecoration(color: AppColors.glassWhite, borderRadius: BorderRadius.circular(12), border: Border.all(color: AppColors.glassBorder, width: 1.5)),
-              child: const Icon(Icons.arrow_back_ios_new_rounded, color: AppColors.textPrimary, size: 18),
+              decoration: BoxDecoration(color: colors.surface, borderRadius: BorderRadius.circular(12), border: Border.all(color: colors.outlineVariant, width: 1.5)),
+              child: Icon(Icons.arrow_back_ios_new_rounded, color: colors.onSurface, size: 18),
             ),
           ),
           const SizedBox(width: 16),
-          Text(_isBn ? 'অনুরোধ পাঠান' : 'Send Request', style: const TextStyle(color: AppColors.textPrimary, fontSize: 18, fontWeight: FontWeight.w700)),
+          Text(_isBn ? 'অনুরোধ পাঠান' : 'Send Request', style: TextStyle(color: colors.onSurface, fontSize: 18, fontWeight: FontWeight.w700)),
         ],
       ),
     ).animate().fadeIn(duration: 400.ms).slideY(begin: -0.1);
   }
 
-  Widget _label(String text) => Align(
+  Widget _label(String text) {
+    final colors = Theme.of(context).colorScheme;
+    return Align(
     alignment: Alignment.centerLeft,
-    child: Text(text, style: const TextStyle(color: AppColors.textSecondary, fontSize: 13, fontWeight: FontWeight.w600)),
+    child: Text(text, style: TextStyle(color: colors.onSurfaceVariant, fontSize: 13, fontWeight: FontWeight.w600)),
   );
+  }
 
   static String _bnDigit(int n) =>
       n.toString().split('').map((d) => '০১২৩৪৫৬৭৮৯'[int.parse(d)]).join();
@@ -489,6 +497,7 @@ class _MatchRequestScreenState extends State<MatchRequestScreen> {
     String selectedValue,
     ValueChanged<String> onSelect,
   ) {
+    final colors = Theme.of(context).colorScheme;
     final bnEntries = bnMap.entries.toList();
     final enEntries = enMap.entries.toList();
     return Wrap(
@@ -504,22 +513,25 @@ class _MatchRequestScreenState extends State<MatchRequestScreen> {
             duration: const Duration(milliseconds: 160),
             padding: const EdgeInsets.symmetric(horizontal: 13, vertical: 8),
             decoration: BoxDecoration(
-              gradient: active ? AppColors.blueGradient : null,
-              color: active ? null : AppColors.glassWhite,
+              gradient: active ? AppGradients.primary(colors) : null,
+              color: active ? null : colors.surface,
               borderRadius: BorderRadius.circular(20),
-              border: Border.all(color: active ? AppColors.deepBlue : AppColors.glassBorder, width: active ? 1.5 : 1),
+              border: Border.all(color: active ? colors.primary : colors.outlineVariant, width: active ? 1.5 : 1),
             ),
-            child: Text(label, style: TextStyle(color: active ? AppColors.ivory : AppColors.textSecondary, fontSize: 12.5, fontWeight: active ? FontWeight.w700 : FontWeight.w500)),
+            child: Text(label, style: TextStyle(color: active ? colors.onPrimary : colors.onSurfaceVariant, fontSize: 12.5, fontWeight: active ? FontWeight.w700 : FontWeight.w500)),
           ),
         );
       }),
     );
   }
 
-  Widget _chipRow(List<String> options, String selected, ValueChanged<String> onSelect) => Wrap(
+  Widget _chipRow(List<String> options, String selected, ValueChanged<String> onSelect) {
+    final colors = Theme.of(context).colorScheme;
+    return Wrap(
     spacing: 8,
     runSpacing: 8,
     children: options.map((opt) {
+    final colors = Theme.of(context).colorScheme;
       final active = selected == opt;
       return GestureDetector(
         onTap: () => onSelect(opt),
@@ -527,29 +539,32 @@ class _MatchRequestScreenState extends State<MatchRequestScreen> {
           duration: const Duration(milliseconds: 160),
           padding: const EdgeInsets.symmetric(horizontal: 13, vertical: 8),
           decoration: BoxDecoration(
-            gradient: active ? AppColors.blueGradient : null,
-            color: active ? null : AppColors.glassWhite,
+            gradient: active ? AppGradients.primary(colors) : null,
+            color: active ? null : colors.surface,
             borderRadius: BorderRadius.circular(20),
-            border: Border.all(color: active ? AppColors.deepBlue : AppColors.glassBorder, width: active ? 1.5 : 1),
+            border: Border.all(color: active ? colors.primary : colors.outlineVariant, width: active ? 1.5 : 1),
           ),
-          child: Text(opt, style: TextStyle(color: active ? AppColors.ivory : AppColors.textSecondary, fontSize: 12.5, fontWeight: active ? FontWeight.w700 : FontWeight.w500)),
+          child: Text(opt, style: TextStyle(color: active ? colors.onPrimary : colors.onSurfaceVariant, fontSize: 12.5, fontWeight: active ? FontWeight.w700 : FontWeight.w500)),
         ),
       );
     }).toList(),
   );
+  }
 
   // Tutor-only fields — studentClass/subjects feed matchmaking-service's TutorDetails, shown to
   // any tutor who opens this request (see match_requests_inbox_screen.dart) and to the customer
   // themselves in my_match_requests_screen.dart. Previously nothing here captured this at all —
   // every tutor request had a description and nothing else structured to search/filter/show.
-  List<Widget> _buildTutorFields() => [
+  List<Widget> _buildTutorFields() {
+    final colors = Theme.of(context).colorScheme;
+    return [
     const SizedBox(height: 20),
     _label(_isBn ? 'ক্লাস / লেভেল' : 'Class / Level'),
     const SizedBox(height: 8),
     DropdownButtonFormField<String>(
       initialValue: _studentClass,
       isExpanded: true,
-      style: const TextStyle(color: AppColors.textPrimary, fontSize: 14),
+      style: TextStyle(color: colors.onSurface, fontSize: 14),
       decoration: InputDecoration(hintText: _isBn ? 'ক্লাস বেছে নিন' : 'Choose a class'),
       items: _studentClasses.map((c) => DropdownMenuItem(value: c, child: Text(c))).toList(),
       onChanged: (v) => setState(() => _studentClass = v),
@@ -559,7 +574,7 @@ class _MatchRequestScreenState extends State<MatchRequestScreen> {
     const SizedBox(height: 8),
     TextFormField(
       controller: _subjectsController,
-      style: const TextStyle(color: AppColors.textPrimary, fontSize: 15),
+      style: TextStyle(color: colors.onSurface, fontSize: 15),
       decoration: InputDecoration(hintText: _isBn ? 'যেমন: গণিত, ইংরেজি, বিজ্ঞান' : 'e.g. Math, English, Science'),
     ),
     const SizedBox(height: 20),
@@ -577,6 +592,7 @@ class _MatchRequestScreenState extends State<MatchRequestScreen> {
       spacing: 8,
       runSpacing: 8,
       children: [2, 3, 4, 5, 6].map((n) {
+    final colors = Theme.of(context).colorScheme;
         final active = _sessionsPerWeek == n;
         return GestureDetector(
           onTap: () => setState(() => _sessionsPerWeek = n),
@@ -584,12 +600,12 @@ class _MatchRequestScreenState extends State<MatchRequestScreen> {
             duration: const Duration(milliseconds: 160),
             padding: const EdgeInsets.symmetric(horizontal: 13, vertical: 8),
             decoration: BoxDecoration(
-              gradient: active ? AppColors.blueGradient : null,
-              color: active ? null : AppColors.glassWhite,
+              gradient: active ? AppGradients.primary(colors) : null,
+              color: active ? null : colors.surface,
               borderRadius: BorderRadius.circular(20),
-              border: Border.all(color: active ? AppColors.deepBlue : AppColors.glassBorder, width: active ? 1.5 : 1),
+              border: Border.all(color: active ? colors.primary : colors.outlineVariant, width: active ? 1.5 : 1),
             ),
-            child: Text(_isBn ? _bnDigit(n) : '$n', style: TextStyle(color: active ? AppColors.ivory : AppColors.textSecondary, fontSize: 12.5, fontWeight: active ? FontWeight.w700 : FontWeight.w500)),
+            child: Text(_isBn ? _bnDigit(n) : '$n', style: TextStyle(color: active ? colors.onPrimary : colors.onSurfaceVariant, fontSize: 12.5, fontWeight: active ? FontWeight.w700 : FontWeight.w500)),
           ),
         );
       }).toList(),
@@ -612,33 +628,36 @@ class _MatchRequestScreenState extends State<MatchRequestScreen> {
     Row(children: [
       Expanded(child: CheckboxListTile(
         value: _homeTuition, onChanged: (v) => setState(() => _homeTuition = v ?? true),
-        title: Text(_isBn ? 'বাসায় এসে' : 'At home', style: const TextStyle(color: AppColors.textPrimary, fontSize: 13)),
+        title: Text(_isBn ? 'বাসায় এসে' : 'At home', style: TextStyle(color: colors.onSurface, fontSize: 13)),
         controlAffinity: ListTileControlAffinity.leading, contentPadding: EdgeInsets.zero, dense: true,
       )),
       Expanded(child: CheckboxListTile(
         value: _onlineTuition, onChanged: (v) => setState(() => _onlineTuition = v ?? false),
-        title: Text(_isBn ? 'অনলাইনে' : 'Online', style: const TextStyle(color: AppColors.textPrimary, fontSize: 13)),
+        title: Text(_isBn ? 'অনলাইনে' : 'Online', style: TextStyle(color: colors.onSurface, fontSize: 13)),
         controlAffinity: ListTileControlAffinity.leading, contentPadding: EdgeInsets.zero, dense: true,
       )),
     ]),
     CheckboxListTile(
       value: _wantsExamPrep, onChanged: (v) => setState(() => _wantsExamPrep = v ?? false),
-      title: Text(_isBn ? 'পরীক্ষার প্রস্তুতি প্রয়োজন' : 'Need exam preparation', style: const TextStyle(color: AppColors.textPrimary, fontSize: 13)),
+      title: Text(_isBn ? 'পরীক্ষার প্রস্তুতি প্রয়োজন' : 'Need exam preparation', style: TextStyle(color: colors.onSurface, fontSize: 13)),
       controlAffinity: ListTileControlAffinity.leading, contentPadding: EdgeInsets.zero, dense: true,
     ),
     if (_wantsExamPrep) ...[
       const SizedBox(height: 4),
       TextFormField(
         controller: _examNameController,
-        style: const TextStyle(color: AppColors.textPrimary, fontSize: 14),
+        style: TextStyle(color: colors.onSurface, fontSize: 14),
         decoration: InputDecoration(hintText: _isBn ? 'কোন পরীক্ষা? যেমন: SSC, HSC, ভর্তি পরীক্ষা' : 'Which exam? e.g. SSC, HSC, admission test'),
       ),
     ],
   ];
+  }
 
   // Helping-hand-only fields — feed matchmaking-service's HelpingHandDetails. v1 scope
   // deliberately excludes live-in (see schema comment on HelpingHandDetails).
-  List<Widget> _buildHelpingHandFields() => [
+  List<Widget> _buildHelpingHandFields() {
+    final colors = Theme.of(context).colorScheme;
+    return [
     const SizedBox(height: 20),
     _label(_isBn ? 'কাজের ধরন (একাধিক বেছে নিতে পারেন)' : 'Work type(s) — select all that apply'),
     const SizedBox(height: 8),
@@ -646,6 +665,7 @@ class _MatchRequestScreenState extends State<MatchRequestScreen> {
       spacing: 8,
       runSpacing: 8,
       children: (_isBn ? _workTypeOptions : _workTypeOptionsEn).entries.map((e) {
+    final colors = Theme.of(context).colorScheme;
         final active = _selectedWorkTypes.contains(e.value);
         return GestureDetector(
           onTap: () => setState(() => active ? _selectedWorkTypes.remove(e.value) : _selectedWorkTypes.add(e.value)),
@@ -653,12 +673,12 @@ class _MatchRequestScreenState extends State<MatchRequestScreen> {
             duration: const Duration(milliseconds: 160),
             padding: const EdgeInsets.symmetric(horizontal: 13, vertical: 8),
             decoration: BoxDecoration(
-              gradient: active ? AppColors.blueGradient : null,
-              color: active ? null : AppColors.glassWhite,
+              gradient: active ? AppGradients.primary(colors) : null,
+              color: active ? null : colors.surface,
               borderRadius: BorderRadius.circular(20),
-              border: Border.all(color: active ? AppColors.deepBlue : AppColors.glassBorder, width: active ? 1.5 : 1),
+              border: Border.all(color: active ? colors.primary : colors.outlineVariant, width: active ? 1.5 : 1),
             ),
-            child: Text(e.key, style: TextStyle(color: active ? AppColors.ivory : AppColors.textSecondary, fontSize: 12.5, fontWeight: active ? FontWeight.w700 : FontWeight.w500)),
+            child: Text(e.key, style: TextStyle(color: active ? colors.onPrimary : colors.onSurfaceVariant, fontSize: 12.5, fontWeight: active ? FontWeight.w700 : FontWeight.w500)),
           ),
         );
       }).toList(),
@@ -686,6 +706,7 @@ class _MatchRequestScreenState extends State<MatchRequestScreen> {
       spacing: 8,
       runSpacing: 8,
       children: [3, 4, 5, 6, 7].map((n) {
+    final colors = Theme.of(context).colorScheme;
         final active = _daysPerWeek == n;
         return GestureDetector(
           onTap: () => setState(() => _daysPerWeek = n),
@@ -693,12 +714,12 @@ class _MatchRequestScreenState extends State<MatchRequestScreen> {
             duration: const Duration(milliseconds: 160),
             padding: const EdgeInsets.symmetric(horizontal: 13, vertical: 8),
             decoration: BoxDecoration(
-              gradient: active ? AppColors.blueGradient : null,
-              color: active ? null : AppColors.glassWhite,
+              gradient: active ? AppGradients.primary(colors) : null,
+              color: active ? null : colors.surface,
               borderRadius: BorderRadius.circular(20),
-              border: Border.all(color: active ? AppColors.deepBlue : AppColors.glassBorder, width: active ? 1.5 : 1),
+              border: Border.all(color: active ? colors.primary : colors.outlineVariant, width: active ? 1.5 : 1),
             ),
-            child: Text(_isBn ? _bnDigit(n) : '$n', style: TextStyle(color: active ? AppColors.ivory : AppColors.textSecondary, fontSize: 12.5, fontWeight: active ? FontWeight.w700 : FontWeight.w500)),
+            child: Text(_isBn ? _bnDigit(n) : '$n', style: TextStyle(color: active ? colors.onPrimary : colors.onSurfaceVariant, fontSize: 12.5, fontWeight: active ? FontWeight.w700 : FontWeight.w500)),
           ),
         );
       }).toList(),
@@ -713,23 +734,23 @@ class _MatchRequestScreenState extends State<MatchRequestScreen> {
     TextFormField(
       controller: _familySizeController,
       keyboardType: TextInputType.number,
-      style: const TextStyle(color: AppColors.textPrimary, fontSize: 15),
+      style: TextStyle(color: colors.onSurface, fontSize: 15),
       decoration: InputDecoration(hintText: _isBn ? 'যেমন: ৪' : 'e.g. 4'),
     ),
     const SizedBox(height: 12),
     CheckboxListTile(
       value: _hasChildren, onChanged: (v) => setState(() => _hasChildren = v ?? false),
-      title: Text(_isBn ? 'বাসায় বাচ্চা আছে' : 'Children at home', style: const TextStyle(color: AppColors.textPrimary, fontSize: 13)),
+      title: Text(_isBn ? 'বাসায় বাচ্চা আছে' : 'Children at home', style: TextStyle(color: colors.onSurface, fontSize: 13)),
       controlAffinity: ListTileControlAffinity.leading, contentPadding: EdgeInsets.zero, dense: true,
     ),
     CheckboxListTile(
       value: _hasElderly, onChanged: (v) => setState(() => _hasElderly = v ?? false),
-      title: Text(_isBn ? 'বাসায় বয়স্ক/অসুস্থ ব্যক্তি আছে' : 'Elderly/sick person at home', style: const TextStyle(color: AppColors.textPrimary, fontSize: 13)),
+      title: Text(_isBn ? 'বাসায় বয়স্ক/অসুস্থ ব্যক্তি আছে' : 'Elderly/sick person at home', style: TextStyle(color: colors.onSurface, fontSize: 13)),
       controlAffinity: ListTileControlAffinity.leading, contentPadding: EdgeInsets.zero, dense: true,
     ),
     CheckboxListTile(
       value: _hasPets, onChanged: (v) => setState(() => _hasPets = v ?? false),
-      title: Text(_isBn ? 'বাসায় পোষা প্রাণী আছে' : 'Pets at home', style: const TextStyle(color: AppColors.textPrimary, fontSize: 13)),
+      title: Text(_isBn ? 'বাসায় পোষা প্রাণী আছে' : 'Pets at home', style: TextStyle(color: colors.onSurface, fontSize: 13)),
       controlAffinity: ListTileControlAffinity.leading, contentPadding: EdgeInsets.zero, dense: true,
     ),
     const SizedBox(height: 8),
@@ -737,8 +758,9 @@ class _MatchRequestScreenState extends State<MatchRequestScreen> {
     const SizedBox(height: 8),
     TextFormField(
       controller: _specialRequirementsController,
-      style: const TextStyle(color: AppColors.textPrimary, fontSize: 14),
+      style: TextStyle(color: colors.onSurface, fontSize: 14),
       decoration: InputDecoration(hintText: _isBn ? 'যেমন: এলার্জি, খাবারের নিয়ম' : 'e.g. allergies, dietary rules'),
     ),
   ];
+  }
 }

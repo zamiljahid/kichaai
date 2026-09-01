@@ -3,7 +3,6 @@ import 'package:flutter_animate/flutter_animate.dart';
 import 'package:provider/provider.dart';
 import '../core/network/api_client.dart';
 import '../core/utils/app_strings.dart';
-import '../theme/app_theme.dart';
 import '../widgets/animated_background.dart';
 import '../widgets/glass_card.dart';
 import '../widgets/glass_button.dart';
@@ -20,14 +19,19 @@ class _OnboardingScreenState extends State<OnboardingScreen> {
   final PageController _controller = PageController();
   int _currentPage = 0;
 
-  final List<_OnboardingData> _pages = const [
+  // A field initializer cannot reach Theme.of(context), and these colours must
+  // follow the active seed — so the list is built per access instead. The copy
+  // is unchanged.
+  List<_OnboardingData> get _pages {
+    final colors = Theme.of(context).colorScheme;
+    return [
     _OnboardingData(
       icon: Icons.verified_user_rounded,
       title: 'যাচাইকৃত সেবাদাতা',
       titleEn: 'Verified Providers',
       desc: 'সকল সেবাদাতা NID যাচাইকৃত এবং পেশাগতভাবে প্রশিক্ষিত',
       descEn: 'Every provider is NID-verified and professionally trained',
-      color: AppColors.deepBlue,
+      color: colors.primary,
     ),
     _OnboardingData(
       icon: Icons.flash_on_rounded,
@@ -35,7 +39,7 @@ class _OnboardingScreenState extends State<OnboardingScreen> {
       titleEn: 'Fast Matching',
       desc: 'আপনার চাহিদা পোস্ট করুন, সেবাদাতা নিজেই আপনার কাছে আসবে',
       descEn: 'Post what you need — providers come to you',
-      color: AppColors.fuchsia,
+      color: colors.secondary,
     ),
     _OnboardingData(
       icon: Icons.category_rounded,
@@ -43,12 +47,14 @@ class _OnboardingScreenState extends State<OnboardingScreen> {
       titleEn: '16 Categories',
       desc: 'ক্যারগিভার থেকে ফটোগ্রাফার — সব ধরনের সেবা এক প্ল্যাটফর্মে',
       descEn: 'From caregivers to photographers — every service, one platform',
-      color: AppColors.deepBlue,
-    ),
-  ];
+        color: colors.primary,
+      ),
+    ];
+  }
 
   @override
   Widget build(BuildContext context) {
+    final colors = Theme.of(context).colorScheme;
     final isBn = context.watch<LanguageNotifier>().isBengali;
     return Scaffold(
       body: AnimatedBackground(
@@ -61,7 +67,7 @@ class _OnboardingScreenState extends State<OnboardingScreen> {
                   onPressed: _goToAuth,
                   child: Text(
                     isBn ? 'এড়িয়ে যান' : 'Skip',
-                    style: TextStyle(color: AppColors.textSecondary, fontSize: 14),
+                    style: TextStyle(color: colors.onSurfaceVariant, fontSize: 14),
                   ),
                 ),
               ),
@@ -99,6 +105,7 @@ class _OnboardingScreenState extends State<OnboardingScreen> {
   }
 
   Widget _buildPage(_OnboardingData data, bool isBn) {
+    final colors = Theme.of(context).colorScheme;
     return Padding(
       padding: const EdgeInsets.symmetric(horizontal: 32),
       child: Column(
@@ -122,7 +129,7 @@ class _OnboardingScreenState extends State<OnboardingScreen> {
                 ),
               ],
             ),
-            child: Icon(data.icon, color: AppColors.ivory, size: 64),
+            child: Icon(data.icon, color: colors.onPrimary, size: 64),
           )
               .animate(key: ValueKey(data.title))
               .scale(duration: 500.ms, curve: Curves.elasticOut)
@@ -133,8 +140,8 @@ class _OnboardingScreenState extends State<OnboardingScreen> {
               children: [
                 Text(
                   isBn ? data.title : data.titleEn,
-                  style: const TextStyle(
-                    color: AppColors.textPrimary,
+                  style: TextStyle(
+                    color: colors.onSurface,
                     fontSize: 26,
                     fontWeight: FontWeight.w700,
                   ),
@@ -143,8 +150,8 @@ class _OnboardingScreenState extends State<OnboardingScreen> {
                 const SizedBox(height: 16),
                 Text(
                   isBn ? data.desc : data.descEn,
-                  style: const TextStyle(
-                    color: AppColors.textSecondary,
+                  style: TextStyle(
+                    color: colors.onSurfaceVariant,
                     fontSize: 15,
                     height: 1.6,
                   ),
@@ -162,6 +169,7 @@ class _OnboardingScreenState extends State<OnboardingScreen> {
   }
 
   Widget _buildDots() {
+    final colors = Theme.of(context).colorScheme;
     return Row(
       mainAxisAlignment: MainAxisAlignment.center,
       children: List.generate(
@@ -172,7 +180,7 @@ class _OnboardingScreenState extends State<OnboardingScreen> {
           width: i == _currentPage ? 24 : 8,
           height: 8,
           decoration: BoxDecoration(
-            color: i == _currentPage ? AppColors.deepBlue : AppColors.textMuted,
+            color: i == _currentPage ? colors.primary : colors.outline,
             borderRadius: BorderRadius.circular(4),
           ),
         ),

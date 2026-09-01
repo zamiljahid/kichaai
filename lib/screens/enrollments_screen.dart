@@ -5,7 +5,7 @@ import 'package:provider/provider.dart';
 import '../core/network/api_client.dart';
 import '../core/utils/app_strings.dart';
 import '../models/micro_learning_model.dart';
-import '../theme/app_theme.dart';
+import '../theme/app_gradients.dart';
 import 'lesson_player_screen.dart';
 
 class EnrollmentsScreen extends StatefulWidget {
@@ -47,6 +47,7 @@ class _EnrollmentsScreenState extends State<EnrollmentsScreen> {
   }
 
   void _viewCertificate(String enrollmentId, String courseName) {
+    final colors = Theme.of(context).colorScheme;
     showModalBottomSheet(
       context: context,
       backgroundColor: Colors.transparent,
@@ -59,7 +60,7 @@ class _EnrollmentsScreenState extends State<EnrollmentsScreen> {
             child: BackdropFilter(
               filter: ImageFilter.blur(sigmaX: 12, sigmaY: 12),
               child: Container(
-                color: AppColors.bgMid,
+                color: colors.surface,
                 padding: const EdgeInsets.all(24),
                 child: Column(
                   mainAxisSize: MainAxisSize.min,
@@ -68,7 +69,7 @@ class _EnrollmentsScreenState extends State<EnrollmentsScreen> {
                       width: double.infinity,
                       padding: const EdgeInsets.all(24),
                       decoration: BoxDecoration(
-                        gradient: AppColors.blueGradient,
+                        gradient: AppGradients.primary(colors),
                         borderRadius: BorderRadius.circular(20),
                       ),
                       child: Column(children: [
@@ -86,8 +87,8 @@ class _EnrollmentsScreenState extends State<EnrollmentsScreen> {
                     const SizedBox(height: 16),
                     TextButton.icon(
                       onPressed: () => Navigator.pop(ctx),
-                      icon: const Icon(Icons.close_rounded, color: AppColors.textMuted),
-                      label: Text(_isBn ? 'বন্ধ করুন' : 'Close', style: const TextStyle(color: AppColors.textMuted)),
+                      icon: Icon(Icons.close_rounded, color: colors.outline),
+                      label: Text(_isBn ? 'বন্ধ করুন' : 'Close', style: TextStyle(color: colors.outline)),
                     ),
                   ],
                 ),
@@ -101,33 +102,34 @@ class _EnrollmentsScreenState extends State<EnrollmentsScreen> {
 
   @override
   Widget build(BuildContext context) {
+    final colors = Theme.of(context).colorScheme;
     _isBn = context.watch<LanguageNotifier>().isBengali;
     return Scaffold(
-      backgroundColor: AppColors.bgDark,
+      backgroundColor: colors.surfaceContainerHighest,
       appBar: AppBar(
         backgroundColor: Colors.transparent,
         elevation: 0,
-        title: Text(_isBn ? 'আমার কোর্সসমূহ' : 'My Courses', style: const TextStyle(color: AppColors.textPrimary, fontSize: 18, fontWeight: FontWeight.w700)),
+        title: Text(_isBn ? 'আমার কোর্সসমূহ' : 'My Courses', style: TextStyle(color: colors.onSurface, fontSize: 18, fontWeight: FontWeight.w700)),
         leading: IconButton(
-          icon: const Icon(Icons.arrow_back_ios_new_rounded, color: AppColors.textPrimary, size: 18),
+          icon: Icon(Icons.arrow_back_ios_new_rounded, color: colors.onSurface, size: 18),
           onPressed: () => Navigator.pop(context),
         ),
       ),
       body: _isLoading
-          ? const Center(child: CircularProgressIndicator(color: AppColors.deepBlue))
+          ? Center(child: CircularProgressIndicator(color: colors.primary))
           : _enrollments.isEmpty
               ? Center(
                   child: Column(mainAxisAlignment: MainAxisAlignment.center, children: [
-                    const Icon(Icons.school_outlined, color: AppColors.textMuted, size: 64),
+                    Icon(Icons.school_outlined, color: colors.outline, size: 64),
                     const SizedBox(height: 12),
-                    Text(_isBn ? 'কোনো এনরোলমেন্ট নেই' : 'No enrollments', style: const TextStyle(color: AppColors.textMuted, fontSize: 16)),
+                    Text(_isBn ? 'কোনো এনরোলমেন্ট নেই' : 'No enrollments', style: TextStyle(color: colors.outline, fontSize: 16)),
                     const SizedBox(height: 8),
-                    Text(_isBn ? 'কোর্সে ভর্তি হন' : 'Enroll in a course', style: const TextStyle(color: AppColors.textMuted, fontSize: 13)),
+                    Text(_isBn ? 'কোর্সে ভর্তি হন' : 'Enroll in a course', style: TextStyle(color: colors.outline, fontSize: 13)),
                   ]),
                 )
               : RefreshIndicator(
-                  color: AppColors.deepBlue,
-                  backgroundColor: AppColors.bgMid,
+                  color: colors.primary,
+                  backgroundColor: colors.surface,
                   onRefresh: _load,
                   child: ListView.builder(
                     padding: const EdgeInsets.fromLTRB(16, 12, 16, 100),
@@ -142,9 +144,9 @@ class _EnrollmentsScreenState extends State<EnrollmentsScreen> {
                       return Container(
                         margin: const EdgeInsets.only(bottom: 12),
                         decoration: BoxDecoration(
-                          color: AppColors.bgMid,
+                          color: colors.surface,
                           borderRadius: BorderRadius.circular(16),
-                          border: Border.all(color: AppColors.glassBorder),
+                          border: Border.all(color: colors.outlineVariant),
                         ),
                         child: ClipRRect(
                           borderRadius: BorderRadius.circular(16),
@@ -161,13 +163,13 @@ class _EnrollmentsScreenState extends State<EnrollmentsScreen> {
                                       height: 120,
                                       width: double.infinity,
                                       fit: BoxFit.cover,
-                                      errorBuilder: (_, __, ___) => Container(height: 80, color: AppColors.glassWhite, child: const Icon(Icons.school_rounded, color: AppColors.textMuted, size: 32)),
+                                      errorBuilder: (_, __, ___) => Container(height: 80, color: colors.surface, child: Icon(Icons.school_rounded, color: colors.outline, size: 32)),
                                     ),
                                   ),
                                 Padding(
                                   padding: const EdgeInsets.all(14),
                                   child: Column(crossAxisAlignment: CrossAxisAlignment.start, children: [
-                                    Text(course['title'] as String? ?? (_isBn ? 'কোর্স' : 'Course'), style: const TextStyle(color: AppColors.textPrimary, fontSize: 15, fontWeight: FontWeight.w700)),
+                                    Text(course['title'] as String? ?? (_isBn ? 'কোর্স' : 'Course'), style: TextStyle(color: colors.onSurface, fontSize: 15, fontWeight: FontWeight.w700)),
                                     const SizedBox(height: 6),
                                     Row(children: [
                                       Expanded(
@@ -175,14 +177,14 @@ class _EnrollmentsScreenState extends State<EnrollmentsScreen> {
                                           borderRadius: BorderRadius.circular(4),
                                           child: LinearProgressIndicator(
                                             value: progress.toDouble() / 100,
-                                            backgroundColor: AppColors.glassWhite,
-                                            color: isComplete ? const Color(0xFF10B981) : AppColors.deepBlue,
+                                            backgroundColor: colors.surface,
+                                            color: isComplete ? const Color(0xFF10B981) : colors.primary,
                                             minHeight: 6,
                                           ),
                                         ),
                                       ),
                                       const SizedBox(width: 8),
-                                      Text('${progress.toInt()}%', style: TextStyle(color: isComplete ? const Color(0xFF10B981) : AppColors.deepBlue, fontSize: 12, fontWeight: FontWeight.w600)),
+                                      Text('${progress.toInt()}%', style: TextStyle(color: isComplete ? const Color(0xFF10B981) : colors.primary, fontSize: 12, fontWeight: FontWeight.w600)),
                                     ]),
                                     const SizedBox(height: 12),
                                     Row(children: [
@@ -198,7 +200,7 @@ class _EnrollmentsScreenState extends State<EnrollmentsScreen> {
                                             },
                                             icon: const Icon(Icons.play_arrow_rounded, size: 16),
                                             label: Text(_isBn ? 'চালিয়ে যান' : 'Continue', style: const TextStyle(fontSize: 12)),
-                                            style: OutlinedButton.styleFrom(foregroundColor: AppColors.deepBlue, side: const BorderSide(color: AppColors.deepBlue), shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(10))),
+                                            style: OutlinedButton.styleFrom(foregroundColor: colors.primary, side: BorderSide(color: colors.primary), shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(10))),
                                           ),
                                         )
                                       else

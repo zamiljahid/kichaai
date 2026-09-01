@@ -7,7 +7,7 @@ import '../core/network/api_client.dart';
 import '../core/utils/app_strings.dart';
 import '../services/catalog_service.dart';
 import '../services/onboarding_service.dart';
-import '../theme/app_theme.dart';
+import '../theme/app_gradients.dart';
 import '../widgets/animated_background.dart';
 import '../widgets/glass_button.dart';
 import '../widgets/glass_card.dart';
@@ -336,6 +336,7 @@ class _TechnicianOnboardingScreenState extends State<TechnicianOnboardingScreen>
 
   @override
   Widget build(BuildContext context) {
+    final colors = Theme.of(context).colorScheme;
     _isBn = context.watch<LanguageNotifier>().isBengali;
     return Scaffold(
       body: AnimatedBackground(
@@ -346,7 +347,7 @@ class _TechnicianOnboardingScreenState extends State<TechnicianOnboardingScreen>
                 padding: const EdgeInsets.fromLTRB(8, 8, 16, 4),
                 child: Row(children: [
                   IconButton(
-                    icon: const Icon(Icons.arrow_back_rounded, color: AppColors.textPrimary),
+                    icon: Icon(Icons.arrow_back_rounded, color: colors.onSurface),
                     onPressed: () {
                       if (_group != null) {
                         setState(() { _group = null; _types.clear(); });
@@ -355,7 +356,7 @@ class _TechnicianOnboardingScreenState extends State<TechnicianOnboardingScreen>
                       }
                     },
                   ),
-                  Text(_isBn ? 'টেকনিশিয়ান ক্যাটাগরি' : 'Technician Category', style: const TextStyle(color: AppColors.textPrimary, fontSize: 18, fontWeight: FontWeight.w700)),
+                  Text(_isBn ? 'টেকনিশিয়ান ক্যাটাগরি' : 'Technician Category', style: TextStyle(color: colors.onSurface, fontSize: 18, fontWeight: FontWeight.w700)),
                 ]),
               ),
               Expanded(child: _buildBody()),
@@ -367,11 +368,12 @@ class _TechnicianOnboardingScreenState extends State<TechnicianOnboardingScreen>
   }
 
   Widget _buildBody() {
+    final colors = Theme.of(context).colorScheme;
     if (_loading) {
-      return const Center(child: CircularProgressIndicator(color: AppColors.deepBlue));
+      return Center(child: CircularProgressIndicator(color: colors.primary));
     }
     if (_loadError != null) {
-      return Center(child: Text(_loadError!, style: const TextStyle(color: AppColors.textSecondary)));
+      return Center(child: Text(_loadError!, style: TextStyle(color: colors.onSurfaceVariant)));
     }
     final tax = _taxonomy;
     if (tax == null) return const SizedBox.shrink();
@@ -381,12 +383,13 @@ class _TechnicianOnboardingScreenState extends State<TechnicianOnboardingScreen>
   }
 
   Widget _buildGroupPicker(TechnicianSpecializationTaxonomy tax) {
+    final colors = Theme.of(context).colorScheme;
     return SingleChildScrollView(
       padding: const EdgeInsets.fromLTRB(16, 8, 16, 32),
       child: Column(crossAxisAlignment: CrossAxisAlignment.start, children: [
         Text(
           _isBn ? 'আপনি কোন ক্যাটাগরির টেকনিশিয়ান?' : 'Which category of technician are you?',
-          style: const TextStyle(color: AppColors.textPrimary, fontSize: 15, fontWeight: FontWeight.w700),
+          style: TextStyle(color: colors.onSurface, fontSize: 15, fontWeight: FontWeight.w700),
         ),
         const SizedBox(height: 14),
         // INDUSTRIAL is temporarily hidden from this picker per the founder ("শিল্পকারখানা
@@ -401,14 +404,14 @@ class _TechnicianOnboardingScreenState extends State<TechnicianOnboardingScreen>
                   child: Row(children: [
                     Container(
                       width: 40, height: 40,
-                      decoration: BoxDecoration(gradient: AppColors.blueGradient, borderRadius: BorderRadius.circular(10)),
+                      decoration: BoxDecoration(gradient: AppGradients.primary(colors), borderRadius: BorderRadius.circular(10)),
                       child: Icon(technicianSpecIcon(node.group.icon), color: Colors.white, size: 20),
                     ),
                     const SizedBox(width: 12),
                     Expanded(
-                      child: Text(_isBn ? node.group.bn : node.group.en, style: const TextStyle(color: AppColors.textPrimary, fontSize: 14, fontWeight: FontWeight.w700)),
+                      child: Text(_isBn ? node.group.bn : node.group.en, style: TextStyle(color: colors.onSurface, fontSize: 14, fontWeight: FontWeight.w700)),
                     ),
-                    const Icon(Icons.chevron_right_rounded, color: AppColors.textMuted),
+                    Icon(Icons.chevron_right_rounded, color: colors.outline),
                   ]),
                 ),
               ),
@@ -418,11 +421,13 @@ class _TechnicianOnboardingScreenState extends State<TechnicianOnboardingScreen>
   }
 
   Widget _buildDetailsForm(TechnicianSpecializationTaxonomy tax) {
+    final colors = Theme.of(context).colorScheme;
     final node = tax.tree.firstWhere((n) => n.group.code == _group, orElse: () => tax.tree.first);
     return SingleChildScrollView(
       padding: const EdgeInsets.fromLTRB(16, 8, 16, 32),
       child: Column(crossAxisAlignment: CrossAxisAlignment.stretch, children: [
         sectionCard(
+          colors: colors,
           title: _isBn ? 'নির্দিষ্ট কাজের ধরন' : 'Specific specializations',
           child: Wrap(
             spacing: 8,
@@ -434,12 +439,12 @@ class _TechnicianOnboardingScreenState extends State<TechnicianOnboardingScreen>
                 child: Container(
                   padding: const EdgeInsets.symmetric(horizontal: 13, vertical: 8),
                   decoration: BoxDecoration(
-                    gradient: active ? AppColors.blueGradient : null,
-                    color: active ? null : const Color(0xFFF9F7F0),
+                    gradient: active ? AppGradients.primary(colors) : null,
+                    color: active ? null : colors.surfaceContainerLow,
                     borderRadius: BorderRadius.circular(20),
-                    border: Border.all(color: active ? AppColors.deepBlue : AppColors.glassBorder, width: active ? 1.5 : 1),
+                    border: Border.all(color: active ? colors.primary : colors.outlineVariant, width: active ? 1.5 : 1),
                   ),
-                  child: Text(_isBn ? t.bn : t.en, style: TextStyle(color: active ? Colors.white : AppColors.textSecondary, fontSize: 12.5, fontWeight: active ? FontWeight.w700 : FontWeight.w500)),
+                  child: Text(_isBn ? t.bn : t.en, style: TextStyle(color: active ? Colors.white : colors.onSurfaceVariant, fontSize: 12.5, fontWeight: active ? FontWeight.w700 : FontWeight.w500)),
                 ),
               );
             }).toList(),
@@ -447,8 +452,9 @@ class _TechnicianOnboardingScreenState extends State<TechnicianOnboardingScreen>
         ),
         const SizedBox(height: 14),
         sectionCard(
+          colors: colors,
           title: _isBn ? 'অভিজ্ঞতা' : 'Experience',
-          child: labeledField(controller: _experienceCtrl, hint: _isBn ? 'অভিজ্ঞতার বছর (যেমন: ২)' : 'Years of experience (e.g. 2)', keyboardType: const TextInputType.numberWithOptions(decimal: true)),
+          child: labeledField(colors: colors, controller: _experienceCtrl, hint: _isBn ? 'অভিজ্ঞতার বছর (যেমন: ২)' : 'Years of experience (e.g. 2)', keyboardType: const TextInputType.numberWithOptions(decimal: true)),
         ),
         const SizedBox(height: 14),
         ..._groupSpecificFields(),
@@ -459,6 +465,7 @@ class _TechnicianOnboardingScreenState extends State<TechnicianOnboardingScreen>
   }
 
   Widget _yesNoToggle({required String label, required bool? value, required ValueChanged<bool> onChanged}) {
+    final colors = Theme.of(context).colorScheme;
     Widget option(String text, bool v) {
       final active = value == v;
       return Expanded(
@@ -468,18 +475,18 @@ class _TechnicianOnboardingScreenState extends State<TechnicianOnboardingScreen>
             alignment: Alignment.center,
             padding: const EdgeInsets.symmetric(vertical: 10),
             decoration: BoxDecoration(
-              gradient: active ? AppColors.blueGradient : null,
-              color: active ? null : const Color(0xFFF9F7F0),
+              gradient: active ? AppGradients.primary(colors) : null,
+              color: active ? null : colors.surfaceContainerLow,
               borderRadius: BorderRadius.circular(10),
-              border: Border.all(color: active ? AppColors.deepBlue : AppColors.glassBorder, width: active ? 1.5 : 1),
+              border: Border.all(color: active ? colors.primary : colors.outlineVariant, width: active ? 1.5 : 1),
             ),
-            child: Text(text, style: TextStyle(color: active ? Colors.white : AppColors.textSecondary, fontSize: 13, fontWeight: active ? FontWeight.w700 : FontWeight.w500)),
+            child: Text(text, style: TextStyle(color: active ? Colors.white : colors.onSurfaceVariant, fontSize: 13, fontWeight: active ? FontWeight.w700 : FontWeight.w500)),
           ),
         ),
       );
     }
     return Column(crossAxisAlignment: CrossAxisAlignment.start, children: [
-      Text(label, style: const TextStyle(color: AppColors.textSecondary, fontSize: 13, height: 1.35)),
+      Text(label, style: TextStyle(color: colors.onSurfaceVariant, fontSize: 13, height: 1.35)),
       const SizedBox(height: 8),
       Row(children: [
         option(_isBn ? 'হ্যাঁ' : 'Yes', true),
@@ -490,12 +497,14 @@ class _TechnicianOnboardingScreenState extends State<TechnicianOnboardingScreen>
   }
 
   List<Widget> _groupSpecificFields() {
+    final colors = Theme.of(context).colorScheme;
     switch (_group) {
       case 'HOME_ELECTRICAL':
         return [
           sectionCard(
+            colors: colors,
             title: _isBn ? 'কাজের নমুনা ছবি (ঐচ্ছিক)' : 'Work sample photo (optional)',
-            child: uploadRow(
+            child: uploadRow(colors: colors, 
               label: _workSamplePhotoUrl != null ? (_isBn ? 'আপলোড হয়েছে ✓' : 'Uploaded ✓') : (_isBn ? 'ছবি আপলোড করুন' : 'Upload a photo'),
               uploaded: _workSamplePhotoUrl != null,
               loading: _uploadingWorkSample,
@@ -506,9 +515,10 @@ class _TechnicianOnboardingScreenState extends State<TechnicianOnboardingScreen>
       case 'AUTOMOTIVE':
         return [
           sectionCard(
+            colors: colors,
             title: _isBn ? 'গ্যারেজ/ওয়ার্কশপ' : 'Garage / Workshop',
             child: Column(crossAxisAlignment: CrossAxisAlignment.start, children: [
-              labeledField(controller: _garageAddressCtrl, hint: _isBn ? 'গ্যারেজের ঠিকানা' : 'Garage address'),
+              labeledField(colors: colors, controller: _garageAddressCtrl, hint: _isBn ? 'গ্যারেজের ঠিকানা' : 'Garage address'),
               const SizedBox(height: 10),
               OutlinedButton.icon(
                 onPressed: _capturingGarageLocation ? null : _captureGarageLocation,
@@ -518,7 +528,7 @@ class _TechnicianOnboardingScreenState extends State<TechnicianOnboardingScreen>
                 label: Text(_garageLat != null ? (_isBn ? 'অবস্থান যুক্ত হয়েছে' : 'Location captured') : (_isBn ? 'বর্তমান অবস্থান ব্যবহার করুন' : 'Use my current location')),
               ),
               const SizedBox(height: 10),
-              uploadRow(
+              uploadRow(colors: colors, 
                 label: _garagePhotoUrl != null ? (_isBn ? 'আপলোড হয়েছে ✓' : 'Uploaded ✓') : (_isBn ? 'গ্যারেজের ছবি আপলোড করুন' : 'Upload a photo of your garage'),
                 uploaded: _garagePhotoUrl != null,
                 loading: _uploadingGaragePhoto,
@@ -528,12 +538,12 @@ class _TechnicianOnboardingScreenState extends State<TechnicianOnboardingScreen>
               InkWell(
                 onTap: () => setState(() => _hasWorkshop = !_hasWorkshop),
                 child: Row(crossAxisAlignment: CrossAxisAlignment.start, children: [
-                  Icon(_hasWorkshop ? Icons.check_box_rounded : Icons.check_box_outline_blank_rounded, color: _hasWorkshop ? AppColors.deepBlue : AppColors.textMuted, size: 22),
+                  Icon(_hasWorkshop ? Icons.check_box_rounded : Icons.check_box_outline_blank_rounded, color: _hasWorkshop ? colors.primary : colors.outline, size: 22),
                   const SizedBox(width: 8),
                   Expanded(
                     child: Text(
                       _isBn ? 'আমার একটি নির্দিষ্ট গ্যারেজ/ওয়ার্কশপ আছে (আবশ্যক)' : 'I have a fixed garage/workshop (required)',
-                      style: const TextStyle(color: AppColors.textSecondary, fontSize: 13, height: 1.35),
+                      style: TextStyle(color: colors.onSurfaceVariant, fontSize: 13, height: 1.35),
                     ),
                   ),
                 ]),
@@ -542,8 +552,9 @@ class _TechnicianOnboardingScreenState extends State<TechnicianOnboardingScreen>
           ),
           const SizedBox(height: 14),
           sectionCard(
+            colors: colors,
             title: _isBn ? 'ট্রেড লাইসেন্স (আবশ্যক)' : 'Trade license (required)',
-            child: uploadRow(
+            child: uploadRow(colors: colors, 
               label: _tradeLicenseUrl != null ? (_isBn ? 'আপলোড হয়েছে ✓' : 'Uploaded ✓') : (_isBn ? 'ট্রেড লাইসেন্স আপলোড করুন' : 'Upload your trade license'),
               uploaded: _tradeLicenseUrl != null,
               loading: _uploadingTradeLicense,
@@ -552,8 +563,9 @@ class _TechnicianOnboardingScreenState extends State<TechnicianOnboardingScreen>
           ),
           const SizedBox(height: 14),
           sectionCard(
+            colors: colors,
             title: _isBn ? 'গ্যারেজের জনবল' : 'Garage staffing',
-            child: labeledField(
+            child: labeledField(colors: colors, 
               controller: _garageWorkerCountCtrl,
               hint: _isBn ? 'গ্যারেজে কতজন কাজ করেন?' : 'Number of people working at the garage',
               keyboardType: TextInputType.number,
@@ -561,6 +573,7 @@ class _TechnicianOnboardingScreenState extends State<TechnicianOnboardingScreen>
           ),
           const SizedBox(height: 14),
           sectionCard(
+            colors: colors,
             title: _isBn ? 'রিকভারি ভ্যান / টো ব্যবস্থা' : 'Recovery van / tow arrangement',
             child: Column(crossAxisAlignment: CrossAxisAlignment.start, children: [
               _yesNoToggle(
@@ -572,7 +585,7 @@ class _TechnicianOnboardingScreenState extends State<TechnicianOnboardingScreen>
               ),
               if (_hasRecoveryVan == true) ...[
                 const SizedBox(height: 12),
-                labeledField(
+                labeledField(colors: colors, 
                   controller: _recoveryVanRadiusCtrl,
                   hint: _isBn ? 'কত কিলোমিটারের মধ্যে পাঠাতে পারবেন?' : 'Within how many kilometers can you send someone?',
                   keyboardType: TextInputType.number,
@@ -582,6 +595,7 @@ class _TechnicianOnboardingScreenState extends State<TechnicianOnboardingScreen>
           ),
           const SizedBox(height: 14),
           sectionCard(
+            colors: colors,
             title: _isBn ? 'জ্বালানি সরবরাহ (ঐচ্ছিক)' : 'Fuel supply (optional)',
             child: _yesNoToggle(
               label: _isBn
@@ -596,8 +610,9 @@ class _TechnicianOnboardingScreenState extends State<TechnicianOnboardingScreen>
       case 'TELECOM':
         return [
           sectionCard(
+            colors: colors,
             title: _isBn ? 'সার্টিফিকেট (ঐচ্ছিক)' : 'Certificate (optional)',
-            child: uploadRow(
+            child: uploadRow(colors: colors, 
               label: _certificateUrl != null ? (_isBn ? 'আপলোড হয়েছে ✓' : 'Uploaded ✓') : (_isBn ? 'সার্টিফিকেট আপলোড করুন' : 'Upload a certificate'),
               uploaded: _certificateUrl != null,
               loading: _uploadingCertificate,
@@ -606,24 +621,25 @@ class _TechnicianOnboardingScreenState extends State<TechnicianOnboardingScreen>
           ),
           const SizedBox(height: 14),
           sectionCard(
+            colors: colors,
             title: _isBn ? 'দোকান' : 'Shop',
             child: Column(crossAxisAlignment: CrossAxisAlignment.start, children: [
               InkWell(
                 onTap: () => setState(() => _hasShop = !_hasShop),
                 child: Row(crossAxisAlignment: CrossAxisAlignment.start, children: [
-                  Icon(_hasShop ? Icons.check_box_rounded : Icons.check_box_outline_blank_rounded, color: _hasShop ? AppColors.deepBlue : AppColors.textMuted, size: 22),
+                  Icon(_hasShop ? Icons.check_box_rounded : Icons.check_box_outline_blank_rounded, color: _hasShop ? colors.primary : colors.outline, size: 22),
                   const SizedBox(width: 8),
                   Expanded(
                     child: Text(
                       _isBn ? 'আমার একটি দোকান আছে' : 'I have a shop',
-                      style: const TextStyle(color: AppColors.textSecondary, fontSize: 13, height: 1.35),
+                      style: TextStyle(color: colors.onSurfaceVariant, fontSize: 13, height: 1.35),
                     ),
                   ),
                 ]),
               ),
               if (_hasShop) ...[
                 const SizedBox(height: 12),
-                labeledField(controller: _shopAddressCtrl, hint: _isBn ? 'দোকানের ঠিকানা' : 'Shop address'),
+                labeledField(colors: colors, controller: _shopAddressCtrl, hint: _isBn ? 'দোকানের ঠিকানা' : 'Shop address'),
                 const SizedBox(height: 10),
                 OutlinedButton.icon(
                   onPressed: _capturingShopLocation ? null : _captureShopLocation,
@@ -633,7 +649,7 @@ class _TechnicianOnboardingScreenState extends State<TechnicianOnboardingScreen>
                   label: Text(_shopLat != null ? (_isBn ? 'অবস্থান যুক্ত হয়েছে' : 'Location captured') : (_isBn ? 'বর্তমান অবস্থান ব্যবহার করুন' : 'Use my current location')),
                 ),
                 const SizedBox(height: 10),
-                uploadRow(
+                uploadRow(colors: colors, 
                   label: _shopTradeLicenseUrl != null ? (_isBn ? 'আপলোড হয়েছে ✓' : 'Uploaded ✓') : (_isBn ? 'দোকানের ট্রেড লাইসেন্স আপলোড করুন' : 'Upload your shop trade license'),
                   uploaded: _shopTradeLicenseUrl != null,
                   loading: _uploadingShopTradeLicense,
@@ -644,6 +660,7 @@ class _TechnicianOnboardingScreenState extends State<TechnicianOnboardingScreen>
           ),
           const SizedBox(height: 14),
           sectionCard(
+            colors: colors,
             title: _isBn ? 'হোম ভিজিট' : 'Home visit',
             child: _yesNoToggle(
               label: _isBn
@@ -657,9 +674,10 @@ class _TechnicianOnboardingScreenState extends State<TechnicianOnboardingScreen>
       case 'INDUSTRIAL':
         return [
           sectionCard(
+            colors: colors,
             title: _isBn ? 'নিরাপত্তা প্রশিক্ষণ' : 'Safety training',
             child: Column(crossAxisAlignment: CrossAxisAlignment.start, children: [
-              uploadRow(
+              uploadRow(colors: colors, 
                 label: _safetyCertificateUrl != null ? (_isBn ? 'আপলোড হয়েছে ✓' : 'Uploaded ✓') : (_isBn ? 'নিরাপত্তা সার্টিফিকেট আপলোড করুন (ঐচ্ছিক)' : 'Upload a safety certificate (optional)'),
                 uploaded: _safetyCertificateUrl != null,
                 loading: _uploadingSafetyCertificate,
@@ -669,12 +687,12 @@ class _TechnicianOnboardingScreenState extends State<TechnicianOnboardingScreen>
               InkWell(
                 onTap: () => setState(() => _hasSafetyTraining = !_hasSafetyTraining),
                 child: Row(crossAxisAlignment: CrossAxisAlignment.start, children: [
-                  Icon(_hasSafetyTraining ? Icons.check_box_rounded : Icons.check_box_outline_blank_rounded, color: _hasSafetyTraining ? AppColors.deepBlue : AppColors.textMuted, size: 22),
+                  Icon(_hasSafetyTraining ? Icons.check_box_rounded : Icons.check_box_outline_blank_rounded, color: _hasSafetyTraining ? colors.primary : colors.outline, size: 22),
                   const SizedBox(width: 8),
                   Expanded(
                     child: Text(
                       _isBn ? 'আমার নিরাপত্তা প্রশিক্ষণ আছে (না থাকলে কমপক্ষে ২ বছর অভিজ্ঞতা প্রয়োজন)' : 'I have safety training (otherwise at least 2 years of experience is required)',
-                      style: const TextStyle(color: AppColors.textSecondary, fontSize: 13, height: 1.35),
+                      style: TextStyle(color: colors.onSurfaceVariant, fontSize: 13, height: 1.35),
                     ),
                   ),
                 ]),

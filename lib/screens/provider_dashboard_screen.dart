@@ -17,7 +17,8 @@ import '../services/commute_service.dart';
 import '../services/dispatch_service.dart';
 import '../services/finance_service.dart';
 import '../services/onboarding_service.dart';
-import '../theme/app_theme.dart';
+import '../theme/app_gradients.dart';
+import '../theme/status_colors.dart';
 import '../widgets/glass_button.dart';
 import '../widgets/glass_card.dart';
 import '../widgets/provider_completeness_gate.dart';
@@ -201,6 +202,7 @@ class _ProviderDashboardScreenState extends State<ProviderDashboardScreen> {
   /// the answer so this only ever interrupts them the first time.
   /// Returns null only if the driver dismissed the picker.
   Future<String?> _resolveDriverVehicleType() async {
+    final colors = Theme.of(context).colorScheme;
     String? stored;
     try {
       final profile = await CommuteService.instance.getMyProfile();
@@ -214,14 +216,14 @@ class _ProviderDashboardScreenState extends State<ProviderDashboardScreen> {
     final picked = await showDialog<String>(
       context: context,
       builder: (ctx) => AlertDialog(
-        backgroundColor: AppColors.bgMid,
+        backgroundColor: colors.surface,
         title: Text(_isBn ? 'আপনি কী চালান?' : 'What do you drive?',
-            style: const TextStyle(color: AppColors.textPrimary, fontSize: 17)),
+            style: TextStyle(color: colors.onSurface, fontSize: 17)),
         content: Text(
           _isBn
               ? 'যাত্রী যে বাহন চান, সেই বাহনের চালকদের কাছেই অনুরোধ যায় — তাই এটা ঠিকভাবে বেছে নেওয়া জরুরি।'
               : 'Ride requests only go to drivers with the vehicle the passenger asked for, so pick accurately.',
-          style: const TextStyle(color: AppColors.textSecondary, fontSize: 13),
+          style: TextStyle(color: colors.onSurfaceVariant, fontSize: 13),
         ),
         actions: [
           for (final type in kRideVehicleTypes)
@@ -229,7 +231,7 @@ class _ProviderDashboardScreenState extends State<ProviderDashboardScreen> {
               onPressed: () => Navigator.pop(ctx, type),
               child: Text(
                 _isBn ? kRideVehicleLabelsBn[type]! : kRideVehicleLabelsEn[type]!,
-                style: const TextStyle(color: AppColors.deepBlue, fontWeight: FontWeight.w700),
+                style: TextStyle(color: colors.primary, fontWeight: FontWeight.w700),
               ),
             ),
         ],
@@ -404,23 +406,24 @@ class _ProviderDashboardScreenState extends State<ProviderDashboardScreen> {
   }
 
   void _showLocationMismatchNotice() {
+    final colors = Theme.of(context).colorScheme;
     showDialog<void>(
       context: context,
       builder: (ctx) => AlertDialog(
-        backgroundColor: AppColors.bgMid,
+        backgroundColor: colors.surface,
         title: Text(_isBn ? 'অবস্থান নিশ্চিত করুন' : 'Confirm your location',
-            style: const TextStyle(color: AppColors.textPrimary)),
+            style: TextStyle(color: colors.onSurface)),
         content: Text(
           _isBn
               ? 'আপনার বর্তমান অবস্থান আপনার রেজিস্টার্ড ঠিকানা থেকে অনেক দূরে মনে হচ্ছে। আপনি কি নিশ্চিত আপনি এখন এখানে আছেন?'
               : 'Your current location looks far from your registered address. Are you sure you\'re here right now?',
-          style: const TextStyle(color: AppColors.textMuted),
+          style: TextStyle(color: colors.outline),
         ),
         actions: [
           TextButton(
             onPressed: () => Navigator.pop(ctx),
             child: Text(_isBn ? 'হ্যাঁ, ঠিক আছে' : 'Yes, that\'s correct',
-                style: const TextStyle(color: AppColors.deepBlue)),
+                style: TextStyle(color: colors.primary)),
           ),
         ],
       ),
@@ -431,32 +434,33 @@ class _ProviderDashboardScreenState extends State<ProviderDashboardScreen> {
   /// state the actionable backend message, then a one-tap button straight into the screen
   /// that fixes it (GenderScreen), instead of leaving the provider to hunt for a settings menu.
   void _showGenderRequiredDialog(AppException ex) {
+    final colors = Theme.of(context).colorScheme;
     showDialog(
       context: context,
       builder: (ctx) => AlertDialog(
-        backgroundColor: AppColors.bgMid,
+        backgroundColor: colors.surface,
         shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(20)),
         title: Row(children: [
           const Icon(Icons.wc_rounded, color: Color(0xFFF59E0B), size: 24),
           const SizedBox(width: 10),
           Expanded(
             child: Text(_isBn ? 'Gender সেট করা প্রয়োজন' : 'Gender required',
-                style: const TextStyle(
-                    color: AppColors.textPrimary,
+                style: TextStyle(
+                    color: colors.onSurface,
                     fontSize: 17,
                     fontWeight: FontWeight.w700)),
           ),
         ]),
         content: Text(
           ex.localized(_isBn),
-          style: const TextStyle(
-              color: AppColors.textSecondary, fontSize: 13.5, height: 1.5),
+          style: TextStyle(
+              color: colors.onSurfaceVariant, fontSize: 13.5, height: 1.5),
         ),
         actions: [
           TextButton(
             onPressed: () => Navigator.pop(ctx),
             child: Text(_isBn ? 'বাতিল' : 'Cancel',
-                style: const TextStyle(color: AppColors.textMuted)),
+                style: TextStyle(color: colors.outline)),
           ),
           ElevatedButton.icon(
             onPressed: () {
@@ -467,7 +471,7 @@ class _ProviderDashboardScreenState extends State<ProviderDashboardScreen> {
             icon: const Icon(Icons.arrow_forward_rounded, size: 18),
             label: Text(_isBn ? 'Gender সেট করুন' : 'Set gender'),
             style: ElevatedButton.styleFrom(
-              backgroundColor: AppColors.deepBlue,
+              backgroundColor: colors.primary,
               foregroundColor: Colors.white,
               shape: RoundedRectangleBorder(
                   borderRadius: BorderRadius.circular(10)),
@@ -785,10 +789,11 @@ class _ProviderDashboardScreenState extends State<ProviderDashboardScreen> {
   /// button straight into the Meet app/browser (see core/utils/meet_link.dart)
   /// alongside the copy fallback.
   void _showMeetLinkDialog(JobModel job, String meetLink) {
+    final colors = Theme.of(context).colorScheme;
     showDialog(
       context: context,
       builder: (ctx) => AlertDialog(
-        backgroundColor: AppColors.bgMid,
+        backgroundColor: colors.surface,
         shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(20)),
         title: Row(children: [
           const Icon(Icons.videocam_rounded,
@@ -797,8 +802,8 @@ class _ProviderDashboardScreenState extends State<ProviderDashboardScreen> {
           Expanded(
             child: Text(
                 _isBn ? 'পরামর্শ গৃহীত হয়েছে' : 'Consultation accepted',
-                style: const TextStyle(
-                    color: AppColors.textPrimary,
+                style: TextStyle(
+                    color: colors.onSurface,
                     fontSize: 17,
                     fontWeight: FontWeight.w700)),
           ),
@@ -811,22 +816,22 @@ class _ProviderDashboardScreenState extends State<ProviderDashboardScreen> {
               _isBn
                   ? '${job.customerNameSnapshot ?? 'গ্রাহক'} ভিডিও কলে যুক্ত হবেন।'
                   : '${job.customerNameSnapshot ?? 'The customer'} will join the video call.',
-              style: const TextStyle(
-                  color: AppColors.textSecondary, fontSize: 13.5, height: 1.5),
+              style: TextStyle(
+                  color: colors.onSurfaceVariant, fontSize: 13.5, height: 1.5),
             ),
             const SizedBox(height: 14),
             Container(
               width: double.infinity,
               padding: const EdgeInsets.all(12),
               decoration: BoxDecoration(
-                color: AppColors.deepBlue.withOpacity(0.07),
+                color: colors.primary.withOpacity(0.07),
                 borderRadius: BorderRadius.circular(12),
-                border: Border.all(color: AppColors.deepBlue.withOpacity(0.35)),
+                border: Border.all(color: colors.primary.withOpacity(0.35)),
               ),
               child: SelectableText(
                 meetLink,
                 style:
-                    const TextStyle(color: AppColors.textPrimary, fontSize: 13),
+                    TextStyle(color: colors.onSurface, fontSize: 13),
               ),
             ),
             const SizedBox(height: 14),
@@ -837,7 +842,7 @@ class _ProviderDashboardScreenState extends State<ProviderDashboardScreen> {
                 icon: const Icon(Icons.videocam_rounded, size: 18),
                 label: Text(_isBn ? 'মিটিং এ যোগ দিন' : 'Join Meeting'),
                 style: ElevatedButton.styleFrom(
-                  backgroundColor: AppColors.deepBlue,
+                  backgroundColor: colors.primary,
                   foregroundColor: Colors.white,
                   padding: const EdgeInsets.symmetric(vertical: 12),
                   shape: RoundedRectangleBorder(
@@ -853,16 +858,16 @@ class _ProviderDashboardScreenState extends State<ProviderDashboardScreen> {
               Clipboard.setData(ClipboardData(text: meetLink));
               _showInfo(_isBn ? 'লিংক কপি হয়েছে' : 'Link copied');
             },
-            icon: const Icon(Icons.copy_rounded,
-                color: AppColors.deepBlue, size: 18),
+            icon: Icon(Icons.copy_rounded,
+                color: colors.primary, size: 18),
             label: Text(_isBn ? 'কপি করুন' : 'Copy',
-                style: const TextStyle(
-                    color: AppColors.deepBlue, fontWeight: FontWeight.w700)),
+                style: TextStyle(
+                    color: colors.primary, fontWeight: FontWeight.w700)),
           ),
           TextButton(
             onPressed: () => Navigator.pop(ctx),
             child: Text(_isBn ? 'ঠিক আছে' : 'OK',
-                style: const TextStyle(color: AppColors.textMuted)),
+                style: TextStyle(color: colors.outline)),
           ),
         ],
       ),
@@ -884,14 +889,15 @@ class _ProviderDashboardScreenState extends State<ProviderDashboardScreen> {
   }
 
   Widget _buildHeader() {
+    final colors = Theme.of(context).colorScheme;
     return Padding(
       padding: const EdgeInsets.fromLTRB(20, 16, 20, 0),
       child: Row(
         children: [
           Text(
             _isBn ? 'প্রোভাইডার' : 'Provider',
-            style: const TextStyle(
-                color: AppColors.textPrimary,
+            style: TextStyle(
+                color: colors.onSurface,
                 fontSize: 18,
                 fontWeight: FontWeight.w700),
           ),
@@ -904,11 +910,11 @@ class _ProviderDashboardScreenState extends State<ProviderDashboardScreen> {
               duration: const Duration(milliseconds: 300),
               padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 9),
               decoration: BoxDecoration(
-                gradient: _isOnline ? AppColors.blueGradient : null,
-                color: _isOnline ? null : AppColors.glassWhite,
+                gradient: _isOnline ? AppGradients.primary(colors) : null,
+                color: _isOnline ? null : colors.surface,
                 borderRadius: BorderRadius.circular(20),
                 border:
-                    _isOnline ? null : Border.all(color: AppColors.glassBorder),
+                    _isOnline ? null : Border.all(color: colors.outlineVariant),
               ),
               child: (_togglingOnline || _checkingOnlineStatus)
                   ? SizedBox(
@@ -916,7 +922,7 @@ class _ProviderDashboardScreenState extends State<ProviderDashboardScreen> {
                       height: 16,
                       child: CircularProgressIndicator(
                           strokeWidth: 2,
-                          color: _isOnline ? Colors.white : AppColors.deepBlue),
+                          color: _isOnline ? Colors.white : colors.primary),
                     )
                   : Row(
                       mainAxisSize: MainAxisSize.min,
@@ -927,7 +933,7 @@ class _ProviderDashboardScreenState extends State<ProviderDashboardScreen> {
                           decoration: BoxDecoration(
                             color: _isOnline
                                 ? const Color(0xFF4ADE80)
-                                : AppColors.textMuted,
+                                : colors.outline,
                             shape: BoxShape.circle,
                           ),
                         ),
@@ -941,7 +947,7 @@ class _ProviderDashboardScreenState extends State<ProviderDashboardScreen> {
                             style: TextStyle(
                               color: _isOnline
                                   ? Colors.white
-                                  : AppColors.textMuted,
+                                  : colors.outline,
                               fontSize: 13,
                               fontWeight: FontWeight.w600,
                             ),
@@ -957,6 +963,7 @@ class _ProviderDashboardScreenState extends State<ProviderDashboardScreen> {
   }
 
   Widget _buildTabBar() {
+    final colors = Theme.of(context).colorScheme;
     final tabs = _isBn
         ? const ['ড্যাশবোর্ড', 'আয়', 'ইতিহাস']
         : const ['Dashboard', 'Earnings', 'History'];
@@ -973,18 +980,18 @@ class _ProviderDashboardScreenState extends State<ProviderDashboardScreen> {
                 margin: EdgeInsets.only(right: i < tabs.length - 1 ? 8 : 0),
                 padding: const EdgeInsets.symmetric(vertical: 10),
                 decoration: BoxDecoration(
-                  gradient: isSelected ? AppColors.blueGradient : null,
-                  color: isSelected ? null : AppColors.glassWhite,
+                  gradient: isSelected ? AppGradients.primary(colors) : null,
+                  color: isSelected ? null : colors.surface,
                   borderRadius: BorderRadius.circular(10),
                   border: isSelected
                       ? null
-                      : Border.all(color: AppColors.glassBorder),
+                      : Border.all(color: colors.outlineVariant),
                 ),
                 child: Center(
                   child: Text(
                     tabs[i],
                     style: TextStyle(
-                      color: isSelected ? Colors.white : AppColors.textMuted,
+                      color: isSelected ? Colors.white : colors.outline,
                       fontSize: 13,
                       fontWeight: FontWeight.w600,
                     ),
@@ -1013,6 +1020,7 @@ class _ProviderDashboardScreenState extends State<ProviderDashboardScreen> {
 
   // Warns the provider about red cards / temp-ban / unpaid dues that block new jobs.
   Widget _buildStandingBanner() {
+    final colors = Theme.of(context).colorScheme;
     final s = _standing;
     if (s == null || s.isClean) return const SizedBox.shrink();
 
@@ -1076,8 +1084,8 @@ class _ProviderDashboardScreenState extends State<ProviderDashboardScreen> {
                           fontWeight: FontWeight.w700)),
                   const SizedBox(height: 3),
                   Text(body,
-                      style: const TextStyle(
-                          color: AppColors.textSecondary,
+                      style: TextStyle(
+                          color: colors.onSurfaceVariant,
                           fontSize: 12.5,
                           height: 1.45)),
                 ],
@@ -1116,8 +1124,9 @@ class _ProviderDashboardScreenState extends State<ProviderDashboardScreen> {
   // Name + rating + level in one glance — this data (dispatchAvgRating, level, totalCompleted)
   // was already coming back from GET /dispatch/me/standing but nothing on this screen showed it.
   Widget _buildProfileStrip() {
+    final colors = Theme.of(context).colorScheme;
     final s = _standing;
-    final levelColor = _levelColors[s?.level] ?? AppColors.textMuted;
+    final levelColor = _levelColors[s?.level] ?? colors.outline;
     return Padding(
       padding: const EdgeInsets.only(bottom: 12),
       child: Row(
@@ -1126,7 +1135,7 @@ class _ProviderDashboardScreenState extends State<ProviderDashboardScreen> {
             width: 44,
             height: 44,
             decoration: BoxDecoration(
-              gradient: AppColors.blueGradient,
+              gradient: AppGradients.primary(colors),
               shape: BoxShape.circle,
               image: (_profilePhotoUrl?.isNotEmpty ?? false)
                   ? DecorationImage(
@@ -1152,8 +1161,8 @@ class _ProviderDashboardScreenState extends State<ProviderDashboardScreen> {
               crossAxisAlignment: CrossAxisAlignment.start,
               children: [
                 Text(_providerName ?? (_isBn ? 'প্রোভাইডার' : 'Provider'),
-                    style: const TextStyle(
-                        color: AppColors.textPrimary,
+                    style: TextStyle(
+                        color: colors.onSurface,
                         fontSize: 15,
                         fontWeight: FontWeight.w700),
                     overflow: TextOverflow.ellipsis),
@@ -1166,8 +1175,8 @@ class _ProviderDashboardScreenState extends State<ProviderDashboardScreen> {
                       const SizedBox(width: 3),
                       Text(
                         s!.dispatchAvgRating!.toStringAsFixed(2),
-                        style: const TextStyle(
-                            color: AppColors.textSecondary,
+                        style: TextStyle(
+                            color: colors.onSurfaceVariant,
                             fontSize: 12,
                             fontWeight: FontWeight.w700),
                       ),
@@ -1176,12 +1185,12 @@ class _ProviderDashboardScreenState extends State<ProviderDashboardScreen> {
                         padding: const EdgeInsets.symmetric(
                             horizontal: 8, vertical: 2),
                         decoration: BoxDecoration(
-                          color: AppColors.deepBlue.withOpacity(0.1),
+                          color: colors.primary.withOpacity(0.1),
                           borderRadius: BorderRadius.circular(6),
                         ),
                         child: Text(_isBn ? 'নতুন' : 'New',
-                            style: const TextStyle(
-                                color: AppColors.deepBlue,
+                            style: TextStyle(
+                                color: colors.primary,
                                 fontSize: 10,
                                 fontWeight: FontWeight.w700)),
                       ),
@@ -1211,8 +1220,8 @@ class _ProviderDashboardScreenState extends State<ProviderDashboardScreen> {
                           _isBn
                               ? 'মোট ${s.totalCompleted}টি কাজ'
                               : 'Total ${s.totalCompleted} jobs',
-                          style: const TextStyle(
-                              color: AppColors.textMuted, fontSize: 11)),
+                          style: TextStyle(
+                              color: colors.outline, fontSize: 11)),
                     ],
                   ],
                 ),
@@ -1225,8 +1234,8 @@ class _ProviderDashboardScreenState extends State<ProviderDashboardScreen> {
             IconButton(
               onPressed: () => Navigator.push(context,
                   MaterialPageRoute(builder: (_) => const GenderScreen())),
-              icon: const Icon(Icons.wc_rounded,
-                  color: AppColors.textMuted, size: 20),
+              icon: Icon(Icons.wc_rounded,
+                  color: colors.outline, size: 20),
               tooltip: _isBn ? 'Gender' : 'Gender',
             ),
         ],
@@ -1263,19 +1272,20 @@ class _ProviderDashboardScreenState extends State<ProviderDashboardScreen> {
   // Each tile is tappable and goes somewhere real — a stat that looks like a card but does
   // nothing on tap reads as broken.
   Widget _buildStatsRow() {
+    final colors = Theme.of(context).colorScheme;
     final rating = _standing?.dispatchAvgRating;
     final pendingCount = _offers.length;
     final tiles = <(String, String, Color, VoidCallback)>[
       (
         _isBn ? 'মোট আয়' : 'Total Income',
         '৳${(_wallet?.lifetimeEarnings ?? 0).toStringAsFixed(0)}',
-        AppColors.deepBlue,
+        colors.primary,
         () => setState(() => _tab = 1), // আয় tab
       ),
       (
         _isBn ? 'সম্পন্ন কাজ' : 'Completed',
         '${_standing?.totalCompleted ?? 0}',
-        AppColors.softBlue,
+        StatusColors.blue,
         () => setState(() => _tab = 2), // ইতিহাস tab
       ),
       (
@@ -1283,13 +1293,13 @@ class _ProviderDashboardScreenState extends State<ProviderDashboardScreen> {
         rating != null
             ? '⭐ ${rating.toStringAsFixed(1)}'
             : (_isBn ? 'নতুন' : 'New'),
-        AppColors.softAmber,
+        StatusColors.amber,
         () => _scrollToSection(_reviewsKey),
       ),
       (
         _isBn ? 'পেন্ডিং কাজ' : 'Pending',
         '$pendingCount',
-        pendingCount > 0 ? AppColors.softRed : AppColors.textMuted,
+        pendingCount > 0 ? colors.error : colors.outline,
         () => _scrollToSection(_offersKey),
       ),
     ];
@@ -1301,7 +1311,7 @@ class _ProviderDashboardScreenState extends State<ProviderDashboardScreen> {
           child: Container(
             margin: EdgeInsets.only(right: isLast ? 0 : 8),
             child: Material(
-              color: AppColors.glassWhite,
+              color: colors.surface,
               borderRadius: BorderRadius.circular(14),
               child: InkWell(
                 onTap: onTap,
@@ -1311,7 +1321,7 @@ class _ProviderDashboardScreenState extends State<ProviderDashboardScreen> {
                       const EdgeInsets.symmetric(vertical: 12, horizontal: 6),
                   decoration: BoxDecoration(
                     borderRadius: BorderRadius.circular(14),
-                    border: Border.all(color: AppColors.glassBorder),
+                    border: Border.all(color: colors.outlineVariant),
                   ),
                   child: Column(
                     children: [
@@ -1323,8 +1333,8 @@ class _ProviderDashboardScreenState extends State<ProviderDashboardScreen> {
                       const SizedBox(height: 3),
                       Text(label,
                           textAlign: TextAlign.center,
-                          style: const TextStyle(
-                              color: AppColors.textMuted,
+                          style: TextStyle(
+                              color: colors.outline,
                               fontSize: 10,
                               fontWeight: FontWeight.w600)),
                     ],
@@ -1377,13 +1387,14 @@ class _ProviderDashboardScreenState extends State<ProviderDashboardScreen> {
 
   void _showProfileCompletionSheet(
       List<(String, IconData, VoidCallback)> gaps) {
+    final colors = Theme.of(context).colorScheme;
     showModalBottomSheet(
       context: context,
       backgroundColor: Colors.transparent,
       builder: (ctx) => Container(
         padding: const EdgeInsets.all(20),
-        decoration: const BoxDecoration(
-          color: AppColors.bgMid,
+        decoration: BoxDecoration(
+          color: colors.surface,
           borderRadius: BorderRadius.vertical(top: Radius.circular(20)),
         ),
         child: Column(
@@ -1394,8 +1405,8 @@ class _ProviderDashboardScreenState extends State<ProviderDashboardScreen> {
                 _isBn
                     ? 'প্রোফাইল সম্পূর্ণ করতে যা বাকি'
                     : 'What\'s left to complete your profile',
-                style: const TextStyle(
-                    color: AppColors.textPrimary,
+                style: TextStyle(
+                    color: colors.onSurface,
                     fontSize: 15,
                     fontWeight: FontWeight.w700)),
             const SizedBox(height: 14),
@@ -1413,17 +1424,17 @@ class _ProviderDashboardScreenState extends State<ProviderDashboardScreen> {
                         horizontal: 14, vertical: 12),
                     child: Row(
                       children: [
-                        Icon(icon, color: AppColors.deepBlue, size: 20),
+                        Icon(icon, color: colors.primary, size: 20),
                         const SizedBox(width: 12),
                         Expanded(
                           child: Text(label,
-                              style: const TextStyle(
-                                  color: AppColors.textPrimary,
+                              style: TextStyle(
+                                  color: colors.onSurface,
                                   fontSize: 13.5,
                                   fontWeight: FontWeight.w600)),
                         ),
-                        const Icon(Icons.arrow_forward_rounded,
-                            color: AppColors.textMuted, size: 16),
+                        Icon(Icons.arrow_forward_rounded,
+                            color: colors.outline, size: 16),
                       ],
                     ),
                   ),
@@ -1439,6 +1450,7 @@ class _ProviderDashboardScreenState extends State<ProviderDashboardScreen> {
   // Profile-completion nudge — only counts criteria applicable to this provider (e.g. NID
   // isn't asked of a non-dispatch/matchmaking provider, portfolio isn't asked of a technician).
   Widget _buildProfileCompletion() {
+    final colors = Theme.of(context).colorScheme;
     final needsNid = _isDispatchProvider || _isMatchmakingProvider;
     final criteria = <bool>[
       _profilePhotoUrl?.isNotEmpty ?? false,
@@ -1467,14 +1479,14 @@ class _ProviderDashboardScreenState extends State<ProviderDashboardScreen> {
                       _isBn
                           ? 'প্রোফাইল $pct% সম্পূর্ণ'
                           : 'Profile $pct% complete',
-                      style: const TextStyle(
-                          color: AppColors.textPrimary,
+                      style: TextStyle(
+                          color: colors.onSurface,
                           fontSize: 13,
                           fontWeight: FontWeight.w700),
                     ),
                   ),
-                  const Icon(Icons.arrow_forward_rounded,
-                      color: AppColors.deepBlue, size: 16),
+                  Icon(Icons.arrow_forward_rounded,
+                      color: colors.primary, size: 16),
                 ],
               ),
               const SizedBox(height: 8),
@@ -1483,8 +1495,8 @@ class _ProviderDashboardScreenState extends State<ProviderDashboardScreen> {
                 child: LinearProgressIndicator(
                   value: done / criteria.length,
                   minHeight: 6,
-                  backgroundColor: AppColors.glassBorder,
-                  valueColor: const AlwaysStoppedAnimation(AppColors.deepBlue),
+                  backgroundColor: colors.outlineVariant,
+                  valueColor: AlwaysStoppedAnimation(colors.primary),
                 ),
               ),
             ],
@@ -1510,6 +1522,7 @@ class _ProviderDashboardScreenState extends State<ProviderDashboardScreen> {
   }
 
   Widget _buildTodayEarningsCard() {
+    final colors = Theme.of(context).colorScheme;
     final days = _last7DaysEarnings;
     final maxDay = days.fold(0.0, (m, v) => v > m ? v : m);
     return Padding(
@@ -1517,7 +1530,7 @@ class _ProviderDashboardScreenState extends State<ProviderDashboardScreen> {
       child: Container(
         padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 14),
         decoration: BoxDecoration(
-          gradient: AppColors.blueGradient,
+          gradient: AppGradients.primary(colors),
           borderRadius: BorderRadius.circular(16),
         ),
         child: Column(
@@ -1617,6 +1630,7 @@ class _ProviderDashboardScreenState extends State<ProviderDashboardScreen> {
   /// mean leaving the dashboard for Profile → "Teach a Course" — the authoring screen was
   /// never linked from here at all, so nothing about teaching was visible on this screen.
   Widget _buildMyCoursesCard() {
+    final colors = Theme.of(context).colorScheme;
     if (!_isInstructor) return const SizedBox.shrink();
 
     final published = _myCourses.where((c) => c.status == 'published').length;
@@ -1627,14 +1641,14 @@ class _ProviderDashboardScreenState extends State<ProviderDashboardScreen> {
     Widget stat(String value, String label) => Expanded(
           child: Column(children: [
             Text(value,
-                style: const TextStyle(
-                    color: AppColors.textPrimary,
+                style: TextStyle(
+                    color: colors.onSurface,
                     fontSize: 17,
                     fontWeight: FontWeight.w800)),
             const SizedBox(height: 2),
             Text(label,
                 textAlign: TextAlign.center,
-                style: const TextStyle(color: AppColors.textMuted, fontSize: 11)),
+                style: TextStyle(color: colors.outline, fontSize: 11)),
           ]),
         );
 
@@ -1648,25 +1662,25 @@ class _ProviderDashboardScreenState extends State<ProviderDashboardScreen> {
           padding: const EdgeInsets.all(16),
           child: Column(crossAxisAlignment: CrossAxisAlignment.start, children: [
             Row(children: [
-              const Icon(Icons.cast_for_education_rounded,
-                  color: AppColors.deepBlue, size: 18),
+              Icon(Icons.cast_for_education_rounded,
+                  color: colors.primary, size: 18),
               const SizedBox(width: 8),
               Expanded(
                 child: Text(_isBn ? 'আমার কোর্স' : 'My courses',
-                    style: const TextStyle(
-                        color: AppColors.textPrimary,
+                    style: TextStyle(
+                        color: colors.onSurface,
                         fontSize: 14,
                         fontWeight: FontWeight.w700)),
               ),
               if (_loadingCourses)
-                const SizedBox(
+                SizedBox(
                     width: 14,
                     height: 14,
                     child: CircularProgressIndicator(
-                        strokeWidth: 2, color: AppColors.textMuted))
+                        strokeWidth: 2, color: colors.outline))
               else
-                const Icon(Icons.chevron_right_rounded,
-                    color: AppColors.textMuted, size: 18),
+                Icon(Icons.chevron_right_rounded,
+                    color: colors.outline, size: 18),
             ]),
             const SizedBox(height: 14),
             if (_myCourses.isEmpty && !_loadingCourses)
@@ -1674,7 +1688,7 @@ class _ProviderDashboardScreenState extends State<ProviderDashboardScreen> {
                 _isBn
                     ? 'এখনো কোনো কোর্স নেই — এখানে চেপে প্রথমটি বানান'
                     : 'No courses yet — tap here to make your first',
-                style: const TextStyle(color: AppColors.textMuted, fontSize: 12.5),
+                style: TextStyle(color: colors.outline, fontSize: 12.5),
               )
             else
               Row(children: [
@@ -1709,33 +1723,34 @@ class _ProviderDashboardScreenState extends State<ProviderDashboardScreen> {
   }
 
   Future<void> _redeemCoupon() async {
+    final colors = Theme.of(context).colorScheme;
     final ctrl = TextEditingController();
     final code = await showDialog<String>(
       context: context,
       builder: (ctx) => AlertDialog(
-        backgroundColor: AppColors.bgMid,
+        backgroundColor: colors.surface,
         title: Text(_isBn ? 'কুপন কোড' : 'Coupon code',
-            style: const TextStyle(color: AppColors.textPrimary, fontSize: 17)),
+            style: TextStyle(color: colors.onSurface, fontSize: 17)),
         content: TextField(
           controller: ctrl,
           autofocus: true,
           textCapitalization: TextCapitalization.characters,
-          style: const TextStyle(color: AppColors.textPrimary),
+          style: TextStyle(color: colors.onSurface),
           decoration: InputDecoration(
             hintText: _isBn ? 'যেমন RIDE2026' : 'e.g. RIDE2026',
-            hintStyle: const TextStyle(color: AppColors.textMuted),
+            hintStyle: TextStyle(color: colors.outline),
           ),
         ),
         actions: [
           TextButton(
               onPressed: () => Navigator.pop(ctx),
               child: Text(_isBn ? 'বাতিল' : 'Cancel',
-                  style: const TextStyle(color: AppColors.textMuted))),
+                  style: TextStyle(color: colors.outline))),
           TextButton(
               onPressed: () => Navigator.pop(ctx, ctrl.text.trim()),
               child: Text(_isBn ? 'প্রয়োগ করুন' : 'Apply',
-                  style: const TextStyle(
-                      color: AppColors.deepBlue, fontWeight: FontWeight.w700))),
+                  style: TextStyle(
+                      color: colors.primary, fontWeight: FontWeight.w700))),
         ],
       ),
     );
@@ -1750,29 +1765,30 @@ class _ProviderDashboardScreenState extends State<ProviderDashboardScreen> {
   }
 
   Future<void> _buyDayPass() async {
+    final colors = Theme.of(context).colorScheme;
     final fee = _rideCommission?['dayPassFee'];
     final ok = await showDialog<bool>(
       context: context,
       builder: (ctx) => AlertDialog(
-        backgroundColor: AppColors.bgMid,
+        backgroundColor: colors.surface,
         title: Text(_isBn ? 'আজকের পাস কিনবেন?' : 'Buy a day pass?',
-            style: const TextStyle(color: AppColors.textPrimary, fontSize: 17)),
+            style: TextStyle(color: colors.onSurface, fontSize: 17)),
         content: Text(
           _isBn
               ? 'আজ সারাদিনের সব রাইডে কোনো কমিশন কাটা হবে না। খরচ ৳$fee।'
               : 'No commission on any ride today. It costs ৳$fee.',
-          style: const TextStyle(color: AppColors.textSecondary, fontSize: 13),
+          style: TextStyle(color: colors.onSurfaceVariant, fontSize: 13),
         ),
         actions: [
           TextButton(
               onPressed: () => Navigator.pop(ctx, false),
               child: Text(_isBn ? 'না' : 'No',
-                  style: const TextStyle(color: AppColors.textMuted))),
+                  style: TextStyle(color: colors.outline))),
           TextButton(
               onPressed: () => Navigator.pop(ctx, true),
               child: Text(_isBn ? 'কিনুন' : 'Buy',
-                  style: const TextStyle(
-                      color: AppColors.deepBlue, fontWeight: FontWeight.w700))),
+                  style: TextStyle(
+                      color: colors.primary, fontWeight: FontWeight.w700))),
         ],
       ),
     );
@@ -1789,6 +1805,7 @@ class _ProviderDashboardScreenState extends State<ProviderDashboardScreen> {
   /// A rule nobody can see is a rule nobody rides differently for, so this shows the rate,
   /// the reason behind it, and exactly how far the next break is.
   Widget _buildRideCommissionCard() {
+    final colors = Theme.of(context).colorScheme;
     final c = _rideCommission;
     if (!_isDriver || c == null) return const SizedBox.shrink();
 
@@ -1805,23 +1822,23 @@ class _ProviderDashboardScreenState extends State<ProviderDashboardScreen> {
         padding: const EdgeInsets.all(16),
         child: Column(crossAxisAlignment: CrossAxisAlignment.start, children: [
           Row(children: [
-            const Icon(Icons.percent_rounded, color: AppColors.deepBlue, size: 18),
+            Icon(Icons.percent_rounded, color: colors.primary, size: 18),
             const SizedBox(width: 8),
             Expanded(
               child: Text(_isBn ? 'আপনার রাইড কমিশন' : 'Your ride commission',
-                  style: const TextStyle(
-                      color: AppColors.textPrimary,
+                  style: TextStyle(
+                      color: colors.onSurface,
                       fontSize: 14,
                       fontWeight: FontWeight.w700)),
             ),
             Text('${rate.toStringAsFixed(rate % 1 == 0 ? 0 : 1)}%',
                 style: TextStyle(
-                    color: rate == 0 ? const Color(0xFF10B981) : AppColors.deepBlue,
+                    color: rate == 0 ? const Color(0xFF10B981) : colors.primary,
                     fontSize: 20,
                     fontWeight: FontWeight.w800)),
           ]),
           const SizedBox(height: 4),
-          Text(reason, style: const TextStyle(color: AppColors.textMuted, fontSize: 12)),
+          Text(reason, style: TextStyle(color: colors.outline, fontSize: 12)),
           if (!hasPass && daysLeft > 0) ...[
             const SizedBox(height: 10),
             Text(
@@ -1838,9 +1855,9 @@ class _ProviderDashboardScreenState extends State<ProviderDashboardScreen> {
                 child: OutlinedButton(
                   onPressed: _redeemCoupon,
                   style: OutlinedButton.styleFrom(
-                      side: const BorderSide(color: AppColors.deepBlue)),
+                      side: BorderSide(color: colors.primary)),
                   child: Text(_isBn ? 'কুপন আছে' : 'I have a coupon',
-                      style: const TextStyle(color: AppColors.deepBlue, fontSize: 12)),
+                      style: TextStyle(color: colors.primary, fontSize: 12)),
                 ),
               ),
             if (!hasCoupon && !hasPass) const SizedBox(width: 8),
@@ -1849,10 +1866,10 @@ class _ProviderDashboardScreenState extends State<ProviderDashboardScreen> {
                 child: OutlinedButton(
                   onPressed: _buyDayPass,
                   style: OutlinedButton.styleFrom(
-                      side: const BorderSide(color: AppColors.glassBorder)),
+                      side: BorderSide(color: colors.outlineVariant)),
                   child: Text(_isBn ? 'আজকের পাস ৳$fee' : 'Day pass ৳$fee',
-                      style: const TextStyle(
-                          color: AppColors.textSecondary, fontSize: 12)),
+                      style: TextStyle(
+                          color: colors.onSurfaceVariant, fontSize: 12)),
                 ),
               ),
           ]),
@@ -1862,6 +1879,7 @@ class _ProviderDashboardScreenState extends State<ProviderDashboardScreen> {
   }
 
   Widget _buildDashboardTab() {
+    final colors = Theme.of(context).colorScheme;
     return SingleChildScrollView(
       padding: const EdgeInsets.all(16),
       child: Column(
@@ -1875,14 +1893,14 @@ class _ProviderDashboardScreenState extends State<ProviderDashboardScreen> {
           _buildMyCoursesCard(),
           _buildStandingBanner(),
           if (_checkingOnlineStatus)
-            const Padding(
+            Padding(
               padding: EdgeInsets.symmetric(vertical: 24),
               child: Center(
                 child: SizedBox(
                     width: 24,
                     height: 24,
                     child: CircularProgressIndicator(
-                        strokeWidth: 2.5, color: AppColors.deepBlue)),
+                        strokeWidth: 2.5, color: colors.primary)),
               ),
             )
           else if (!_isOnline)
@@ -1896,25 +1914,25 @@ class _ProviderDashboardScreenState extends State<ProviderDashboardScreen> {
                       width: 64,
                       height: 64,
                       decoration: BoxDecoration(
-                          color: AppColors.glassWhite,
+                          color: colors.surface,
                           shape: BoxShape.circle,
-                          border: Border.all(color: AppColors.glassBorder)),
+                          border: Border.all(color: colors.outlineVariant)),
                       child: _togglingOnline
-                          ? const Padding(
+                          ? Padding(
                               padding: EdgeInsets.all(18),
                               child: CircularProgressIndicator(
-                                  strokeWidth: 2.5, color: AppColors.deepBlue),
+                                  strokeWidth: 2.5, color: colors.primary),
                             )
-                          : const Icon(Icons.power_settings_new_rounded,
-                              color: AppColors.textMuted, size: 32),
+                          : Icon(Icons.power_settings_new_rounded,
+                              color: colors.outline, size: 32),
                     ),
                     const SizedBox(height: 16),
                     Text(
                         _togglingOnline
                             ? (_isBn ? 'সংযোগ হচ্ছে…' : 'Connecting…')
                             : (_isBn ? 'অফলাইনে আছেন' : 'You are offline'),
-                        style: const TextStyle(
-                            color: AppColors.textPrimary,
+                        style: TextStyle(
+                            color: colors.onSurface,
                             fontSize: 16,
                             fontWeight: FontWeight.w600)),
                     const SizedBox(height: 6),
@@ -1922,8 +1940,8 @@ class _ProviderDashboardScreenState extends State<ProviderDashboardScreen> {
                         _isBn
                             ? 'কাজ পেতে এখানে ট্যাপ করুন'
                             : 'Tap here to receive jobs',
-                        style: const TextStyle(
-                            color: AppColors.textMuted, fontSize: 13)),
+                        style: TextStyle(
+                            color: colors.outline, fontSize: 13)),
                   ],
                 ),
               ),
@@ -1949,13 +1967,14 @@ class _ProviderDashboardScreenState extends State<ProviderDashboardScreen> {
   // offer as an actionable card (same accept/reject path as the ring-popup, via
   // _respondToOffer), falling back to a compact one-line empty state when there are none.
   Widget _buildJobRequestsSection() {
+    final colors = Theme.of(context).colorScheme;
     if (_offers.isEmpty) {
       return GlassCard(
         padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 16),
         child: Row(
           children: [
-            const Icon(Icons.search_rounded,
-                color: AppColors.textMuted, size: 22),
+            Icon(Icons.search_rounded,
+                color: colors.outline, size: 22),
             const SizedBox(width: 12),
             Expanded(
               child: Column(
@@ -1965,8 +1984,8 @@ class _ProviderDashboardScreenState extends State<ProviderDashboardScreen> {
                     _isBn
                         ? 'এই মুহূর্তে কোনো নতুন অনুরোধ নেই'
                         : 'No new requests right now',
-                    style: const TextStyle(
-                        color: AppColors.textPrimary,
+                    style: TextStyle(
+                        color: colors.onSurface,
                         fontSize: 14,
                         fontWeight: FontWeight.w600),
                   ),
@@ -1976,8 +1995,8 @@ class _ProviderDashboardScreenState extends State<ProviderDashboardScreen> {
                       _isBn
                           ? 'গত ৭ দিনে ${_standing!.weeklyCompleted}টি কাজ সম্পন্ন করেছেন'
                           : 'You completed ${_standing!.weeklyCompleted} job(s) in the last 7 days',
-                      style: const TextStyle(
-                          color: AppColors.textMuted, fontSize: 12),
+                      style: TextStyle(
+                          color: colors.outline, fontSize: 12),
                     ),
                   ],
                 ],
@@ -1992,8 +2011,8 @@ class _ProviderDashboardScreenState extends State<ProviderDashboardScreen> {
       children: [
         Text(
           _isBn ? 'নতুন কাজের অনুরোধ' : 'New Job Requests',
-          style: const TextStyle(
-              color: AppColors.textMuted,
+          style: TextStyle(
+              color: colors.outline,
               fontSize: 12,
               fontWeight: FontWeight.w700,
               letterSpacing: 0.8),
@@ -2063,6 +2082,7 @@ class _ProviderDashboardScreenState extends State<ProviderDashboardScreen> {
   }
 
   Widget _buildOfferCard(JobOffer offer) {
+    final colors = Theme.of(context).colorScheme;
     final job = offer.job;
     final amount = job.finalAmount ?? job.quotedAmount ?? job.estimatedAmount;
     return Padding(
@@ -2076,15 +2096,15 @@ class _ProviderDashboardScreenState extends State<ProviderDashboardScreen> {
               children: [
                 Expanded(
                   child: Text(job.title,
-                      style: const TextStyle(
-                          color: AppColors.textPrimary,
+                      style: TextStyle(
+                          color: colors.onSurface,
                           fontSize: 14,
                           fontWeight: FontWeight.w700)),
                 ),
                 if (amount != null)
                   Text('৳${amount.round()}',
-                      style: const TextStyle(
-                          color: AppColors.deepBlue,
+                      style: TextStyle(
+                          color: colors.primary,
                           fontSize: 15,
                           fontWeight: FontWeight.w800)),
               ],
@@ -2096,7 +2116,7 @@ class _ProviderDashboardScreenState extends State<ProviderDashboardScreen> {
               const SizedBox(height: 8),
               Builder(builder: (_) {
                 final clash = _dateClash(job.eventDate!);
-                final tone = clash == null ? AppColors.deepBlue : const Color(0xFFEF4444);
+                final tone = clash == null ? colors.primary : const Color(0xFFEF4444);
                 return Container(
                   padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 8),
                   decoration: BoxDecoration(
@@ -2124,7 +2144,7 @@ class _ProviderDashboardScreenState extends State<ProviderDashboardScreen> {
                             clash ??
                                 (_isBn ? 'ওই দিন আপনি ফাঁকা আছেন' : "You're free that day"),
                             style: TextStyle(
-                                color: clash == null ? AppColors.textMuted : tone,
+                                color: clash == null ? colors.outline : tone,
                                 fontSize: 11.5),
                           ),
                         ],
@@ -2140,8 +2160,8 @@ class _ProviderDashboardScreenState extends State<ProviderDashboardScreen> {
                 job.description!.trim(),
                 maxLines: 4,
                 overflow: TextOverflow.ellipsis,
-                style: const TextStyle(
-                    color: AppColors.textSecondary, fontSize: 12.5, height: 1.45),
+                style: TextStyle(
+                    color: colors.onSurfaceVariant, fontSize: 12.5, height: 1.45),
               ),
             ],
             if ((job.pickupAddressSnapshot ?? '').isNotEmpty) ...[
@@ -2149,14 +2169,14 @@ class _ProviderDashboardScreenState extends State<ProviderDashboardScreen> {
               Row(
                 children: [
                   Icon(job.isRide ? Icons.trip_origin_rounded : Icons.location_on_outlined,
-                      color: AppColors.textMuted, size: 14),
+                      color: colors.outline, size: 14),
                   const SizedBox(width: 4),
                   Expanded(
                     child: Text(job.pickupAddressSnapshot!,
                         maxLines: 1,
                         overflow: TextOverflow.ellipsis,
-                        style: const TextStyle(
-                            color: AppColors.textMuted, fontSize: 12)),
+                        style: TextStyle(
+                            color: colors.outline, fontSize: 12)),
                   ),
                 ],
               ),
@@ -2168,7 +2188,7 @@ class _ProviderDashboardScreenState extends State<ProviderDashboardScreen> {
               const SizedBox(height: 4),
               Row(
                 children: [
-                  const Icon(Icons.flag_rounded, color: AppColors.deepBlue, size: 14),
+                  Icon(Icons.flag_rounded, color: colors.primary, size: 14),
                   const SizedBox(width: 4),
                   Expanded(
                     child: Text(
@@ -2176,8 +2196,8 @@ class _ProviderDashboardScreenState extends State<ProviderDashboardScreen> {
                           (_isBn ? 'গন্তব্য ম্যাপে দেওয়া আছে' : 'Destination pinned on the map'),
                       maxLines: 1,
                       overflow: TextOverflow.ellipsis,
-                      style: const TextStyle(
-                          color: AppColors.textPrimary,
+                      style: TextStyle(
+                          color: colors.onSurface,
                           fontSize: 12,
                           fontWeight: FontWeight.w600),
                     ),
@@ -2188,8 +2208,8 @@ class _ProviderDashboardScreenState extends State<ProviderDashboardScreen> {
                       _isBn
                           ? '${job.distanceKm!.toStringAsFixed(1)} কিমি'
                           : '${job.distanceKm!.toStringAsFixed(1)} km',
-                      style: const TextStyle(
-                          color: AppColors.textMuted,
+                      style: TextStyle(
+                          color: colors.outline,
                           fontSize: 11.5,
                           fontWeight: FontWeight.w600),
                     ),
@@ -2205,14 +2225,14 @@ class _ProviderDashboardScreenState extends State<ProviderDashboardScreen> {
                     onPressed: () =>
                         _respondToOffer(job, offer.assignmentId, 'rejected'),
                     style: OutlinedButton.styleFrom(
-                      side: const BorderSide(color: AppColors.glassBorder),
+                      side: BorderSide(color: colors.outlineVariant),
                       padding: const EdgeInsets.symmetric(vertical: 10),
                       shape: RoundedRectangleBorder(
                           borderRadius: BorderRadius.circular(10)),
                     ),
                     child: Text(_isBn ? 'বাতিল' : 'Skip',
-                        style: const TextStyle(
-                            color: AppColors.textMuted,
+                        style: TextStyle(
+                            color: colors.outline,
                             fontWeight: FontWeight.w600)),
                   ),
                 ),
@@ -2222,7 +2242,7 @@ class _ProviderDashboardScreenState extends State<ProviderDashboardScreen> {
                     onPressed: () =>
                         _respondToOffer(job, offer.assignmentId, 'accepted'),
                     style: ElevatedButton.styleFrom(
-                      backgroundColor: AppColors.deepBlue,
+                      backgroundColor: colors.primary,
                       foregroundColor: Colors.white,
                       padding: const EdgeInsets.symmetric(vertical: 10),
                       shape: RoundedRectangleBorder(
@@ -2243,6 +2263,7 @@ class _ProviderDashboardScreenState extends State<ProviderDashboardScreen> {
   // Aggregate rating already shown in the stats row — this card adds the human element (recent
   // review text). Empty state is mandatory per spec: most providers here have zero reviews.
   Widget _buildReviewsCard() {
+    final colors = Theme.of(context).colorScheme;
     return GlassCard(
       padding: const EdgeInsets.all(16),
       child: Column(
@@ -2251,38 +2272,38 @@ class _ProviderDashboardScreenState extends State<ProviderDashboardScreen> {
           Row(
             children: [
               const Icon(Icons.star_rounded,
-                  color: AppColors.softAmber, size: 18),
+                  color: StatusColors.amber, size: 18),
               const SizedBox(width: 8),
               Text(_isBn ? 'রেটিং ও রিভিউ' : 'Rating & Reviews',
-                  style: const TextStyle(
-                      color: AppColors.textPrimary,
+                  style: TextStyle(
+                      color: colors.onSurface,
                       fontSize: 14,
                       fontWeight: FontWeight.w700)),
               const Spacer(),
               if (_standing?.dispatchAvgRating != null)
                 Text(
                     '⭐ ${_standing!.dispatchAvgRating!.toStringAsFixed(1)} (${_standing!.totalCompleted})',
-                    style: const TextStyle(
-                        color: AppColors.textMuted,
+                    style: TextStyle(
+                        color: colors.outline,
                         fontSize: 12.5,
                         fontWeight: FontWeight.w600)),
             ],
           ),
           const SizedBox(height: 10),
           if (_loadingReviews)
-            const Padding(
+            Padding(
               padding: EdgeInsets.symmetric(vertical: 12),
               child: Center(
                   child: SizedBox(
                       width: 20,
                       height: 20,
                       child: CircularProgressIndicator(
-                          strokeWidth: 2, color: AppColors.deepBlue))),
+                          strokeWidth: 2, color: colors.primary))),
             )
           else if (_reviews.isEmpty)
             Text(_isBn ? 'এখনো কোনো রিভিউ নেই।' : 'No reviews yet.',
                 style:
-                    const TextStyle(color: AppColors.textMuted, fontSize: 13))
+                    TextStyle(color: colors.outline, fontSize: 13))
           else
             ..._reviews.map((r) => Padding(
                   padding: const EdgeInsets.only(bottom: 10),
@@ -2293,15 +2314,15 @@ class _ProviderDashboardScreenState extends State<ProviderDashboardScreen> {
                         children: [
                           Text(
                               r.customerName ?? (_isBn ? 'গ্রাহক' : 'Customer'),
-                              style: const TextStyle(
-                                  color: AppColors.textPrimary,
+                              style: TextStyle(
+                                  color: colors.onSurface,
                                   fontSize: 13,
                                   fontWeight: FontWeight.w700)),
                           const SizedBox(width: 6),
                           if (r.rating != null)
                             Text('⭐ ${r.rating}',
                                 style: const TextStyle(
-                                    color: AppColors.softAmber,
+                                    color: StatusColors.amber,
                                     fontSize: 12,
                                     fontWeight: FontWeight.w700)),
                         ],
@@ -2309,8 +2330,8 @@ class _ProviderDashboardScreenState extends State<ProviderDashboardScreen> {
                       if ((r.review ?? '').isNotEmpty) ...[
                         const SizedBox(height: 3),
                         Text(r.review!,
-                            style: const TextStyle(
-                                color: AppColors.textSecondary,
+                            style: TextStyle(
+                                color: colors.onSurfaceVariant,
                                 fontSize: 12.5,
                                 height: 1.4)),
                       ],
@@ -2374,6 +2395,7 @@ class _ProviderDashboardScreenState extends State<ProviderDashboardScreen> {
   bool get _isMatchmakingProvider => _hasServiceKind(_kMatchmakingKinds);
 
   Widget _buildQuickActions() {
+    final colors = Theme.of(context).colorScheme;
     void nav(Widget w) =>
         Navigator.push(context, MaterialPageRoute(builder: (_) => w));
     // Subtitle is a live number pulled from state already loaded elsewhere on this screen
@@ -2389,7 +2411,7 @@ class _ProviderDashboardScreenState extends State<ProviderDashboardScreen> {
         Icons.account_balance_wallet_outlined,
         _isBn ? 'ওয়ালেট' : 'Wallet',
         walletSub,
-        AppColors.deepBlue,
+        colors.primary,
         () => nav(const WalletScreen())
       ),
       if (_isDispatchProvider)
@@ -2397,7 +2419,7 @@ class _ProviderDashboardScreenState extends State<ProviderDashboardScreen> {
           Icons.percent_rounded,
           _isBn ? 'কমিশন' : 'Commission',
           null,
-          AppColors.softAmber,
+          StatusColors.amber,
           () => nav(const CommissionScreen())
         ),
       if (_isDispatchProvider || _isMatchmakingProvider)
@@ -2405,7 +2427,7 @@ class _ProviderDashboardScreenState extends State<ProviderDashboardScreen> {
           Icons.credit_card_outlined,
           'NID',
           null,
-          AppColors.softBlue,
+          StatusColors.blue,
           () => nav(const NidScreen())
         ),
       if (_isVisualProvider)
@@ -2413,7 +2435,7 @@ class _ProviderDashboardScreenState extends State<ProviderDashboardScreen> {
           Icons.photo_library_outlined,
           _isBn ? 'পোর্টফোলিও' : 'Portfolio',
           null,
-          AppColors.softBlue,
+          StatusColors.blue,
           () => nav(const PortfolioScreen())
         ),
       if (_isMatchmakingProvider)
@@ -2421,7 +2443,7 @@ class _ProviderDashboardScreenState extends State<ProviderDashboardScreen> {
           Icons.inbox_rounded,
           _isBn ? 'ম্যাচ অনুরোধ' : 'Match Requests',
           null,
-          AppColors.softBlue,
+          StatusColors.blue,
           () => nav(const MatchRequestsInboxScreen())
         ),
     ];
@@ -2512,6 +2534,7 @@ class _ProviderDashboardScreenState extends State<ProviderDashboardScreen> {
   }
 
   Widget _buildMoreIncomeChip(IconData icon, String label, VoidCallback onTap) {
+    final colors = Theme.of(context).colorScheme;
     return GestureDetector(
       onTap: onTap,
       child: GlassCard(
@@ -2519,11 +2542,11 @@ class _ProviderDashboardScreenState extends State<ProviderDashboardScreen> {
         child: Row(
           mainAxisAlignment: MainAxisAlignment.center,
           children: [
-            Icon(icon, size: 15, color: AppColors.textSecondary),
+            Icon(icon, size: 15, color: colors.onSurfaceVariant),
             const SizedBox(width: 6),
             Text(label,
-                style: const TextStyle(
-                    color: AppColors.textSecondary,
+                style: TextStyle(
+                    color: colors.onSurfaceVariant,
                     fontSize: 12,
                     fontWeight: FontWeight.w600)),
           ],
@@ -2588,15 +2611,16 @@ class _ProviderDashboardScreenState extends State<ProviderDashboardScreen> {
   }
 
   Widget _buildMyServicesSection() {
+    final colors = Theme.of(context).colorScheme;
     if (_loadingMyServices) {
-      return const Center(
+      return Center(
           child: Padding(
         padding: EdgeInsets.symmetric(vertical: 12),
         child: SizedBox(
             width: 24,
             height: 24,
             child: CircularProgressIndicator(
-                strokeWidth: 2, color: AppColors.deepBlue)),
+                strokeWidth: 2, color: colors.primary)),
       ));
     }
 
@@ -2609,8 +2633,8 @@ class _ProviderDashboardScreenState extends State<ProviderDashboardScreen> {
             children: [
               Expanded(
                 child: Text(_isBn ? 'আমার সেবাসমূহ' : 'My Services',
-                    style: const TextStyle(
-                        color: AppColors.textMuted,
+                    style: TextStyle(
+                        color: colors.outline,
                         fontSize: 12,
                         fontWeight: FontWeight.w700,
                         letterSpacing: 0.8)),
@@ -2623,8 +2647,8 @@ class _ProviderDashboardScreenState extends State<ProviderDashboardScreen> {
                     MaterialPageRoute(
                         builder: (_) => const ProviderOnboardingScreen())),
                 child: Text(_isBn ? '+ নতুন সেবা যোগ করুন' : '+ Add a service',
-                    style: const TextStyle(
-                        color: AppColors.deepBlue,
+                    style: TextStyle(
+                        color: colors.primary,
                         fontSize: 12,
                         fontWeight: FontWeight.w700)),
               ),
@@ -2680,8 +2704,8 @@ class _ProviderDashboardScreenState extends State<ProviderDashboardScreen> {
                     children: [
                       Expanded(
                         child: Text(name,
-                            style: const TextStyle(
-                                color: AppColors.textPrimary,
+                            style: TextStyle(
+                                color: colors.onSurface,
                                 fontSize: 14,
                                 fontWeight: FontWeight.w600)),
                       ),
@@ -2692,8 +2716,8 @@ class _ProviderDashboardScreenState extends State<ProviderDashboardScreen> {
                                   builder: (_) => const TutorProfileScreen())),
                           child: Text(
                               _isBn ? 'বিষয় ও লেভেল' : 'Subjects & Levels',
-                              style: const TextStyle(
-                                  color: AppColors.deepBlue,
+                              style: TextStyle(
+                                  color: colors.primary,
                                   fontSize: 12.5,
                                   fontWeight: FontWeight.w700)),
                         ),
@@ -2707,8 +2731,8 @@ class _ProviderDashboardScreenState extends State<ProviderDashboardScreen> {
                                       const PhotographerProfileScreen())),
                           child: Text(
                               _isBn ? 'গিয়ার প্রোফাইল' : 'Gear Profile',
-                              style: const TextStyle(
-                                  color: AppColors.deepBlue,
+                              style: TextStyle(
+                                  color: colors.primary,
                                   fontSize: 12.5,
                                   fontWeight: FontWeight.w700)),
                         ),
@@ -2722,8 +2746,8 @@ class _ProviderDashboardScreenState extends State<ProviderDashboardScreen> {
                                       const CinematographerProfileScreen())),
                           child: Text(
                               _isBn ? 'গিয়ার প্রোফাইল' : 'Gear Profile',
-                              style: const TextStyle(
-                                  color: AppColors.deepBlue,
+                              style: TextStyle(
+                                  color: colors.primary,
                                   fontSize: 12.5,
                                   fontWeight: FontWeight.w700)),
                         ),
@@ -2739,8 +2763,8 @@ class _ProviderDashboardScreenState extends State<ProviderDashboardScreen> {
                               _isBn
                                   ? 'সার্টিফিকেট ও বিশেষত্ব'
                                   : 'Certificate & Specializations',
-                              style: const TextStyle(
-                                  color: AppColors.deepBlue,
+                              style: TextStyle(
+                                  color: colors.primary,
                                   fontSize: 12.5,
                                   fontWeight: FontWeight.w700)),
                         ),
@@ -2756,8 +2780,8 @@ class _ProviderDashboardScreenState extends State<ProviderDashboardScreen> {
                               _isBn
                                   ? 'ক্যাটাগরি ও বিশেষত্ব'
                                   : 'Category & Specializations',
-                              style: const TextStyle(
-                                  color: AppColors.deepBlue,
+                              style: TextStyle(
+                                  color: colors.primary,
                                   fontSize: 12.5,
                                   fontWeight: FontWeight.w700)),
                         ),
@@ -2773,8 +2797,8 @@ class _ProviderDashboardScreenState extends State<ProviderDashboardScreen> {
                               _isBn
                                   ? 'পোষা প্রাণী প্রোফাইল'
                                   : 'Pet Care Profile',
-                              style: const TextStyle(
-                                  color: AppColors.deepBlue,
+                              style: TextStyle(
+                                  color: colors.primary,
                                   fontSize: 12.5,
                                   fontWeight: FontWeight.w700)),
                         ),
@@ -2788,8 +2812,8 @@ class _ProviderDashboardScreenState extends State<ProviderDashboardScreen> {
                                       const SkillShareProfileScreen())),
                           child: Text(
                               _isBn ? 'শিক্ষাগত তথ্য' : 'Education Profile',
-                              style: const TextStyle(
-                                  color: AppColors.deepBlue,
+                              style: TextStyle(
+                                  color: colors.primary,
                                   fontSize: 12.5,
                                   fontWeight: FontWeight.w700)),
                         ),
@@ -2802,8 +2826,8 @@ class _ProviderDashboardScreenState extends State<ProviderDashboardScreen> {
                                   builder: (_) => const CourseAuthoringScreen()))
                               .then((_) => _loadMyCourses()),
                           child: Text(_isBn ? 'আমার কোর্স' : 'My Courses',
-                              style: const TextStyle(
-                                  color: AppColors.deepBlue,
+                              style: TextStyle(
+                                  color: colors.primary,
                                   fontSize: 12.5,
                                   fontWeight: FontWeight.w700)),
                         ),
@@ -2815,8 +2839,8 @@ class _ProviderDashboardScreenState extends State<ProviderDashboardScreen> {
                                       const MicroLearningProfileScreen())),
                           child: Text(
                               _isBn ? 'দক্ষতা প্রোফাইল' : 'Expertise Profile',
-                              style: const TextStyle(
-                                  color: AppColors.deepBlue,
+                              style: TextStyle(
+                                  color: colors.primary,
                                   fontSize: 12.5,
                                   fontWeight: FontWeight.w700)),
                         ),
@@ -2830,8 +2854,8 @@ class _ProviderDashboardScreenState extends State<ProviderDashboardScreen> {
                                       const MakeupArtistProfileScreen())),
                           child: Text(
                               _isBn ? 'মেকআপ প্রোফাইল' : 'Makeup Profile',
-                              style: const TextStyle(
-                                  color: AppColors.deepBlue,
+                              style: TextStyle(
+                                  color: colors.primary,
                                   fontSize: 12.5,
                                   fontWeight: FontWeight.w700)),
                         ),
@@ -2847,8 +2871,8 @@ class _ProviderDashboardScreenState extends State<ProviderDashboardScreen> {
                               _isBn
                                   ? 'কুইক হেল্প প্রোফাইল'
                                   : 'Quick Help Profile',
-                              style: const TextStyle(
-                                  color: AppColors.deepBlue,
+                              style: TextStyle(
+                                  color: colors.primary,
                                   fontSize: 12.5,
                                   fontWeight: FontWeight.w700)),
                         ),
@@ -2864,8 +2888,8 @@ class _ProviderDashboardScreenState extends State<ProviderDashboardScreen> {
                               _isBn
                                   ? 'গৃহকর্মী প্রোফাইল'
                                   : 'Household Help Profile',
-                              style: const TextStyle(
-                                  color: AppColors.deepBlue,
+                              style: TextStyle(
+                                  color: colors.primary,
                                   fontSize: 12.5,
                                   fontWeight: FontWeight.w700)),
                         ),
@@ -2882,8 +2906,8 @@ class _ProviderDashboardScreenState extends State<ProviderDashboardScreen> {
                           : (_isBn
                               ? 'বিস্তারিত জানতে সাপোর্টে যোগাযোগ করুন'
                               : 'Contact support for details'),
-                      style: const TextStyle(
-                          color: AppColors.textMuted,
+                      style: TextStyle(
+                          color: colors.outline,
                           fontSize: 12.5,
                           height: 1.4),
                     ),
@@ -2894,8 +2918,8 @@ class _ProviderDashboardScreenState extends State<ProviderDashboardScreen> {
                         onPressed: () => _fixAndResubmit(svc),
                         child: Text(
                             _isBn ? 'সংশোধন করে জমা দিন' : 'Fix & resubmit',
-                            style: const TextStyle(
-                                color: AppColors.deepBlue,
+                            style: TextStyle(
+                                color: colors.primary,
                                 fontSize: 12.5,
                                 fontWeight: FontWeight.w700)),
                       ),
@@ -2911,6 +2935,7 @@ class _ProviderDashboardScreenState extends State<ProviderDashboardScreen> {
   }
 
   Widget _statusChip(String status) {
+    final colors = Theme.of(context).colorScheme;
     final (label, bg, fg) = switch (status) {
       'approved' => (
           _isBn ? 'অনুমোদিত' : 'Approved',
@@ -2932,7 +2957,7 @@ class _ProviderDashboardScreenState extends State<ProviderDashboardScreen> {
           const Color(0x20F97316),
           const Color(0xFFF97316)
         ),
-      _ => ('Draft', const Color(0x20888888), AppColors.textMuted),
+      _ => ('Draft', const Color(0x20888888), colors.outline),
     };
     return Container(
       padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 4),
@@ -2945,6 +2970,7 @@ class _ProviderDashboardScreenState extends State<ProviderDashboardScreen> {
   }
 
   Widget _buildActiveJobCard() {
+    final colors = Theme.of(context).colorScheme;
     final job = _activeJob!;
     return GlassCard(
       padding: const EdgeInsets.all(16),
@@ -2973,8 +2999,8 @@ class _ProviderDashboardScreenState extends State<ProviderDashboardScreen> {
           ],
           const SizedBox(height: 12),
           Text(job.title,
-              style: const TextStyle(
-                  color: AppColors.textPrimary,
+              style: TextStyle(
+                  color: colors.onSurface,
                   fontSize: 15,
                   fontWeight: FontWeight.w700)),
           const SizedBox(height: 6),
@@ -2982,11 +3008,11 @@ class _ProviderDashboardScreenState extends State<ProviderDashboardScreen> {
             Text(
                 '${_isBn ? 'গ্রাহক' : 'Customer'}: ${job.customerNameSnapshot}',
                 style:
-                    const TextStyle(color: AppColors.textMuted, fontSize: 13)),
+                    TextStyle(color: colors.outline, fontSize: 13)),
           const SizedBox(height: 4),
           Text('${_isBn ? 'অবস্থা' : 'Status'}: ${job.statusLabel(_isBn)}',
-              style: const TextStyle(
-                  color: AppColors.deepBlue,
+              style: TextStyle(
+                  color: colors.primary,
                   fontSize: 13,
                   fontWeight: FontWeight.w600)),
           const SizedBox(height: 16),
@@ -3008,13 +3034,14 @@ class _ProviderDashboardScreenState extends State<ProviderDashboardScreen> {
   }
 
   Widget _buildEarningsTab() {
+    final colors = Theme.of(context).colorScheme;
     if (_loadingEarnings) {
-      return const Center(
-          child: CircularProgressIndicator(color: AppColors.deepBlue));
+      return Center(
+          child: CircularProgressIndicator(color: colors.primary));
     }
     return RefreshIndicator(
       onRefresh: _loadEarnings,
-      color: AppColors.deepBlue,
+      color: colors.primary,
       child: ListView(
         padding: const EdgeInsets.all(16),
         children: [
@@ -3023,33 +3050,33 @@ class _ProviderDashboardScreenState extends State<ProviderDashboardScreen> {
             child: Column(
               children: [
                 Text(_isBn ? 'মোট ব্যালেন্স' : 'Total Balance',
-                    style: const TextStyle(
-                        color: AppColors.textMuted, fontSize: 13)),
+                    style: TextStyle(
+                        color: colors.outline, fontSize: 13)),
                 const SizedBox(height: 8),
                 Text(
                   '৳ ${_wallet?.balance.toStringAsFixed(0) ?? '0'}',
-                  style: const TextStyle(
-                      color: AppColors.textPrimary,
+                  style: TextStyle(
+                      color: colors.onSurface,
                       fontSize: 36,
                       fontWeight: FontWeight.w800),
                 ),
                 const SizedBox(height: 4),
                 Text(_wallet?.currency ?? 'BDT',
-                    style: const TextStyle(
-                        color: AppColors.textMuted, fontSize: 12)),
+                    style: TextStyle(
+                        color: colors.outline, fontSize: 12)),
               ],
             ),
           ),
           const SizedBox(height: 20),
           Text(_isBn ? 'লেনদেনের ইতিহাস' : 'Transaction History',
-              style: const TextStyle(color: AppColors.textMuted, fontSize: 12)),
+              style: TextStyle(color: colors.outline, fontSize: 12)),
           const SizedBox(height: 10),
           if (_transactions.isEmpty)
             Padding(
               padding: const EdgeInsets.all(24),
               child: Center(
                   child: Text(_isBn ? 'কোনো লেনদেন নেই' : 'No transactions',
-                      style: const TextStyle(color: AppColors.textMuted))),
+                      style: TextStyle(color: colors.outline))),
             )
           else
             ..._transactions.map(_buildTransactionTile),
@@ -3059,6 +3086,7 @@ class _ProviderDashboardScreenState extends State<ProviderDashboardScreen> {
   }
 
   Widget _buildTransactionTile(TransactionModel t) {
+    final colors = Theme.of(context).colorScheme;
     final isCredit = t.isCredit;
     return Padding(
       padding: const EdgeInsets.only(bottom: 10),
@@ -3095,16 +3123,16 @@ class _ProviderDashboardScreenState extends State<ProviderDashboardScreen> {
                         (_isBn
                             ? (isCredit ? 'জমা' : 'উত্তোলন')
                             : (isCredit ? 'Credit' : 'Withdrawal')),
-                    style: const TextStyle(
-                        color: AppColors.textPrimary,
+                    style: TextStyle(
+                        color: colors.onSurface,
                         fontSize: 13,
                         fontWeight: FontWeight.w600),
                   ),
                   const SizedBox(height: 2),
                   Text(
                     '${t.createdAt.day}/${t.createdAt.month}/${t.createdAt.year}',
-                    style: const TextStyle(
-                        color: AppColors.textMuted, fontSize: 11),
+                    style: TextStyle(
+                        color: colors.outline, fontSize: 11),
                   ),
                 ],
               ),
@@ -3126,17 +3154,18 @@ class _ProviderDashboardScreenState extends State<ProviderDashboardScreen> {
   }
 
   Widget _buildHistoryTab() {
+    final colors = Theme.of(context).colorScheme;
     if (_loadingHistory) {
-      return const Center(
-          child: CircularProgressIndicator(color: AppColors.deepBlue));
+      return Center(
+          child: CircularProgressIndicator(color: colors.primary));
     }
     return RefreshIndicator(
       onRefresh: _loadHistory,
-      color: AppColors.deepBlue,
+      color: colors.primary,
       child: _jobHistory.isEmpty
           ? Center(
               child: Text(_isBn ? 'কোনো কাজের ইতিহাস নেই' : 'No job history',
-                  style: const TextStyle(color: AppColors.textMuted)),
+                  style: TextStyle(color: colors.outline)),
             )
           : ListView.builder(
               padding: const EdgeInsets.all(16),
@@ -3154,6 +3183,7 @@ class _ProviderDashboardScreenState extends State<ProviderDashboardScreen> {
   };
 
   Widget _buildHistoryTile(JobModel job) {
+    final colors = Theme.of(context).colorScheme;
     // Only the single most-recent non-lawyer active job surfaces as the dashboard's "Active Job"
     // card (see _poll's `active.first`) — a provider with more than one confirmed advance-booking
     // at once had no way to reach the others at all. Any job still in a workable status opens
@@ -3184,8 +3214,8 @@ class _ProviderDashboardScreenState extends State<ProviderDashboardScreen> {
                   Expanded(
                     child: Text(
                       job.title,
-                      style: const TextStyle(
-                          color: AppColors.textPrimary,
+                      style: TextStyle(
+                          color: colors.onSurface,
                           fontSize: 14,
                           fontWeight: FontWeight.w600),
                     ),
@@ -3194,12 +3224,12 @@ class _ProviderDashboardScreenState extends State<ProviderDashboardScreen> {
                     padding:
                         const EdgeInsets.symmetric(horizontal: 8, vertical: 3),
                     decoration: BoxDecoration(
-                      color: AppColors.glassWhite,
+                      color: colors.surface,
                       borderRadius: BorderRadius.circular(8),
                     ),
                     child: Text(job.statusLabel(_isBn),
-                        style: const TextStyle(
-                            color: AppColors.textMuted, fontSize: 11)),
+                        style: TextStyle(
+                            color: colors.outline, fontSize: 11)),
                   ),
                 ],
               ),
@@ -3207,15 +3237,15 @@ class _ProviderDashboardScreenState extends State<ProviderDashboardScreen> {
                 const SizedBox(height: 4),
                 Text(
                     '${_isBn ? 'গ্রাহক' : 'Customer'}: ${job.customerNameSnapshot}',
-                    style: const TextStyle(
-                        color: AppColors.textMuted, fontSize: 12)),
+                    style: TextStyle(
+                        color: colors.outline, fontSize: 12)),
               ],
               if (job.finalAmount != null || job.estimatedAmount != null) ...[
                 const SizedBox(height: 4),
                 Text(
                   '${_isBn ? 'মূল্য' : 'Price'}: ৳ ${(job.finalAmount ?? job.estimatedAmount)!.toStringAsFixed(0)}',
-                  style: const TextStyle(
-                      color: AppColors.deepBlue,
+                  style: TextStyle(
+                      color: colors.primary,
                       fontSize: 13,
                       fontWeight: FontWeight.w600),
                 ),
@@ -3266,22 +3296,24 @@ class _CaregiverInfoBlock extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    final colors = Theme.of(context).colorScheme;
     final detail = job.caregiverDetail;
     return Container(
       padding: const EdgeInsets.all(12),
       decoration: BoxDecoration(
-        color: AppColors.deepBlue.withValues(alpha: 0.07),
+        color: colors.primary.withValues(alpha: 0.07),
         borderRadius: BorderRadius.circular(12),
-        border: Border.all(color: AppColors.deepBlue.withValues(alpha: 0.25)),
+        border: Border.all(color: colors.primary.withValues(alpha: 0.25)),
       ),
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
           if (detail?.patientCondition != null &&
               detail!.patientCondition!.isNotEmpty)
-            _row(Icons.medical_information_rounded, detail.patientCondition!),
+            _row(colors, Icons.medical_information_rounded, detail.patientCondition!),
           if (detail?.patientAge != null)
             _row(
+                colors,
                 Icons.cake_rounded,
                 isBn
                     ? 'বয়স: ${detail!.patientAge}'
@@ -3289,6 +3321,7 @@ class _CaregiverInfoBlock extends StatelessWidget {
           if (job.providerGenderPreference != null &&
               job.providerGenderPreference != 'any')
             _row(
+                colors,
                 Icons.wc_rounded,
                 isBn
                     ? 'পছন্দ: ${job.providerGenderPreference}'
@@ -3298,20 +3331,22 @@ class _CaregiverInfoBlock extends StatelessWidget {
     );
   }
 
-  Widget _row(IconData icon, String text) => Padding(
+  Widget _row(ColorScheme colors, IconData icon, String text) {
+    return Padding(
         padding: const EdgeInsets.only(bottom: 4),
         child: Row(
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
-            Icon(icon, size: 15, color: AppColors.deepBlue),
+            Icon(icon, size: 15, color: colors.primary),
             const SizedBox(width: 8),
             Expanded(
                 child: Text(text,
-                    style: const TextStyle(
-                        color: AppColors.textSecondary, fontSize: 12.5))),
+                    style: TextStyle(
+                        color: colors.onSurfaceVariant, fontSize: 12.5))),
           ],
         ),
       );
+  }
 }
 
 class _IncomingJobDialog extends StatelessWidget {
@@ -3331,14 +3366,15 @@ class _IncomingJobDialog extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    final colors = Theme.of(context).colorScheme;
     return Dialog(
       backgroundColor: Colors.transparent,
       insetPadding: const EdgeInsets.all(16),
       child: Container(
         decoration: BoxDecoration(
-          color: AppColors.bgMid,
+          color: colors.surface,
           borderRadius: BorderRadius.circular(24),
-          border: Border.all(color: AppColors.glassBorder),
+          border: Border.all(color: colors.outlineVariant),
         ),
         padding: const EdgeInsets.all(24),
         child: Column(
@@ -3350,7 +3386,7 @@ class _IncomingJobDialog extends StatelessWidget {
               decoration: const BoxDecoration(shape: BoxShape.circle),
               child: DecoratedBox(
                 decoration: BoxDecoration(
-                    gradient: AppColors.blueGradient, shape: BoxShape.circle),
+                    gradient: AppGradients.primary(colors), shape: BoxShape.circle),
                 child: const Icon(Icons.work_rounded,
                     color: Colors.white, size: 32),
               ),
@@ -3358,8 +3394,8 @@ class _IncomingJobDialog extends StatelessWidget {
             const SizedBox(height: 16),
             Text(
               isBn ? 'নতুন কাজের অনুরোধ!' : 'New Job Request!',
-              style: const TextStyle(
-                  color: AppColors.textPrimary,
+              style: TextStyle(
+                  color: colors.onSurface,
                   fontSize: 18,
                   fontWeight: FontWeight.w700),
             ),
@@ -3372,8 +3408,8 @@ class _IncomingJobDialog extends StatelessWidget {
             const SizedBox(height: 12),
             Text(
               job.title,
-              style: const TextStyle(
-                  color: AppColors.textPrimary,
+              style: TextStyle(
+                  color: colors.onSurface,
                   fontSize: 15,
                   fontWeight: FontWeight.w600),
               textAlign: TextAlign.center,
@@ -3383,7 +3419,7 @@ class _IncomingJobDialog extends StatelessWidget {
               Text(
                 '${isBn ? 'গ্রাহক' : 'Customer'}: ${job.customerNameSnapshot}',
                 style:
-                    const TextStyle(color: AppColors.textMuted, fontSize: 13),
+                    TextStyle(color: colors.outline, fontSize: 13),
               ),
             ],
             if (job.pickupAddressSnapshot != null) ...[
@@ -3393,7 +3429,7 @@ class _IncomingJobDialog extends StatelessWidget {
                     ? '${isBn ? 'আনুমানিক এলাকা' : 'Approximate area'}: ${job.pickupAddressSnapshot}'
                     : job.pickupAddressSnapshot!,
                 style:
-                    const TextStyle(color: AppColors.textMuted, fontSize: 13),
+                    TextStyle(color: colors.outline, fontSize: 13),
                 textAlign: TextAlign.center,
               ),
               if (job.exactLocationHidden) ...[
@@ -3402,8 +3438,8 @@ class _IncomingJobDialog extends StatelessWidget {
                   isBn
                       ? 'গ্রহণ করলে সম্পূর্ণ ঠিকানা ও ফোন দেখা যাবে'
                       : 'Full address and phone will show once accepted',
-                  style: const TextStyle(
-                      color: AppColors.textMuted,
+                  style: TextStyle(
+                      color: colors.outline,
                       fontSize: 11,
                       fontStyle: FontStyle.italic),
                   textAlign: TextAlign.center,
@@ -3418,8 +3454,8 @@ class _IncomingJobDialog extends StatelessWidget {
               const SizedBox(height: 12),
               Text(
                 '৳ ${job.estimatedAmount!.toStringAsFixed(0)}',
-                style: const TextStyle(
-                    color: AppColors.deepBlue,
+                style: TextStyle(
+                    color: colors.primary,
                     fontSize: 24,
                     fontWeight: FontWeight.w800),
               ),
@@ -3431,23 +3467,23 @@ class _IncomingJobDialog extends StatelessWidget {
                 child: Container(
                   height: 44,
                   decoration: BoxDecoration(
-                    color: AppColors.deepBlue.withOpacity(0.08),
+                    color: colors.primary.withOpacity(0.08),
                     borderRadius: BorderRadius.circular(12),
                     border:
-                        Border.all(color: AppColors.deepBlue.withOpacity(0.35)),
+                        Border.all(color: colors.primary.withOpacity(0.35)),
                   ),
                   child: Row(
                     mainAxisAlignment: MainAxisAlignment.center,
                     children: [
-                      const Icon(Icons.event_available_rounded,
-                          size: 18, color: AppColors.deepBlue),
+                      Icon(Icons.event_available_rounded,
+                          size: 18, color: colors.primary),
                       const SizedBox(width: 8),
                       Text(
                           isBn
                               ? 'ব্যস্ত? এর বদলে সময় প্রস্তাব করুন'
                               : 'Busy? Propose a different time instead',
-                          style: const TextStyle(
-                              color: AppColors.deepBlue,
+                          style: TextStyle(
+                              color: colors.primary,
                               fontWeight: FontWeight.w600,
                               fontSize: 13.5)),
                     ],
@@ -3487,7 +3523,7 @@ class _IncomingJobDialog extends StatelessWidget {
                     child: Container(
                       height: 50,
                       decoration: BoxDecoration(
-                        gradient: AppColors.blueGradient,
+                        gradient: AppGradients.primary(colors),
                         borderRadius: BorderRadius.circular(12),
                       ),
                       child: Center(
@@ -3594,12 +3630,13 @@ class _ProposeSlotsSheetState extends State<_ProposeSlotsSheet> {
 
   @override
   Widget build(BuildContext context) {
+    final colors = Theme.of(context).colorScheme;
     return Padding(
       padding:
           EdgeInsets.only(bottom: MediaQuery.of(context).viewInsets.bottom),
       child: Container(
-        decoration: const BoxDecoration(
-          color: AppColors.bgMid,
+        decoration: BoxDecoration(
+          color: colors.surface,
           borderRadius: BorderRadius.vertical(top: Radius.circular(24)),
         ),
         padding: const EdgeInsets.fromLTRB(20, 16, 20, 24),
@@ -3612,13 +3649,13 @@ class _ProposeSlotsSheetState extends State<_ProposeSlotsSheet> {
                     width: 40,
                     height: 4,
                     decoration: BoxDecoration(
-                        color: AppColors.glassBorder,
+                        color: colors.outlineVariant,
                         borderRadius: BorderRadius.circular(2))),
               ),
               const SizedBox(height: 16),
               Text(widget.isBn ? 'সময় প্রস্তাব করুন' : 'Propose Time Slots',
-                  style: const TextStyle(
-                      color: AppColors.textPrimary,
+                  style: TextStyle(
+                      color: colors.onSurface,
                       fontSize: 17,
                       fontWeight: FontWeight.w700)),
               const SizedBox(height: 4),
@@ -3626,8 +3663,8 @@ class _ProposeSlotsSheetState extends State<_ProposeSlotsSheet> {
                   widget.isBn
                       ? '"${widget.job.title}" — সর্বোচ্চ ৩টি সময় দিন, গ্রাহক একটি বেছে নেবেন।'
                       : '"${widget.job.title}" — give up to 3 time slots, the customer will pick one.',
-                  style: const TextStyle(
-                      color: AppColors.textMuted, fontSize: 12.5)),
+                  style: TextStyle(
+                      color: colors.outline, fontSize: 12.5)),
               const SizedBox(height: 16),
               for (int i = 0; i < _starts.length; i++) ...[
                 InkWell(
@@ -3637,13 +3674,13 @@ class _ProposeSlotsSheetState extends State<_ProposeSlotsSheet> {
                     padding: const EdgeInsets.symmetric(
                         horizontal: 14, vertical: 14),
                     decoration: BoxDecoration(
-                      color: const Color(0xFFF9F7F0),
+                      color: colors.surfaceContainerLow,
                       borderRadius: BorderRadius.circular(12),
-                      border: Border.all(color: AppColors.glassBorder),
+                      border: Border.all(color: colors.outlineVariant),
                     ),
                     child: Row(children: [
-                      const Icon(Icons.schedule_rounded,
-                          size: 18, color: AppColors.deepBlue),
+                      Icon(Icons.schedule_rounded,
+                          size: 18, color: colors.primary),
                       const SizedBox(width: 10),
                       Expanded(
                         child: Text(
@@ -3654,8 +3691,8 @@ class _ProposeSlotsSheetState extends State<_ProposeSlotsSheet> {
                               : _fmt(_starts[i]!),
                           style: TextStyle(
                             color: _starts[i] == null
-                                ? AppColors.textMuted
-                                : AppColors.textPrimary,
+                                ? colors.outline
+                                : colors.onSurface,
                             fontSize: 13.5,
                             fontWeight: _starts[i] == null
                                 ? FontWeight.w400
@@ -3665,8 +3702,8 @@ class _ProposeSlotsSheetState extends State<_ProposeSlotsSheet> {
                       ),
                       if (_starts.length > 1)
                         IconButton(
-                          icon: const Icon(Icons.close_rounded,
-                              size: 18, color: AppColors.textMuted),
+                          icon: Icon(Icons.close_rounded,
+                              size: 18, color: colors.outline),
                           onPressed: () => setState(() => _starts.removeAt(i)),
                         ),
                     ]),
@@ -3677,12 +3714,12 @@ class _ProposeSlotsSheetState extends State<_ProposeSlotsSheet> {
               if (_starts.length < 3)
                 TextButton.icon(
                   onPressed: () => setState(() => _starts.add(null)),
-                  icon: const Icon(Icons.add_rounded,
-                      size: 18, color: AppColors.deepBlue),
+                  icon: Icon(Icons.add_rounded,
+                      size: 18, color: colors.primary),
                   label: Text(
                       widget.isBn ? 'আরেকটি সময় যোগ করুন' : 'Add another time',
-                      style: const TextStyle(
-                          color: AppColors.deepBlue, fontSize: 13)),
+                      style: TextStyle(
+                          color: colors.primary, fontSize: 13)),
                 ),
               if (_error != null) ...[
                 const SizedBox(height: 6),
@@ -3753,6 +3790,7 @@ class _EventDateBanner extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    final colors = Theme.of(context).colorScheme;
     final d = job.eventDate;
     if (d == null) return const SizedBox.shrink();
     final local = d.toLocal();
@@ -3773,9 +3811,9 @@ class _EventDateBanner extends StatelessWidget {
       width: double.infinity,
       padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 10),
       decoration: BoxDecoration(
-        color: AppColors.deepBlue.withValues(alpha: 0.12),
+        color: colors.primary.withValues(alpha: 0.12),
         borderRadius: BorderRadius.circular(12),
-        border: Border.all(color: AppColors.deepBlue.withValues(alpha: 0.35)),
+        border: Border.all(color: colors.primary.withValues(alpha: 0.35)),
       ),
       child: Row(
         crossAxisAlignment: CrossAxisAlignment.start,
@@ -3788,8 +3826,8 @@ class _EventDateBanner extends StatelessWidget {
               children: [
                 Text(
                   isBn ? 'অনুষ্ঠানের তারিখ' : 'Event Date',
-                  style: const TextStyle(
-                    color: AppColors.textMuted,
+                  style: TextStyle(
+                    color: colors.outline,
                     fontSize: 11,
                     fontWeight: FontWeight.w700,
                     letterSpacing: 0.3,
@@ -3798,8 +3836,8 @@ class _EventDateBanner extends StatelessWidget {
                 const SizedBox(height: 2),
                 Text(
                   '$day $month, $year, $hh:$mm$durationLabel',
-                  style: const TextStyle(
-                    color: AppColors.deepBlue,
+                  style: TextStyle(
+                    color: colors.primary,
                     fontSize: 14,
                     fontWeight: FontWeight.w700,
                   ),

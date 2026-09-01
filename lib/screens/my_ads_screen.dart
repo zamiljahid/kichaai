@@ -3,10 +3,7 @@ import 'package:provider/provider.dart';
 import '../core/network/api_client.dart';
 import '../core/utils/app_strings.dart';
 import '../models/property_model.dart';
-import '../theme/app_theme.dart';
 import 'post_mess_screen.dart';
-
-const _accent = AppColors.deepBlue;
 
 /// "আমার বিজ্ঞাপন" — every mess/house listing the logged-in user has posted.
 /// Edit, delete, or temporarily hide (isActive=false, the "seats full" case).
@@ -78,22 +75,23 @@ class _MyAdsScreenState extends State<MyAdsScreen> {
   }
 
   Future<void> _delete(PropertyListing ad) async {
+    final colors = Theme.of(context).colorScheme;
     final sure = await showDialog<bool>(
       context: context,
       builder: (ctx) => AlertDialog(
-        backgroundColor: AppColors.bgMid,
+        backgroundColor: colors.surface,
         shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(20)),
         title: Text(_isBn ? 'বিজ্ঞাপন মুছবেন?' : 'Delete listing?',
-            style: const TextStyle(color: AppColors.textPrimary, fontSize: 17, fontWeight: FontWeight.w700)),
+            style: TextStyle(color: colors.onSurface, fontSize: 17, fontWeight: FontWeight.w700)),
         content: Text(
             _isBn
                 ? '"${ad.messName}" মুছে ফেলা হবে। সিট ভরে গেলে মুছে না ফেলে "সাময়িকভাবে বন্ধ" করাই ভালো।'
                 : '"${ad.messName}" will be removed. If it is just full, "temporarily hide" is better than deleting.',
-            style: const TextStyle(color: AppColors.textSecondary, fontSize: 14, height: 1.5)),
+            style: TextStyle(color: colors.onSurfaceVariant, fontSize: 14, height: 1.5)),
         actions: [
           TextButton(
             onPressed: () => Navigator.pop(ctx, false),
-            child: Text(_isBn ? 'বাতিল' : 'Cancel', style: const TextStyle(color: AppColors.textMuted)),
+            child: Text(_isBn ? 'বাতিল' : 'Cancel', style: TextStyle(color: colors.outline)),
           ),
           TextButton(
             onPressed: () => Navigator.pop(ctx, true),
@@ -118,23 +116,24 @@ class _MyAdsScreenState extends State<MyAdsScreen> {
 
   @override
   Widget build(BuildContext context) {
+    final colors = Theme.of(context).colorScheme;
     _isBn = context.watch<LanguageNotifier>().isBengali;
     return Scaffold(
-      backgroundColor: AppColors.bgDark,
+      backgroundColor: colors.surfaceContainerHighest,
       appBar: AppBar(
         backgroundColor: Colors.transparent,
         elevation: 0,
         title: Text(_isBn ? 'আমার বিজ্ঞাপন' : 'My listings',
-            style: const TextStyle(color: AppColors.textPrimary, fontSize: 18, fontWeight: FontWeight.w700)),
+            style: TextStyle(color: colors.onSurface, fontSize: 18, fontWeight: FontWeight.w700)),
         leading: IconButton(
-          icon: const Icon(Icons.arrow_back_ios_new_rounded, color: AppColors.textPrimary, size: 18),
+          icon: Icon(Icons.arrow_back_ios_new_rounded, color: colors.onSurface, size: 18),
           onPressed: () => Navigator.pop(context),
         ),
       ),
       body: _body(),
       floatingActionButton: FloatingActionButton.extended(
         onPressed: () => _openPost(),
-        backgroundColor: _accent,
+        backgroundColor: colors.primary,
         icon: const Icon(Icons.add_rounded, color: Colors.white, size: 20),
         label: Text(_isBn ? 'নতুন বিজ্ঞাপন' : 'New listing',
             style: const TextStyle(color: Colors.white, fontWeight: FontWeight.w700, fontSize: 13.5)),
@@ -143,17 +142,18 @@ class _MyAdsScreenState extends State<MyAdsScreen> {
   }
 
   Widget _body() {
-    if (_isLoading) return const Center(child: CircularProgressIndicator(color: _accent));
+    final colors = Theme.of(context).colorScheme;
+    if (_isLoading) return Center(child: CircularProgressIndicator(color: colors.primary));
     if (_error != null) {
       return Center(child: Padding(
         padding: const EdgeInsets.all(28),
         child: Column(mainAxisSize: MainAxisSize.min, children: [
-          const Icon(Icons.wifi_off_rounded, color: AppColors.textMuted, size: 48),
+          Icon(Icons.wifi_off_rounded, color: colors.outline, size: 48),
           const SizedBox(height: 12),
-          Text(_error!, textAlign: TextAlign.center, style: const TextStyle(color: AppColors.textMuted)),
+          Text(_error!, textAlign: TextAlign.center, style: TextStyle(color: colors.outline)),
           const SizedBox(height: 16),
           GestureDetector(onTap: _fetch, child: Text(_isBn ? 'আবার চেষ্টা করুন' : 'Try again',
-              style: const TextStyle(color: _accent, fontWeight: FontWeight.w700))),
+              style: TextStyle(color: colors.primary, fontWeight: FontWeight.w700))),
         ]),
       ));
     }
@@ -161,23 +161,23 @@ class _MyAdsScreenState extends State<MyAdsScreen> {
       return Center(child: Padding(
         padding: const EdgeInsets.all(28),
         child: Column(mainAxisSize: MainAxisSize.min, children: [
-          const Icon(Icons.home_work_outlined, color: AppColors.textMuted, size: 56),
+          Icon(Icons.home_work_outlined, color: colors.outline, size: 56),
           const SizedBox(height: 14),
           Text(_isBn ? 'এখনো কোনো বিজ্ঞাপন নেই' : 'No listings yet',
-              style: const TextStyle(color: AppColors.textPrimary, fontSize: 16, fontWeight: FontWeight.w700)),
+              style: TextStyle(color: colors.onSurface, fontSize: 16, fontWeight: FontWeight.w700)),
           const SizedBox(height: 6),
           Text(
               _isBn
                   ? 'আপনার মেস বা বাসা ভাড়ার বিজ্ঞাপন দিন — হাজারো মানুষ খুঁজছে।'
                   : 'Post your mess or house for rent — thousands are searching.',
               textAlign: TextAlign.center,
-              style: const TextStyle(color: AppColors.textMuted, fontSize: 13.5, height: 1.5)),
+              style: TextStyle(color: colors.outline, fontSize: 13.5, height: 1.5)),
         ]),
       ));
     }
     return RefreshIndicator(
-      color: _accent,
-      backgroundColor: AppColors.bgMid,
+      color: colors.primary,
+      backgroundColor: colors.surface,
       onRefresh: _fetch,
       child: ListView.builder(
         padding: const EdgeInsets.fromLTRB(16, 4, 16, 96),
@@ -188,6 +188,7 @@ class _MyAdsScreenState extends State<MyAdsScreen> {
   }
 
   Widget _adCard(PropertyListing ad) {
+    final colors = Theme.of(context).colorScheme;
     final busy = _busy.contains(ad.id);
     final rentUnit = ad.isMess
         ? (_isBn ? '/সিট' : '/seat')
@@ -210,9 +211,9 @@ class _MyAdsScreenState extends State<MyAdsScreen> {
     return Container(
       margin: const EdgeInsets.only(bottom: 14),
       decoration: BoxDecoration(
-        color: AppColors.bgMid,
+        color: colors.surface,
         borderRadius: BorderRadius.circular(18),
-        border: Border.all(color: AppColors.glassBorder),
+        border: Border.all(color: colors.outlineVariant),
       ),
       child: Column(children: [
         Padding(
@@ -224,12 +225,12 @@ class _MyAdsScreenState extends State<MyAdsScreen> {
                 width: 72, height: 72,
                 child: ad.photosUrls.isNotEmpty
                     ? Image.network(ad.photosUrls.first, fit: BoxFit.cover,
-                        errorBuilder: (_, __, ___) => const ColoredBox(
+                        errorBuilder: (_, __, ___) => ColoredBox(
                             color: Color(0xFFEDE8DE),
-                            child: Icon(Icons.home_work_rounded, color: AppColors.textMuted)))
-                    : const ColoredBox(
+                            child: Icon(Icons.home_work_rounded, color: colors.outline)))
+                    : ColoredBox(
                         color: Color(0xFFEDE8DE),
-                        child: Icon(Icons.home_work_rounded, color: AppColors.textMuted)),
+                        child: Icon(Icons.home_work_rounded, color: colors.outline)),
               ),
             ),
             const SizedBox(width: 12),
@@ -239,13 +240,13 @@ class _MyAdsScreenState extends State<MyAdsScreen> {
                   Container(
                     padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 2.5),
                     decoration: BoxDecoration(
-                      color: (ad.isMess ? _accent : ad.isGarage ? const Color(0xFF6B7280) : const Color(0xFFB45309)).withOpacity(0.14),
+                      color: (ad.isMess ? colors.primary : ad.isGarage ? const Color(0xFF6B7280) : const Color(0xFFB45309)).withOpacity(0.14),
                       borderRadius: BorderRadius.circular(8),
                     ),
                     child: Text(
                         ad.isMess ? (_isBn ? 'মেস' : 'Mess') : ad.isGarage ? (_isBn ? 'গ্যারেজ' : 'Garage') : (_isBn ? 'বাসা ভাড়া' : 'House'),
                         style: TextStyle(
-                            color: ad.isMess ? _accent : ad.isGarage ? const Color(0xFF6B7280) : const Color(0xFFB45309),
+                            color: ad.isMess ? colors.primary : ad.isGarage ? const Color(0xFF6B7280) : const Color(0xFFB45309),
                             fontSize: 10.5, fontWeight: FontWeight.w800)),
                   ),
                   if (!ad.isActive) ...[
@@ -253,37 +254,37 @@ class _MyAdsScreenState extends State<MyAdsScreen> {
                     Container(
                       padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 2.5),
                       decoration: BoxDecoration(
-                        color: AppColors.textMuted.withOpacity(0.15),
+                        color: colors.outline.withOpacity(0.15),
                         borderRadius: BorderRadius.circular(8),
                       ),
                       child: Text(_isBn ? 'বন্ধ আছে' : 'Hidden',
-                          style: const TextStyle(color: AppColors.textMuted, fontSize: 10.5, fontWeight: FontWeight.w800)),
+                          style: TextStyle(color: colors.outline, fontSize: 10.5, fontWeight: FontWeight.w800)),
                     ),
                   ],
                 ]),
                 const SizedBox(height: 5),
                 Text(ad.messName, maxLines: 1, overflow: TextOverflow.ellipsis,
-                    style: const TextStyle(color: AppColors.textPrimary, fontSize: 15, fontWeight: FontWeight.w700)),
+                    style: TextStyle(color: colors.onSurface, fontSize: 15, fontWeight: FontWeight.w700)),
                 const SizedBox(height: 2),
                 Text(ad.address, maxLines: 1, overflow: TextOverflow.ellipsis,
-                    style: const TextStyle(color: AppColors.textMuted, fontSize: 12.5)),
+                    style: TextStyle(color: colors.outline, fontSize: 12.5)),
                 const SizedBox(height: 4),
                 Row(children: [
                   if (ad.rent != null)
                     Text('${takaFmt(ad.rent!)}$rentUnit',
-                        style: const TextStyle(color: AppColors.textPrimary, fontSize: 13.5, fontWeight: FontWeight.w800)),
+                        style: TextStyle(color: colors.onSurface, fontSize: 13.5, fontWeight: FontWeight.w800)),
                   if (ad.rent != null && info.isNotEmpty)
-                    const Text('  ·  ', style: TextStyle(color: AppColors.textMuted, fontSize: 12.5)),
+                    Text('  ·  ', style: TextStyle(color: colors.outline, fontSize: 12.5)),
                   Expanded(
                     child: Text(info, maxLines: 1, overflow: TextOverflow.ellipsis,
-                        style: const TextStyle(color: AppColors.textSecondary, fontSize: 12.5)),
+                        style: TextStyle(color: colors.onSurfaceVariant, fontSize: 12.5)),
                   ),
                 ]),
               ]),
             ),
           ]),
         ),
-        const Divider(color: AppColors.glassBorder, height: 1),
+        Divider(color: colors.outlineVariant, height: 1),
         Padding(
           padding: const EdgeInsets.symmetric(horizontal: 6, vertical: 2),
           child: Row(children: [
@@ -293,14 +294,14 @@ class _MyAdsScreenState extends State<MyAdsScreen> {
                 busy ? null : () => _delete(ad), color: const Color(0xFFEF4444)),
             const Spacer(),
             Text(_isBn ? 'সাময়িকভাবে বন্ধ' : 'Hide temporarily',
-                style: const TextStyle(color: AppColors.textSecondary, fontSize: 12, fontWeight: FontWeight.w600)),
+                style: TextStyle(color: colors.onSurfaceVariant, fontSize: 12, fontWeight: FontWeight.w600)),
             SizedBox(
               height: 34,
               child: busy
-                  ? const Padding(
+                  ? Padding(
                       padding: EdgeInsets.symmetric(horizontal: 14),
                       child: SizedBox(width: 16, height: 16,
-                          child: CircularProgressIndicator(strokeWidth: 2, color: _accent)))
+                          child: CircularProgressIndicator(strokeWidth: 2, color: colors.primary)))
                   : Switch(
                       value: !ad.isActive,
                       activeColor: const Color(0xFFB45309),
@@ -314,11 +315,12 @@ class _MyAdsScreenState extends State<MyAdsScreen> {
   }
 
   Widget _actionBtn(IconData icon, String label, VoidCallback? onTap, {Color? color}) {
+    final colors = Theme.of(context).colorScheme;
     return TextButton.icon(
       onPressed: onTap,
-      icon: Icon(icon, size: 16, color: color ?? AppColors.textSecondary),
+      icon: Icon(icon, size: 16, color: color ?? colors.onSurfaceVariant),
       label: Text(label, style: TextStyle(
-          color: color ?? AppColors.textSecondary, fontSize: 12.5, fontWeight: FontWeight.w600)),
+          color: color ?? colors.onSurfaceVariant, fontSize: 12.5, fontWeight: FontWeight.w600)),
     );
   }
 }

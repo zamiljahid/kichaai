@@ -7,7 +7,6 @@ import 'package:image_picker/image_picker.dart';
 import 'package:provider/provider.dart';
 import '../core/network/api_client.dart';
 import '../core/utils/app_strings.dart';
-import '../theme/app_theme.dart';
 import '../widgets/glass_button.dart';
 import '../widgets/glass_card.dart';
 
@@ -109,22 +108,23 @@ class _NidScreenState extends State<NidScreen> {
 
   @override
   Widget build(BuildContext context) {
+    final colors = Theme.of(context).colorScheme;
     _isBn = context.watch<LanguageNotifier>().isBengali;
     final nidStatus = _status?['status'] as String?;
 
     return Scaffold(
-      backgroundColor: AppColors.bgDark,
+      backgroundColor: colors.surfaceContainerHighest,
       appBar: AppBar(
         backgroundColor: Colors.transparent,
         elevation: 0,
-        title: Text(_isBn ? 'NID যাচাইকরণ' : 'NID Verification', style: const TextStyle(color: AppColors.textPrimary, fontSize: 18, fontWeight: FontWeight.w700)),
+        title: Text(_isBn ? 'NID যাচাইকরণ' : 'NID Verification', style: TextStyle(color: colors.onSurface, fontSize: 18, fontWeight: FontWeight.w700)),
         leading: IconButton(
-          icon: const Icon(Icons.arrow_back_ios_new_rounded, color: AppColors.textPrimary, size: 18),
+          icon: Icon(Icons.arrow_back_ios_new_rounded, color: colors.onSurface, size: 18),
           onPressed: () => Navigator.pop(context),
         ),
       ),
       body: _isLoading
-          ? const Center(child: CircularProgressIndicator(color: AppColors.deepBlue))
+          ? Center(child: CircularProgressIndicator(color: colors.primary))
           : SingleChildScrollView(
               padding: const EdgeInsets.all(16),
               child: Column(
@@ -141,13 +141,13 @@ class _NidScreenState extends State<NidScreen> {
                           TextField(
                             controller: _nidNumCtrl,
                             keyboardType: TextInputType.number,
-                            style: const TextStyle(color: AppColors.textPrimary),
+                            style: TextStyle(color: colors.onSurface),
                             decoration: _inputDeco(_isBn ? '১০/১৩/১৭ সংখ্যার NID' : '10/13/17 digit NID', Icons.credit_card_outlined),
                           ),
                           _label(_isBn ? 'NID-তে নাম' : 'Name on NID'),
                           TextField(
                             controller: _nameCtrl,
-                            style: const TextStyle(color: AppColors.textPrimary),
+                            style: TextStyle(color: colors.onSurface),
                             decoration: _inputDeco(_isBn ? 'NID তে যেভাবে আছে' : 'As it appears on the NID', Icons.person_outline_rounded),
                           ),
                           const SizedBox(height: 20),
@@ -172,6 +172,7 @@ class _NidScreenState extends State<NidScreen> {
   }
 
   Widget _buildStatusBanner(String status) {
+    final colors = Theme.of(context).colorScheme;
     final isVerified = status == 'VERIFIED';
     final isPending = status == 'PENDING';
     final isRejected = status == 'REJECTED';
@@ -194,45 +195,52 @@ class _NidScreenState extends State<NidScreen> {
         const SizedBox(width: 12),
         Expanded(child: Column(crossAxisAlignment: CrossAxisAlignment.start, children: [
           Text(text, style: TextStyle(color: color, fontSize: 14, fontWeight: FontWeight.w700)),
-          if (sub != null) Text('${_isBn ? 'কারণ' : 'Reason'}: $sub', style: const TextStyle(color: AppColors.textMuted, fontSize: 12)),
+          if (sub != null) Text('${_isBn ? 'কারণ' : 'Reason'}: $sub', style: TextStyle(color: colors.outline, fontSize: 12)),
         ])),
       ]),
     );
   }
 
   Widget _imagePicker(String label, XFile? file, VoidCallback onTap) {
+    final colors = Theme.of(context).colorScheme;
     return GestureDetector(
       onTap: onTap,
       child: Container(
         height: 120,
         decoration: BoxDecoration(
-          color: AppColors.glassWhite,
+          color: colors.surface,
           borderRadius: BorderRadius.circular(14),
-          border: Border.all(color: AppColors.glassBorder),
+          border: Border.all(color: colors.outlineVariant),
           image: file != null ? DecorationImage(image: FileImage(File(file.path)), fit: BoxFit.cover) : null,
         ),
         child: file == null
             ? Column(mainAxisAlignment: MainAxisAlignment.center, children: [
-                const Icon(Icons.add_a_photo_outlined, color: AppColors.textMuted, size: 28),
+                Icon(Icons.add_a_photo_outlined, color: colors.outline, size: 28),
                 const SizedBox(height: 6),
-                Text(label, style: const TextStyle(color: AppColors.textMuted, fontSize: 12)),
+                Text(label, style: TextStyle(color: colors.outline, fontSize: 12)),
               ])
             : null,
       ),
     );
   }
 
-  Widget _label(String text) => Padding(
+  Widget _label(String text) {
+    final colors = Theme.of(context).colorScheme;
+    return Padding(
     padding: const EdgeInsets.only(top: 16, bottom: 8),
-    child: Text(text, style: const TextStyle(color: AppColors.textMuted, fontSize: 12, fontWeight: FontWeight.w600)),
+    child: Text(text, style: TextStyle(color: colors.outline, fontSize: 12, fontWeight: FontWeight.w600)),
   );
+  }
 
-  InputDecoration _inputDeco(String hint, IconData icon) => InputDecoration(
+  InputDecoration _inputDeco(String hint, IconData icon) {
+    final colors = Theme.of(context).colorScheme;
+    return InputDecoration(
     hintText: hint,
-    hintStyle: const TextStyle(color: AppColors.textMuted),
-    prefixIcon: Icon(icon, color: AppColors.textMuted, size: 18),
+    hintStyle: TextStyle(color: colors.outline),
+    prefixIcon: Icon(icon, color: colors.outline, size: 18),
     filled: true,
-    fillColor: AppColors.glassWhite,
+    fillColor: colors.surface,
     border: OutlineInputBorder(borderRadius: BorderRadius.circular(12), borderSide: BorderSide.none),
   );
+  }
 }

@@ -10,7 +10,6 @@ import '../models/messaging_model.dart';
 import '../services/auth_service.dart';
 import '../services/cook_service.dart';
 import '../services/messaging_service.dart';
-import '../theme/app_theme.dart';
 import '../widgets/glass_button.dart';
 import '../widgets/policy_agreement_checkbox.dart';
 import 'chat_screen.dart';
@@ -113,9 +112,10 @@ class _CookScreenState extends State<CookScreen> with SingleTickerProviderStateM
   }
 
   Future<void> _openDetail(CookRequestModel req) async {
+    final colors = Theme.of(context).colorScheme;
     await showModalBottomSheet(
       context: context,
-      backgroundColor: AppColors.bgDark,
+      backgroundColor: colors.surfaceContainerHighest,
       isScrollControlled: true,
       shape: const RoundedRectangleBorder(borderRadius: BorderRadius.vertical(top: Radius.circular(20))),
       builder: (ctx) => _RequestDetailSheet(request: req, isBn: _isBn, onChanged: _loadMyRequests),
@@ -132,34 +132,41 @@ class _CookScreenState extends State<CookScreen> with SingleTickerProviderStateM
     ScaffoldMessenger.of(context).showSnackBar(SnackBar(content: Text(message, style: const TextStyle(color: Colors.white)), backgroundColor: const Color(0xFF10B981), behavior: SnackBarBehavior.floating, shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)), margin: const EdgeInsets.all(16)));
   }
 
-  InputDecoration _deco({String? hint}) => InputDecoration(
+  InputDecoration _deco({String? hint}) {
+    final colors = Theme.of(context).colorScheme;
+    return InputDecoration(
         hintText: hint,
-        hintStyle: const TextStyle(color: AppColors.textMuted, fontSize: 14),
+        hintStyle: TextStyle(color: colors.outline, fontSize: 14),
         filled: true,
-        fillColor: AppColors.glassWhite,
+        fillColor: colors.surface,
         contentPadding: const EdgeInsets.symmetric(horizontal: 20, vertical: 16),
-        border: OutlineInputBorder(borderRadius: BorderRadius.circular(16), borderSide: const BorderSide(color: AppColors.glassBorder)),
-        enabledBorder: OutlineInputBorder(borderRadius: BorderRadius.circular(16), borderSide: const BorderSide(color: AppColors.glassBorder)),
-        focusedBorder: OutlineInputBorder(borderRadius: BorderRadius.circular(16), borderSide: const BorderSide(color: AppColors.deepBlue, width: 1.5)),
+        border: OutlineInputBorder(borderRadius: BorderRadius.circular(16), borderSide: BorderSide(color: colors.outlineVariant)),
+        enabledBorder: OutlineInputBorder(borderRadius: BorderRadius.circular(16), borderSide: BorderSide(color: colors.outlineVariant)),
+        focusedBorder: OutlineInputBorder(borderRadius: BorderRadius.circular(16), borderSide: BorderSide(color: colors.primary, width: 1.5)),
       );
+  }
 
-  Widget _label(String t) => Text(t, style: const TextStyle(color: AppColors.textPrimary, fontSize: 13, fontWeight: FontWeight.w600));
+  Widget _label(String t) {
+    final colors = Theme.of(context).colorScheme;
+    return Text(t, style: TextStyle(color: colors.onSurface, fontSize: 13, fontWeight: FontWeight.w600));
+  }
 
   @override
   Widget build(BuildContext context) {
+    final colors = Theme.of(context).colorScheme;
     _isBn = context.watch<LanguageNotifier>().isBengali;
     return Scaffold(
-      backgroundColor: AppColors.bgDark,
+      backgroundColor: colors.surfaceContainerHighest,
       appBar: AppBar(
-        backgroundColor: AppColors.bgMid,
+        backgroundColor: colors.surface,
         elevation: 0,
-        leading: IconButton(icon: const Icon(Icons.arrow_back_ios_new_rounded, color: AppColors.textPrimary, size: 18), onPressed: () => Navigator.of(context).pop()),
-        title: Text(_isBn ? 'রান্না অন-ডিমান্ড' : 'Cook On-Demand', style: const TextStyle(color: AppColors.textPrimary, fontSize: 17, fontWeight: FontWeight.w700)),
+        leading: IconButton(icon: Icon(Icons.arrow_back_ios_new_rounded, color: colors.onSurface, size: 18), onPressed: () => Navigator.of(context).pop()),
+        title: Text(_isBn ? 'রান্না অন-ডিমান্ড' : 'Cook On-Demand', style: TextStyle(color: colors.onSurface, fontSize: 17, fontWeight: FontWeight.w700)),
         bottom: TabBar(
           controller: _tabController,
-          labelColor: AppColors.deepBlue,
-          unselectedLabelColor: AppColors.textMuted,
-          indicatorColor: AppColors.deepBlue,
+          labelColor: colors.primary,
+          unselectedLabelColor: colors.outline,
+          indicatorColor: colors.primary,
           tabs: [Tab(text: _isBn ? 'নতুন রিকোয়েস্ট' : 'New Request'), Tab(text: _isBn ? 'আমার রিকোয়েস্ট' : 'My Requests')],
         ),
       ),
@@ -168,6 +175,7 @@ class _CookScreenState extends State<CookScreen> with SingleTickerProviderStateM
   }
 
   Widget _buildNewTab() {
+    final colors = Theme.of(context).colorScheme;
     return SingleChildScrollView(
       padding: const EdgeInsets.fromLTRB(20, 24, 20, 40),
       child: Column(
@@ -175,19 +183,19 @@ class _CookScreenState extends State<CookScreen> with SingleTickerProviderStateM
         children: [
           _label(_isBn ? 'পদের নাম' : 'Dish name'),
           const SizedBox(height: 8),
-          TextField(controller: _dishCtrl, style: const TextStyle(color: AppColors.textPrimary), decoration: _deco(hint: _isBn ? 'যেমন: মুরগির বিরিয়ানি' : 'e.g. Chicken Biryani')),
+          TextField(controller: _dishCtrl, style: TextStyle(color: colors.onSurface), decoration: _deco(hint: _isBn ? 'যেমন: মুরগির বিরিয়ানি' : 'e.g. Chicken Biryani')),
           const SizedBox(height: 20),
           _label(_isBn ? 'পরিমাণ' : 'Quantity'),
           const SizedBox(height: 8),
-          TextField(controller: _qtyCtrl, style: const TextStyle(color: AppColors.textPrimary), decoration: _deco(hint: _isBn ? 'যেমন: ২ প্লেট' : 'e.g. 2 plates')),
+          TextField(controller: _qtyCtrl, style: TextStyle(color: colors.onSurface), decoration: _deco(hint: _isBn ? 'যেমন: ২ প্লেট' : 'e.g. 2 plates')),
           const SizedBox(height: 20),
           _label(_isBn ? 'নোট (ঐচ্ছিক)' : 'Notes (optional)'),
           const SizedBox(height: 8),
-          TextField(controller: _notesCtrl, style: const TextStyle(color: AppColors.textPrimary), decoration: _deco()),
+          TextField(controller: _notesCtrl, style: TextStyle(color: colors.onSurface), decoration: _deco()),
           const SizedBox(height: 20),
           _label(_isBn ? 'পিকআপ এলাকা' : 'Pickup area'),
           const SizedBox(height: 8),
-          TextField(controller: _areaCtrl, style: const TextStyle(color: AppColors.textPrimary), decoration: _deco(hint: _isBn ? 'যেমন: ধানমন্ডি' : 'e.g. Dhanmondi')),
+          TextField(controller: _areaCtrl, style: TextStyle(color: colors.onSurface), decoration: _deco(hint: _isBn ? 'যেমন: ধানমন্ডি' : 'e.g. Dhanmondi')),
           const SizedBox(height: 20),
           _label(_isBn ? 'পিকআপ তারিখ' : 'Pickup date'),
           const SizedBox(height: 8),
@@ -195,11 +203,11 @@ class _CookScreenState extends State<CookScreen> with SingleTickerProviderStateM
             onTap: _pickDate,
             child: Container(
               padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 16),
-              decoration: BoxDecoration(color: AppColors.glassWhite, borderRadius: BorderRadius.circular(16), border: Border.all(color: AppColors.glassBorder)),
+              decoration: BoxDecoration(color: colors.surface, borderRadius: BorderRadius.circular(16), border: Border.all(color: colors.outlineVariant)),
               child: Row(children: [
-                const Icon(Icons.calendar_today_outlined, color: AppColors.textMuted, size: 16),
+                Icon(Icons.calendar_today_outlined, color: colors.outline, size: 16),
                 const SizedBox(width: 10),
-                Text(_windowDate == null ? (_isBn ? 'তারিখ বেছে নিন' : 'Choose a date') : '${_windowDate!.day}/${_windowDate!.month}/${_windowDate!.year}', style: TextStyle(color: _windowDate == null ? AppColors.textMuted : AppColors.textPrimary, fontSize: 14, fontWeight: FontWeight.w600)),
+                Text(_windowDate == null ? (_isBn ? 'তারিখ বেছে নিন' : 'Choose a date') : '${_windowDate!.day}/${_windowDate!.month}/${_windowDate!.year}', style: TextStyle(color: _windowDate == null ? colors.outline : colors.onSurface, fontSize: 14, fontWeight: FontWeight.w600)),
               ]),
             ),
           ),
@@ -207,9 +215,9 @@ class _CookScreenState extends State<CookScreen> with SingleTickerProviderStateM
           _label(_isBn ? 'সময়সীমা' : 'Time window'),
           const SizedBox(height: 8),
           Row(children: [
-            Expanded(child: OutlinedButton(onPressed: () => _pickTime(true), style: OutlinedButton.styleFrom(side: const BorderSide(color: AppColors.glassBorder), padding: const EdgeInsets.symmetric(vertical: 14), shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(14))), child: Text(_startTime == null ? (_isBn ? 'শুরু' : 'Start') : _fmtTime(_startTime!), style: const TextStyle(color: AppColors.textPrimary)))),
+            Expanded(child: OutlinedButton(onPressed: () => _pickTime(true), style: OutlinedButton.styleFrom(side: BorderSide(color: colors.outlineVariant), padding: const EdgeInsets.symmetric(vertical: 14), shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(14))), child: Text(_startTime == null ? (_isBn ? 'শুরু' : 'Start') : _fmtTime(_startTime!), style: TextStyle(color: colors.onSurface)))),
             const SizedBox(width: 10),
-            Expanded(child: OutlinedButton(onPressed: () => _pickTime(false), style: OutlinedButton.styleFrom(side: const BorderSide(color: AppColors.glassBorder), padding: const EdgeInsets.symmetric(vertical: 14), shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(14))), child: Text(_endTime == null ? (_isBn ? 'শেষ' : 'End') : _fmtTime(_endTime!), style: const TextStyle(color: AppColors.textPrimary)))),
+            Expanded(child: OutlinedButton(onPressed: () => _pickTime(false), style: OutlinedButton.styleFrom(side: BorderSide(color: colors.outlineVariant), padding: const EdgeInsets.symmetric(vertical: 14), shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(14))), child: Text(_endTime == null ? (_isBn ? 'শেষ' : 'End') : _fmtTime(_endTime!), style: TextStyle(color: colors.onSurface)))),
           ]),
           const SizedBox(height: 24),
           GlassButton(label: _isSubmitting ? (_isBn ? 'পাঠানো হচ্ছে...' : 'Posting...') : (_isBn ? 'রিকোয়েস্ট পোস্ট করুন' : 'Post Request'), onPressed: _isSubmitting ? null : _submit),
@@ -219,11 +227,12 @@ class _CookScreenState extends State<CookScreen> with SingleTickerProviderStateM
   }
 
   Widget _buildMyTab() {
-    if (_requestsLoading) return const Center(child: CircularProgressIndicator(color: AppColors.deepBlue));
-    if (_myRequests.isEmpty) return Center(child: Text(_isBn ? 'কোনো রিকোয়েস্ট নেই' : 'No requests yet', style: const TextStyle(color: AppColors.textMuted)));
+    final colors = Theme.of(context).colorScheme;
+    if (_requestsLoading) return Center(child: CircularProgressIndicator(color: colors.primary));
+    if (_myRequests.isEmpty) return Center(child: Text(_isBn ? 'কোনো রিকোয়েস্ট নেই' : 'No requests yet', style: TextStyle(color: colors.outline)));
     return RefreshIndicator(
       onRefresh: _loadMyRequests,
-      color: AppColors.deepBlue,
+      color: colors.primary,
       child: ListView.builder(
         padding: const EdgeInsets.fromLTRB(16, 16, 16, 40),
         itemCount: _myRequests.length,
@@ -234,18 +243,18 @@ class _CookScreenState extends State<CookScreen> with SingleTickerProviderStateM
             child: Container(
               margin: const EdgeInsets.only(bottom: 12),
               padding: const EdgeInsets.all(16),
-              decoration: BoxDecoration(color: AppColors.bgMid, borderRadius: BorderRadius.circular(16), border: Border.all(color: AppColors.glassBorder)),
+              decoration: BoxDecoration(color: colors.surface, borderRadius: BorderRadius.circular(16), border: Border.all(color: colors.outlineVariant)),
               child: Column(
                 crossAxisAlignment: CrossAxisAlignment.start,
                 children: [
                   Row(children: [
-                    Expanded(child: Text(r.dishName, style: const TextStyle(color: AppColors.textPrimary, fontSize: 15, fontWeight: FontWeight.w700))),
-                    Container(padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 4), decoration: BoxDecoration(color: AppColors.deepBlue.withOpacity(0.12), borderRadius: BorderRadius.circular(8)), child: Text(r.status.replaceAll('_', ' '), style: const TextStyle(color: AppColors.deepBlue, fontSize: 11, fontWeight: FontWeight.w700))),
+                    Expanded(child: Text(r.dishName, style: TextStyle(color: colors.onSurface, fontSize: 15, fontWeight: FontWeight.w700))),
+                    Container(padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 4), decoration: BoxDecoration(color: colors.primary.withOpacity(0.12), borderRadius: BorderRadius.circular(8)), child: Text(r.status.replaceAll('_', ' '), style: TextStyle(color: colors.primary, fontSize: 11, fontWeight: FontWeight.w700))),
                   ]),
                   const SizedBox(height: 6),
-                  Text('${r.quantity} · ${r.pickupArea}', style: const TextStyle(color: AppColors.textMuted, fontSize: 12)),
+                  Text('${r.quantity} · ${r.pickupArea}', style: TextStyle(color: colors.outline, fontSize: 12)),
                   const SizedBox(height: 4),
-                  Text('${r.windowStart} - ${r.windowEnd}', style: const TextStyle(color: AppColors.textMuted, fontSize: 12)),
+                  Text('${r.windowStart} - ${r.windowEnd}', style: TextStyle(color: colors.outline, fontSize: 12)),
                 ],
               ),
             ),
@@ -430,12 +439,13 @@ class _RequestDetailSheetState extends State<_RequestDetailSheet> {
   }
 
   Future<void> _rate() async {
+    final colors = Theme.of(context).colorScheme;
     int rating = 5;
     final confirmed = await showDialog<bool>(
       context: context,
       builder: (ctx) => StatefulBuilder(builder: (ctx, setD) => AlertDialog(
-        backgroundColor: AppColors.bgMid,
-        title: Text(widget.isBn ? 'রেটিং দিন' : 'Rate provider', style: const TextStyle(color: AppColors.textPrimary)),
+        backgroundColor: colors.surface,
+        title: Text(widget.isBn ? 'রেটিং দিন' : 'Rate provider', style: TextStyle(color: colors.onSurface)),
         content: Row(mainAxisSize: MainAxisSize.min, children: List.generate(5, (i) => IconButton(
           icon: Icon(i < rating ? Icons.star_rounded : Icons.star_border_rounded, color: const Color(0xFFF59E0B)),
           onPressed: () => setD(() => rating = i + 1),
@@ -464,6 +474,7 @@ class _RequestDetailSheetState extends State<_RequestDetailSheet> {
 
   @override
   Widget build(BuildContext context) {
+    final colors = Theme.of(context).colorScheme;
     final r = _liveRequest;
     final isBn = widget.isBn;
     CookConfirmationModel? finalConfirmation;
@@ -478,12 +489,12 @@ class _RequestDetailSheetState extends State<_RequestDetailSheet> {
           crossAxisAlignment: CrossAxisAlignment.start,
           mainAxisSize: MainAxisSize.min,
           children: [
-            Text(r.dishName, style: const TextStyle(color: AppColors.textPrimary, fontSize: 18, fontWeight: FontWeight.w800)),
+            Text(r.dishName, style: TextStyle(color: colors.onSurface, fontSize: 18, fontWeight: FontWeight.w800)),
             const SizedBox(height: 4),
-            Text('${r.quantity} · ${r.pickupArea}', style: const TextStyle(color: AppColors.textMuted, fontSize: 13)),
+            Text('${r.quantity} · ${r.pickupArea}', style: TextStyle(color: colors.outline, fontSize: 13)),
             const SizedBox(height: 16),
             if (_kActiveTrackedStatuses.contains(r.status) && r.providerLatitude != null && r.providerLongitude != null) ...[
-              Text(isBn ? 'রাঁধুনির অবস্থান' : "Provider's location", style: const TextStyle(color: AppColors.textPrimary, fontWeight: FontWeight.w700)),
+              Text(isBn ? 'রাঁধুনির অবস্থান' : "Provider's location", style: TextStyle(color: colors.onSurface, fontWeight: FontWeight.w700)),
               const SizedBox(height: 8),
               ClipRRect(
                 borderRadius: BorderRadius.circular(14),
@@ -504,52 +515,52 @@ class _RequestDetailSheetState extends State<_RequestDetailSheet> {
               const SizedBox(height: 12),
             ],
             if (r.status != 'posted') ...[
-              Text(isBn ? 'রাঁধুনির তথ্য' : 'Provider info', style: const TextStyle(color: AppColors.textPrimary, fontWeight: FontWeight.w700)),
+              Text(isBn ? 'রাঁধুনির তথ্য' : 'Provider info', style: TextStyle(color: colors.onSurface, fontWeight: FontWeight.w700)),
               const SizedBox(height: 8),
               Row(children: [
-                const Icon(Icons.person_rounded, color: AppColors.deepBlue, size: 18),
+                Icon(Icons.person_rounded, color: colors.primary, size: 18),
                 const SizedBox(width: 8),
-                Text(finalConfirmation?.providerNameSnapshot ?? (isBn ? 'রাঁধুনি' : 'Provider'), style: const TextStyle(color: AppColors.textPrimary, fontSize: 14, fontWeight: FontWeight.w600)),
+                Text(finalConfirmation?.providerNameSnapshot ?? (isBn ? 'রাঁধুনি' : 'Provider'), style: TextStyle(color: colors.onSurface, fontSize: 14, fontWeight: FontWeight.w600)),
               ]),
               if (finalConfirmation?.providerPhoneSnapshot != null) ...[
                 const SizedBox(height: 8),
                 Row(children: [
-                  const Icon(Icons.phone_rounded, color: AppColors.deepBlue, size: 18),
+                  Icon(Icons.phone_rounded, color: colors.primary, size: 18),
                   const SizedBox(width: 8),
-                  Text(finalConfirmation!.providerPhoneSnapshot!, style: const TextStyle(color: AppColors.textPrimary, fontSize: 14)),
+                  Text(finalConfirmation!.providerPhoneSnapshot!, style: TextStyle(color: colors.onSurface, fontSize: 14)),
                 ]),
               ] else ...[
                 const SizedBox(height: 8),
-                Text(isBn ? 'নম্বরটি এখনো প্রকাশ করা হয়নি — ততক্ষণ চ্যাটে কথা বলুন' : "The number isn't revealed yet — chat until then", style: const TextStyle(color: AppColors.textMuted, fontSize: 12, height: 1.4)),
+                Text(isBn ? 'নম্বরটি এখনো প্রকাশ করা হয়নি — ততক্ষণ চ্যাটে কথা বলুন' : "The number isn't revealed yet — chat until then", style: TextStyle(color: colors.outline, fontSize: 12, height: 1.4)),
               ],
               const SizedBox(height: 10),
               GestureDetector(
                 onTap: _isOpeningChat ? null : _openChat,
                 child: Row(children: [
                   _isOpeningChat
-                      ? const SizedBox(width: 16, height: 16, child: CircularProgressIndicator(strokeWidth: 2, color: AppColors.deepBlue))
-                      : const Icon(Icons.chat_bubble_outline_rounded, color: AppColors.deepBlue, size: 16),
+                      ? SizedBox(width: 16, height: 16, child: CircularProgressIndicator(strokeWidth: 2, color: colors.primary))
+                      : Icon(Icons.chat_bubble_outline_rounded, color: colors.primary, size: 16),
                   const SizedBox(width: 8),
-                  Text(isBn ? 'রাঁধুনির সাথে চ্যাট করুন' : 'Chat with provider', style: const TextStyle(color: AppColors.deepBlue, fontSize: 13, fontWeight: FontWeight.w600)),
+                  Text(isBn ? 'রাঁধুনির সাথে চ্যাট করুন' : 'Chat with provider', style: TextStyle(color: colors.primary, fontSize: 13, fontWeight: FontWeight.w600)),
                 ]),
               ),
               const SizedBox(height: 16),
             ],
             if (r.status == 'posted') ...[
-              Text(isBn ? 'রাঁধুনিদের সাড়া' : 'Provider responses', style: const TextStyle(color: AppColors.textPrimary, fontWeight: FontWeight.w700)),
+              Text(isBn ? 'রাঁধুনিদের সাড়া' : 'Provider responses', style: TextStyle(color: colors.onSurface, fontWeight: FontWeight.w700)),
               const SizedBox(height: 8),
-              if (_loading) const Center(child: CircularProgressIndicator(color: AppColors.deepBlue))
+              if (_loading) Center(child: CircularProgressIndicator(color: colors.primary))
               else if (_confirmations.where((c) => c.status == 'confirmed').isEmpty)
-                Text(isBn ? 'এখনো কোনো রাঁধুনি সাড়া দেননি' : 'No providers have responded yet', style: const TextStyle(color: AppColors.textMuted, fontSize: 13))
+                Text(isBn ? 'এখনো কোনো রাঁধুনি সাড়া দেননি' : 'No providers have responded yet', style: TextStyle(color: colors.outline, fontSize: 13))
               else
                 ..._confirmations.where((c) => c.status == 'confirmed').map((c) => Container(
                       margin: const EdgeInsets.only(bottom: 8),
                       padding: const EdgeInsets.all(12),
-                      decoration: BoxDecoration(color: AppColors.glassWhite, borderRadius: BorderRadius.circular(12), border: Border.all(color: AppColors.glassBorder)),
+                      decoration: BoxDecoration(color: colors.surface, borderRadius: BorderRadius.circular(12), border: Border.all(color: colors.outlineVariant)),
                       child: Row(children: [
                         Expanded(child: Column(crossAxisAlignment: CrossAxisAlignment.start, children: [
-                          Text(c.providerNameSnapshot ?? (isBn ? 'রাঁধুনি' : 'Provider'), style: const TextStyle(color: AppColors.textPrimary, fontWeight: FontWeight.w700)),
-                          if (c.quotedAmount != null) Text('৳${c.quotedAmount!.toStringAsFixed(0)}', style: const TextStyle(color: AppColors.deepBlue, fontSize: 12, fontWeight: FontWeight.w600)),
+                          Text(c.providerNameSnapshot ?? (isBn ? 'রাঁধুনি' : 'Provider'), style: TextStyle(color: colors.onSurface, fontWeight: FontWeight.w700)),
+                          if (c.quotedAmount != null) Text('৳${c.quotedAmount!.toStringAsFixed(0)}', style: TextStyle(color: colors.primary, fontSize: 12, fontWeight: FontWeight.w600)),
                         ])),
                         TextButton(onPressed: _busy ? null : () => _finalize(c), child: Text(isBn ? 'নির্বাচন করুন' : 'Select')),
                       ]),

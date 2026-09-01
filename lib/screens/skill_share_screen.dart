@@ -5,7 +5,6 @@ import 'package:provider/provider.dart';
 import '../core/network/api_client.dart';
 import '../core/utils/app_strings.dart';
 import '../services/skill_share_service.dart';
-import '../theme/app_theme.dart';
 import '../widgets/glass_button.dart';
 import 'exchange_detail_screen.dart';
 import 'payment_waiting_screen.dart';
@@ -91,6 +90,7 @@ class _SkillShareScreenState extends State<SkillShareScreen> with SingleTickerPr
   }
 
   void _showAddSkillSheet() {
+    final colors = Theme.of(context).colorScheme;
     final nameCtrl = TextEditingController();
     final descCtrl = TextEditingController();
     String category = 'technology';
@@ -108,15 +108,15 @@ class _SkillShareScreenState extends State<SkillShareScreen> with SingleTickerPr
             child: BackdropFilter(
               filter: ImageFilter.blur(sigmaX: 12, sigmaY: 12),
               child: Container(
-                color: AppColors.bgMid,
+                color: colors.surface,
                 padding: const EdgeInsets.fromLTRB(20, 20, 20, 32),
                 child: Column(
                   mainAxisSize: MainAxisSize.min,
                   crossAxisAlignment: CrossAxisAlignment.start,
                   children: [
-                    Center(child: Container(width: 40, height: 4, decoration: BoxDecoration(color: AppColors.glassBorder, borderRadius: BorderRadius.circular(2)))),
+                    Center(child: Container(width: 40, height: 4, decoration: BoxDecoration(color: colors.outlineVariant, borderRadius: BorderRadius.circular(2)))),
                     const SizedBox(height: 16),
-                    Text(_isBn ? 'নতুন দক্ষতা যোগ করুন' : 'Add a New Skill', style: const TextStyle(color: AppColors.textPrimary, fontSize: 18, fontWeight: FontWeight.w700)),
+                    Text(_isBn ? 'নতুন দক্ষতা যোগ করুন' : 'Add a New Skill', style: TextStyle(color: colors.onSurface, fontSize: 18, fontWeight: FontWeight.w700)),
                     const SizedBox(height: 16),
                     _sheetField(nameCtrl, _isBn ? 'দক্ষতার নাম' : 'Skill name', Icons.star_outline_rounded),
                     const SizedBox(height: 12),
@@ -124,8 +124,8 @@ class _SkillShareScreenState extends State<SkillShareScreen> with SingleTickerPr
                     const SizedBox(height: 12),
                     DropdownButtonFormField<String>(
                       initialValue: category,
-                      dropdownColor: AppColors.bgMid,
-                      style: const TextStyle(color: AppColors.textPrimary),
+                      dropdownColor: colors.surface,
+                      style: TextStyle(color: colors.onSurface),
                       decoration: _inputDeco(_isBn ? 'বিভাগ' : 'Category'),
                       items: _kCategories.map((e) => DropdownMenuItem(value: e, child: Text(e))).toList(),
                       onChanged: (v) => setS(() => category = v ?? category),
@@ -133,8 +133,8 @@ class _SkillShareScreenState extends State<SkillShareScreen> with SingleTickerPr
                     const SizedBox(height: 12),
                     DropdownButtonFormField<String>(
                       initialValue: level,
-                      dropdownColor: AppColors.bgMid,
-                      style: const TextStyle(color: AppColors.textPrimary),
+                      dropdownColor: colors.surface,
+                      style: TextStyle(color: colors.onSurface),
                       decoration: _inputDeco(_isBn ? 'স্তর' : 'Level'),
                       items: _kLevels.map((e) => DropdownMenuItem(value: e, child: Text(e))).toList(),
                       onChanged: (v) => setS(() => level = v ?? level),
@@ -167,25 +167,29 @@ class _SkillShareScreenState extends State<SkillShareScreen> with SingleTickerPr
     );
   }
 
-  InputDecoration _inputDeco(String hint) => InputDecoration(
+  InputDecoration _inputDeco(String hint) {
+    final colors = Theme.of(context).colorScheme;
+    return InputDecoration(
     hintText: hint,
-    hintStyle: const TextStyle(color: AppColors.textMuted),
+    hintStyle: TextStyle(color: colors.outline),
     filled: true,
-    fillColor: AppColors.glassWhite,
+    fillColor: colors.surface,
     border: OutlineInputBorder(borderRadius: BorderRadius.circular(12), borderSide: BorderSide.none),
   );
+  }
 
   Widget _sheetField(TextEditingController ctrl, String hint, IconData icon, {int maxLines = 1}) {
+    final colors = Theme.of(context).colorScheme;
     return TextField(
       controller: ctrl,
       maxLines: maxLines,
-      style: const TextStyle(color: AppColors.textPrimary),
+      style: TextStyle(color: colors.onSurface),
       decoration: InputDecoration(
         hintText: hint,
-        hintStyle: const TextStyle(color: AppColors.textMuted),
-        prefixIcon: maxLines == 1 ? Icon(icon, color: AppColors.textMuted, size: 18) : null,
+        hintStyle: TextStyle(color: colors.outline),
+        prefixIcon: maxLines == 1 ? Icon(icon, color: colors.outline, size: 18) : null,
         filled: true,
-        fillColor: AppColors.glassWhite,
+        fillColor: colors.surface,
         border: OutlineInputBorder(borderRadius: BorderRadius.circular(12), borderSide: BorderSide.none),
       ),
     );
@@ -201,22 +205,23 @@ class _SkillShareScreenState extends State<SkillShareScreen> with SingleTickerPr
 
   @override
   Widget build(BuildContext context) {
+    final colors = Theme.of(context).colorScheme;
     _isBn = context.watch<LanguageNotifier>().isBengali;
     return Scaffold(
-      backgroundColor: AppColors.bgDark,
+      backgroundColor: colors.surfaceContainerHighest,
       appBar: AppBar(
         backgroundColor: Colors.transparent,
         elevation: 0,
-        title: Text(_isBn ? 'স্কিল শেয়ার' : 'Skill Share', style: const TextStyle(color: AppColors.textPrimary, fontSize: 18, fontWeight: FontWeight.w700)),
+        title: Text(_isBn ? 'স্কিল শেয়ার' : 'Skill Share', style: TextStyle(color: colors.onSurface, fontSize: 18, fontWeight: FontWeight.w700)),
         leading: IconButton(
-          icon: const Icon(Icons.arrow_back_ios_new_rounded, color: AppColors.textPrimary, size: 18),
+          icon: Icon(Icons.arrow_back_ios_new_rounded, color: colors.onSurface, size: 18),
           onPressed: () => Navigator.pop(context),
         ),
         bottom: TabBar(
           controller: _tabController,
-          labelColor: AppColors.deepBlue,
-          unselectedLabelColor: AppColors.textMuted,
-          indicatorColor: AppColors.deepBlue,
+          labelColor: colors.primary,
+          unselectedLabelColor: colors.outline,
+          indicatorColor: colors.primary,
           tabs: [
             Tab(text: _isBn ? 'খুঁজুন' : 'Discover'),
             Tab(text: _isBn ? 'আমার দক্ষতা' : 'My Skills'),
@@ -226,7 +231,7 @@ class _SkillShareScreenState extends State<SkillShareScreen> with SingleTickerPr
         ),
       ),
       body: _isLoading
-          ? const Center(child: CircularProgressIndicator(color: AppColors.deepBlue))
+          ? Center(child: CircularProgressIndicator(color: colors.primary))
           : TabBarView(
               controller: _tabController,
               children: [
@@ -240,7 +245,7 @@ class _SkillShareScreenState extends State<SkillShareScreen> with SingleTickerPr
         animation: _tabController,
         builder: (_, __) => FloatingActionButton(
           onPressed: _tabController.index == 2 ? _showPostRequestSheet : _showAddSkillSheet,
-          backgroundColor: AppColors.deepBlue,
+          backgroundColor: colors.primary,
           child: const Icon(Icons.add_rounded, color: Colors.white),
         ),
       ),
@@ -276,6 +281,7 @@ class _SkillShareScreenState extends State<SkillShareScreen> with SingleTickerPr
   }
 
   Widget _buildDiscoverTab() {
+    final colors = Theme.of(context).colorScheme;
     return Column(
       children: [
         Padding(
@@ -286,23 +292,23 @@ class _SkillShareScreenState extends State<SkillShareScreen> with SingleTickerPr
                 child: TextField(
                   controller: _discoverCtrl,
                   onSubmitted: (_) => _runDiscover(),
-                  style: const TextStyle(color: AppColors.textPrimary, fontSize: 14),
+                  style: TextStyle(color: colors.onSurface, fontSize: 14),
                   decoration: InputDecoration(
                     hintText: _isBn
                         ? 'দক্ষতা খুঁজুন (যেমন: গিটার, ইংরেজি)'
                         : 'Search a skill (e.g. guitar, English)',
-                    hintStyle: const TextStyle(color: AppColors.textMuted, fontSize: 13),
-                    prefixIcon: const Icon(Icons.search_rounded,
-                        color: AppColors.textMuted, size: 20),
+                    hintStyle: TextStyle(color: colors.outline, fontSize: 13),
+                    prefixIcon: Icon(Icons.search_rounded,
+                        color: colors.outline, size: 20),
                     filled: true,
-                    fillColor: AppColors.glassWhite,
+                    fillColor: colors.surface,
                     border: OutlineInputBorder(
                       borderRadius: BorderRadius.circular(12),
-                      borderSide: const BorderSide(color: AppColors.glassBorder),
+                      borderSide: BorderSide(color: colors.outlineVariant),
                     ),
                     enabledBorder: OutlineInputBorder(
                       borderRadius: BorderRadius.circular(12),
-                      borderSide: const BorderSide(color: AppColors.glassBorder),
+                      borderSide: BorderSide(color: colors.outlineVariant),
                     ),
                   ),
                 ),
@@ -314,7 +320,7 @@ class _SkillShareScreenState extends State<SkillShareScreen> with SingleTickerPr
                   width: 48,
                   height: 48,
                   decoration: BoxDecoration(
-                    color: AppColors.deepBlue,
+                    color: colors.primary,
                     borderRadius: BorderRadius.circular(12),
                   ),
                   child: _discovering
@@ -339,7 +345,7 @@ class _SkillShareScreenState extends State<SkillShareScreen> with SingleTickerPr
                         : (_isBn
                             ? 'অন্যদের দক্ষতা খুঁজতে সার্চ করুন'
                             : "Search to find other people's skills"),
-                    style: const TextStyle(color: AppColors.textMuted, fontSize: 13),
+                    style: TextStyle(color: colors.outline, fontSize: 13),
                   ),
                 )
               : ListView.builder(
@@ -355,9 +361,9 @@ class _SkillShareScreenState extends State<SkillShareScreen> with SingleTickerPr
                       margin: const EdgeInsets.only(bottom: 10),
                       padding: const EdgeInsets.all(14),
                       decoration: BoxDecoration(
-                        color: AppColors.glassWhite,
+                        color: colors.surface,
                         borderRadius: BorderRadius.circular(14),
-                        border: Border.all(color: AppColors.glassBorder),
+                        border: Border.all(color: colors.outlineVariant),
                       ),
                       child: Column(
                         crossAxisAlignment: CrossAxisAlignment.start,
@@ -366,8 +372,8 @@ class _SkillShareScreenState extends State<SkillShareScreen> with SingleTickerPr
                             children: [
                               Expanded(
                                 child: Text(name,
-                                    style: const TextStyle(
-                                        color: AppColors.textPrimary,
+                                    style: TextStyle(
+                                        color: colors.onSurface,
                                         fontSize: 14,
                                         fontWeight: FontWeight.w700)),
                               ),
@@ -376,13 +382,13 @@ class _SkillShareScreenState extends State<SkillShareScreen> with SingleTickerPr
                                   padding: const EdgeInsets.symmetric(
                                       horizontal: 8, vertical: 3),
                                   decoration: BoxDecoration(
-                                    color: AppColors.glassWhite,
+                                    color: colors.surface,
                                     borderRadius: BorderRadius.circular(20),
-                                    border: Border.all(color: AppColors.glassBorder),
+                                    border: Border.all(color: colors.outlineVariant),
                                   ),
                                   child: Text(level,
-                                      style: const TextStyle(
-                                          color: AppColors.textSecondary,
+                                      style: TextStyle(
+                                          color: colors.onSurfaceVariant,
                                           fontSize: 10,
                                           fontWeight: FontWeight.w600)),
                                 ),
@@ -391,16 +397,16 @@ class _SkillShareScreenState extends State<SkillShareScreen> with SingleTickerPr
                           if (cat.isNotEmpty) ...[
                             const SizedBox(height: 3),
                             Text(cat,
-                                style: const TextStyle(
-                                    color: AppColors.deepBlue, fontSize: 11.5)),
+                                style: TextStyle(
+                                    color: colors.primary, fontSize: 11.5)),
                           ],
                           if (desc.isNotEmpty) ...[
                             const SizedBox(height: 6),
                             Text(desc,
                                 maxLines: 3,
                                 overflow: TextOverflow.ellipsis,
-                                style: const TextStyle(
-                                    color: AppColors.textSecondary, fontSize: 12)),
+                                style: TextStyle(
+                                    color: colors.onSurfaceVariant, fontSize: 12)),
                           ],
                         ],
                       ),
@@ -413,14 +419,15 @@ class _SkillShareScreenState extends State<SkillShareScreen> with SingleTickerPr
   }
 
   Widget _buildMySkillsTab() {
+    final colors = Theme.of(context).colorScheme;
     if (_mySkills.isEmpty) {
       return Center(
         child: Column(mainAxisAlignment: MainAxisAlignment.center, children: [
-          const Icon(Icons.auto_awesome_rounded, color: AppColors.textMuted, size: 56),
+          Icon(Icons.auto_awesome_rounded, color: colors.outline, size: 56),
           const SizedBox(height: 12),
-          Text(_isBn ? 'কোনো দক্ষতা নেই' : 'No skills yet', style: const TextStyle(color: AppColors.textMuted)),
+          Text(_isBn ? 'কোনো দক্ষতা নেই' : 'No skills yet', style: TextStyle(color: colors.outline)),
           const SizedBox(height: 8),
-          TextButton(onPressed: _showAddSkillSheet, child: Text(_isBn ? 'যোগ করুন' : 'Add', style: const TextStyle(color: AppColors.deepBlue))),
+          TextButton(onPressed: _showAddSkillSheet, child: Text(_isBn ? 'যোগ করুন' : 'Add', style: TextStyle(color: colors.primary))),
         ]),
       );
     }
@@ -436,22 +443,22 @@ class _SkillShareScreenState extends State<SkillShareScreen> with SingleTickerPr
           margin: const EdgeInsets.only(bottom: 10),
           padding: const EdgeInsets.all(14),
           decoration: BoxDecoration(
-            color: AppColors.bgMid,
+            color: colors.surface,
             borderRadius: BorderRadius.circular(14),
-            border: Border.all(color: AppColors.glassBorder),
+            border: Border.all(color: colors.outlineVariant),
           ),
           child: Row(children: [
             Container(
               width: 44,
               height: 44,
-              decoration: BoxDecoration(color: AppColors.deepBlue.withValues(alpha: 0.1), borderRadius: BorderRadius.circular(12)),
-              child: const Icon(Icons.auto_awesome_rounded, color: AppColors.deepBlue, size: 22),
+              decoration: BoxDecoration(color: colors.primary.withValues(alpha: 0.1), borderRadius: BorderRadius.circular(12)),
+              child: Icon(Icons.auto_awesome_rounded, color: colors.primary, size: 22),
             ),
             const SizedBox(width: 12),
             Expanded(child: Column(crossAxisAlignment: CrossAxisAlignment.start, children: [
-              Text(s['skillName'] as String? ?? '', style: const TextStyle(color: AppColors.textPrimary, fontSize: 14, fontWeight: FontWeight.w600)),
+              Text(s['skillName'] as String? ?? '', style: TextStyle(color: colors.onSurface, fontSize: 14, fontWeight: FontWeight.w600)),
               const SizedBox(height: 2),
-              Text(s['category'] as String? ?? '', style: const TextStyle(color: AppColors.textMuted, fontSize: 11)),
+              Text(s['category'] as String? ?? '', style: TextStyle(color: colors.outline, fontSize: 11)),
             ])),
             Container(
               padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 4),
@@ -468,6 +475,7 @@ class _SkillShareScreenState extends State<SkillShareScreen> with SingleTickerPr
   /// Tap a skill card → edit it (PATCH /skill-share/skills/:id, only the
   /// fields that changed).
   void _showEditSkillSheet(Map<String, dynamic> s) {
+    final colors = Theme.of(context).colorScheme;
     final skillId = s['id'] as String? ?? '';
     if (skillId.isEmpty) return;
     final nameCtrl = TextEditingController(text: s['skillName'] as String? ?? '');
@@ -488,15 +496,15 @@ class _SkillShareScreenState extends State<SkillShareScreen> with SingleTickerPr
             child: BackdropFilter(
               filter: ImageFilter.blur(sigmaX: 12, sigmaY: 12),
               child: Container(
-                color: AppColors.bgMid,
+                color: colors.surface,
                 padding: const EdgeInsets.fromLTRB(20, 20, 20, 32),
                 child: Column(
                   mainAxisSize: MainAxisSize.min,
                   crossAxisAlignment: CrossAxisAlignment.start,
                   children: [
-                    Center(child: Container(width: 40, height: 4, decoration: BoxDecoration(color: AppColors.glassBorder, borderRadius: BorderRadius.circular(2)))),
+                    Center(child: Container(width: 40, height: 4, decoration: BoxDecoration(color: colors.outlineVariant, borderRadius: BorderRadius.circular(2)))),
                     const SizedBox(height: 16),
-                    Text(_isBn ? 'দক্ষতা সম্পাদনা করুন' : 'Edit Skill', style: const TextStyle(color: AppColors.textPrimary, fontSize: 18, fontWeight: FontWeight.w700)),
+                    Text(_isBn ? 'দক্ষতা সম্পাদনা করুন' : 'Edit Skill', style: TextStyle(color: colors.onSurface, fontSize: 18, fontWeight: FontWeight.w700)),
                     const SizedBox(height: 16),
                     _sheetField(nameCtrl, _isBn ? 'দক্ষতার নাম' : 'Skill name', Icons.star_outline_rounded),
                     const SizedBox(height: 12),
@@ -504,8 +512,8 @@ class _SkillShareScreenState extends State<SkillShareScreen> with SingleTickerPr
                     const SizedBox(height: 12),
                     DropdownButtonFormField<String>(
                       initialValue: category,
-                      dropdownColor: AppColors.bgMid,
-                      style: const TextStyle(color: AppColors.textPrimary),
+                      dropdownColor: colors.surface,
+                      style: TextStyle(color: colors.onSurface),
                       decoration: _inputDeco(_isBn ? 'বিভাগ' : 'Category'),
                       items: _kCategories.map((e) => DropdownMenuItem(value: e, child: Text(e))).toList(),
                       onChanged: (v) => setS(() => category = v ?? category),
@@ -513,8 +521,8 @@ class _SkillShareScreenState extends State<SkillShareScreen> with SingleTickerPr
                     const SizedBox(height: 12),
                     DropdownButtonFormField<String>(
                       initialValue: level,
-                      dropdownColor: AppColors.bgMid,
-                      style: const TextStyle(color: AppColors.textPrimary),
+                      dropdownColor: colors.surface,
+                      style: TextStyle(color: colors.onSurface),
                       decoration: _inputDeco(_isBn ? 'স্তর' : 'Level'),
                       items: _kLevels.map((e) => DropdownMenuItem(value: e, child: Text(e))).toList(),
                       onChanged: (v) => setS(() => level = v ?? level),
@@ -561,20 +569,21 @@ class _SkillShareScreenState extends State<SkillShareScreen> with SingleTickerPr
   // proposal sent through the old flow failed backend validation outright.
 
   Widget _buildRequestsTab() {
+    final colors = Theme.of(context).colorScheme;
     if (_openExchanges.isEmpty) {
       return Center(
         child: Column(mainAxisAlignment: MainAxisAlignment.center, children: [
-          const Icon(Icons.campaign_outlined, color: AppColors.textMuted, size: 56),
+          Icon(Icons.campaign_outlined, color: colors.outline, size: 56),
           const SizedBox(height: 12),
-          Text(_isBn ? 'এই মুহূর্তে কোনো খোলা অনুরোধ নেই' : 'No open requests right now', style: const TextStyle(color: AppColors.textMuted)),
+          Text(_isBn ? 'এই মুহূর্তে কোনো খোলা অনুরোধ নেই' : 'No open requests right now', style: TextStyle(color: colors.outline)),
           const SizedBox(height: 8),
-          TextButton(onPressed: _showPostRequestSheet, child: Text(_isBn ? 'একটি পোস্ট করুন' : 'Post one', style: const TextStyle(color: AppColors.deepBlue))),
+          TextButton(onPressed: _showPostRequestSheet, child: Text(_isBn ? 'একটি পোস্ট করুন' : 'Post one', style: TextStyle(color: colors.primary))),
         ]),
       );
     }
     return RefreshIndicator(
-      color: AppColors.deepBlue,
-      backgroundColor: AppColors.bgMid,
+      color: colors.primary,
+      backgroundColor: colors.surface,
       onRefresh: _loadOpenExchanges,
       child: ListView.builder(
         padding: const EdgeInsets.fromLTRB(16, 12, 16, 100),
@@ -586,35 +595,35 @@ class _SkillShareScreenState extends State<SkillShareScreen> with SingleTickerPr
             margin: const EdgeInsets.only(bottom: 10),
             padding: const EdgeInsets.all(14),
             decoration: BoxDecoration(
-              color: AppColors.bgMid,
+              color: colors.surface,
               borderRadius: BorderRadius.circular(14),
-              border: Border.all(color: AppColors.glassBorder),
+              border: Border.all(color: colors.outlineVariant),
             ),
             child: Column(crossAxisAlignment: CrossAxisAlignment.start, children: [
               Row(children: [
-                Icon(Icons.auto_awesome_rounded, color: AppColors.deepBlue, size: 16),
+                Icon(Icons.auto_awesome_rounded, color: colors.primary, size: 16),
                 const SizedBox(width: 6),
-                Expanded(child: Text(_isBn ? 'দিচ্ছেন: ${offered?['skillName'] ?? '—'}' : 'Offering: ${offered?['skillName'] ?? '—'}', style: const TextStyle(color: AppColors.textPrimary, fontSize: 13.5, fontWeight: FontWeight.w600))),
+                Expanded(child: Text(_isBn ? 'দিচ্ছেন: ${offered?['skillName'] ?? '—'}' : 'Offering: ${offered?['skillName'] ?? '—'}', style: TextStyle(color: colors.onSurface, fontSize: 13.5, fontWeight: FontWeight.w600))),
               ]),
               const SizedBox(height: 6),
               Row(children: [
-                const Icon(Icons.swap_horiz_rounded, color: AppColors.textMuted, size: 16),
+                Icon(Icons.swap_horiz_rounded, color: colors.outline, size: 16),
                 const SizedBox(width: 6),
-                Expanded(child: Text(_isBn ? 'চাচ্ছেন: ${e['wantedSkillName'] ?? '—'} (${e['wantedSkillCategory'] ?? ''})' : 'Wants: ${e['wantedSkillName'] ?? '—'} (${e['wantedSkillCategory'] ?? ''})', style: const TextStyle(color: AppColors.textSecondary, fontSize: 13))),
+                Expanded(child: Text(_isBn ? 'চাচ্ছেন: ${e['wantedSkillName'] ?? '—'} (${e['wantedSkillCategory'] ?? ''})' : 'Wants: ${e['wantedSkillName'] ?? '—'} (${e['wantedSkillCategory'] ?? ''})', style: TextStyle(color: colors.onSurfaceVariant, fontSize: 13))),
               ]),
               if ((e['message'] as String?)?.isNotEmpty ?? false) ...[
                 const SizedBox(height: 6),
-                Text(e['message'] as String, style: const TextStyle(color: AppColors.textMuted, fontSize: 12), maxLines: 2, overflow: TextOverflow.ellipsis),
+                Text(e['message'] as String, style: TextStyle(color: colors.outline, fontSize: 12), maxLines: 2, overflow: TextOverflow.ellipsis),
               ],
               const SizedBox(height: 10),
               Row(children: [
-                const Icon(Icons.repeat_rounded, color: AppColors.textMuted, size: 13),
+                Icon(Icons.repeat_rounded, color: colors.outline, size: 13),
                 const SizedBox(width: 4),
-                Text(_isBn ? '${e['agreedSessionCount'] ?? 1} সেশন' : '${e['agreedSessionCount'] ?? 1} sessions', style: const TextStyle(color: AppColors.textMuted, fontSize: 11)),
+                Text(_isBn ? '${e['agreedSessionCount'] ?? 1} সেশন' : '${e['agreedSessionCount'] ?? 1} sessions', style: TextStyle(color: colors.outline, fontSize: 11)),
                 const Spacer(),
                 TextButton(
                   onPressed: () => _showRespondSheet(e),
-                  child: Text(_isBn ? 'রেসপন্স দিন' : 'Respond', style: const TextStyle(color: AppColors.deepBlue, fontSize: 12.5, fontWeight: FontWeight.w700)),
+                  child: Text(_isBn ? 'রেসপন্স দিন' : 'Respond', style: TextStyle(color: colors.primary, fontSize: 12.5, fontWeight: FontWeight.w700)),
                 ),
               ]),
             ]),
@@ -625,6 +634,7 @@ class _SkillShareScreenState extends State<SkillShareScreen> with SingleTickerPr
   }
 
   void _showPostRequestSheet() {
+    final colors = Theme.of(context).colorScheme;
     if (_mySkills.isEmpty) {
       _showError(_isBn ? 'প্রথমে "আমার দক্ষতা" ট্যাবে অন্তত একটি দক্ষতা যোগ করুন' : 'First add at least one skill in the "My Skills" tab');
       return;
@@ -648,49 +658,49 @@ class _SkillShareScreenState extends State<SkillShareScreen> with SingleTickerPr
             child: BackdropFilter(
               filter: ImageFilter.blur(sigmaX: 12, sigmaY: 12),
               child: Container(
-                color: AppColors.bgMid,
+                color: colors.surface,
                 padding: const EdgeInsets.fromLTRB(20, 20, 20, 32),
                 child: SingleChildScrollView(
                   child: Column(
                     mainAxisSize: MainAxisSize.min,
                     crossAxisAlignment: CrossAxisAlignment.start,
                     children: [
-                      Center(child: Container(width: 40, height: 4, decoration: BoxDecoration(color: AppColors.glassBorder, borderRadius: BorderRadius.circular(2)))),
+                      Center(child: Container(width: 40, height: 4, decoration: BoxDecoration(color: colors.outlineVariant, borderRadius: BorderRadius.circular(2)))),
                       const SizedBox(height: 16),
-                      Text(_isBn ? 'অনুরোধ পোস্ট করুন' : 'Post a Request', style: const TextStyle(color: AppColors.textPrimary, fontSize: 18, fontWeight: FontWeight.w700)),
+                      Text(_isBn ? 'অনুরোধ পোস্ট করুন' : 'Post a Request', style: TextStyle(color: colors.onSurface, fontSize: 18, fontWeight: FontWeight.w700)),
                       const SizedBox(height: 4),
-                      Text(_isBn ? 'যে কেউ এটা দেখে সাড়া দিতে পারবে' : 'Anyone who sees this can respond', style: const TextStyle(color: AppColors.textMuted, fontSize: 12)),
+                      Text(_isBn ? 'যে কেউ এটা দেখে সাড়া দিতে পারবে' : 'Anyone who sees this can respond', style: TextStyle(color: colors.outline, fontSize: 12)),
                       const SizedBox(height: 16),
-                      Text(_isBn ? 'আপনি কী দিচ্ছেন:' : 'What you\'re offering:', style: const TextStyle(color: AppColors.textMuted, fontSize: 12)),
+                      Text(_isBn ? 'আপনি কী দিচ্ছেন:' : 'What you\'re offering:', style: TextStyle(color: colors.outline, fontSize: 12)),
                       const SizedBox(height: 8),
                       DropdownButtonFormField<String>(
                         initialValue: offeredSkillId,
-                        dropdownColor: AppColors.bgMid,
-                        style: const TextStyle(color: AppColors.textPrimary),
+                        dropdownColor: colors.surface,
+                        style: TextStyle(color: colors.onSurface),
                         decoration: _inputDeco(_isBn ? 'আমার দক্ষতা' : 'My skill'),
                         items: _mySkills.map((s) => DropdownMenuItem<String>(value: s['id'] as String?, child: Text(s['skillName'] as String? ?? ''))).toList(),
                         onChanged: (v) => setS(() => offeredSkillId = v),
                       ),
                       const SizedBox(height: 14),
-                      Text(_isBn ? 'আপনি কী চান:' : 'What you want:', style: const TextStyle(color: AppColors.textMuted, fontSize: 12)),
+                      Text(_isBn ? 'আপনি কী চান:' : 'What you want:', style: TextStyle(color: colors.outline, fontSize: 12)),
                       const SizedBox(height: 8),
                       _sheetField(wantedNameCtrl, _isBn ? 'যেমন: React ডেভেলপমেন্ট' : 'e.g. React development', Icons.search_rounded),
                       const SizedBox(height: 12),
                       DropdownButtonFormField<String>(
                         initialValue: wantedCategory,
-                        dropdownColor: AppColors.bgMid,
-                        style: const TextStyle(color: AppColors.textPrimary),
+                        dropdownColor: colors.surface,
+                        style: TextStyle(color: colors.onSurface),
                         decoration: _inputDeco(_isBn ? 'বিভাগ' : 'Category'),
                         items: _kCategories.map((e) => DropdownMenuItem(value: e, child: Text(e))).toList(),
                         onChanged: (v) => setS(() => wantedCategory = v ?? wantedCategory),
                       ),
                       const SizedBox(height: 12),
                       Row(children: [
-                        Text(_isBn ? 'সেশন সংখ্যা:' : 'Number of sessions:', style: const TextStyle(color: AppColors.textMuted, fontSize: 12)),
+                        Text(_isBn ? 'সেশন সংখ্যা:' : 'Number of sessions:', style: TextStyle(color: colors.outline, fontSize: 12)),
                         const Spacer(),
-                        IconButton(onPressed: () => setS(() => sessions = (sessions - 1).clamp(1, 12)), icon: const Icon(Icons.remove_rounded, color: AppColors.textMuted)),
-                        Text('$sessions', style: const TextStyle(color: AppColors.textPrimary, fontWeight: FontWeight.w700)),
-                        IconButton(onPressed: () => setS(() => sessions = (sessions + 1).clamp(1, 12)), icon: const Icon(Icons.add_rounded, color: AppColors.deepBlue)),
+                        IconButton(onPressed: () => setS(() => sessions = (sessions - 1).clamp(1, 12)), icon: Icon(Icons.remove_rounded, color: colors.outline)),
+                        Text('$sessions', style: TextStyle(color: colors.onSurface, fontWeight: FontWeight.w700)),
+                        IconButton(onPressed: () => setS(() => sessions = (sessions + 1).clamp(1, 12)), icon: Icon(Icons.add_rounded, color: colors.primary)),
                       ]),
                       const SizedBox(height: 12),
                       _sheetField(msgCtrl, _isBn ? 'বার্তা (ঐচ্ছিক)' : 'Message (optional)', Icons.message_outlined, maxLines: 2),
@@ -732,6 +742,7 @@ class _SkillShareScreenState extends State<SkillShareScreen> with SingleTickerPr
   }
 
   void _showRespondSheet(Map<String, dynamic> exchange) {
+    final colors = Theme.of(context).colorScheme;
     String? myOfferId = _mySkills.isNotEmpty ? _mySkills.first['id'] as String? : null;
     bool submitting = false;
 
@@ -747,25 +758,25 @@ class _SkillShareScreenState extends State<SkillShareScreen> with SingleTickerPr
             child: BackdropFilter(
               filter: ImageFilter.blur(sigmaX: 12, sigmaY: 12),
               child: Container(
-                color: AppColors.bgMid,
+                color: colors.surface,
                 padding: const EdgeInsets.fromLTRB(20, 20, 20, 32),
                 child: Column(
                   mainAxisSize: MainAxisSize.min,
                   crossAxisAlignment: CrossAxisAlignment.start,
                   children: [
-                    Center(child: Container(width: 40, height: 4, decoration: BoxDecoration(color: AppColors.glassBorder, borderRadius: BorderRadius.circular(2)))),
+                    Center(child: Container(width: 40, height: 4, decoration: BoxDecoration(color: colors.outlineVariant, borderRadius: BorderRadius.circular(2)))),
                     const SizedBox(height: 16),
-                    Text(_isBn ? 'এই অনুরোধে সাড়া দিন' : 'Respond to This Request', style: const TextStyle(color: AppColors.textPrimary, fontSize: 18, fontWeight: FontWeight.w700)),
+                    Text(_isBn ? 'এই অনুরোধে সাড়া দিন' : 'Respond to This Request', style: TextStyle(color: colors.onSurface, fontSize: 18, fontWeight: FontWeight.w700)),
                     const SizedBox(height: 16),
                     if (_mySkills.isEmpty)
-                      Text(_isBn ? 'গ্রহণ করতে হলে আগে অন্তত একটি দক্ষতা যোগ করুন' : 'Add at least one skill before you can accept', style: const TextStyle(color: AppColors.textMuted, fontSize: 13))
+                      Text(_isBn ? 'গ্রহণ করতে হলে আগে অন্তত একটি দক্ষতা যোগ করুন' : 'Add at least one skill before you can accept', style: TextStyle(color: colors.outline, fontSize: 13))
                     else ...[
-                      Text(_isBn ? 'বিনিময়ে আপনি কোন দক্ষতা দেবেন:' : 'What skill will you give in exchange:', style: const TextStyle(color: AppColors.textMuted, fontSize: 12)),
+                      Text(_isBn ? 'বিনিময়ে আপনি কোন দক্ষতা দেবেন:' : 'What skill will you give in exchange:', style: TextStyle(color: colors.outline, fontSize: 12)),
                       const SizedBox(height: 8),
                       DropdownButtonFormField<String>(
                         initialValue: myOfferId,
-                        dropdownColor: AppColors.bgMid,
-                        style: const TextStyle(color: AppColors.textPrimary),
+                        dropdownColor: colors.surface,
+                        style: TextStyle(color: colors.onSurface),
                         decoration: _inputDeco(_isBn ? 'আমার দক্ষতা' : 'My skill'),
                         items: _mySkills.map((s) => DropdownMenuItem<String>(value: s['id'] as String?, child: Text(s['skillName'] as String? ?? ''))).toList(),
                         onChanged: (v) => setS(() => myOfferId = v),
@@ -817,12 +828,13 @@ class _SkillShareScreenState extends State<SkillShareScreen> with SingleTickerPr
   }
 
   Widget _buildExchangesTab() {
+    final colors = Theme.of(context).colorScheme;
     if (_myExchanges.isEmpty) {
-      return Center(child: Text(_isBn ? 'কোনো এক্সচেঞ্জ নেই' : 'No exchanges yet', style: const TextStyle(color: AppColors.textMuted)));
+      return Center(child: Text(_isBn ? 'কোনো এক্সচেঞ্জ নেই' : 'No exchanges yet', style: TextStyle(color: colors.outline)));
     }
     return RefreshIndicator(
-      color: AppColors.deepBlue,
-      backgroundColor: AppColors.bgMid,
+      color: colors.primary,
+      backgroundColor: colors.surface,
       onRefresh: _loadMyExchanges,
       child: ListView.builder(
         padding: const EdgeInsets.fromLTRB(16, 12, 16, 100),
@@ -837,36 +849,36 @@ class _SkillShareScreenState extends State<SkillShareScreen> with SingleTickerPr
             'completed': const Color(0xFF8B5CF6),
             'cancelled': const Color(0xFFEF4444),
           };
-          final color = statusColors[status] ?? AppColors.textMuted;
+          final color = statusColors[status] ?? colors.outline;
           return GestureDetector(
             onTap: () => Navigator.push(context, MaterialPageRoute(builder: (_) => ExchangeDetailScreen(exchangeId: e['id'] as String? ?? ''))).then((_) => _loadMyExchanges()),
             child: Container(
               margin: const EdgeInsets.only(bottom: 10),
               padding: const EdgeInsets.all(14),
               decoration: BoxDecoration(
-                color: AppColors.bgMid,
+                color: colors.surface,
                 borderRadius: BorderRadius.circular(14),
-                border: Border.all(color: AppColors.glassBorder),
+                border: Border.all(color: colors.outlineVariant),
               ),
               child: Row(children: [
                 Container(
                   width: 44,
                   height: 44,
-                  decoration: BoxDecoration(color: AppColors.deepBlue.withValues(alpha: 0.1), borderRadius: BorderRadius.circular(12)),
-                  child: const Icon(Icons.swap_horiz_rounded, color: AppColors.deepBlue, size: 22),
+                  decoration: BoxDecoration(color: colors.primary.withValues(alpha: 0.1), borderRadius: BorderRadius.circular(12)),
+                  child: Icon(Icons.swap_horiz_rounded, color: colors.primary, size: 22),
                 ),
                 const SizedBox(width: 12),
                 Expanded(child: Column(crossAxisAlignment: CrossAxisAlignment.start, children: [
-                  Text('${offered?['skillName'] ?? '—'} ↔ ${e['wantedSkillName'] ?? '—'}', style: const TextStyle(color: AppColors.textPrimary, fontSize: 13, fontWeight: FontWeight.w600), maxLines: 1, overflow: TextOverflow.ellipsis),
+                  Text('${offered?['skillName'] ?? '—'} ↔ ${e['wantedSkillName'] ?? '—'}', style: TextStyle(color: colors.onSurface, fontSize: 13, fontWeight: FontWeight.w600), maxLines: 1, overflow: TextOverflow.ellipsis),
                   const SizedBox(height: 2),
-                  Text(_isBn ? '${e['agreedSessionCount'] ?? 1} সেশন' : '${e['agreedSessionCount'] ?? 1} sessions', style: const TextStyle(color: AppColors.textMuted, fontSize: 11)),
+                  Text(_isBn ? '${e['agreedSessionCount'] ?? 1} সেশন' : '${e['agreedSessionCount'] ?? 1} sessions', style: TextStyle(color: colors.outline, fontSize: 11)),
                 ])),
                 Container(
                   padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 4),
                   decoration: BoxDecoration(color: color.withValues(alpha: 0.1), borderRadius: BorderRadius.circular(8)),
                   child: Text(status, style: TextStyle(color: color, fontSize: 11, fontWeight: FontWeight.w600)),
                 ),
-                const Icon(Icons.chevron_right_rounded, color: AppColors.textMuted, size: 18),
+                Icon(Icons.chevron_right_rounded, color: colors.outline, size: 18),
               ]),
             ),
           ).animate().fadeIn(delay: Duration(milliseconds: i * 40));

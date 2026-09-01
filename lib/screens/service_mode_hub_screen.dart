@@ -2,7 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:flutter_animate/flutter_animate.dart';
 import 'package:provider/provider.dart';
 import '../core/utils/app_strings.dart';
-import '../theme/app_theme.dart';
+import '../theme/app_gradients.dart';
 import '../widgets/animated_background.dart';
 import '../widgets/glass_card.dart';
 import 'commute_screen.dart';
@@ -86,6 +86,7 @@ class ServiceModeHubScreen extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    final colors = Theme.of(context).colorScheme;
     final isBn = context.watch<LanguageNotifier>().isBengali;
     return Scaffold(
       appBar: AppBar(
@@ -107,8 +108,8 @@ class ServiceModeHubScreen extends StatelessWidget {
                 Text(
                   isBn ? 'কীভাবে নিতে চান?' : 'How would you like it?',
                   textAlign: TextAlign.center,
-                  style: const TextStyle(
-                      color: AppColors.textPrimary, fontSize: 17, fontWeight: FontWeight.w700),
+                  style: TextStyle(
+                      color: colors.onSurface, fontSize: 17, fontWeight: FontWeight.w700),
                 ).animate(delay: 80.ms).fadeIn(),
                 const SizedBox(height: 24),
                 _buildOption(context, config.instant, isBn, isPrimary: true,
@@ -132,22 +133,23 @@ class ServiceModeHubScreen extends StatelessWidget {
     required VoidCallback onTap,
     required int delayMs,
   }) {
+    final colors = Theme.of(context).colorScheme;
     return GestureDetector(
       onTap: onTap,
       child: GlassCard(
         padding: const EdgeInsets.all(18),
-        glassColor: isPrimary ? AppColors.glassBlue : null,
-        borderColor: isPrimary ? AppColors.glassBorderBlue : null,
+        glassColor: isPrimary ? colors.primary.withValues(alpha: 0.08) : null,
+        borderColor: isPrimary ? colors.primary.withValues(alpha: 0.20) : null,
         child: Row(
           children: [
             Container(
               width: 50,
               height: 50,
               decoration: BoxDecoration(
-                gradient: isPrimary ? AppColors.blueGradient : AppColors.fuchsiaGradient,
+                gradient: isPrimary ? AppGradients.primary(colors) : AppGradients.accent(colors),
                 borderRadius: BorderRadius.circular(15),
               ),
-              child: Icon(option.icon, color: AppColors.ivory, size: 25),
+              child: Icon(option.icon, color: colors.onPrimary, size: 25),
             ),
             const SizedBox(width: 14),
             Expanded(
@@ -156,20 +158,20 @@ class ServiceModeHubScreen extends StatelessWidget {
                 children: [
                   Text(
                     isBn ? option.titleBn : option.titleEn,
-                    style: const TextStyle(
-                        color: AppColors.textPrimary, fontSize: 15.5, fontWeight: FontWeight.w700),
+                    style: TextStyle(
+                        color: colors.onSurface, fontSize: 15.5, fontWeight: FontWeight.w700),
                   ),
                   const SizedBox(height: 4),
                   Text(
                     isBn ? option.subtitleBn : option.subtitleEn,
-                    style: const TextStyle(
-                        color: AppColors.textMuted, fontSize: 12, height: 1.45),
+                    style: TextStyle(
+                        color: colors.outline, fontSize: 12, height: 1.45),
                   ),
                 ],
               ),
             ),
             const SizedBox(width: 6),
-            const Icon(Icons.arrow_forward_ios_rounded, color: AppColors.deepBlue, size: 15),
+            Icon(Icons.arrow_forward_ios_rounded, color: colors.primary, size: 15),
           ],
         ),
       ),
