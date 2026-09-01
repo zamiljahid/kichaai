@@ -1,6 +1,6 @@
 import 'dart:math' as math;
 import 'package:flutter/material.dart';
-import '../theme/app_theme.dart';
+import '../theme/app_gradients.dart';
 
 class AnimatedBackground extends StatefulWidget {
   final Widget child;
@@ -45,19 +45,23 @@ class _AnimatedBackgroundState extends State<AnimatedBackground>
 
   @override
   Widget build(BuildContext context) {
+    final colors = Theme.of(context).colorScheme;
     return Stack(
       children: [
         Container(
-          decoration: BoxDecoration(gradient: AppColors.bgGradient),
+          decoration: BoxDecoration(gradient: AppGradients.background(colors)),
         ),
         AnimatedBuilder(
-          animation: Listenable.merge([_controller1, _controller2, _controller3]),
+          animation:
+              Listenable.merge([_controller1, _controller2, _controller3]),
           builder: (context, _) {
             return CustomPaint(
               painter: _BlobPainter(
                 t1: _controller1.value,
                 t2: _controller2.value,
                 t3: _controller3.value,
+                primary: colors.primary,
+                accent: colors.secondary,
               ),
               size: MediaQuery.of(context).size,
             );
@@ -72,19 +76,30 @@ class _AnimatedBackgroundState extends State<AnimatedBackground>
 class _BlobPainter extends CustomPainter {
   final double t1, t2, t3;
 
-  _BlobPainter({required this.t1, required this.t2, required this.t3});
+  /// A painter has no BuildContext, so the two themed colours are passed in.
+  /// They change with the active role, which is why shouldRepaint compares them.
+  final Color primary;
+  final Color accent;
+
+  _BlobPainter({
+    required this.t1,
+    required this.t2,
+    required this.t3,
+    required this.primary,
+    required this.accent,
+  });
 
   @override
   void paint(Canvas canvas, Size size) {
     final w = size.width;
     final h = size.height;
 
-    // Pine wash top-right — subtle on the light canvas
+    // Primary wash top-right — subtle on the light canvas
     final paint1 = Paint()
       ..shader = RadialGradient(
         colors: [
-          AppColors.deepBlue.withOpacity(0.08),
-          AppColors.deepBlue.withOpacity(0.0),
+          primary.withValues(alpha: 0.08),
+          primary.withValues(alpha: 0.0),
         ],
       ).createShader(Rect.fromCircle(
         center: Offset(
@@ -102,12 +117,12 @@ class _BlobPainter extends CustomPainter {
       paint1,
     );
 
-    // Marigold wash bottom-left — subtle warmth
+    // Accent wash bottom-left
     final paint2 = Paint()
       ..shader = RadialGradient(
         colors: [
-          AppColors.fuchsia.withOpacity(0.09),
-          AppColors.fuchsia.withOpacity(0.0),
+          accent.withValues(alpha: 0.09),
+          accent.withValues(alpha: 0.0),
         ],
       ).createShader(Rect.fromCircle(
         center: Offset(
@@ -125,12 +140,12 @@ class _BlobPainter extends CustomPainter {
       paint2,
     );
 
-    // Pine wash centre — barely there
+    // Primary wash centre — barely there
     final paint3 = Paint()
       ..shader = RadialGradient(
         colors: [
-          AppColors.deepBlue.withOpacity(0.05),
-          AppColors.deepBlue.withOpacity(0.0),
+          primary.withValues(alpha: 0.05),
+          primary.withValues(alpha: 0.0),
         ],
       ).createShader(Rect.fromCircle(
         center: Offset(
@@ -150,5 +165,10 @@ class _BlobPainter extends CustomPainter {
   }
 
   @override
-  bool shouldRepaint(_BlobPainter old) => true;
+  bool shouldRepaint(_BlobPainter old) =>
+      old.t1 != t1 ||
+      old.t2 != t2 ||
+      old.t3 != t3 ||
+      old.primary != primary ||
+      old.accent != accent;
 }

@@ -212,6 +212,7 @@ class _HouseholdHelpProfileScreenState extends State<HouseholdHelpProfileScreen>
                     ),
                     const SizedBox(height: 14),
                     liabilityDisclaimerCheckbox(
+                      context: context,
                       value: _liabilityAccepted,
                       onChanged: (v) => setState(() => _liabilityAccepted = v),
                       isBn: _isBn,

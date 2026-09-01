@@ -1,5 +1,4 @@
 import 'package:flutter/material.dart';
-import '../theme/app_theme.dart';
 
 /// Universal liability disclaimer + mandatory "I agree" checkbox — the
 /// founder's own framing: "Company just media. Shobar jonnoi mention korba
@@ -17,11 +16,16 @@ import '../theme/app_theme.dart';
 /// not itself liable — the company is only a mediator between customer and
 /// provider.
 Widget liabilityDisclaimerCheckbox({
+  required BuildContext context,
   required bool value,
   required ValueChanged<bool> onChanged,
   required bool isBn,
 }) {
-  const bodyStyle = TextStyle(color: AppColors.textSecondary, fontSize: 12.5, height: 1.5);
+  // A top-level function widget, so the scheme is read from the passed context
+  // rather than an implicit one.
+  final colors = Theme.of(context).colorScheme;
+  final bodyStyle =
+      TextStyle(color: colors.onSurfaceVariant, fontSize: 12.5, height: 1.5);
   final text = isBn
       ? 'এই প্রোভাইডারের মাধ্যমে গ্রাহকের বাসায় কোনো ক্ষতি বা লোকসান হলে, তার জন্য প্রোভাইডার ব্যক্তিগতভাবে দায়ী থাকবেন। '
           'প্রোভাইডার কোনো ধরনের হয়রানির শিকার হলে কোম্পানি আইনি সহায়তা দেবে, তবে কোম্পানি নিজে এর জন্য দায়বদ্ধ নয় — '
@@ -34,17 +38,17 @@ Widget liabilityDisclaimerCheckbox({
   return Container(
     padding: const EdgeInsets.all(14),
     decoration: BoxDecoration(
-      color: const Color(0xFFF9F7F0),
+      color: colors.surfaceContainerLow,
       borderRadius: BorderRadius.circular(14),
-      border: Border.all(color: AppColors.glassBorder),
+      border: Border.all(color: colors.outlineVariant),
     ),
     child: Column(crossAxisAlignment: CrossAxisAlignment.start, children: [
       Row(children: [
-        const Icon(Icons.info_outline_rounded, color: AppColors.textMuted, size: 18),
+        Icon(Icons.info_outline_rounded, color: colors.outline, size: 18),
         const SizedBox(width: 8),
         Text(
           isBn ? 'দায়বদ্ধতার শর্তাবলী' : 'Liability disclaimer',
-          style: const TextStyle(color: AppColors.textPrimary, fontSize: 13, fontWeight: FontWeight.w700),
+          style: TextStyle(color: colors.onSurface, fontSize: 13, fontWeight: FontWeight.w700),
         ),
       ]),
       const SizedBox(height: 8),
@@ -57,14 +61,14 @@ Widget liabilityDisclaimerCheckbox({
           Checkbox(
             value: value,
             onChanged: (v) => onChanged(v ?? false),
-            activeColor: AppColors.deepBlue,
+            activeColor: colors.primary,
           ),
           Expanded(
             child: Padding(
               padding: const EdgeInsets.only(top: 12),
               child: Text(
                 isBn ? 'আমি সম্মত' : 'I agree',
-                style: const TextStyle(color: AppColors.textPrimary, fontSize: 13, fontWeight: FontWeight.w700),
+                style: TextStyle(color: colors.onSurface, fontSize: 13, fontWeight: FontWeight.w700),
               ),
             ),
           ),

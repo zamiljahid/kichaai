@@ -1,6 +1,5 @@
 import 'package:flutter/material.dart';
 import 'package:google_maps_flutter/google_maps_flutter.dart';
-import '../theme/app_theme.dart';
 
 /// Manual location picker — tap the map to drop a pin, confirm to return the
 /// LatLng. Used wherever live GPS failed (geocoder couldn't find an address,
@@ -27,16 +26,17 @@ class _PinPickerScreenState extends State<PinPickerScreen> {
 
   @override
   Widget build(BuildContext context) {
+    final colors = Theme.of(context).colorScheme;
     final isBn = widget.isBn;
     return Scaffold(
-      backgroundColor: AppColors.bgDark,
+      backgroundColor: colors.surfaceContainerHighest,
       appBar: AppBar(
         backgroundColor: Colors.transparent,
         elevation: 0,
         title: Text(isBn ? 'ম্যাপে পিন দিন' : 'Drop a pin',
-            style: const TextStyle(color: AppColors.textPrimary, fontSize: 17, fontWeight: FontWeight.w700)),
+            style: TextStyle(color: colors.onSurface, fontSize: 17, fontWeight: FontWeight.w700)),
         leading: IconButton(
-          icon: const Icon(Icons.arrow_back_ios_new_rounded, color: AppColors.textPrimary, size: 18),
+          icon: Icon(Icons.arrow_back_ios_new_rounded, color: colors.onSurface, size: 18),
           onPressed: () => Navigator.pop(context),
         ),
       ),
@@ -59,7 +59,7 @@ class _PinPickerScreenState extends State<PinPickerScreen> {
             child: Container(
               padding: const EdgeInsets.symmetric(vertical: 15),
               decoration: BoxDecoration(
-                color: _pin == null ? AppColors.textMuted : AppColors.deepBlue,
+                color: _pin == null ? colors.outline : colors.primary,
                 borderRadius: BorderRadius.circular(14),
               ),
               child: Center(child: Text(
