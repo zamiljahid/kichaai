@@ -4,7 +4,6 @@ import 'package:image_picker/image_picker.dart';
 import 'package:url_launcher/url_launcher.dart';
 import '../core/network/api_client.dart';
 import '../services/auth_service.dart';
-import '../theme/app_theme.dart';
 import 'glass_button.dart';
 import 'glass_card.dart';
 
@@ -111,12 +110,13 @@ class _CompletenessSheetState extends State<_CompletenessSheet> {
 
   @override
   Widget build(BuildContext context) {
+    final colors = Theme.of(context).colorScheme;
     final isBn = widget.isBn;
     return Padding(
       padding: EdgeInsets.only(bottom: MediaQuery.of(context).viewInsets.bottom),
       child: Container(
-        decoration: const BoxDecoration(
-          color: AppColors.bgMid,
+        decoration: BoxDecoration(
+          color: colors.surface,
           borderRadius: BorderRadius.vertical(top: Radius.circular(24)),
         ),
         padding: const EdgeInsets.fromLTRB(20, 16, 20, 24),
@@ -128,13 +128,13 @@ class _CompletenessSheetState extends State<_CompletenessSheet> {
               Center(
                 child: Container(
                   width: 40, height: 4,
-                  decoration: BoxDecoration(color: AppColors.glassBorder, borderRadius: BorderRadius.circular(2)),
+                  decoration: BoxDecoration(color: colors.outlineVariant, borderRadius: BorderRadius.circular(2)),
                 ),
               ),
               const SizedBox(height: 16),
               Text(
                 isBn ? 'অনলাইন হওয়ার আগে প্রোফাইল সম্পূর্ণ করুন' : 'Complete your profile before going online',
-                style: const TextStyle(color: AppColors.textPrimary, fontSize: 18, fontWeight: FontWeight.w700),
+                style: TextStyle(color: colors.onSurface, fontSize: 18, fontWeight: FontWeight.w700),
               ),
               const SizedBox(height: 16),
               if (_error != null)
@@ -161,16 +161,17 @@ class _CompletenessSheetState extends State<_CompletenessSheet> {
   }
 
   Widget _buildPhotoTile(bool isBn) {
+    final colors = Theme.of(context).colorScheme;
     return GlassCard(
       padding: const EdgeInsets.all(14),
       child: Row(
         children: [
           Icon(_hasPhoto ? Icons.check_circle_rounded : Icons.camera_alt_rounded,
-              color: _hasPhoto ? const Color(0xFF10B981) : AppColors.textMuted, size: 24),
+              color: _hasPhoto ? const Color(0xFF10B981) : colors.outline, size: 24),
           const SizedBox(width: 12),
           Expanded(
             child: Text(isBn ? 'প্রোফাইল ছবি' : 'Profile photo',
-                style: const TextStyle(color: AppColors.textPrimary, fontSize: 14, fontWeight: FontWeight.w600)),
+                style: TextStyle(color: colors.onSurface, fontSize: 14, fontWeight: FontWeight.w600)),
           ),
           if (!_hasPhoto)
             _busyPhoto
@@ -182,6 +183,7 @@ class _CompletenessSheetState extends State<_CompletenessSheet> {
   }
 
   Widget _buildPhoneTile(bool isBn) {
+    final colors = Theme.of(context).colorScheme;
     return GlassCard(
       padding: const EdgeInsets.all(14),
       child: Column(
@@ -190,11 +192,11 @@ class _CompletenessSheetState extends State<_CompletenessSheet> {
           Row(
             children: [
               Icon(_hasPhone ? Icons.check_circle_rounded : Icons.phone_rounded,
-                  color: _hasPhone ? const Color(0xFF10B981) : AppColors.textMuted, size: 24),
+                  color: _hasPhone ? const Color(0xFF10B981) : colors.outline, size: 24),
               const SizedBox(width: 12),
               Expanded(
                 child: Text(isBn ? 'ফোন নম্বর' : 'Phone number',
-                    style: const TextStyle(color: AppColors.textPrimary, fontSize: 14, fontWeight: FontWeight.w600)),
+                    style: TextStyle(color: colors.onSurface, fontSize: 14, fontWeight: FontWeight.w600)),
               ),
             ],
           ),
@@ -206,10 +208,10 @@ class _CompletenessSheetState extends State<_CompletenessSheet> {
                   child: TextField(
                     controller: _phoneCtrl,
                     keyboardType: TextInputType.phone,
-                    style: const TextStyle(color: AppColors.textPrimary, fontSize: 14),
+                    style: TextStyle(color: colors.onSurface, fontSize: 14),
                     decoration: InputDecoration(
                       hintText: '01XXXXXXXXX',
-                      hintStyle: const TextStyle(color: AppColors.textMuted),
+                      hintStyle: TextStyle(color: colors.outline),
                       isDense: true,
                       contentPadding: const EdgeInsets.symmetric(horizontal: 12, vertical: 10),
                       border: OutlineInputBorder(borderRadius: BorderRadius.circular(10)),
@@ -229,6 +231,7 @@ class _CompletenessSheetState extends State<_CompletenessSheet> {
   }
 
   Widget _buildRulesTile(bool isBn) {
+    final colors = Theme.of(context).colorScheme;
     return GlassCard(
       padding: const EdgeInsets.all(14),
       child: Column(
@@ -237,11 +240,11 @@ class _CompletenessSheetState extends State<_CompletenessSheet> {
           Row(
             children: [
               Icon(_rulesAgreed ? Icons.check_circle_rounded : Icons.rule_rounded,
-                  color: _rulesAgreed ? const Color(0xFF10B981) : AppColors.textMuted, size: 24),
+                  color: _rulesAgreed ? const Color(0xFF10B981) : colors.outline, size: 24),
               const SizedBox(width: 12),
               Expanded(
                 child: Text(isBn ? 'নিয়মাবলী' : 'Rules & Regulations',
-                    style: const TextStyle(color: AppColors.textPrimary, fontSize: 14, fontWeight: FontWeight.w600)),
+                    style: TextStyle(color: colors.onSurface, fontSize: 14, fontWeight: FontWeight.w600)),
               ),
             ],
           ),
@@ -258,12 +261,12 @@ class _CompletenessSheetState extends State<_CompletenessSheet> {
                       onTap: () => launchUrl(Uri.parse('https://kichaai.com/provider-rules'), mode: LaunchMode.externalApplication),
                       child: Text.rich(
                         TextSpan(
-                          style: const TextStyle(color: AppColors.textSecondary, fontSize: 12.5),
+                          style: TextStyle(color: colors.onSurfaceVariant, fontSize: 12.5),
                           children: [
                             TextSpan(text: isBn ? 'আমি ' : 'I have read and agree to the '),
                             TextSpan(
                               text: isBn ? 'নিয়মাবলী' : 'Rules & Regulations',
-                              style: const TextStyle(color: AppColors.deepBlue, fontWeight: FontWeight.w700, decoration: TextDecoration.underline),
+                              style: TextStyle(color: colors.primary, fontWeight: FontWeight.w700, decoration: TextDecoration.underline),
                             ),
                             TextSpan(text: isBn ? ' পড়েছি ও সম্মত' : ''),
                           ],

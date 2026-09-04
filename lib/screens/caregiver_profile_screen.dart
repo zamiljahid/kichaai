@@ -5,7 +5,7 @@ import 'package:provider/provider.dart';
 import '../core/network/api_client.dart';
 import '../core/utils/app_strings.dart';
 import '../services/onboarding_service.dart';
-import '../theme/app_theme.dart';
+import '../theme/app_gradients.dart';
 import '../widgets/animated_background.dart';
 import '../widgets/glass_button.dart';
 import 'photographer_profile_screen.dart' show sectionCard, labeledField, uploadRow;
@@ -108,6 +108,7 @@ class _CaregiverProfileScreenState extends State<CaregiverProfileScreen> {
 
   @override
   Widget build(BuildContext context) {
+    final colors = Theme.of(context).colorScheme;
     _isBn = context.watch<LanguageNotifier>().isBengali;
     return Scaffold(
       body: AnimatedBackground(
@@ -117,8 +118,8 @@ class _CaregiverProfileScreenState extends State<CaregiverProfileScreen> {
               Padding(
                 padding: const EdgeInsets.fromLTRB(8, 8, 16, 4),
                 child: Row(children: [
-                  IconButton(icon: const Icon(Icons.arrow_back_rounded, color: AppColors.textPrimary), onPressed: () => Navigator.of(context).pop()),
-                  Text(_isBn ? 'কেয়ারগিভার প্রোফাইল' : 'Caregiver Profile', style: const TextStyle(color: AppColors.textPrimary, fontSize: 18, fontWeight: FontWeight.w700)),
+                  IconButton(icon: Icon(Icons.arrow_back_rounded, color: colors.onSurface), onPressed: () => Navigator.of(context).pop()),
+                  Text(_isBn ? 'কেয়ারগিভার প্রোফাইল' : 'Caregiver Profile', style: TextStyle(color: colors.onSurface, fontSize: 18, fontWeight: FontWeight.w700)),
                 ]),
               ),
               Expanded(
@@ -126,11 +127,12 @@ class _CaregiverProfileScreenState extends State<CaregiverProfileScreen> {
                   padding: const EdgeInsets.fromLTRB(16, 8, 16, 32),
                   child: Column(crossAxisAlignment: CrossAxisAlignment.stretch, children: [
                     sectionCard(
+                      colors: colors,
                       title: _isBn ? 'সার্টিফিকেট' : 'Certificate',
                       child: Column(crossAxisAlignment: CrossAxisAlignment.start, children: [
-                        labeledField(controller: _certificateTypeCtrl, hint: _isBn ? 'সার্টিফিকেটের ধরন (যেমন: নার্সিং, ফার্স্ট এইড)' : 'Certificate type (e.g. Nursing, First Aid)'),
+                        labeledField(colors: colors, controller: _certificateTypeCtrl, hint: _isBn ? 'সার্টিফিকেটের ধরন (যেমন: নার্সিং, ফার্স্ট এইড)' : 'Certificate type (e.g. Nursing, First Aid)'),
                         const SizedBox(height: 10),
-                        uploadRow(
+                        uploadRow(colors: colors, 
                           label: _certificateUrl != null ? (_isBn ? 'আপলোড হয়েছে ✓' : 'Uploaded ✓') : (_isBn ? 'সার্টিফিকেটের ছবি আপলোড করুন' : 'Upload a photo of your certificate'),
                           uploaded: _certificateUrl != null,
                           loading: _uploadingCertificate,
@@ -140,11 +142,13 @@ class _CaregiverProfileScreenState extends State<CaregiverProfileScreen> {
                     ),
                     const SizedBox(height: 14),
                     sectionCard(
+                      colors: colors,
                       title: _isBn ? 'অভিজ্ঞতা' : 'Experience',
-                      child: labeledField(controller: _experienceCtrl, hint: _isBn ? 'অভিজ্ঞতার বছর' : 'Years of experience', keyboardType: TextInputType.number),
+                      child: labeledField(colors: colors, controller: _experienceCtrl, hint: _isBn ? 'অভিজ্ঞতার বছর' : 'Years of experience', keyboardType: TextInputType.number),
                     ),
                     const SizedBox(height: 14),
                     sectionCard(
+                      colors: colors,
                       title: _isBn ? 'বিশেষত্ব' : 'Specializations',
                       child: Wrap(
                         spacing: 8,
@@ -156,12 +160,12 @@ class _CaregiverProfileScreenState extends State<CaregiverProfileScreen> {
                             child: Container(
                               padding: const EdgeInsets.symmetric(horizontal: 13, vertical: 8),
                               decoration: BoxDecoration(
-                                gradient: active ? AppColors.blueGradient : null,
-                                color: active ? null : const Color(0xFFF9F7F0),
+                                gradient: active ? AppGradients.primary(colors) : null,
+                                color: active ? null : colors.surfaceContainerLow,
                                 borderRadius: BorderRadius.circular(20),
-                                border: Border.all(color: active ? AppColors.deepBlue : AppColors.glassBorder, width: active ? 1.5 : 1),
+                                border: Border.all(color: active ? colors.primary : colors.outlineVariant, width: active ? 1.5 : 1),
                               ),
-                              child: Text(s, style: TextStyle(color: active ? Colors.white : AppColors.textSecondary, fontSize: 12.5, fontWeight: active ? FontWeight.w700 : FontWeight.w500)),
+                              child: Text(s, style: TextStyle(color: active ? Colors.white : colors.onSurfaceVariant, fontSize: 12.5, fontWeight: active ? FontWeight.w700 : FontWeight.w500)),
                             ),
                           );
                         }).toList(),

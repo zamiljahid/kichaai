@@ -8,10 +8,11 @@ import '../models/groceries_model.dart';
 import '../services/auth_service.dart';
 import '../services/dispatch_service.dart';
 import '../services/groceries_service.dart';
-import '../theme/app_theme.dart';
+import '../theme/app_gradients.dart';
 import '../widgets/glass_card.dart';
 import 'job_tracking_screen.dart';
 import 'my_match_requests_screen.dart';
+import '../widgets/custom_bottom_nav.dart';
 
 class OrdersScreen extends StatefulWidget {
   const OrdersScreen({super.key});
@@ -74,6 +75,7 @@ class _OrdersScreenState extends State<OrdersScreen> with SingleTickerProviderSt
   // A provider cancelled a committed job without confirming start — ask whether they still
   // did the work off-app. "Yes" charges the provider the commission (anti-bypass).
   Future<void> _maybePromptCancelReview() async {
+    final colors = Theme.of(context).colorScheme;
     if (_reviewDialogOpen || _cancelReviews.isEmpty || !mounted) return;
     final r = _cancelReviews.first;
     _reviewDialogOpen = true;
@@ -81,27 +83,27 @@ class _OrdersScreenState extends State<OrdersScreen> with SingleTickerProviderSt
       context: context,
       barrierDismissible: false,
       builder: (ctx) => AlertDialog(
-        backgroundColor: AppColors.bgMid,
+        backgroundColor: colors.surface,
         shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)),
         title: Text(_isBn ? 'কাজটি কি হয়েছিল?' : 'Was the job done?',
-            style: const TextStyle(color: AppColors.textPrimary, fontSize: 16, fontWeight: FontWeight.w700)),
+            style: TextStyle(color: colors.onSurface, fontSize: 16, fontWeight: FontWeight.w700)),
         content: Text(
           _isBn
               ? '${r.providerName ?? 'প্রোভাইডার'} আপনার "${r.title}" কাজটি বাতিল করেছে। '
                   'সে কি তবুও কাজটি করে দিয়েছিল?'
               : '${r.providerName ?? 'The provider'} cancelled your "${r.title}" job. '
                   'Did they still do the work?',
-          style: const TextStyle(color: AppColors.textSecondary, fontSize: 14, height: 1.5),
+          style: TextStyle(color: colors.onSurfaceVariant, fontSize: 14, height: 1.5),
         ),
         actions: [
           TextButton(
             onPressed: () => Navigator.pop(ctx, false),
-            child: Text(_isBn ? 'না, করেনি' : 'No', style: TextStyle(color: AppColors.textMuted)),
+            child: Text(_isBn ? 'না, করেনি' : 'No', style: TextStyle(color: colors.outline)),
           ),
           TextButton(
             onPressed: () => Navigator.pop(ctx, true),
             child: Text(_isBn ? 'হ্যাঁ, করেছিল' : 'Yes, they did',
-                style: const TextStyle(color: AppColors.deepBlue, fontWeight: FontWeight.w700)),
+                style: TextStyle(color: colors.primary, fontWeight: FontWeight.w700)),
           ),
         ],
       ),
@@ -125,16 +127,21 @@ class _OrdersScreenState extends State<OrdersScreen> with SingleTickerProviderSt
 
   @override
   Widget build(BuildContext context) {
+    final colors = Theme.of(context).colorScheme;
     _isBn = context.watch<LanguageNotifier>().isBengali;
     return RefreshIndicator(
       onRefresh: _loadData,
-      color: AppColors.deepBlue,
-      backgroundColor: AppColors.bgMid,
+      color: colors.primary,
+      backgroundColor: colors.surface,
       child: CustomScrollView(
         slivers: [
           SliverAppBar(
-            title: Text(_isBn ? 'আমার অর্ডার' : 'My Orders', style: const TextStyle(color: AppColors.textPrimary, fontWeight: FontWeight.w700)),
+            title: Text(_isBn ? 'আমার অর্ডার' : 'My Orders', style: TextStyle(color: colors.onSurface, fontWeight: FontWeight.w700)),
             floating: true, snap: true, backgroundColor: Colors.transparent,
+            foregroundColor: colors.onSurface,
+            // This bar is transparent over the light canvas, so it must not
+            // inherit the theme's primary-bar rounding or white foreground.
+            shape: const RoundedRectangleBorder(),
             bottom: PreferredSize(
               preferredSize: const Size.fromHeight(52),
               child: Padding(
@@ -146,18 +153,18 @@ class _OrdersScreenState extends State<OrdersScreen> with SingleTickerProviderSt
                     child: Container(
                       height: 44,
                       decoration: BoxDecoration(
-                        color: AppColors.glassWhite,
+                        color: colors.surface,
                         borderRadius: BorderRadius.circular(14),
-                        border: Border.all(color: AppColors.glassBorder, width: 1.5),
+                        border: Border.all(color: colors.outlineVariant, width: 1.5),
                       ),
                       child: TabBar(
                         controller: _tabController,
-                        indicator: BoxDecoration(gradient: AppColors.blueGradient, borderRadius: BorderRadius.circular(10)),
+                        indicator: BoxDecoration(gradient: AppGradients.primary(colors), borderRadius: BorderRadius.circular(10)),
                         indicatorSize: TabBarIndicatorSize.tab,
                         indicatorPadding: const EdgeInsets.all(3),
                         dividerColor: Colors.transparent,
-                        labelColor: AppColors.ivory,
-                        unselectedLabelColor: AppColors.textMuted,
+                        labelColor: colors.onPrimary,
+                        unselectedLabelColor: colors.outline,
                         labelStyle: const TextStyle(fontSize: 13, fontWeight: FontWeight.w600),
                         tabs: [
                           Tab(text: _isBn ? 'সেবা' : 'Services'),
@@ -172,7 +179,7 @@ class _OrdersScreenState extends State<OrdersScreen> with SingleTickerProviderSt
             ),
           ),
           if (_isLoading)
-            SliverToBoxAdapter(child: const Padding(padding: EdgeInsets.only(top: 100), child: Center(child: CircularProgressIndicator(color: AppColors.deepBlue))))
+            SliverToBoxAdapter(child: Padding(padding: EdgeInsets.only(top: 100), child: Center(child: CircularProgressIndicator(color: colors.primary))))
           else if (_error != null)
             SliverToBoxAdapter(child: _buildError())
           else
@@ -182,11 +189,12 @@ class _OrdersScreenState extends State<OrdersScreen> with SingleTickerProviderSt
                 children: [
                   _buildJobsTab(),
                   _buildGroceryTab(),
-                  const MyMatchRequestsScreen(),
+                  // Embedded in a tab, not pushed — so no back arrow.
+                  const MyMatchRequestsScreen(embedded: true),
                 ],
                ),
             ),
-          const SliverToBoxAdapter(child: SizedBox(height: 100)),
+          SliverToBoxAdapter(child: SizedBox(height: bottomNavClearance(context))),
         ],
       ),
     );
@@ -202,6 +210,7 @@ class _OrdersScreenState extends State<OrdersScreen> with SingleTickerProviderSt
   }
 
   Widget _buildJobCard(JobModel job, int index) {
+    final colors = Theme.of(context).colorScheme;
     final statusColor = _statusColor(job.status);
     return Padding(
       padding: const EdgeInsets.only(bottom: 12),
@@ -225,9 +234,9 @@ class _OrdersScreenState extends State<OrdersScreen> with SingleTickerProviderSt
               const SizedBox(width: 14),
               Expanded(
                 child: Column(crossAxisAlignment: CrossAxisAlignment.start, children: [
-                  Text(job.title, style: const TextStyle(color: AppColors.textPrimary, fontSize: 14, fontWeight: FontWeight.w600), maxLines: 1, overflow: TextOverflow.ellipsis),
+                  Text(job.title, style: TextStyle(color: colors.onSurface, fontSize: 14, fontWeight: FontWeight.w600), maxLines: 1, overflow: TextOverflow.ellipsis),
                   const SizedBox(height: 3),
-                  Text(_serviceKindLabel(job.serviceKind), style: TextStyle(color: AppColors.textMuted, fontSize: 12)),
+                  Text(_serviceKindLabel(job.serviceKind), style: TextStyle(color: colors.outline, fontSize: 12)),
                 ]),
               ),
               Column(crossAxisAlignment: CrossAxisAlignment.end, children: [
@@ -237,7 +246,7 @@ class _OrdersScreenState extends State<OrdersScreen> with SingleTickerProviderSt
                   child: Text(job.statusBn(), style: TextStyle(color: statusColor, fontSize: 11, fontWeight: FontWeight.w600)),
                 ),
                 const SizedBox(height: 4),
-                Text(_formatDate(job.createdAt), style: TextStyle(color: AppColors.textMuted, fontSize: 10)),
+                Text(_formatDate(job.createdAt), style: TextStyle(color: colors.outline, fontSize: 10)),
               ]),
             ],
           ),
@@ -256,6 +265,7 @@ class _OrdersScreenState extends State<OrdersScreen> with SingleTickerProviderSt
   }
 
   Widget _buildGroceryOrderCard(GroceryOrderModel order, int index) {
+    final colors = Theme.of(context).colorScheme;
     return Padding(
       padding: const EdgeInsets.only(bottom: 12),
       child: GlassCard(
@@ -265,25 +275,25 @@ class _OrdersScreenState extends State<OrdersScreen> with SingleTickerProviderSt
             Container(
               width: 44, height: 44,
               decoration: BoxDecoration(
-                gradient: AppColors.blueGradient,
+                gradient: AppGradients.primary(colors),
                 borderRadius: BorderRadius.circular(12),
               ),
-              child: const Icon(Icons.shopping_basket_rounded, color: AppColors.ivory, size: 22),
+              child: Icon(Icons.shopping_basket_rounded, color: colors.onPrimary, size: 22),
             ),
             const SizedBox(width: 14),
             Expanded(
               child: Column(crossAxisAlignment: CrossAxisAlignment.start, children: [
-                Text('#${order.id.substring(0, 8).toUpperCase()}', style: const TextStyle(color: AppColors.textPrimary, fontSize: 14, fontWeight: FontWeight.w600)),
-                Text('${order.items.length} ${_isBn ? 'পণ্য' : 'items'}', style: TextStyle(color: AppColors.textMuted, fontSize: 12)),
+                Text('#${order.id.substring(0, 8).toUpperCase()}', style: TextStyle(color: colors.onSurface, fontSize: 14, fontWeight: FontWeight.w600)),
+                Text('${order.items.length} ${_isBn ? 'পণ্য' : 'items'}', style: TextStyle(color: colors.outline, fontSize: 12)),
               ]),
             ),
             Column(crossAxisAlignment: CrossAxisAlignment.end, children: [
-              Text('৳ ${order.totalAmount.toStringAsFixed(0)}', style: const TextStyle(color: AppColors.deepBlue, fontSize: 14, fontWeight: FontWeight.w700)),
+              Text('৳ ${order.totalAmount.toStringAsFixed(0)}', style: TextStyle(color: colors.primary, fontSize: 14, fontWeight: FontWeight.w700)),
               const SizedBox(height: 4),
               Container(
                 padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 3),
-                decoration: BoxDecoration(color: AppColors.glassWhite, borderRadius: BorderRadius.circular(8), border: Border.all(color: AppColors.glassBorder)),
-                child: Text(order.status, style: TextStyle(color: AppColors.textMuted, fontSize: 10, fontWeight: FontWeight.w600)),
+                decoration: BoxDecoration(color: colors.surface, borderRadius: BorderRadius.circular(8), border: Border.all(color: colors.outlineVariant)),
+                child: Text(order.status, style: TextStyle(color: colors.outline, fontSize: 10, fontWeight: FontWeight.w600)),
               ),
             ]),
           ],
@@ -293,39 +303,42 @@ class _OrdersScreenState extends State<OrdersScreen> with SingleTickerProviderSt
   }
 
   Widget _buildEmpty(String message, IconData icon) {
+    final colors = Theme.of(context).colorScheme;
     return Center(
       child: Column(mainAxisSize: MainAxisSize.min, children: [
-        Icon(icon, color: AppColors.textMuted, size: 56),
+        Icon(icon, color: colors.outline, size: 56),
         const SizedBox(height: 12),
-        Text(message, style: TextStyle(color: AppColors.textMuted, fontSize: 14)),
+        Text(message, style: TextStyle(color: colors.outline, fontSize: 14)),
       ]),
     );
   }
 
   Widget _buildError() {
+    final colors = Theme.of(context).colorScheme;
     return Padding(
       padding: const EdgeInsets.all(32),
       child: Center(
         child: Column(mainAxisSize: MainAxisSize.min, children: [
-          const Icon(Icons.wifi_off_rounded, color: AppColors.textMuted, size: 48),
+          Icon(Icons.wifi_off_rounded, color: colors.outline, size: 48),
           const SizedBox(height: 12),
-          Text(_isBn ? 'তথ্য লোড হয়নি' : 'Failed to load', style: const TextStyle(color: AppColors.textSecondary, fontSize: 14)),
+          Text(_isBn ? 'তথ্য লোড হয়নি' : 'Failed to load', style: TextStyle(color: colors.onSurfaceVariant, fontSize: 14)),
           const SizedBox(height: 16),
-          GestureDetector(onTap: _loadData, child: Text(_isBn ? 'আবার চেষ্টা করুন' : 'Try again', style: const TextStyle(color: AppColors.deepBlue, fontWeight: FontWeight.w600))),
+          GestureDetector(onTap: _loadData, child: Text(_isBn ? 'আবার চেষ্টা করুন' : 'Try again', style: TextStyle(color: colors.primary, fontWeight: FontWeight.w600))),
         ]),
       ),
     );
   }
 
   Color _statusColor(String status) {
+    final colors = Theme.of(context).colorScheme;
     switch (status) {
-      case 'searching': return AppColors.deepBlue;
+      case 'searching': return colors.primary;
       case 'assigned': case 'accepted': return const Color(0xFF8B5CF6);
       case 'arriving': return const Color(0xFF06B6D4);
       case 'in_progress': return const Color(0xFF10B981);
       case 'completed': return const Color(0xFF22C55E);
       case 'cancelled': return const Color(0xFFEF4444);
-      default: return AppColors.textMuted;
+      default: return colors.outline;
     }
   }
 

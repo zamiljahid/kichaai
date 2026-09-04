@@ -5,7 +5,8 @@ import 'package:share_plus/share_plus.dart';
 import '../core/network/api_client.dart';
 import '../models/meal_model.dart';
 import '../services/meal_service.dart';
-import '../theme/app_theme.dart';
+import '../theme/app_gradients.dart';
+import '../theme/status_colors.dart';
 import '../widgets/glass_button.dart';
 import '../widgets/glass_card.dart';
 import 'meal_monthly_summary_screen.dart';
@@ -80,6 +81,7 @@ class _MealGroupDetailScreenState extends State<MealGroupDetailScreen> {
   }
 
   Future<void> _toggleMeal({required String mealType, String? targetUserId}) async {
+    final colors = Theme.of(context).colorScheme;
     final uid = targetUserId ?? _userId;
     if (uid == null) return;
     final current = _todayByUser[uid];
@@ -125,7 +127,7 @@ class _MealGroupDetailScreenState extends State<MealGroupDetailScreen> {
       if (mounted) {
         ScaffoldMessenger.of(context).showSnackBar(SnackBar(
           content: Text(e.toString()),
-          backgroundColor: AppColors.softRed,
+          backgroundColor: colors.error,
         ));
         _load();
       }
@@ -145,25 +147,26 @@ class _MealGroupDetailScreenState extends State<MealGroupDetailScreen> {
     Clipboard.setData(ClipboardData(text: widget.group.inviteCode));
     ScaffoldMessenger.of(context).showSnackBar(const SnackBar(
       content: Text('কোড কপি হয়েছে'),
-      backgroundColor: AppColors.softBlue,
+      backgroundColor: StatusColors.blue,
     ));
   }
 
   Future<void> _confirmLeave() async {
+    final colors = Theme.of(context).colorScheme;
     final confirm = await showDialog<bool>(
       context: context,
       builder: (ctx) => AlertDialog(
-        backgroundColor: AppColors.bgMid,
-        title: const Text('গ্রুপ ছেড়ে যাবেন?', style: TextStyle(color: AppColors.textPrimary)),
-        content: const Text(
+        backgroundColor: colors.surface,
+        title: Text('গ্রুপ ছেড়ে যাবেন?', style: TextStyle(color: colors.onSurface)),
+        content: Text(
           'আপনার আগের মিল ও খরচের হিসাব থেকে যাবে, কিন্তু আপনি আর নতুন হিসাব যোগ করতে পারবেন না।',
-          style: TextStyle(color: AppColors.textSecondary),
+          style: TextStyle(color: colors.onSurfaceVariant),
         ),
         actions: [
           TextButton(onPressed: () => Navigator.pop(ctx, false), child: const Text('বাতিল')),
           TextButton(
             onPressed: () => Navigator.pop(ctx, true),
-            child: const Text('ছেড়ে যান', style: TextStyle(color: AppColors.softRed)),
+            child: Text('ছেড়ে যান', style: TextStyle(color: colors.error)),
           ),
         ],
       ),
@@ -174,7 +177,7 @@ class _MealGroupDetailScreenState extends State<MealGroupDetailScreen> {
         if (mounted) Navigator.of(context).pop(true);
       } catch (e) {
         if (mounted) {
-          ScaffoldMessenger.of(context).showSnackBar(SnackBar(content: Text(e.toString()), backgroundColor: AppColors.softRed));
+          ScaffoldMessenger.of(context).showSnackBar(SnackBar(content: Text(e.toString()), backgroundColor: colors.error));
         }
       }
     }
@@ -182,11 +185,12 @@ class _MealGroupDetailScreenState extends State<MealGroupDetailScreen> {
 
   @override
   Widget build(BuildContext context) {
+    final colors = Theme.of(context).colorScheme;
     return PopScope(
       canPop: true,
       onPopInvokedWithResult: (didPop, result) {},
       child: Scaffold(
-        backgroundColor: AppColors.bgDark,
+        backgroundColor: colors.surfaceContainerHighest,
         appBar: AppBar(
           title: Text(widget.group.name, overflow: TextOverflow.ellipsis),
           actions: [
@@ -202,12 +206,12 @@ class _MealGroupDetailScreenState extends State<MealGroupDetailScreen> {
           ],
         ),
         body: DecoratedBox(
-          decoration: BoxDecoration(gradient: AppColors.bgGradient),
+          decoration: BoxDecoration(gradient: AppGradients.background(colors)),
           child: _isLoading
-              ? const Center(child: CircularProgressIndicator(color: AppColors.deepBlue))
+              ? Center(child: CircularProgressIndicator(color: colors.primary))
               : RefreshIndicator(
                   onRefresh: _load,
-                  color: AppColors.deepBlue,
+                  color: colors.primary,
                   child: ListView(
                     padding: const EdgeInsets.all(16),
                     children: [
@@ -234,16 +238,17 @@ class _MealGroupDetailScreenState extends State<MealGroupDetailScreen> {
   }
 
   Widget _buildInviteCard() {
+    final colors = Theme.of(context).colorScheme;
     return GlassCard(
-      glassColor: AppColors.glassBlue,
-      borderColor: AppColors.glassBorderBlue,
+      glassColor: colors.primary.withValues(alpha: 0.08),
+      borderColor: colors.primary.withValues(alpha: 0.20),
       child: Row(
         children: [
           Expanded(
             child: Column(
               crossAxisAlignment: CrossAxisAlignment.start,
               children: [
-                const Text('ইনভাইট কোড', style: TextStyle(color: AppColors.textMuted, fontSize: 12)),
+                Text('ইনভাইট কোড', style: TextStyle(color: colors.outline, fontSize: 12)),
                 const SizedBox(height: 4),
                 GestureDetector(
                   onTap: _copyCode,
@@ -251,10 +256,10 @@ class _MealGroupDetailScreenState extends State<MealGroupDetailScreen> {
                     children: [
                       Text(
                         widget.group.inviteCode,
-                        style: const TextStyle(color: AppColors.deepBlue, fontSize: 22, fontWeight: FontWeight.w800, letterSpacing: 4),
+                        style: TextStyle(color: colors.primary, fontSize: 22, fontWeight: FontWeight.w800, letterSpacing: 4),
                       ),
                       const SizedBox(width: 8),
-                      const Icon(Icons.copy_rounded, size: 16, color: AppColors.deepBlue),
+                      Icon(Icons.copy_rounded, size: 16, color: colors.primary),
                     ],
                   ),
                 ),
@@ -271,12 +276,13 @@ class _MealGroupDetailScreenState extends State<MealGroupDetailScreen> {
   // front-and-center — the whole point of this feature is knowing where you stand without
   // digging into the monthly summary screen.
   Widget _buildQuickStatsCard() {
+    final colors = Theme.of(context).colorScheme;
     final my = _myBalance;
     final positive = (my?.balance ?? 0) >= 0;
-    final balanceColor = positive ? const Color(0xFF15803D) : AppColors.softRed;
+    final balanceColor = positive ? const Color(0xFF15803D) : colors.error;
     return GlassCard(
-      glassColor: AppColors.glassBlue,
-      borderColor: AppColors.glassBorderBlue,
+      glassColor: colors.primary.withValues(alpha: 0.08),
+      borderColor: colors.primary.withValues(alpha: 0.20),
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
@@ -299,22 +305,27 @@ class _MealGroupDetailScreenState extends State<MealGroupDetailScreen> {
     ).animate(delay: 60.ms).fadeIn().slideY(begin: 0.08);
   }
 
-  Widget _quickStatDivider() => Container(width: 1, height: 36, color: AppColors.glassBorder);
+  Widget _quickStatDivider() {
+    final colors = Theme.of(context).colorScheme;
+    return Container(width: 1, height: 36, color: colors.outlineVariant);
+  }
 
   Widget _quickStat(String label, String value, IconData icon, {Color? valueColor}) {
+    final colors = Theme.of(context).colorScheme;
     return Expanded(
       child: Column(
         children: [
-          Icon(icon, color: AppColors.deepBlue, size: 18),
+          Icon(icon, color: colors.primary, size: 18),
           const SizedBox(height: 4),
-          Text(value, style: TextStyle(color: valueColor ?? AppColors.textPrimary, fontSize: 15, fontWeight: FontWeight.w800)),
-          Text(label, style: const TextStyle(color: AppColors.textMuted, fontSize: 10), textAlign: TextAlign.center),
+          Text(value, style: TextStyle(color: valueColor ?? colors.onSurface, fontSize: 15, fontWeight: FontWeight.w800)),
+          Text(label, style: TextStyle(color: colors.outline, fontSize: 10), textAlign: TextAlign.center),
         ],
       ),
     );
   }
 
   Future<void> _showAddDepositSheet({String? targetUserId, String? targetLabel}) async {
+    final colors = Theme.of(context).colorScheme;
     final amountCtrl = TextEditingController();
     final noteCtrl = TextEditingController();
     bool isSubmitting = false;
@@ -330,36 +341,36 @@ class _MealGroupDetailScreenState extends State<MealGroupDetailScreen> {
           child: ClipRRect(
             borderRadius: const BorderRadius.vertical(top: Radius.circular(24)),
             child: Container(
-              color: AppColors.bgMid,
+              color: colors.surface,
               padding: const EdgeInsets.fromLTRB(20, 20, 20, 32),
               child: Column(
                 mainAxisSize: MainAxisSize.min,
                 crossAxisAlignment: CrossAxisAlignment.start,
                 children: [
-                  Center(child: Container(width: 40, height: 4, decoration: BoxDecoration(color: AppColors.glassBorder, borderRadius: BorderRadius.circular(2)))),
+                  Center(child: Container(width: 40, height: 4, decoration: BoxDecoration(color: colors.outlineVariant, borderRadius: BorderRadius.circular(2)))),
                   const SizedBox(height: 16),
                   Text(
                     targetLabel != null ? '$targetLabel-এর বাজার ফান্ডে জমা' : 'বাজার ফান্ডে জমা দিন',
-                    style: const TextStyle(color: AppColors.textPrimary, fontSize: 18, fontWeight: FontWeight.w700),
+                    style: TextStyle(color: colors.onSurface, fontSize: 18, fontWeight: FontWeight.w700),
                   ),
                   const SizedBox(height: 4),
-                  const Text('এটা কোনো কেনাকাটা না — শুধু বাজারের জন্য আগাম টাকা জমা দেওয়া হচ্ছে', style: TextStyle(color: AppColors.textMuted, fontSize: 11)),
+                  Text('এটা কোনো কেনাকাটা না — শুধু বাজারের জন্য আগাম টাকা জমা দেওয়া হচ্ছে', style: TextStyle(color: colors.outline, fontSize: 11)),
                   const SizedBox(height: 16),
                   TextField(
                     controller: amountCtrl,
                     keyboardType: const TextInputType.numberWithOptions(decimal: true),
-                    style: const TextStyle(color: AppColors.textPrimary),
+                    style: TextStyle(color: colors.onSurface),
                     decoration: const InputDecoration(hintText: 'টাকার পরিমাণ', prefixText: '৳ '),
                   ),
                   const SizedBox(height: 12),
                   TextField(
                     controller: noteCtrl,
-                    style: const TextStyle(color: AppColors.textPrimary),
+                    style: TextStyle(color: colors.onSurface),
                     decoration: const InputDecoration(hintText: 'নোট (ঐচ্ছিক)'),
                   ),
                   if (error != null) ...[
                     const SizedBox(height: 8),
-                    Text(error!, style: const TextStyle(color: AppColors.softRed, fontSize: 12)),
+                    Text(error!, style: TextStyle(color: colors.error, fontSize: 12)),
                   ],
                   const SizedBox(height: 20),
                   GlassButton(
@@ -398,6 +409,7 @@ class _MealGroupDetailScreenState extends State<MealGroupDetailScreen> {
   }
 
   Widget _buildTodayCard() {
+    final colors = Theme.of(context).colorScheme;
     final breakfast = _todayEntry?.ateBreakfast ?? false;
     final lunch = _todayEntry?.ateLunch ?? false;
     final dinner = _todayEntry?.ateDinner ?? false;
@@ -408,9 +420,9 @@ class _MealGroupDetailScreenState extends State<MealGroupDetailScreen> {
         children: [
           Row(
             children: [
-              const Text('আজকের খাবার', style: TextStyle(color: AppColors.textPrimary, fontSize: 16, fontWeight: FontWeight.w700)),
+              Text('আজকের খাবার', style: TextStyle(color: colors.onSurface, fontSize: 16, fontWeight: FontWeight.w700)),
               const Spacer(),
-              Text('$weekday, ${_today.day}/${_today.month}', style: const TextStyle(color: AppColors.textMuted, fontSize: 12)),
+              Text('$weekday, ${_today.day}/${_today.month}', style: TextStyle(color: colors.outline, fontSize: 12)),
             ],
           ),
           const SizedBox(height: 16),
@@ -429,6 +441,7 @@ class _MealGroupDetailScreenState extends State<MealGroupDetailScreen> {
   }
 
   Widget _buildMealToggle({required String label, required String emoji, required bool active, required VoidCallback onTap}) {
+    final colors = Theme.of(context).colorScheme;
     return GestureDetector(
       onTap: onTap,
       child: AnimatedContainer(
@@ -436,21 +449,21 @@ class _MealGroupDetailScreenState extends State<MealGroupDetailScreen> {
         curve: Curves.easeOutBack,
         padding: const EdgeInsets.symmetric(vertical: 14),
         decoration: BoxDecoration(
-          gradient: active ? AppColors.blueGradient : null,
-          color: active ? null : AppColors.glassWhite,
+          gradient: active ? AppGradients.primary(colors) : null,
+          color: active ? null : colors.surface,
           borderRadius: BorderRadius.circular(16),
-          border: Border.all(color: active ? Colors.transparent : AppColors.glassBorder, width: 1.5),
-          boxShadow: active ? [BoxShadow(color: AppColors.deepBlue.withOpacity(0.35), blurRadius: 14, offset: const Offset(0, 6))] : null,
+          border: Border.all(color: active ? Colors.transparent : colors.outlineVariant, width: 1.5),
+          boxShadow: active ? [BoxShadow(color: colors.primary.withOpacity(0.35), blurRadius: 14, offset: const Offset(0, 6))] : null,
         ),
         child: Column(
           children: [
             Text(emoji, style: const TextStyle(fontSize: 22)),
             const SizedBox(height: 4),
-            Text(label, style: TextStyle(color: active ? AppColors.ivory : AppColors.textPrimary, fontSize: 12, fontWeight: FontWeight.w700)),
+            Text(label, style: TextStyle(color: active ? colors.onPrimary : colors.onSurface, fontSize: 12, fontWeight: FontWeight.w700)),
             const SizedBox(height: 3),
             Icon(
               active ? Icons.check_circle_rounded : Icons.radio_button_unchecked_rounded,
-              color: active ? AppColors.ivory : AppColors.textMuted,
+              color: active ? colors.onPrimary : colors.outline,
               size: 15,
             ),
           ],
@@ -464,23 +477,24 @@ class _MealGroupDetailScreenState extends State<MealGroupDetailScreen> {
   // separately open the app and self-report. Excludes the caller — their own big toggle
   // tiles above already cover that.
   Widget _buildRosterCard() {
+    final colors = Theme.of(context).colorScheme;
     final others = _members.where((m) => m.userId != _userId).toList();
     return GlassCard(
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
-          const Row(
+          Row(
             children: [
-              Icon(Icons.workspace_premium_rounded, size: 16, color: AppColors.softAmber),
+              Icon(Icons.workspace_premium_rounded, size: 16, color: StatusColors.amber),
               SizedBox(width: 6),
-              Text('অন্য সদস্যদের জন্য এন্ট্রি দিন', style: TextStyle(color: AppColors.textPrimary, fontSize: 15, fontWeight: FontWeight.w700)),
+              Text('অন্য সদস্যদের জন্য এন্ট্রি দিন', style: TextStyle(color: colors.onSurface, fontSize: 15, fontWeight: FontWeight.w700)),
             ],
           ),
           const SizedBox(height: 2),
-          const Text('ম্যানেজার হিসেবে আপনি বাসার সবার হয়ে আজকের খাবার টিক দিতে পারবেন। কারো নাম চেপে ধরলে তার বাজার ফান্ডে জমা যোগ করতে পারবেন।', style: TextStyle(color: AppColors.textMuted, fontSize: 11)),
+          Text('ম্যানেজার হিসেবে আপনি বাসার সবার হয়ে আজকের খাবার টিক দিতে পারবেন। কারো নাম চেপে ধরলে তার বাজার ফান্ডে জমা যোগ করতে পারবেন।', style: TextStyle(color: colors.outline, fontSize: 11)),
           const SizedBox(height: 14),
           if (others.isEmpty)
-            const Text('গ্রুপে আর কোনো সদস্য নেই', style: TextStyle(color: AppColors.textMuted, fontSize: 13))
+            Text('গ্রুপে আর কোনো সদস্য নেই', style: TextStyle(color: colors.outline, fontSize: 13))
           else
             ...others.asMap().entries.map((entry) => _buildRosterRow(entry.value, entry.key)),
         ],
@@ -489,6 +503,7 @@ class _MealGroupDetailScreenState extends State<MealGroupDetailScreen> {
   }
 
   Widget _buildRosterRow(MealGroupMember member, int index) {
+    final colors = Theme.of(context).colorScheme;
     final entry = _todayByUser[member.userId];
     final breakfast = entry?.ateBreakfast ?? false;
     final lunch = entry?.ateLunch ?? false;
@@ -503,14 +518,14 @@ class _MealGroupDetailScreenState extends State<MealGroupDetailScreen> {
               children: [
                 CircleAvatar(
                   radius: 15,
-                  backgroundColor: AppColors.deepBlue,
-                  child: Text(member.displayName.isNotEmpty ? member.displayName[0].toUpperCase() : '?', style: const TextStyle(color: AppColors.ivory, fontSize: 12, fontWeight: FontWeight.w700)),
+                  backgroundColor: colors.primary,
+                  child: Text(member.displayName.isNotEmpty ? member.displayName[0].toUpperCase() : '?', style: TextStyle(color: colors.onPrimary, fontSize: 12, fontWeight: FontWeight.w700)),
                 ),
                 const SizedBox(width: 10),
               ],
             ),
           ),
-          Expanded(child: Text(member.displayName, style: const TextStyle(color: AppColors.textPrimary, fontSize: 13, fontWeight: FontWeight.w600))),
+          Expanded(child: Text(member.displayName, style: TextStyle(color: colors.onSurface, fontSize: 13, fontWeight: FontWeight.w600))),
           _buildRosterChip(emoji: '🍳', active: breakfast, onTap: () => _toggleMeal(mealType: 'breakfast', targetUserId: member.userId)),
           const SizedBox(width: 6),
           _buildRosterChip(emoji: '🍚', active: lunch, onTap: () => _toggleMeal(mealType: 'lunch', targetUserId: member.userId)),
@@ -522,6 +537,7 @@ class _MealGroupDetailScreenState extends State<MealGroupDetailScreen> {
   }
 
   Widget _buildRosterChip({required String emoji, required bool active, required VoidCallback onTap}) {
+    final colors = Theme.of(context).colorScheme;
     return GestureDetector(
       onTap: onTap,
       child: AnimatedContainer(
@@ -529,10 +545,10 @@ class _MealGroupDetailScreenState extends State<MealGroupDetailScreen> {
         width: 34,
         height: 32,
         decoration: BoxDecoration(
-          gradient: active ? AppColors.blueGradient : null,
-          color: active ? null : AppColors.glassWhite,
+          gradient: active ? AppGradients.primary(colors) : null,
+          color: active ? null : colors.surface,
           borderRadius: BorderRadius.circular(10),
-          border: Border.all(color: active ? Colors.transparent : AppColors.glassBorder),
+          border: Border.all(color: active ? Colors.transparent : colors.outlineVariant),
         ),
         alignment: Alignment.center,
         child: Text(emoji, style: const TextStyle(fontSize: 16)),
@@ -541,6 +557,7 @@ class _MealGroupDetailScreenState extends State<MealGroupDetailScreen> {
   }
 
   Widget _buildSummaryLink() {
+    final colors = Theme.of(context).colorScheme;
     return GestureDetector(
       onTap: () => Navigator.of(context).push(
         MaterialPageRoute(builder: (_) => MealMonthlySummaryScreen(group: widget.group)),
@@ -551,20 +568,20 @@ class _MealGroupDetailScreenState extends State<MealGroupDetailScreen> {
             Container(
               width: 44,
               height: 44,
-              decoration: BoxDecoration(gradient: AppColors.fuchsiaGradient, borderRadius: BorderRadius.circular(14)),
-              child: const Icon(Icons.receipt_long_rounded, color: AppColors.ivory, size: 22),
+              decoration: BoxDecoration(gradient: AppGradients.accent(colors), borderRadius: BorderRadius.circular(14)),
+              child: Icon(Icons.receipt_long_rounded, color: colors.onPrimary, size: 22),
             ),
             const SizedBox(width: 14),
-            const Expanded(
+            Expanded(
               child: Column(
                 crossAxisAlignment: CrossAxisAlignment.start,
                 children: [
-                  Text('মাসিক হিসাব ও বাজার খরচ', style: TextStyle(color: AppColors.textPrimary, fontSize: 14, fontWeight: FontWeight.w700)),
-                  Text('কে কত মিল খেলো, কে কত টাকা পাবে/দেবে', style: TextStyle(color: AppColors.textMuted, fontSize: 11)),
+                  Text('মাসিক হিসাব ও বাজার খরচ', style: TextStyle(color: colors.onSurface, fontSize: 14, fontWeight: FontWeight.w700)),
+                  Text('কে কত মিল খেলো, কে কত টাকা পাবে/দেবে', style: TextStyle(color: colors.outline, fontSize: 11)),
                 ],
               ),
             ),
-            const Icon(Icons.arrow_forward_ios_rounded, color: AppColors.deepBlue, size: 16),
+            Icon(Icons.arrow_forward_ios_rounded, color: colors.primary, size: 16),
           ],
         ),
       ),
@@ -572,11 +589,12 @@ class _MealGroupDetailScreenState extends State<MealGroupDetailScreen> {
   }
 
   Widget _buildMembersCard() {
+    final colors = Theme.of(context).colorScheme;
     return GlassCard(
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
-          Text('সদস্য (${_members.length})', style: const TextStyle(color: AppColors.textPrimary, fontSize: 16, fontWeight: FontWeight.w700)),
+          Text('সদস্য (${_members.length})', style: TextStyle(color: colors.onSurface, fontSize: 16, fontWeight: FontWeight.w700)),
           const SizedBox(height: 12),
           ..._members.asMap().entries.map((entry) {
             final m = entry.value;
@@ -586,16 +604,16 @@ class _MealGroupDetailScreenState extends State<MealGroupDetailScreen> {
                 children: [
                   CircleAvatar(
                     radius: 18,
-                    backgroundColor: AppColors.deepBlue,
+                    backgroundColor: colors.primary,
                     child: Text(
                       m.displayName.isNotEmpty ? m.displayName[0].toUpperCase() : '?',
-                      style: const TextStyle(color: AppColors.ivory, fontWeight: FontWeight.w700),
+                      style: TextStyle(color: colors.onPrimary, fontWeight: FontWeight.w700),
                     ),
                   ),
                   const SizedBox(width: 12),
-                  Expanded(child: Text(m.displayName, style: const TextStyle(color: AppColors.textPrimary, fontSize: 14, fontWeight: FontWeight.w600))),
+                  Expanded(child: Text(m.displayName, style: TextStyle(color: colors.onSurface, fontSize: 14, fontWeight: FontWeight.w600))),
                   if (m.isManager)
-                    const Icon(Icons.workspace_premium_rounded, size: 16, color: AppColors.softAmber),
+                    const Icon(Icons.workspace_premium_rounded, size: 16, color: StatusColors.amber),
                 ],
               ),
             ).animate(delay: Duration(milliseconds: 50 * entry.key)).fadeIn().slideX(begin: 0.05);

@@ -8,7 +8,6 @@ import '../models/messaging_model.dart';
 import '../services/auth_service.dart';
 import '../services/laundry_service.dart';
 import '../services/messaging_service.dart';
-import '../theme/app_theme.dart';
 import 'chat_screen.dart';
 
 class LaundryHubScreen extends StatefulWidget {
@@ -69,16 +68,17 @@ class _LaundryHubScreenState extends State<LaundryHubScreen> {
   }
 
   Future<void> _weighIn(LaundryBookingModel b) async {
+    final colors = Theme.of(context).colorScheme;
     final ctrl = TextEditingController(text: b.estimatedLoad.toStringAsFixed(1));
     final result = await showDialog<double>(
       context: context,
       builder: (ctx) => AlertDialog(
-        backgroundColor: AppColors.bgMid,
-        title: Text(_isBn ? 'প্রকৃত পরিমাণ' : 'Actual load', style: const TextStyle(color: AppColors.textPrimary)),
+        backgroundColor: colors.surface,
+        title: Text(_isBn ? 'প্রকৃত পরিমাণ' : 'Actual load', style: TextStyle(color: colors.onSurface)),
         content: TextField(
           controller: ctrl,
           keyboardType: const TextInputType.numberWithOptions(decimal: true),
-          style: const TextStyle(color: AppColors.textPrimary),
+          style: TextStyle(color: colors.onSurface),
           decoration: const InputDecoration(border: OutlineInputBorder()),
         ),
         actions: [
@@ -162,43 +162,44 @@ class _LaundryHubScreenState extends State<LaundryHubScreen> {
 
   @override
   Widget build(BuildContext context) {
+    final colors = Theme.of(context).colorScheme;
     _isBn = context.watch<LanguageNotifier>().isBengali;
     return Scaffold(
-      backgroundColor: AppColors.bgDark,
+      backgroundColor: colors.surfaceContainerHighest,
       appBar: AppBar(
-        backgroundColor: AppColors.bgMid,
+        backgroundColor: colors.surface,
         elevation: 0,
-        leading: IconButton(icon: const Icon(Icons.arrow_back_ios_new_rounded, color: AppColors.textPrimary, size: 18), onPressed: () => Navigator.of(context).pop()),
-        title: Text(_isBn ? 'লন্ড্রি হাব কিউ' : 'Laundry Hub Queue', style: const TextStyle(color: AppColors.textPrimary, fontSize: 17, fontWeight: FontWeight.w700)),
+        leading: IconButton(icon: Icon(Icons.arrow_back_ios_new_rounded, color: colors.onSurface, size: 18), onPressed: () => Navigator.of(context).pop()),
+        title: Text(_isBn ? 'লন্ড্রি হাব কিউ' : 'Laundry Hub Queue', style: TextStyle(color: colors.onSurface, fontSize: 17, fontWeight: FontWeight.w700)),
       ),
       body: _loading
-          ? const Center(child: CircularProgressIndicator(color: AppColors.deepBlue))
+          ? Center(child: CircularProgressIndicator(color: colors.primary))
           : _myHubs.isEmpty
-              ? Center(child: Text(_isBn ? 'আপনি কোনো হাবের স্টাফ নন' : 'You are not staff at any hub', style: const TextStyle(color: AppColors.textMuted)))
+              ? Center(child: Text(_isBn ? 'আপনি কোনো হাবের স্টাফ নন' : 'You are not staff at any hub', style: TextStyle(color: colors.outline)))
               : Column(children: [
                   if (_myHubs.length > 1)
                     Padding(
                       padding: const EdgeInsets.all(16),
                       child: DropdownButtonFormField<String>(
                         value: _selectedHubId,
-                        dropdownColor: AppColors.bgMid,
+                        dropdownColor: colors.surface,
                         items: _myHubs.map((h) {
                           final id = h['hubId'] as String;
                           final hub = h['hub'] as Map<String, dynamic>?;
                           final name = hub?['name'] as String? ?? id;
-                          return DropdownMenuItem(value: id, child: Text(name, style: const TextStyle(color: AppColors.textPrimary)));
+                          return DropdownMenuItem(value: id, child: Text(name, style: TextStyle(color: colors.onSurface)));
                         }).toList(),
                         onChanged: (v) { setState(() => _selectedHubId = v); _loadQueue(); },
                       ),
                     ),
                   Expanded(
                     child: _queueLoading
-                        ? const Center(child: CircularProgressIndicator(color: AppColors.deepBlue))
+                        ? Center(child: CircularProgressIndicator(color: colors.primary))
                         : _queue.isEmpty
-                            ? Center(child: Text(_isBn ? 'কিউতে কোনো বুকিং নেই' : 'No bookings in queue', style: const TextStyle(color: AppColors.textMuted)))
+                            ? Center(child: Text(_isBn ? 'কিউতে কোনো বুকিং নেই' : 'No bookings in queue', style: TextStyle(color: colors.outline)))
                             : RefreshIndicator(
                                 onRefresh: _loadQueue,
-                                color: AppColors.deepBlue,
+                                color: colors.primary,
                                 child: ListView.builder(
                                   padding: const EdgeInsets.fromLTRB(16, 0, 16, 40),
                                   itemCount: _queue.length,
@@ -211,32 +212,33 @@ class _LaundryHubScreenState extends State<LaundryHubScreen> {
   }
 
   Widget _queueCard(LaundryBookingModel b) {
+    final colors = Theme.of(context).colorScheme;
     return Container(
       margin: const EdgeInsets.only(bottom: 12),
       padding: const EdgeInsets.all(16),
-      decoration: BoxDecoration(color: AppColors.bgMid, borderRadius: BorderRadius.circular(16), border: Border.all(color: AppColors.glassBorder)),
+      decoration: BoxDecoration(color: colors.surface, borderRadius: BorderRadius.circular(16), border: Border.all(color: colors.outlineVariant)),
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
           Row(children: [
-            Expanded(child: Text('#${b.bookingNo} · ${b.serviceKind.replaceAll('_', ' ')}', style: const TextStyle(color: AppColors.textPrimary, fontSize: 14, fontWeight: FontWeight.w700))),
+            Expanded(child: Text('#${b.bookingNo} · ${b.serviceKind.replaceAll('_', ' ')}', style: TextStyle(color: colors.onSurface, fontSize: 14, fontWeight: FontWeight.w700))),
             Container(
               padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 4),
-              decoration: BoxDecoration(color: AppColors.deepBlue.withOpacity(0.12), borderRadius: BorderRadius.circular(8)),
-              child: Text(b.status.replaceAll('_', ' '), style: const TextStyle(color: AppColors.deepBlue, fontSize: 11, fontWeight: FontWeight.w700)),
+              decoration: BoxDecoration(color: colors.primary.withOpacity(0.12), borderRadius: BorderRadius.circular(8)),
+              child: Text(b.status.replaceAll('_', ' '), style: TextStyle(color: colors.primary, fontSize: 11, fontWeight: FontWeight.w700)),
             ),
           ]),
           const SizedBox(height: 6),
-          Text(b.pickupAddress, style: const TextStyle(color: AppColors.textMuted, fontSize: 12)),
+          Text(b.pickupAddress, style: TextStyle(color: colors.outline, fontSize: 12)),
           const SizedBox(height: 4),
-          Text(_isBn ? 'আনুমানিক: ${b.estimatedLoad}${b.actualLoad != null ? " · প্রকৃত: ${b.actualLoad}" : ""}' : 'Est: ${b.estimatedLoad}${b.actualLoad != null ? " · Actual: ${b.actualLoad}" : ""}', style: const TextStyle(color: AppColors.textMuted, fontSize: 12)),
+          Text(_isBn ? 'আনুমানিক: ${b.estimatedLoad}${b.actualLoad != null ? " · প্রকৃত: ${b.actualLoad}" : ""}' : 'Est: ${b.estimatedLoad}${b.actualLoad != null ? " · Actual: ${b.actualLoad}" : ""}', style: TextStyle(color: colors.outline, fontSize: 12)),
           if (b.status != 'booked') ...[
             if (b.customerPhoneSnapshot != null) ...[
               const SizedBox(height: 8),
               Row(children: [
-                const Icon(Icons.phone_rounded, color: AppColors.deepBlue, size: 18),
+                Icon(Icons.phone_rounded, color: colors.primary, size: 18),
                 const SizedBox(width: 8),
-                Text(b.customerPhoneSnapshot!, style: const TextStyle(color: AppColors.textPrimary, fontSize: 14)),
+                Text(b.customerPhoneSnapshot!, style: TextStyle(color: colors.onSurface, fontSize: 14)),
               ]),
             ],
             const SizedBox(height: 10),
@@ -244,23 +246,23 @@ class _LaundryHubScreenState extends State<LaundryHubScreen> {
               onTap: _openingChatBookingId == b.id ? null : () => _openChat(b.id),
               child: Row(children: [
                 _openingChatBookingId == b.id
-                    ? const SizedBox(width: 16, height: 16, child: CircularProgressIndicator(strokeWidth: 2, color: AppColors.deepBlue))
-                    : const Icon(Icons.chat_bubble_outline_rounded, color: AppColors.deepBlue, size: 16),
+                    ? SizedBox(width: 16, height: 16, child: CircularProgressIndicator(strokeWidth: 2, color: colors.primary))
+                    : Icon(Icons.chat_bubble_outline_rounded, color: colors.primary, size: 16),
                 const SizedBox(width: 8),
-                Text(_isBn ? 'গ্রাহকের সাথে চ্যাট করুন' : 'Chat with customer', style: const TextStyle(color: AppColors.deepBlue, fontSize: 13, fontWeight: FontWeight.w600)),
+                Text(_isBn ? 'গ্রাহকের সাথে চ্যাট করুন' : 'Chat with customer', style: TextStyle(color: colors.primary, fontSize: 13, fontWeight: FontWeight.w600)),
               ]),
             ),
           ],
           const SizedBox(height: 12),
           Row(children: [
             if (b.status == 'booked')
-              Expanded(child: OutlinedButton(onPressed: () => _receive(b), style: _btnStyle(), child: Text(_isBn ? 'গ্রহণ করুন' : 'Receive', style: const TextStyle(color: AppColors.deepBlue, fontWeight: FontWeight.w700)))),
+              Expanded(child: OutlinedButton(onPressed: () => _receive(b), style: _btnStyle(), child: Text(_isBn ? 'গ্রহণ করুন' : 'Receive', style: TextStyle(color: colors.primary, fontWeight: FontWeight.w700)))),
             if (b.status == 'picked_up') ...[
-              Expanded(child: OutlinedButton(onPressed: () => _weighIn(b), style: _btnStyle(), child: Text(_isBn ? 'ওজন লিখুন' : 'Weigh in', style: const TextStyle(color: AppColors.deepBlue, fontWeight: FontWeight.w700)))),
+              Expanded(child: OutlinedButton(onPressed: () => _weighIn(b), style: _btnStyle(), child: Text(_isBn ? 'ওজন লিখুন' : 'Weigh in', style: TextStyle(color: colors.primary, fontWeight: FontWeight.w700)))),
               const SizedBox(width: 8),
             ],
             if (_kNextStage.containsKey(b.status)) ...[
-              Expanded(child: OutlinedButton(onPressed: () => _advanceStage(b), style: _btnStyle(), child: Text(_isBn ? 'পরবর্তী ধাপ' : 'Next stage', style: const TextStyle(color: AppColors.deepBlue, fontWeight: FontWeight.w700)))),
+              Expanded(child: OutlinedButton(onPressed: () => _advanceStage(b), style: _btnStyle(), child: Text(_isBn ? 'পরবর্তী ধাপ' : 'Next stage', style: TextStyle(color: colors.primary, fontWeight: FontWeight.w700)))),
             ],
           ]),
         ],
@@ -268,5 +270,8 @@ class _LaundryHubScreenState extends State<LaundryHubScreen> {
     ).animate().fadeIn(duration: 250.ms);
   }
 
-  ButtonStyle _btnStyle() => OutlinedButton.styleFrom(side: const BorderSide(color: AppColors.deepBlue), padding: const EdgeInsets.symmetric(vertical: 12), shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)));
+  ButtonStyle _btnStyle() {
+    final colors = Theme.of(context).colorScheme;
+    return OutlinedButton.styleFrom(side: BorderSide(color: colors.primary), padding: const EdgeInsets.symmetric(vertical: 12), shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)));
+  }
 }

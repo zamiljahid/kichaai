@@ -5,7 +5,7 @@ import 'package:provider/provider.dart';
 import '../core/network/api_client.dart';
 import '../core/utils/app_strings.dart';
 import '../services/onboarding_service.dart';
-import '../theme/app_theme.dart';
+import '../theme/app_gradients.dart';
 import '../widgets/animated_background.dart';
 import '../widgets/glass_button.dart';
 import 'photographer_profile_screen.dart' show sectionCard, uploadRow;
@@ -141,6 +141,7 @@ class _MicroLearningProfileScreenState extends State<MicroLearningProfileScreen>
 
   @override
   Widget build(BuildContext context) {
+    final colors = Theme.of(context).colorScheme;
     _isBn = context.watch<LanguageNotifier>().isBengali;
     return Scaffold(
       body: AnimatedBackground(
@@ -150,8 +151,8 @@ class _MicroLearningProfileScreenState extends State<MicroLearningProfileScreen>
               Padding(
                 padding: const EdgeInsets.fromLTRB(8, 8, 16, 4),
                 child: Row(children: [
-                  IconButton(icon: const Icon(Icons.arrow_back_rounded, color: AppColors.textPrimary), onPressed: () => Navigator.of(context).pop()),
-                  Text(_isBn ? 'মাইক্রো-লার্নিং প্রোফাইল' : 'Micro-Learning Profile', style: const TextStyle(color: AppColors.textPrimary, fontSize: 18, fontWeight: FontWeight.w700)),
+                  IconButton(icon: Icon(Icons.arrow_back_rounded, color: colors.onSurface), onPressed: () => Navigator.of(context).pop()),
+                  Text(_isBn ? 'মাইক্রো-লার্নিং প্রোফাইল' : 'Micro-Learning Profile', style: TextStyle(color: colors.onSurface, fontSize: 18, fontWeight: FontWeight.w700)),
                 ]),
               ),
               Expanded(
@@ -159,6 +160,7 @@ class _MicroLearningProfileScreenState extends State<MicroLearningProfileScreen>
                   padding: const EdgeInsets.fromLTRB(16, 8, 16, 32),
                   child: Column(crossAxisAlignment: CrossAxisAlignment.stretch, children: [
                     sectionCard(
+                      colors: colors,
                       title: _isBn ? 'দক্ষতার বিষয়' : 'Expertise topics',
                       child: Column(crossAxisAlignment: CrossAxisAlignment.start, children: [
                         Row(children: [
@@ -166,7 +168,7 @@ class _MicroLearningProfileScreenState extends State<MicroLearningProfileScreen>
                             child: TextField(
                               controller: _topicController,
                               onSubmitted: (_) => _addTopic(),
-                              style: const TextStyle(color: AppColors.textPrimary, fontSize: 14),
+                              style: TextStyle(color: colors.onSurface, fontSize: 14),
                               decoration: InputDecoration(hintText: _isBn ? 'যেমন: ওয়েব ডেভেলপমেন্ট' : 'e.g. Web Development'),
                             ),
                           ),
@@ -178,15 +180,16 @@ class _MicroLearningProfileScreenState extends State<MicroLearningProfileScreen>
                           Wrap(spacing: 6, runSpacing: 6, children: _topics.map((t) => Chip(
                             label: Text(t, style: const TextStyle(fontSize: 12.5)),
                             onDeleted: () => setState(() => _topics.remove(t)),
-                            backgroundColor: AppColors.deepBlue.withOpacity(0.08),
+                            backgroundColor: colors.primary.withOpacity(0.08),
                           )).toList()),
                         ],
                       ]),
                     ),
                     const SizedBox(height: 14),
                     sectionCard(
+                      colors: colors,
                       title: _isBn ? 'শিক্ষাগত সনদ / বিশ্ববিদ্যালয় আইডি' : 'Education certificate / University ID',
-                      child: uploadRow(
+                      child: uploadRow(colors: colors, 
                         label: _universityIdUrl != null
                             ? (_isBn ? 'আপলোড হয়েছে ✓' : 'Uploaded ✓')
                             : (_isBn ? 'ছবি আপলোড করুন' : 'Upload a photo'),
@@ -197,9 +200,10 @@ class _MicroLearningProfileScreenState extends State<MicroLearningProfileScreen>
                     ),
                     const SizedBox(height: 14),
                     sectionCard(
+                      colors: colors,
                       title: _isBn ? 'অতিরিক্ত সার্টিফিকেট (ঐচ্ছিক)' : 'Additional certificates (optional)',
                       child: Column(crossAxisAlignment: CrossAxisAlignment.start, children: [
-                        uploadRow(
+                        uploadRow(colors: colors, 
                           label: _isBn ? 'সার্টিফিকেট যোগ করুন' : 'Add a certificate',
                           uploaded: false,
                           loading: _uploadingCertificate,
@@ -209,23 +213,25 @@ class _MicroLearningProfileScreenState extends State<MicroLearningProfileScreen>
                           const SizedBox(height: 8),
                           Text(
                             _isBn ? '${_certificateUrls.length}টি সার্টিফিকেট যোগ হয়েছে' : '${_certificateUrls.length} certificate(s) added',
-                            style: const TextStyle(color: AppColors.textMuted, fontSize: 12),
+                            style: TextStyle(color: colors.outline, fontSize: 12),
                           ),
                         ],
                       ]),
                     ),
                     const SizedBox(height: 14),
                     sectionCard(
+                      colors: colors,
                       title: _isBn ? 'প্রতিষ্ঠানের ইমেইল (ঐচ্ছিক)' : 'Institute email (optional)',
                       child: TextField(
                         controller: _instituteEmailController,
                         keyboardType: TextInputType.emailAddress,
-                        style: const TextStyle(color: AppColors.textPrimary, fontSize: 14),
+                        style: TextStyle(color: colors.onSurface, fontSize: 14),
                         decoration: InputDecoration(hintText: _isBn ? 'instructor@university.edu' : 'instructor@university.edu'),
                       ),
                     ),
                     const SizedBox(height: 14),
                     sectionCard(
+                      colors: colors,
                       title: _isBn ? 'ক্লাসের ধরন' : 'Class format',
                       child: Column(
                         crossAxisAlignment: CrossAxisAlignment.start,
@@ -261,7 +267,7 @@ class _MicroLearningProfileScreenState extends State<MicroLearningProfileScreen>
                                   children: [
                                     Icon(
                                       _recordedFeeConsent ? Icons.check_box_rounded : Icons.check_box_outline_blank_rounded,
-                                      color: _recordedFeeConsent ? AppColors.deepBlue : AppColors.textMuted,
+                                      color: _recordedFeeConsent ? colors.primary : colors.outline,
                                       size: 22,
                                     ),
                                     const SizedBox(width: 8),
@@ -270,7 +276,7 @@ class _MicroLearningProfileScreenState extends State<MicroLearningProfileScreen>
                                         _isBn
                                             ? 'আমি রেকর্ডেড কোর্সের জন্য মাসিক অতিরিক্ত ফি দিতে সম্মত'
                                             : 'I agree to a monthly extra fee for recorded courses',
-                                        style: const TextStyle(color: AppColors.textSecondary, fontSize: 13, height: 1.35),
+                                        style: TextStyle(color: colors.onSurfaceVariant, fontSize: 13, height: 1.35),
                                       ),
                                     ),
                                   ],
@@ -294,6 +300,7 @@ class _MicroLearningProfileScreenState extends State<MicroLearningProfileScreen>
   }
 
   Widget _formatTab(String value, String label, String sub) {
+    final colors = Theme.of(context).colorScheme;
     final active = _contentFormat == value;
     return GestureDetector(
       onTap: () => setState(() {
@@ -304,16 +311,16 @@ class _MicroLearningProfileScreenState extends State<MicroLearningProfileScreen>
         duration: const Duration(milliseconds: 180),
         padding: const EdgeInsets.symmetric(vertical: 12, horizontal: 8),
         decoration: BoxDecoration(
-          gradient: active ? AppColors.blueGradient : null,
-          color: active ? null : const Color(0xFFF9F7F0),
+          gradient: active ? AppGradients.primary(colors) : null,
+          color: active ? null : colors.surfaceContainerLow,
           borderRadius: BorderRadius.circular(12),
-          border: Border.all(color: active ? Colors.transparent : AppColors.glassBorder),
+          border: Border.all(color: active ? Colors.transparent : colors.outlineVariant),
         ),
         child: Column(
           children: [
-            Text(label, style: TextStyle(color: active ? Colors.white : AppColors.textPrimary, fontSize: 13, fontWeight: FontWeight.w700)),
+            Text(label, style: TextStyle(color: active ? Colors.white : colors.onSurface, fontSize: 13, fontWeight: FontWeight.w700)),
             const SizedBox(height: 2),
-            Text(sub, style: TextStyle(color: active ? Colors.white70 : AppColors.textMuted, fontSize: 11)),
+            Text(sub, style: TextStyle(color: active ? Colors.white70 : colors.outline, fontSize: 11)),
           ],
         ),
       ),

@@ -3,7 +3,7 @@ import 'package:flutter_animate/flutter_animate.dart';
 import 'package:provider/provider.dart';
 import '../core/utils/app_strings.dart';
 import '../services/dispatch_service.dart';
-import '../theme/app_theme.dart';
+import '../theme/app_gradients.dart';
 import '../widgets/animated_background.dart';
 import '../widgets/glass_card.dart';
 
@@ -147,6 +147,7 @@ class _ProviderPricingScreenState extends State<ProviderPricingScreen> {
   }
 
   Widget _header() {
+    final colors = Theme.of(context).colorScheme;
     return Padding(
       padding: const EdgeInsets.fromLTRB(16, 14, 20, 12),
       child: Row(
@@ -156,11 +157,11 @@ class _ProviderPricingScreenState extends State<ProviderPricingScreen> {
             child: Container(
               width: 40, height: 40,
               decoration: BoxDecoration(
-                color: AppColors.glassWhite,
+                color: colors.surface,
                 borderRadius: BorderRadius.circular(12),
-                border: Border.all(color: AppColors.glassBorder, width: 1.5),
+                border: Border.all(color: colors.outlineVariant, width: 1.5),
               ),
-              child: const Icon(Icons.arrow_back_ios_new_rounded, color: AppColors.textPrimary, size: 18),
+              child: Icon(Icons.arrow_back_ios_new_rounded, color: colors.onSurface, size: 18),
             ),
           ),
           const SizedBox(width: 16),
@@ -168,8 +169,8 @@ class _ProviderPricingScreenState extends State<ProviderPricingScreen> {
             child: Column(
               crossAxisAlignment: CrossAxisAlignment.start,
               children: [
-                Text(_isBn ? 'মূল্য নির্ধারণ' : 'Pricing', style: const TextStyle(color: AppColors.textPrimary, fontSize: 20, fontWeight: FontWeight.w700)),
-                Text(_isBn ? 'Pricing preference' : 'মূল্য পছন্দ', style: const TextStyle(color: AppColors.textMuted, fontSize: 12)),
+                Text(_isBn ? 'মূল্য নির্ধারণ' : 'Pricing', style: TextStyle(color: colors.onSurface, fontSize: 20, fontWeight: FontWeight.w700)),
+                Text(_isBn ? 'Pricing preference' : 'মূল্য পছন্দ', style: TextStyle(color: colors.outline, fontSize: 12)),
               ],
             ),
           ),
@@ -179,8 +180,9 @@ class _ProviderPricingScreenState extends State<ProviderPricingScreen> {
   }
 
   Widget _body() {
+    final colors = Theme.of(context).colorScheme;
     if (_loading) {
-      return const Center(child: CircularProgressIndicator(color: AppColors.deepBlue));
+      return Center(child: CircularProgressIndicator(color: colors.primary));
     }
     if (_error != null) {
       return Center(
@@ -189,9 +191,9 @@ class _ProviderPricingScreenState extends State<ProviderPricingScreen> {
           child: Column(
             mainAxisSize: MainAxisSize.min,
             children: [
-              const Icon(Icons.error_outline_rounded, color: AppColors.textMuted, size: 40),
+              Icon(Icons.error_outline_rounded, color: colors.outline, size: 40),
               const SizedBox(height: 12),
-              Text(_error!, textAlign: TextAlign.center, style: const TextStyle(color: AppColors.textMuted)),
+              Text(_error!, textAlign: TextAlign.center, style: TextStyle(color: colors.outline)),
               const SizedBox(height: 16),
               TextButton(onPressed: _load, child: Text(_isBn ? 'আবার চেষ্টা করুন' : 'Try again')),
             ],
@@ -200,11 +202,11 @@ class _ProviderPricingScreenState extends State<ProviderPricingScreen> {
       );
     }
     if (_rates.isEmpty) {
-      return Center(child: Text(_isBn ? 'কোনো ক্যাটাগরি পাওয়া যায়নি' : 'No categories found', style: const TextStyle(color: AppColors.textMuted)));
+      return Center(child: Text(_isBn ? 'কোনো ক্যাটাগরি পাওয়া যায়নি' : 'No categories found', style: TextStyle(color: colors.outline)));
     }
     return RefreshIndicator(
-      color: AppColors.deepBlue,
-      backgroundColor: AppColors.bgMid,
+      color: colors.primary,
+      backgroundColor: colors.surface,
       onRefresh: _load,
       child: ListView(
         padding: const EdgeInsets.fromLTRB(16, 0, 16, 100),
@@ -218,24 +220,25 @@ class _ProviderPricingScreenState extends State<ProviderPricingScreen> {
   }
 
   Widget _infoBanner() {
+    final colors = Theme.of(context).colorScheme;
     return Container(
       padding: const EdgeInsets.all(14),
       decoration: BoxDecoration(
-        color: AppColors.glassBlue,
+        color: colors.primary.withValues(alpha: 0.08),
         borderRadius: BorderRadius.circular(14),
-        border: Border.all(color: AppColors.glassBorderBlue, width: 1),
+        border: Border.all(color: colors.primary.withValues(alpha: 0.20), width: 1),
       ),
       child: Row(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
-          const Icon(Icons.info_outline_rounded, color: AppColors.deepBlue, size: 18),
+          Icon(Icons.info_outline_rounded, color: colors.primary, size: 18),
           const SizedBox(width: 10),
           Expanded(
             child: Text(
               _isBn
                   ? 'FIXED = প্ল্যাটফর্মের নির্ধারিত দাম (সুপারিশকৃত)। CUSTOM = কাজ দেখে আপনি নিজে দাম দেবেন; গ্রাহক অনুমোদন করলে কাজ শুরু হবে।'
                   : 'FIXED = the platform-set price (recommended). CUSTOM = you quote your own price on-site; work starts once the customer approves.',
-              style: const TextStyle(color: AppColors.textSecondary, fontSize: 12, height: 1.45),
+              style: TextStyle(color: colors.onSurfaceVariant, fontSize: 12, height: 1.45),
             ),
           ),
         ],
@@ -244,6 +247,7 @@ class _ProviderPricingScreenState extends State<ProviderPricingScreen> {
   }
 
   Widget _rateCard(Map<String, dynamic> rate, int index) {
+    final colors = Theme.of(context).colorScheme;
     final cat = rate['taskCategory'] as String? ?? '';
     final label = (_isBn ? _labelsBn : _labelsEn)[cat] ?? cat;
     final fixed = (rate['fixedPrice'] as num?)?.toStringAsFixed(0) ?? '—';
@@ -260,10 +264,10 @@ class _ProviderPricingScreenState extends State<ProviderPricingScreen> {
             Row(
               children: [
                 Expanded(
-                  child: Text(label, style: const TextStyle(color: AppColors.textPrimary, fontSize: 15, fontWeight: FontWeight.w700)),
+                  child: Text(label, style: TextStyle(color: colors.onSurface, fontSize: 15, fontWeight: FontWeight.w700)),
                 ),
                 if (busy)
-                  const SizedBox(width: 14, height: 14, child: CircularProgressIndicator(strokeWidth: 2, color: AppColors.deepBlue)),
+                  SizedBox(width: 14, height: 14, child: CircularProgressIndicator(strokeWidth: 2, color: colors.primary)),
               ],
             ),
             const SizedBox(height: 8),
@@ -289,25 +293,27 @@ class _ProviderPricingScreenState extends State<ProviderPricingScreen> {
   }
 
   Widget _pricePill(IconData icon, String text) {
+    final colors = Theme.of(context).colorScheme;
     return Container(
       padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 5),
       decoration: BoxDecoration(
-        color: AppColors.glassWhite,
+        color: colors.surface,
         borderRadius: BorderRadius.circular(8),
-        border: Border.all(color: AppColors.glassBorder, width: 1),
+        border: Border.all(color: colors.outlineVariant, width: 1),
       ),
       child: Row(
         mainAxisSize: MainAxisSize.min,
         children: [
-          Icon(icon, color: AppColors.textMuted, size: 13),
+          Icon(icon, color: colors.outline, size: 13),
           const SizedBox(width: 5),
-          Text(text, style: const TextStyle(color: AppColors.textSecondary, fontSize: 12, fontWeight: FontWeight.w600)),
+          Text(text, style: TextStyle(color: colors.onSurfaceVariant, fontSize: 12, fontWeight: FontWeight.w600)),
         ],
       ),
     );
   }
 
   Widget _modeButton(String cat, String value, bool selected, String label) {
+    final colors = Theme.of(context).colorScheme;
     return GestureDetector(
       onTap: () => _setMode(cat, value),
       child: AnimatedContainer(
@@ -315,22 +321,22 @@ class _ProviderPricingScreenState extends State<ProviderPricingScreen> {
         padding: const EdgeInsets.symmetric(vertical: 11),
         alignment: Alignment.center,
         decoration: BoxDecoration(
-          gradient: selected ? AppColors.blueGradient : null,
-          color: selected ? null : AppColors.glassWhite,
+          gradient: selected ? AppGradients.primary(colors) : null,
+          color: selected ? null : colors.surface,
           borderRadius: BorderRadius.circular(12),
           border: Border.all(
-            color: selected ? Colors.transparent : AppColors.glassBorder,
+            color: selected ? Colors.transparent : colors.outlineVariant,
             width: 1.5,
           ),
         ),
         child: Column(
           children: [
             Text(value, style: TextStyle(
-              color: selected ? AppColors.ivory : AppColors.textSecondary,
+              color: selected ? colors.onPrimary : colors.onSurfaceVariant,
               fontSize: 13, fontWeight: FontWeight.w700, letterSpacing: 0.3)),
             const SizedBox(height: 1),
             Text(label, style: TextStyle(
-              color: selected ? AppColors.ivory.withValues(alpha: 0.85) : AppColors.textMuted,
+              color: selected ? colors.onPrimary.withValues(alpha: 0.85) : colors.outline,
               fontSize: 10)),
           ],
         ),

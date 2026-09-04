@@ -1,6 +1,5 @@
 import 'dart:ui';
 import 'package:flutter/material.dart';
-import '../theme/app_theme.dart';
 
 class GlassCard extends StatelessWidget {
   final Widget child;
@@ -30,6 +29,7 @@ class GlassCard extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    final colors = Theme.of(context).colorScheme;
     return GestureDetector(
       onTap: onTap,
       child: ClipRRect(
@@ -47,19 +47,19 @@ class GlassCard extends StatelessWidget {
                 // Plain cards read as solid warm-white; tinted cards (e.g. the
                 // blue/pine variant) keep a soft translucent fade.
                 colors: glassColor != null
-                    ? [glassColor!, glassColor!.withOpacity(0.05)]
-                    : const [Color(0xFFFFFFFF), Color(0xFFFCFAF4)],
+                    ? [glassColor!, glassColor!.withValues(alpha: 0.05)]
+                    : [colors.surface, colors.surfaceContainerLow],
               ),
               borderRadius: BorderRadius.circular(borderRadius),
               border: Border.all(
-                color: borderColor ?? AppColors.glassBorder,
+                color: borderColor ?? colors.outlineVariant,
                 width: 1.5,
               ),
               boxShadow: shadows ??
                   [
-                    // Soft warm lift for the light theme — not a hard black drop.
+                    // Soft tinted lift for the light theme — not a hard black drop.
                     BoxShadow(
-                      color: const Color(0xFF0A3D2E).withOpacity(0.08),
+                      color: colors.shadow.withValues(alpha: 0.08),
                       blurRadius: 22,
                       offset: const Offset(0, 10),
                     ),
@@ -89,15 +89,16 @@ class GlassBlueCard extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    final colors = Theme.of(context).colorScheme;
     return GlassCard(
       padding: padding,
       borderRadius: borderRadius,
-      glassColor: AppColors.glassBlue,
-      borderColor: AppColors.glassBorderBlue,
+      glassColor: colors.primary.withValues(alpha: 0.08),
+      borderColor: colors.primary.withValues(alpha: 0.20),
       onTap: onTap,
       shadows: [
         BoxShadow(
-          color: AppColors.deepBlue.withOpacity(0.2),
+          color: colors.primary.withValues(alpha: 0.2),
           blurRadius: 20,
           offset: const Offset(0, 8),
         ),

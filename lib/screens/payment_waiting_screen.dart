@@ -4,7 +4,7 @@ import 'package:flutter_animate/flutter_animate.dart';
 import 'package:provider/provider.dart';
 import 'package:url_launcher/url_launcher.dart';
 import '../core/utils/app_strings.dart';
-import '../theme/app_theme.dart';
+import '../theme/app_gradients.dart';
 import '../widgets/animated_background.dart';
 import '../widgets/glass_button.dart';
 import '../widgets/glass_card.dart';
@@ -173,6 +173,7 @@ class _PaymentWaitingScreenState extends State<PaymentWaitingScreen> with Widget
   }
 
   Widget _buildAgreementGate() {
+    final colors = Theme.of(context).colorScheme;
     return Scaffold(
       body: AnimatedBackground(
         child: SafeArea(
@@ -184,17 +185,17 @@ class _PaymentWaitingScreenState extends State<PaymentWaitingScreen> with Widget
                 Text(
                   _isBn ? widget.title : widget.titleEn,
                   textAlign: TextAlign.center,
-                  style: const TextStyle(color: AppColors.textPrimary, fontSize: 18, fontWeight: FontWeight.w800),
+                  style: TextStyle(color: colors.onSurface, fontSize: 18, fontWeight: FontWeight.w800),
                 ),
                 const SizedBox(height: 6),
                 if (_couponDiscount != null && _couponDiscount! > 0) ...[
                   Text(
                     '৳ ${widget.amount.toStringAsFixed(0)}',
-                    style: const TextStyle(color: AppColors.textMuted, fontSize: 15, fontWeight: FontWeight.w600, decoration: TextDecoration.lineThrough),
+                    style: TextStyle(color: colors.outline, fontSize: 15, fontWeight: FontWeight.w600, decoration: TextDecoration.lineThrough),
                   ),
                   const SizedBox(height: 2),
                 ],
-                Text('৳ ${_amount.toStringAsFixed(0)}', style: const TextStyle(color: AppColors.deepBlue, fontSize: 26, fontWeight: FontWeight.w800)),
+                Text('৳ ${_amount.toStringAsFixed(0)}', style: TextStyle(color: colors.primary, fontSize: 26, fontWeight: FontWeight.w800)),
                 if (widget.applyCoupon != null) ...[
                   const SizedBox(height: 16),
                   Row(children: [
@@ -202,22 +203,22 @@ class _PaymentWaitingScreenState extends State<PaymentWaitingScreen> with Widget
                       child: TextField(
                         controller: _couponCtrl,
                         textCapitalization: TextCapitalization.characters,
-                        style: const TextStyle(color: AppColors.textPrimary, fontSize: 14),
+                        style: TextStyle(color: colors.onSurface, fontSize: 14),
                         decoration: InputDecoration(
                           hintText: _isBn ? 'কুপন কোড থাকলে দিন' : 'Have a coupon code?',
-                          hintStyle: const TextStyle(color: AppColors.textMuted, fontSize: 13),
+                          hintStyle: TextStyle(color: colors.outline, fontSize: 13),
                           filled: true,
-                          fillColor: AppColors.glassWhite,
+                          fillColor: colors.surface,
                           contentPadding: const EdgeInsets.symmetric(horizontal: 14, vertical: 12),
-                          border: OutlineInputBorder(borderRadius: BorderRadius.circular(12), borderSide: const BorderSide(color: AppColors.glassBorder)),
-                          enabledBorder: OutlineInputBorder(borderRadius: BorderRadius.circular(12), borderSide: const BorderSide(color: AppColors.glassBorder)),
+                          border: OutlineInputBorder(borderRadius: BorderRadius.circular(12), borderSide: BorderSide(color: colors.outlineVariant)),
+                          enabledBorder: OutlineInputBorder(borderRadius: BorderRadius.circular(12), borderSide: BorderSide(color: colors.outlineVariant)),
                         ),
                       ),
                     ),
                     const SizedBox(width: 8),
                     _applyingCoupon
                         ? const SizedBox(width: 44, height: 44, child: Padding(padding: EdgeInsets.all(12), child: CircularProgressIndicator(strokeWidth: 2)))
-                        : TextButton(onPressed: _applyCoupon, child: Text(_isBn ? 'প্রয়োগ করুন' : 'Apply', style: const TextStyle(color: AppColors.deepBlue, fontWeight: FontWeight.w700))),
+                        : TextButton(onPressed: _applyCoupon, child: Text(_isBn ? 'প্রয়োগ করুন' : 'Apply', style: TextStyle(color: colors.primary, fontWeight: FontWeight.w700))),
                   ]),
                   if (_couponError != null) ...[
                     const SizedBox(height: 4),
@@ -238,7 +239,7 @@ class _PaymentWaitingScreenState extends State<PaymentWaitingScreen> with Widget
                     children: [
                       Checkbox(
                         value: _agreed,
-                        activeColor: AppColors.deepBlue,
+                        activeColor: colors.primary,
                         onChanged: (v) => setState(() => _agreed = v ?? false),
                       ),
                       Expanded(
@@ -248,32 +249,32 @@ class _PaymentWaitingScreenState extends State<PaymentWaitingScreen> with Widget
                             children: [
                               Text(
                                 _isBn ? 'আমি পড়েছি এবং সম্মত ' : 'I have read and agree to the ',
-                                style: const TextStyle(color: AppColors.textSecondary, fontSize: 13, height: 1.5),
+                                style: TextStyle(color: colors.onSurfaceVariant, fontSize: 13, height: 1.5),
                               ),
                               GestureDetector(
                                 onTap: () => _openLegalPage('/terms'),
                                 child: Text(
                                   _isBn ? 'ব্যবহারের শর্তাবলী' : 'Terms & Conditions',
-                                  style: const TextStyle(color: AppColors.deepBlue, fontSize: 13, fontWeight: FontWeight.w700, decoration: TextDecoration.underline),
+                                  style: TextStyle(color: colors.primary, fontSize: 13, fontWeight: FontWeight.w700, decoration: TextDecoration.underline),
                                 ),
                               ),
-                              Text(_isBn ? ', ' : ', ', style: const TextStyle(color: AppColors.textSecondary, fontSize: 13)),
+                              Text(_isBn ? ', ' : ', ', style: TextStyle(color: colors.onSurfaceVariant, fontSize: 13)),
                               GestureDetector(
                                 onTap: () => _openLegalPage('/privacy'),
                                 child: Text(
                                   _isBn ? 'প্রাইভেসি পলিসি' : 'Privacy Policy',
-                                  style: const TextStyle(color: AppColors.deepBlue, fontSize: 13, fontWeight: FontWeight.w700, decoration: TextDecoration.underline),
+                                  style: TextStyle(color: colors.primary, fontSize: 13, fontWeight: FontWeight.w700, decoration: TextDecoration.underline),
                                 ),
                               ),
-                              Text(_isBn ? ' এবং ' : ' and ', style: const TextStyle(color: AppColors.textSecondary, fontSize: 13)),
+                              Text(_isBn ? ' এবং ' : ' and ', style: TextStyle(color: colors.onSurfaceVariant, fontSize: 13)),
                               GestureDetector(
                                 onTap: () => _openLegalPage('/refund'),
                                 child: Text(
                                   _isBn ? 'রিফান্ড ও রিটার্ন নীতি' : 'Return & Refund Policy',
-                                  style: const TextStyle(color: AppColors.deepBlue, fontSize: 13, fontWeight: FontWeight.w700, decoration: TextDecoration.underline),
+                                  style: TextStyle(color: colors.primary, fontSize: 13, fontWeight: FontWeight.w700, decoration: TextDecoration.underline),
                                 ),
                               ),
-                              Text(_isBn ? ' মেনে নিয়েছি।' : '.', style: const TextStyle(color: AppColors.textSecondary, fontSize: 13, height: 1.5)),
+                              Text(_isBn ? ' মেনে নিয়েছি।' : '.', style: TextStyle(color: colors.onSurfaceVariant, fontSize: 13, height: 1.5)),
                             ],
                           ),
                         ),
@@ -291,7 +292,7 @@ class _PaymentWaitingScreenState extends State<PaymentWaitingScreen> with Widget
                 const SizedBox(height: 10),
                 TextButton(
                   onPressed: () => Navigator.of(context).pop(false),
-                  child: Text(_isBn ? 'বাতিল করুন' : 'Cancel', style: const TextStyle(color: AppColors.textMuted)),
+                  child: Text(_isBn ? 'বাতিল করুন' : 'Cancel', style: TextStyle(color: colors.outline)),
                 ),
               ],
             ),
@@ -303,6 +304,7 @@ class _PaymentWaitingScreenState extends State<PaymentWaitingScreen> with Widget
 
   @override
   Widget build(BuildContext context) {
+    final colors = Theme.of(context).colorScheme;
     _isBn = context.watch<LanguageNotifier>().isBengali;
     if (!_gatePassed) return _buildAgreementGate();
     return Scaffold(
@@ -318,13 +320,13 @@ class _PaymentWaitingScreenState extends State<PaymentWaitingScreen> with Widget
                   decoration: BoxDecoration(
                     gradient: _failed
                         ? const LinearGradient(colors: [Color(0xFFEF4444), Color(0xFFB91C1C)])
-                        : AppColors.blueGradient,
+                        : AppGradients.primary(colors),
                     shape: BoxShape.circle,
-                    boxShadow: [BoxShadow(color: (_failed ? const Color(0xFFEF4444) : AppColors.deepBlue).withOpacity(0.35), blurRadius: 24)],
+                    boxShadow: [BoxShadow(color: (_failed ? const Color(0xFFEF4444) : colors.primary).withOpacity(0.35), blurRadius: 24)],
                   ),
                   child: Icon(
                     _failed ? Icons.error_outline_rounded : Icons.hourglass_top_rounded,
-                    color: AppColors.ivory,
+                    color: colors.onPrimary,
                     size: 44,
                   ),
                 ).animate(onPlay: (c) => _failed ? null : c.repeat(reverse: true)).scale(
@@ -336,16 +338,16 @@ class _PaymentWaitingScreenState extends State<PaymentWaitingScreen> with Widget
                   _failed
                       ? (_isBn ? 'পেমেন্ট ব্যর্থ হয়েছে' : 'Payment Failed')
                       : (_isBn ? 'পেমেন্টের অপেক্ষায়...' : 'Waiting for Payment...'),
-                  style: const TextStyle(color: AppColors.textPrimary, fontSize: 20, fontWeight: FontWeight.w800),
+                  style: TextStyle(color: colors.onSurface, fontSize: 20, fontWeight: FontWeight.w800),
                 ),
                 const SizedBox(height: 8),
                 Text(
                   _isBn ? widget.title : widget.titleEn,
                   textAlign: TextAlign.center,
-                  style: const TextStyle(color: AppColors.textSecondary, fontSize: 14, fontWeight: FontWeight.w600),
+                  style: TextStyle(color: colors.onSurfaceVariant, fontSize: 14, fontWeight: FontWeight.w600),
                 ),
                 const SizedBox(height: 4),
-                Text('৳ ${_amount.toStringAsFixed(0)}', style: const TextStyle(color: AppColors.deepBlue, fontSize: 22, fontWeight: FontWeight.w800)),
+                Text('৳ ${_amount.toStringAsFixed(0)}', style: TextStyle(color: colors.primary, fontSize: 22, fontWeight: FontWeight.w800)),
                 const SizedBox(height: 20),
                 GlassCard(
                   child: Text(
@@ -357,7 +359,7 @@ class _PaymentWaitingScreenState extends State<PaymentWaitingScreen> with Widget
                             ? 'ব্রাউজারে পেমেন্ট পেজ খোলা হয়েছে। bKash/Nagad/কার্ড দিয়ে পেমেন্ট সম্পন্ন করে এই স্ক্রিনে ফিরে আসুন — আমরা স্বয়ংক্রিয়ভাবে যাচাই করব।'
                             : 'The payment page opened in your browser. Complete payment with bKash/Nagad/Card, then come back here — we\'ll verify it automatically.'),
                     textAlign: TextAlign.center,
-                    style: const TextStyle(color: AppColors.textMuted, fontSize: 13, height: 1.5),
+                    style: TextStyle(color: colors.outline, fontSize: 13, height: 1.5),
                   ),
                 ),
                 const SizedBox(height: 24),
@@ -381,18 +383,18 @@ class _PaymentWaitingScreenState extends State<PaymentWaitingScreen> with Widget
                   const SizedBox(height: 10),
                   TextButton.icon(
                     onPressed: _openGateway,
-                    icon: const Icon(Icons.open_in_new_rounded, size: 16, color: AppColors.deepBlue),
+                    icon: Icon(Icons.open_in_new_rounded, size: 16, color: colors.primary),
                     label: Text(
                       _openedOnce
                           ? (_isBn ? 'পেমেন্ট পেজ আবার খুলুন' : 'Reopen Payment Page')
                           : (_isBn ? 'পেমেন্ট পেজ খুলুন' : 'Open Payment Page'),
-                      style: const TextStyle(color: AppColors.deepBlue, fontWeight: FontWeight.w600),
+                      style: TextStyle(color: colors.primary, fontWeight: FontWeight.w600),
                     ),
                   ),
                 ],
                 TextButton(
                   onPressed: () => Navigator.of(context).pop(false),
-                  child: Text(_isBn ? 'বাতিল করুন' : 'Cancel', style: const TextStyle(color: AppColors.textMuted)),
+                  child: Text(_isBn ? 'বাতিল করুন' : 'Cancel', style: TextStyle(color: colors.outline)),
                 ),
               ],
             ),

@@ -4,7 +4,7 @@ import 'package:provider/provider.dart';
 import '../core/network/api_client.dart';
 import '../core/utils/app_strings.dart';
 import '../services/dispatch_service.dart';
-import '../theme/app_theme.dart';
+import '../theme/app_gradients.dart';
 import '../widgets/animated_background.dart';
 import '../widgets/glass_button.dart';
 import '../widgets/glass_card.dart';
@@ -30,6 +30,7 @@ class _RatingScreenState extends State<RatingScreen> {
   }
 
   Future<void> _submit() async {
+    final colors = Theme.of(context).colorScheme;
     setState(() => _isSubmitting = true);
     try {
       await DispatchService.instance.rateJob(
@@ -39,7 +40,7 @@ class _RatingScreenState extends State<RatingScreen> {
       );
       if (!mounted) return;
       ScaffoldMessenger.of(context).showSnackBar(SnackBar(
-        content: Text(_isBn ? 'রিভিউ দেওয়ার জন্য ধন্যবাদ!' : 'Thanks for your review!', style: const TextStyle(color: AppColors.ivory)),
+        content: Text(_isBn ? 'রিভিউ দেওয়ার জন্য ধন্যবাদ!' : 'Thanks for your review!', style: TextStyle(color: colors.onPrimary)),
         backgroundColor: const Color(0xFF22C55E),
         behavior: SnackBarBehavior.floating,
         shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
@@ -49,7 +50,7 @@ class _RatingScreenState extends State<RatingScreen> {
     } catch (e) {
       if (mounted) {
         ScaffoldMessenger.of(context).showSnackBar(SnackBar(
-          content: Text(ApiClient.mapError(e).localized(_isBn), style: const TextStyle(color: AppColors.ivory)),
+          content: Text(ApiClient.mapError(e).localized(_isBn), style: TextStyle(color: colors.onPrimary)),
           backgroundColor: const Color(0xFFEF4444),
           behavior: SnackBarBehavior.floating,
           shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
@@ -63,6 +64,7 @@ class _RatingScreenState extends State<RatingScreen> {
 
   @override
   Widget build(BuildContext context) {
+    final colors = Theme.of(context).colorScheme;
     _isBn = context.watch<LanguageNotifier>().isBengali;
     return Scaffold(
       body: AnimatedBackground(
@@ -75,24 +77,24 @@ class _RatingScreenState extends State<RatingScreen> {
                 Container(
                   width: 88, height: 88,
                   decoration: BoxDecoration(
-                    gradient: AppColors.blueGradient,
+                    gradient: AppGradients.primary(colors),
                     shape: BoxShape.circle,
-                    boxShadow: [BoxShadow(color: AppColors.deepBlue.withOpacity(0.4), blurRadius: 24)],
+                    boxShadow: [BoxShadow(color: colors.primary.withOpacity(0.4), blurRadius: 24)],
                   ),
-                  child: const Icon(Icons.check_circle_rounded, color: AppColors.ivory, size: 48),
+                  child: Icon(Icons.check_circle_rounded, color: colors.onPrimary, size: 48),
                 ).animate().scale(duration: 500.ms, curve: Curves.elasticOut),
                 const SizedBox(height: 24),
-                Text(_isBn ? 'কাজ সম্পন্ন হয়েছে!' : 'Job Completed!', style: const TextStyle(color: AppColors.textPrimary, fontSize: 24, fontWeight: FontWeight.w800))
+                Text(_isBn ? 'কাজ সম্পন্ন হয়েছে!' : 'Job Completed!', style: TextStyle(color: colors.onSurface, fontSize: 24, fontWeight: FontWeight.w800))
                     .animate(delay: 200.ms).fadeIn().slideY(begin: 0.1),
                 const SizedBox(height: 8),
-                Text(_isBn ? 'Provider-কে রেটিং দিন' : 'Rate the Provider', style: const TextStyle(color: AppColors.textMuted, fontSize: 14))
+                Text(_isBn ? 'Provider-কে রেটিং দিন' : 'Rate the Provider', style: TextStyle(color: colors.outline, fontSize: 14))
                     .animate(delay: 300.ms).fadeIn(),
                 const SizedBox(height: 32),
                 GlassCard(
                   child: Column(
                     crossAxisAlignment: CrossAxisAlignment.stretch,
                     children: [
-                      Text(_isBn ? 'আপনার অভিজ্ঞতা কেমন ছিল?' : 'How was your experience?', style: const TextStyle(color: AppColors.textSecondary, fontSize: 13, fontWeight: FontWeight.w600)),
+                      Text(_isBn ? 'আপনার অভিজ্ঞতা কেমন ছিল?' : 'How was your experience?', style: TextStyle(color: colors.onSurfaceVariant, fontSize: 13, fontWeight: FontWeight.w600)),
                       const SizedBox(height: 16),
                       Row(
                         mainAxisAlignment: MainAxisAlignment.center,
@@ -104,7 +106,7 @@ class _RatingScreenState extends State<RatingScreen> {
                               padding: const EdgeInsets.symmetric(horizontal: 6),
                               child: Icon(
                                 star <= _rating ? Icons.star_rounded : Icons.star_outline_rounded,
-                                color: star <= _rating ? const Color(0xFFFFC107) : AppColors.glassBorder,
+                                color: star <= _rating ? const Color(0xFFFFC107) : colors.outlineVariant,
                                 size: 40,
                               ),
                             ),
@@ -112,17 +114,17 @@ class _RatingScreenState extends State<RatingScreen> {
                         }),
                       ),
                       const SizedBox(height: 8),
-                      Center(child: Text(_ratingLabel(_rating), style: TextStyle(color: AppColors.textMuted, fontSize: 13))),
+                      Center(child: Text(_ratingLabel(_rating), style: TextStyle(color: colors.outline, fontSize: 13))),
                       const SizedBox(height: 20),
                       TextFormField(
                         controller: _reviewController,
                         maxLines: 3,
-                        style: const TextStyle(color: AppColors.textPrimary, fontSize: 14),
+                        style: TextStyle(color: colors.onSurface, fontSize: 14),
                         decoration: InputDecoration(
                           hintText: _isBn ? 'রিভিউ লিখুন (ঐচ্ছিক)...' : 'Write a review (optional)...',
-                          prefixIcon: const Padding(
+                          prefixIcon: Padding(
                             padding: EdgeInsets.only(bottom: 40),
-                            child: Icon(Icons.rate_review_rounded, color: AppColors.textMuted, size: 20),
+                            child: Icon(Icons.rate_review_rounded, color: colors.outline, size: 20),
                           ),
                         ),
                       ),

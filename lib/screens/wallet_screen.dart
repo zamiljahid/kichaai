@@ -5,8 +5,9 @@ import 'package:provider/provider.dart';
 import '../core/network/api_client.dart';
 import '../core/utils/app_strings.dart';
 import '../services/finance_service.dart';
-import '../theme/app_theme.dart';
+import '../theme/app_gradients.dart';
 import '../widgets/glass_button.dart';
+import '../widgets/animated_background.dart';
 
 class WalletScreen extends StatefulWidget {
   const WalletScreen({super.key});
@@ -72,6 +73,7 @@ class _WalletScreenState extends State<WalletScreen> with SingleTickerProviderSt
   ];
 
   void _showPayoutSheet() {
+    final colors = Theme.of(context).colorScheme;
     final amountCtrl = TextEditingController();
     final accountCtrl = TextEditingController();
     String method = 'bkash';
@@ -90,19 +92,19 @@ class _WalletScreenState extends State<WalletScreen> with SingleTickerProviderSt
             child: BackdropFilter(
               filter: ImageFilter.blur(sigmaX: 12, sigmaY: 12),
               child: Container(
-                color: AppColors.bgMid,
+                color: colors.surface,
                 padding: const EdgeInsets.fromLTRB(20, 20, 20, 32),
                 child: Column(
                   mainAxisSize: MainAxisSize.min,
                   crossAxisAlignment: CrossAxisAlignment.start,
                   children: [
-                    Center(child: Container(width: 40, height: 4, decoration: BoxDecoration(color: AppColors.glassBorder, borderRadius: BorderRadius.circular(2)))),
+                    Center(child: Container(width: 40, height: 4, decoration: BoxDecoration(color: colors.outlineVariant, borderRadius: BorderRadius.circular(2)))),
                     const SizedBox(height: 16),
-                    Text(_isBn ? 'উত্তোলনের অনুরোধ' : 'Payout request', style: const TextStyle(color: AppColors.textPrimary, fontSize: 18, fontWeight: FontWeight.w700)),
+                    Text(_isBn ? 'উত্তোলনের অনুরোধ' : 'Payout request', style: TextStyle(color: colors.onSurface, fontSize: 18, fontWeight: FontWeight.w700)),
                     const SizedBox(height: 16),
                     _sheetField(amountCtrl, _isBn ? 'পরিমাণ (৳)' : 'Amount (৳)', Icons.currency_exchange_rounded, TextInputType.number),
                     const SizedBox(height: 12),
-                    Text(_isBn ? 'পেআউট পদ্ধতি' : 'Payout method', style: const TextStyle(color: AppColors.textMuted, fontSize: 12, fontWeight: FontWeight.w600)),
+                    Text(_isBn ? 'পেআউট পদ্ধতি' : 'Payout method', style: TextStyle(color: colors.outline, fontSize: 12, fontWeight: FontWeight.w600)),
                     const SizedBox(height: 8),
                     Row(
                       children: _payoutMethods.map((m) {
@@ -114,14 +116,14 @@ class _WalletScreenState extends State<WalletScreen> with SingleTickerProviderSt
                               margin: EdgeInsets.only(right: m.$1 != _payoutMethods.last.$1 ? 8 : 0),
                               padding: const EdgeInsets.symmetric(vertical: 10),
                               decoration: BoxDecoration(
-                                color: selected ? AppColors.deepBlue.withOpacity(0.1) : AppColors.glassWhite,
+                                color: selected ? colors.primary.withOpacity(0.1) : colors.surface,
                                 borderRadius: BorderRadius.circular(10),
-                                border: Border.all(color: selected ? AppColors.deepBlue : AppColors.glassBorder),
+                                border: Border.all(color: selected ? colors.primary : colors.outlineVariant),
                               ),
                               child: Text(
                                 _isBn ? m.$2 : m.$3,
                                 textAlign: TextAlign.center,
-                                style: TextStyle(color: selected ? AppColors.deepBlue : AppColors.textSecondary, fontSize: 12, fontWeight: FontWeight.w600),
+                                style: TextStyle(color: selected ? colors.primary : colors.onSurfaceVariant, fontSize: 12, fontWeight: FontWeight.w600),
                               ),
                             ),
                           ),
@@ -187,16 +189,17 @@ class _WalletScreenState extends State<WalletScreen> with SingleTickerProviderSt
   }
 
   Widget _sheetField(TextEditingController ctrl, String hint, IconData icon, [TextInputType? type]) {
+    final colors = Theme.of(context).colorScheme;
     return TextField(
       controller: ctrl,
       keyboardType: type,
-      style: const TextStyle(color: AppColors.textPrimary),
+      style: TextStyle(color: colors.onSurface),
       decoration: InputDecoration(
         hintText: hint,
-        hintStyle: const TextStyle(color: AppColors.textMuted),
-        prefixIcon: Icon(icon, color: AppColors.textMuted, size: 18),
+        hintStyle: TextStyle(color: colors.outline),
+        prefixIcon: Icon(icon, color: colors.outline, size: 18),
         filled: true,
-        fillColor: AppColors.glassWhite,
+        fillColor: colors.surface,
         border: OutlineInputBorder(borderRadius: BorderRadius.circular(12), borderSide: BorderSide.none),
       ),
     );
@@ -204,59 +207,63 @@ class _WalletScreenState extends State<WalletScreen> with SingleTickerProviderSt
 
   @override
   Widget build(BuildContext context) {
+    final colors = Theme.of(context).colorScheme;
     _isBn = context.watch<LanguageNotifier>().isBengali;
-    return Scaffold(
-      backgroundColor: AppColors.bgDark,
-      appBar: AppBar(
+    return AnimatedBackground(
+      child: Scaffold(
         backgroundColor: Colors.transparent,
-        elevation: 0,
-        title: Text(_isBn ? 'আমার ওয়ালেট' : 'My Wallet', style: const TextStyle(color: AppColors.textPrimary, fontSize: 18, fontWeight: FontWeight.w700)),
-        leading: IconButton(
-          icon: const Icon(Icons.arrow_back_ios_new_rounded, color: AppColors.textPrimary, size: 18),
-          onPressed: () => Navigator.pop(context),
+        appBar: AppBar(
+          backgroundColor: Colors.transparent,
+          elevation: 0,
+          title: Text(_isBn ? 'আমার ওয়ালেট' : 'My Wallet', style: TextStyle(color: colors.onSurface, fontSize: 18, fontWeight: FontWeight.w700)),
+          leading: IconButton(
+            icon: Icon(Icons.arrow_back_ios_new_rounded, color: colors.onSurface, size: 18),
+            onPressed: () => Navigator.pop(context),
+          ),
+          bottom: TabBar(
+            controller: _tabController,
+            labelColor: colors.primary,
+            unselectedLabelColor: colors.outline,
+            indicatorColor: colors.primary,
+            tabs: [Tab(text: _isBn ? 'লেনদেন' : 'Transactions'), Tab(text: _isBn ? 'পেআউট' : 'Payouts')],
+          ),
         ),
-        bottom: TabBar(
-          controller: _tabController,
-          labelColor: AppColors.deepBlue,
-          unselectedLabelColor: AppColors.textMuted,
-          indicatorColor: AppColors.deepBlue,
-          tabs: [Tab(text: _isBn ? 'লেনদেন' : 'Transactions'), Tab(text: _isBn ? 'পেআউট' : 'Payouts')],
-        ),
-      ),
-      body: _isLoading
-          ? const Center(child: CircularProgressIndicator(color: AppColors.deepBlue))
-          : _providerId == null
-              ? Center(child: Text(_isBn ? 'প্রোভাইডার একাউন্ট প্রয়োজন' : 'Provider account required', style: const TextStyle(color: AppColors.textMuted)))
-              : Column(
-                  children: [
-                    _buildBalanceCard(),
-                    Expanded(
-                      child: TabBarView(
-                        controller: _tabController,
-                        children: [
-                          _buildTransactionList(),
-                          _buildPayoutList(),
-                        ],
+        body: _isLoading
+            ? Center(child: CircularProgressIndicator(color: colors.primary))
+            : _providerId == null
+                ? Center(child: Text(_isBn ? 'প্রোভাইডার একাউন্ট প্রয়োজন' : 'Provider account required', style: TextStyle(color: colors.outline)))
+                : Column(
+                    children: [
+                      _buildBalanceCard(),
+                      Expanded(
+                        child: TabBarView(
+                          controller: _tabController,
+                          children: [
+                            _buildTransactionList(),
+                            _buildPayoutList(),
+                          ],
+                        ),
                       ),
-                    ),
-                  ],
-                ),
-      floatingActionButton: _providerId == null ? null : FloatingActionButton.extended(
-        onPressed: _showPayoutSheet,
-        backgroundColor: AppColors.deepBlue,
-        icon: const Icon(Icons.arrow_upward_rounded, color: Colors.white),
-        label: Text(_isBn ? 'উত্তোলন' : 'Withdraw', style: const TextStyle(color: Colors.white, fontWeight: FontWeight.w700)),
+                    ],
+                  ),
+        floatingActionButton: _providerId == null ? null : FloatingActionButton.extended(
+          onPressed: _showPayoutSheet,
+          backgroundColor: colors.primary,
+          icon: const Icon(Icons.arrow_upward_rounded, color: Colors.white),
+          label: Text(_isBn ? 'উত্তোলন' : 'Withdraw', style: const TextStyle(color: Colors.white, fontWeight: FontWeight.w700)),
+        ),
       ),
     );
   }
 
   Widget _buildBalanceCard() {
+    final colors = Theme.of(context).colorScheme;
     final balance = (_wallet?['balance'] ?? _wallet?['availableBalance'] ?? 0.0);
     return Container(
       margin: const EdgeInsets.all(16),
       padding: const EdgeInsets.all(24),
       decoration: BoxDecoration(
-        gradient: AppColors.blueGradient,
+        gradient: AppGradients.primary(colors),
         borderRadius: BorderRadius.circular(20),
       ),
       child: Row(
@@ -280,12 +287,13 @@ class _WalletScreenState extends State<WalletScreen> with SingleTickerProviderSt
   }
 
   Widget _buildTransactionList() {
+    final colors = Theme.of(context).colorScheme;
     if (_transactions.isEmpty) {
-      return Center(child: Text(_isBn ? 'কোনো লেনদেন নেই' : 'No transactions', style: const TextStyle(color: AppColors.textMuted)));
+      return Center(child: Text(_isBn ? 'কোনো লেনদেন নেই' : 'No transactions', style: TextStyle(color: colors.outline)));
     }
     return RefreshIndicator(
-      color: AppColors.deepBlue,
-      backgroundColor: AppColors.bgMid,
+      color: colors.primary,
+      backgroundColor: colors.surface,
       onRefresh: _loadAll,
       child: ListView.builder(
         padding: const EdgeInsets.fromLTRB(16, 8, 16, 100),
@@ -297,9 +305,16 @@ class _WalletScreenState extends State<WalletScreen> with SingleTickerProviderSt
             margin: const EdgeInsets.only(bottom: 10),
             padding: const EdgeInsets.all(14),
             decoration: BoxDecoration(
-              color: AppColors.bgMid,
-              borderRadius: BorderRadius.circular(14),
-              border: Border.all(color: AppColors.glassBorder),
+              color: colors.surface,
+              borderRadius: BorderRadius.circular(20),
+              border: Border.all(color: colors.outlineVariant),
+              boxShadow: [
+                BoxShadow(
+                  color: colors.shadow.withValues(alpha: 0.06),
+                  blurRadius: 18,
+                  offset: const Offset(0, 8),
+                ),
+              ],
             ),
             child: Row(
               children: [
@@ -321,9 +336,9 @@ class _WalletScreenState extends State<WalletScreen> with SingleTickerProviderSt
                   child: Column(
                     crossAxisAlignment: CrossAxisAlignment.start,
                     children: [
-                      Text(t.description ?? (_isBn ? 'লেনদেন' : 'Transaction'), style: const TextStyle(color: AppColors.textPrimary, fontSize: 13, fontWeight: FontWeight.w600)),
+                      Text(t.description ?? (_isBn ? 'লেনদেন' : 'Transaction'), style: TextStyle(color: colors.onSurface, fontSize: 13, fontWeight: FontWeight.w600)),
                       const SizedBox(height: 2),
-                      Text('${t.createdAt.year}-${t.createdAt.month.toString().padLeft(2, '0')}-${t.createdAt.day.toString().padLeft(2, '0')}', style: const TextStyle(color: AppColors.textMuted, fontSize: 11)),
+                      Text('${t.createdAt.year}-${t.createdAt.month.toString().padLeft(2, '0')}-${t.createdAt.day.toString().padLeft(2, '0')}', style: TextStyle(color: colors.outline, fontSize: 11)),
                     ],
                   ),
                 ),
@@ -344,8 +359,9 @@ class _WalletScreenState extends State<WalletScreen> with SingleTickerProviderSt
   }
 
   Widget _buildPayoutList() {
+    final colors = Theme.of(context).colorScheme;
     if (_payouts.isEmpty) {
-      return Center(child: Text(_isBn ? 'কোনো পেআউট নেই' : 'No payouts', style: const TextStyle(color: AppColors.textMuted)));
+      return Center(child: Text(_isBn ? 'কোনো পেআউট নেই' : 'No payouts', style: TextStyle(color: colors.outline)));
     }
     return ListView.builder(
       padding: const EdgeInsets.fromLTRB(16, 8, 16, 100),
@@ -358,9 +374,16 @@ class _WalletScreenState extends State<WalletScreen> with SingleTickerProviderSt
           margin: const EdgeInsets.only(bottom: 10),
           padding: const EdgeInsets.all(14),
           decoration: BoxDecoration(
-            color: AppColors.bgMid,
-            borderRadius: BorderRadius.circular(14),
-            border: Border.all(color: AppColors.glassBorder),
+            color: colors.surface,
+            borderRadius: BorderRadius.circular(20),
+            border: Border.all(color: colors.outlineVariant),
+            boxShadow: [
+              BoxShadow(
+                color: colors.shadow.withValues(alpha: 0.06),
+                blurRadius: 18,
+                offset: const Offset(0, 8),
+              ),
+            ],
           ),
           child: Row(
             children: [
@@ -368,11 +391,11 @@ class _WalletScreenState extends State<WalletScreen> with SingleTickerProviderSt
                 child: Column(
                   crossAxisAlignment: CrossAxisAlignment.start,
                   children: [
-                    Text('৳${(double.tryParse('${p['amount'] ?? 0}') ?? 0).toStringAsFixed(0)}', style: const TextStyle(color: AppColors.textPrimary, fontSize: 16, fontWeight: FontWeight.w700)),
+                    Text('৳${(double.tryParse('${p['amount'] ?? 0}') ?? 0).toStringAsFixed(0)}', style: TextStyle(color: colors.onSurface, fontSize: 16, fontWeight: FontWeight.w700)),
                     const SizedBox(height: 4),
                     Text(
                       [p['payoutMethod'], p['payoutAccountInfo']].where((v) => v != null && v.toString().isNotEmpty).join(' · '),
-                      style: const TextStyle(color: AppColors.textMuted, fontSize: 12),
+                      style: TextStyle(color: colors.outline, fontSize: 12),
                     ),
                   ],
                 ),

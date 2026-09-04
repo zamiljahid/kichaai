@@ -4,7 +4,7 @@ import '../core/network/api_client.dart';
 import '../core/utils/app_strings.dart';
 import '../services/ai_chat_service.dart';
 import '../services/push_service.dart';
-import '../theme/app_theme.dart';
+import '../theme/app_gradients.dart';
 
 class _ChatBubbleData {
   final String text;
@@ -69,6 +69,7 @@ class _AiChatOverlayState extends State<AiChatOverlay> {
   }
 
   void _openChat(bool isBn) {
+    final colors = Theme.of(context).colorScheme;
     // AiChatOverlay wraps MaterialApp.builder's `child` (the Navigator lives INSIDE that
     // child), so this State's own `context` is an ANCESTOR of the Navigator, not a descendant —
     // showModalBottomSheet's internal Navigator.of(context) lookup walks upward and never finds
@@ -93,8 +94,8 @@ class _AiChatOverlayState extends State<AiChatOverlay> {
               maxChildSize: 0.92,
               expand: false,
               builder: (ctx, scrollCtl) => Container(
-                decoration: const BoxDecoration(
-                  color: AppColors.bgMid,
+                decoration: BoxDecoration(
+                  color: colors.surface,
                   borderRadius: BorderRadius.vertical(top: Radius.circular(24)),
                 ),
                 child: Column(
@@ -105,7 +106,7 @@ class _AiChatOverlayState extends State<AiChatOverlay> {
                           ? Center(
                               child: Text(
                                 isBn ? 'আপনার প্রশ্ন লিখুন...' : 'Ask me anything about KiChaai...',
-                                style: const TextStyle(color: AppColors.textMuted),
+                                style: TextStyle(color: colors.outline),
                               ),
                             )
                           : ListView.builder(
@@ -130,6 +131,7 @@ class _AiChatOverlayState extends State<AiChatOverlay> {
   }
 
   Widget _sheetHeader(BuildContext sheetCtx, bool isBn) {
+    final colors = Theme.of(sheetCtx).colorScheme;
     return Padding(
       padding: const EdgeInsets.fromLTRB(16, 12, 8, 8),
       child: Row(
@@ -137,7 +139,7 @@ class _AiChatOverlayState extends State<AiChatOverlay> {
           Container(
             padding: const EdgeInsets.all(8),
             decoration: BoxDecoration(
-              gradient: AppColors.blueGradient,
+              gradient: AppGradients.primary(colors),
               borderRadius: BorderRadius.circular(10),
             ),
             child: const Icon(Icons.support_agent_rounded, color: Colors.white, size: 20),
@@ -146,11 +148,11 @@ class _AiChatOverlayState extends State<AiChatOverlay> {
           Expanded(
             child: Text(
               isBn ? 'KiChaai সহায়ক' : 'KiChaai Assistant',
-              style: const TextStyle(fontWeight: FontWeight.w700, fontSize: 16, color: AppColors.textPrimary),
+              style: TextStyle(fontWeight: FontWeight.w700, fontSize: 16, color: colors.onSurface),
             ),
           ),
           IconButton(
-            icon: const Icon(Icons.close_rounded, color: AppColors.textMuted),
+            icon: Icon(Icons.close_rounded, color: colors.outline),
             onPressed: () => Navigator.of(sheetCtx).pop(),
           ),
         ],
@@ -159,6 +161,7 @@ class _AiChatOverlayState extends State<AiChatOverlay> {
   }
 
   Widget _bubble(_ChatBubbleData m) {
+    final colors = Theme.of(context).colorScheme;
     return Align(
       alignment: m.isUser ? Alignment.centerRight : Alignment.centerLeft,
       child: Container(
@@ -166,9 +169,9 @@ class _AiChatOverlayState extends State<AiChatOverlay> {
         padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 10),
         constraints: BoxConstraints(maxWidth: MediaQuery.of(context).size.width * 0.75),
         decoration: BoxDecoration(
-          gradient: m.isUser ? AppColors.blueGradient : null,
-          color: m.isUser ? null : AppColors.glassWhite,
-          border: m.isUser ? null : Border.all(color: AppColors.glassBorder),
+          gradient: m.isUser ? AppGradients.primary(colors) : null,
+          color: m.isUser ? null : colors.surface,
+          border: m.isUser ? null : Border.all(color: colors.outlineVariant),
           borderRadius: BorderRadius.only(
             topLeft: const Radius.circular(16),
             topRight: const Radius.circular(16),
@@ -178,31 +181,32 @@ class _AiChatOverlayState extends State<AiChatOverlay> {
         ),
         child: Text(
           m.text,
-          style: TextStyle(color: m.isUser ? Colors.white : AppColors.textPrimary, fontSize: 14, height: 1.4),
+          style: TextStyle(color: m.isUser ? Colors.white : colors.onSurface, fontSize: 14, height: 1.4),
         ),
       ),
     );
   }
 
   Widget _typingBubble() {
+    final colors = Theme.of(context).colorScheme;
     return Align(
       alignment: Alignment.centerLeft,
       child: Container(
         margin: const EdgeInsets.symmetric(vertical: 4),
         padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 12),
         decoration: BoxDecoration(
-          color: AppColors.glassWhite,
-          border: Border.all(color: AppColors.glassBorder),
+          color: colors.surface,
+          border: Border.all(color: colors.outlineVariant),
           borderRadius: BorderRadius.circular(16),
         ),
-        child: const SizedBox(
+        child: SizedBox(
           width: 24,
           height: 12,
           child: Center(
             child: SizedBox(
               width: 16,
               height: 16,
-              child: CircularProgressIndicator(strokeWidth: 2, color: AppColors.deepBlue),
+              child: CircularProgressIndicator(strokeWidth: 2, color: colors.primary),
             ),
           ),
         ),
@@ -211,6 +215,7 @@ class _AiChatOverlayState extends State<AiChatOverlay> {
   }
 
   Widget _inputBar(bool isBn, StateSetter setSheetState) {
+    final colors = Theme.of(context).colorScheme;
     return SafeArea(
       top: false,
       child: Padding(
@@ -227,11 +232,11 @@ class _AiChatOverlayState extends State<AiChatOverlay> {
                 decoration: InputDecoration(
                   hintText: isBn ? 'বার্তা লিখুন...' : 'Type a message...',
                   filled: true,
-                  fillColor: AppColors.bgDark,
+                  fillColor: colors.surfaceContainerHighest,
                   contentPadding: const EdgeInsets.symmetric(horizontal: 16, vertical: 10),
                   border: OutlineInputBorder(
                     borderRadius: BorderRadius.circular(20),
-                    borderSide: BorderSide(color: AppColors.glassBorder),
+                    borderSide: BorderSide(color: colors.outlineVariant),
                   ),
                 ),
               ),
@@ -241,7 +246,7 @@ class _AiChatOverlayState extends State<AiChatOverlay> {
               onTap: () => _send(isBn, setSheetState),
               child: Container(
                 padding: const EdgeInsets.all(12),
-                decoration: BoxDecoration(gradient: AppColors.blueGradient, shape: BoxShape.circle),
+                decoration: BoxDecoration(gradient: AppGradients.primary(colors), shape: BoxShape.circle),
                 child: const Icon(Icons.send_rounded, color: Colors.white, size: 18),
               ),
             ),
@@ -253,6 +258,7 @@ class _AiChatOverlayState extends State<AiChatOverlay> {
 
   @override
   Widget build(BuildContext context) {
+    final colors = Theme.of(context).colorScheme;
     final isBn = context.watch<LanguageNotifier>().isBengali;
     return Stack(
       children: [
@@ -271,7 +277,7 @@ class _AiChatOverlayState extends State<AiChatOverlay> {
                     width: 56,
                     height: 56,
                     decoration: BoxDecoration(
-                      gradient: AppColors.blueGradient,
+                      gradient: AppGradients.primary(colors),
                       shape: BoxShape.circle,
                       boxShadow: [
                         BoxShadow(color: Colors.black.withOpacity(0.2), blurRadius: 12, offset: const Offset(0, 4)),

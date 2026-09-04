@@ -5,7 +5,7 @@ import 'package:provider/provider.dart';
 import '../core/network/api_client.dart';
 import '../core/utils/app_strings.dart';
 import '../services/onboarding_service.dart';
-import '../theme/app_theme.dart';
+import '../theme/app_gradients.dart';
 import '../widgets/animated_background.dart';
 import '../widgets/glass_button.dart';
 import 'photographer_profile_screen.dart' show sectionCard, labeledField, uploadRow;
@@ -187,39 +187,46 @@ class _MakeupArtistProfileScreenState extends State<MakeupArtistProfileScreen> {
     ));
   }
 
-  Widget _pricingModeChip({required String label, required bool active, required VoidCallback onTap}) => GestureDetector(
+  Widget _pricingModeChip({required String label, required bool active, required VoidCallback onTap}) {
+    final colors = Theme.of(context).colorScheme;
+    return GestureDetector(
         onTap: onTap,
         child: Container(
           padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 10),
           decoration: BoxDecoration(
-            gradient: active ? AppColors.blueGradient : null,
-            color: active ? null : const Color(0xFFF9F7F0),
+            gradient: active ? AppGradients.primary(colors) : null,
+            color: active ? null : colors.surfaceContainerLow,
             borderRadius: BorderRadius.circular(20),
-            border: Border.all(color: active ? AppColors.deepBlue : AppColors.glassBorder, width: active ? 1.5 : 1),
+            border: Border.all(color: active ? colors.primary : colors.outlineVariant, width: active ? 1.5 : 1),
           ),
           child: Row(mainAxisSize: MainAxisSize.min, children: [
-            Icon(active ? Icons.check_circle_rounded : Icons.circle_outlined, size: 16, color: active ? Colors.white : AppColors.textMuted),
+            Icon(active ? Icons.check_circle_rounded : Icons.circle_outlined, size: 16, color: active ? Colors.white : colors.outline),
             const SizedBox(width: 6),
-            Text(label, style: TextStyle(color: active ? Colors.white : AppColors.textSecondary, fontSize: 13, fontWeight: active ? FontWeight.w700 : FontWeight.w500)),
+            Text(label, style: TextStyle(color: active ? Colors.white : colors.onSurfaceVariant, fontSize: 13, fontWeight: active ? FontWeight.w700 : FontWeight.w500)),
           ]),
         ),
       );
+  }
 
-  Widget _rateRangeRow({required String label, required TextEditingController minCtrl, required TextEditingController maxCtrl}) => Padding(
+  Widget _rateRangeRow({required String label, required TextEditingController minCtrl, required TextEditingController maxCtrl}) {
+    final colors = Theme.of(context).colorScheme;
+    return Padding(
         padding: const EdgeInsets.only(top: 10),
         child: Column(crossAxisAlignment: CrossAxisAlignment.start, children: [
-          Text(label, style: const TextStyle(color: AppColors.textSecondary, fontSize: 12.5, fontWeight: FontWeight.w600)),
+          Text(label, style: TextStyle(color: colors.onSurfaceVariant, fontSize: 12.5, fontWeight: FontWeight.w600)),
           const SizedBox(height: 6),
           Row(children: [
-            Expanded(child: labeledField(controller: minCtrl, hint: _isBn ? 'সর্বনিম্ন ৳' : 'Min ৳', keyboardType: const TextInputType.numberWithOptions(decimal: true))),
+            Expanded(child: labeledField(colors: colors, controller: minCtrl, hint: _isBn ? 'সর্বনিম্ন ৳' : 'Min ৳', keyboardType: const TextInputType.numberWithOptions(decimal: true))),
             const SizedBox(width: 8),
-            Expanded(child: labeledField(controller: maxCtrl, hint: _isBn ? 'সর্বোচ্চ ৳' : 'Max ৳', keyboardType: const TextInputType.numberWithOptions(decimal: true))),
+            Expanded(child: labeledField(colors: colors, controller: maxCtrl, hint: _isBn ? 'সর্বোচ্চ ৳' : 'Max ৳', keyboardType: const TextInputType.numberWithOptions(decimal: true))),
           ]),
         ]),
       );
+  }
 
   @override
   Widget build(BuildContext context) {
+    final colors = Theme.of(context).colorScheme;
     _isBn = context.watch<LanguageNotifier>().isBengali;
     return Scaffold(
       body: AnimatedBackground(
@@ -229,8 +236,8 @@ class _MakeupArtistProfileScreenState extends State<MakeupArtistProfileScreen> {
               Padding(
                 padding: const EdgeInsets.fromLTRB(8, 8, 16, 4),
                 child: Row(children: [
-                  IconButton(icon: const Icon(Icons.arrow_back_rounded, color: AppColors.textPrimary), onPressed: () => Navigator.of(context).pop()),
-                  Text(_isBn ? 'মেকআপ প্রোফাইল' : 'Makeup Profile', style: const TextStyle(color: AppColors.textPrimary, fontSize: 18, fontWeight: FontWeight.w700)),
+                  IconButton(icon: Icon(Icons.arrow_back_rounded, color: colors.onSurface), onPressed: () => Navigator.of(context).pop()),
+                  Text(_isBn ? 'মেকআপ প্রোফাইল' : 'Makeup Profile', style: TextStyle(color: colors.onSurface, fontSize: 18, fontWeight: FontWeight.w700)),
                 ]),
               ),
               Expanded(
@@ -238,14 +245,16 @@ class _MakeupArtistProfileScreenState extends State<MakeupArtistProfileScreen> {
                   padding: const EdgeInsets.fromLTRB(16, 8, 16, 32),
                   child: Column(crossAxisAlignment: CrossAxisAlignment.stretch, children: [
                     sectionCard(
+                      colors: colors,
                       title: _isBn ? 'পোর্টফোলিও' : 'Portfolio',
-                      child: labeledField(
+                      child: labeledField(colors: colors, 
                         controller: _sampleDriveCtrl,
                         hint: _isBn ? 'Google Drive / Dropbox লিংক' : 'Google Drive / Dropbox link',
                       ),
                     ),
                     const SizedBox(height: 14),
                     sectionCard(
+                      colors: colors,
                       title: _isBn ? 'বিশেষত্ব' : 'Specializations',
                       child: Wrap(
                         spacing: 8,
@@ -257,12 +266,12 @@ class _MakeupArtistProfileScreenState extends State<MakeupArtistProfileScreen> {
                             child: Container(
                               padding: const EdgeInsets.symmetric(horizontal: 13, vertical: 8),
                               decoration: BoxDecoration(
-                                gradient: active ? AppColors.blueGradient : null,
-                                color: active ? null : const Color(0xFFF9F7F0),
+                                gradient: active ? AppGradients.primary(colors) : null,
+                                color: active ? null : colors.surfaceContainerLow,
                                 borderRadius: BorderRadius.circular(20),
-                                border: Border.all(color: active ? AppColors.deepBlue : AppColors.glassBorder, width: active ? 1.5 : 1),
+                                border: Border.all(color: active ? colors.primary : colors.outlineVariant, width: active ? 1.5 : 1),
                               ),
-                              child: Text(_specializationLabel(code, _isBn), style: TextStyle(color: active ? Colors.white : AppColors.textSecondary, fontSize: 12.5, fontWeight: active ? FontWeight.w700 : FontWeight.w500)),
+                              child: Text(_specializationLabel(code, _isBn), style: TextStyle(color: active ? Colors.white : colors.onSurfaceVariant, fontSize: 12.5, fontWeight: active ? FontWeight.w700 : FontWeight.w500)),
                             ),
                           );
                         }).toList(),
@@ -270,8 +279,9 @@ class _MakeupArtistProfileScreenState extends State<MakeupArtistProfileScreen> {
                     ),
                     const SizedBox(height: 14),
                     sectionCard(
+                      colors: colors,
                       title: _isBn ? 'সার্টিফিকেট (ঐচ্ছিক)' : 'Certificate (optional)',
-                      child: uploadRow(
+                      child: uploadRow(colors: colors, 
                         label: _certificateUrl != null ? (_isBn ? 'আপলোড হয়েছে ✓' : 'Uploaded ✓') : (_isBn ? 'বিউটিশিয়ান/মেকআপ কোর্স সার্টিফিকেট আপলোড করুন' : 'Upload your beautician/makeup course certificate'),
                         uploaded: _certificateUrl != null,
                         loading: _uploadingCertificate,
@@ -280,16 +290,18 @@ class _MakeupArtistProfileScreenState extends State<MakeupArtistProfileScreen> {
                     ),
                     const SizedBox(height: 14),
                     sectionCard(
+                      colors: colors,
                       title: _isBn ? 'অভিজ্ঞতা' : 'Experience',
-                      child: labeledField(controller: _experienceCtrl, hint: _isBn ? 'অভিজ্ঞতার বছর' : 'Years of experience', keyboardType: TextInputType.number),
+                      child: labeledField(colors: colors, controller: _experienceCtrl, hint: _isBn ? 'অভিজ্ঞতার বছর' : 'Years of experience', keyboardType: TextInputType.number),
                     ),
                     const SizedBox(height: 14),
                     sectionCard(
+                      colors: colors,
                       title: _isBn ? 'কাজের ধরন — ঘণ্টাভিত্তিক / প্যাকেজ' : 'Pricing mode — hourly / package',
                       child: Column(crossAxisAlignment: CrossAxisAlignment.start, children: [
                         Text(
                           _isBn ? 'আপনি কীভাবে কাজ করেন তা নির্বাচন করুন (একটি বা উভয়ই)' : 'Choose how you work (one or both)',
-                          style: const TextStyle(color: AppColors.textMuted, fontSize: 12),
+                          style: TextStyle(color: colors.outline, fontSize: 12),
                         ),
                         const SizedBox(height: 10),
                         Wrap(spacing: 8, runSpacing: 8, children: [
@@ -312,14 +324,15 @@ class _MakeupArtistProfileScreenState extends State<MakeupArtistProfileScreen> {
                     ),
                     const SizedBox(height: 14),
                     sectionCard(
+                      colors: colors,
                       title: _isBn ? 'সোশ্যাল মিডিয়া পেজ (ঐচ্ছিক, শুধু অ্যাডমিন দেখবে)' : 'Social media page (optional, admin-only)',
                       child: Column(crossAxisAlignment: CrossAxisAlignment.start, children: [
                         Text(
                           _isBn ? 'এই লিংক শুধুমাত্র অ্যাডমিন রিভিউতে দেখা যাবে — কাস্টমারদের কাছে কখনো প্রদর্শিত হবে না।' : 'Only visible to KiChaai admins for review — never shown on your customer-facing profile.',
-                          style: const TextStyle(color: AppColors.textMuted, fontSize: 12),
+                          style: TextStyle(color: colors.outline, fontSize: 12),
                         ),
                         const SizedBox(height: 10),
-                        labeledField(
+                        labeledField(colors: colors, 
                           controller: _socialPageCtrl,
                           hint: _isBn ? 'Facebook / Instagram পেজ লিংক' : 'Facebook / Instagram page link',
                           keyboardType: TextInputType.url,
@@ -328,11 +341,12 @@ class _MakeupArtistProfileScreenState extends State<MakeupArtistProfileScreen> {
                     ),
                     const SizedBox(height: 14),
                     sectionCard(
+                      colors: colors,
                       title: _isBn ? 'অর্জন (ঐচ্ছিক)' : 'Achievements (optional)',
                       child: TextField(
                         controller: _achievementsCtrl,
                         maxLines: 3,
-                        style: const TextStyle(color: AppColors.textPrimary, fontSize: 14),
+                        style: TextStyle(color: colors.onSurface, fontSize: 14),
                         decoration: InputDecoration(hintText: _isBn ? 'পুরস্কার, প্রদর্শনী, উল্লেখযোগ্য কাজ...' : 'Awards, exhibitions, notable work...'),
                       ),
                     ),

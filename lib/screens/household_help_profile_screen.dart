@@ -5,7 +5,6 @@ import 'package:provider/provider.dart';
 import '../core/network/api_client.dart';
 import '../core/utils/app_strings.dart';
 import '../services/onboarding_service.dart';
-import '../theme/app_theme.dart';
 import '../widgets/animated_background.dart';
 import '../widgets/glass_button.dart';
 import '../widgets/liability_disclaimer.dart';
@@ -138,6 +137,7 @@ class _HouseholdHelpProfileScreenState extends State<HouseholdHelpProfileScreen>
 
   @override
   Widget build(BuildContext context) {
+    final colors = Theme.of(context).colorScheme;
     _isBn = context.watch<LanguageNotifier>().isBengali;
     return Scaffold(
       body: AnimatedBackground(
@@ -147,8 +147,8 @@ class _HouseholdHelpProfileScreenState extends State<HouseholdHelpProfileScreen>
               Padding(
                 padding: const EdgeInsets.fromLTRB(8, 8, 16, 4),
                 child: Row(children: [
-                  IconButton(icon: const Icon(Icons.arrow_back_rounded, color: AppColors.textPrimary), onPressed: () => Navigator.of(context).pop()),
-                  Text(_isBn ? 'গৃহকর্মী প্রোফাইল' : 'Household Help Profile', style: const TextStyle(color: AppColors.textPrimary, fontSize: 18, fontWeight: FontWeight.w700)),
+                  IconButton(icon: Icon(Icons.arrow_back_rounded, color: colors.onSurface), onPressed: () => Navigator.of(context).pop()),
+                  Text(_isBn ? 'গৃহকর্মী প্রোফাইল' : 'Household Help Profile', style: TextStyle(color: colors.onSurface, fontSize: 18, fontWeight: FontWeight.w700)),
                 ]),
               ),
               Expanded(
@@ -156,31 +156,34 @@ class _HouseholdHelpProfileScreenState extends State<HouseholdHelpProfileScreen>
                   padding: const EdgeInsets.fromLTRB(16, 8, 16, 32),
                   child: Column(crossAxisAlignment: CrossAxisAlignment.stretch, children: [
                     sectionCard(
+                      colors: colors,
                       title: _isBn ? 'অভিভাবকের NID (বাবা/স্বামী; না থাকলে মা/বিশ্বস্ত অভিভাবক)' : "Guardian's NID (father/husband; or mother/trusted guardian if neither)",
                       child: Column(crossAxisAlignment: CrossAxisAlignment.start, children: [
-                        uploadRow(
+                        uploadRow(colors: colors, 
                           label: _guardianNidUrl != null ? (_isBn ? 'আপলোড হয়েছে ✓' : 'Uploaded ✓') : (_isBn ? 'NID এর ছবি আপলোড করুন' : 'Upload NID photo'),
                           uploaded: _guardianNidUrl != null,
                           loading: _uploadingGuardianNid,
                           onTap: _uploadGuardianNid,
                         ),
                         const SizedBox(height: 10),
-                        labeledField(controller: _guardianNameCtrl, hint: _isBn ? 'অভিভাবকের নাম' : "Guardian's name"),
+                        labeledField(colors: colors, controller: _guardianNameCtrl, hint: _isBn ? 'অভিভাবকের নাম' : "Guardian's name"),
                         const SizedBox(height: 10),
-                        labeledField(controller: _guardianPhoneCtrl, hint: _isBn ? 'অভিভাবকের ফোন নম্বর' : "Guardian's phone number", keyboardType: TextInputType.phone),
+                        labeledField(colors: colors, controller: _guardianPhoneCtrl, hint: _isBn ? 'অভিভাবকের ফোন নম্বর' : "Guardian's phone number", keyboardType: TextInputType.phone),
                       ]),
                     ),
                     const SizedBox(height: 14),
                     sectionCard(
+                      colors: colors,
                       title: _isBn ? 'নিজের তথ্য' : 'Your details',
                       child: Column(crossAxisAlignment: CrossAxisAlignment.start, children: [
-                        labeledField(controller: _ownAddressCtrl, hint: _isBn ? 'বর্তমান ঠিকানা' : 'Current address'),
+                        labeledField(colors: colors, controller: _ownAddressCtrl, hint: _isBn ? 'বর্তমান ঠিকানা' : 'Current address'),
                         const SizedBox(height: 10),
-                        labeledField(controller: _ownPhoneCtrl, hint: _isBn ? 'ফোন নম্বর' : 'Phone number', keyboardType: TextInputType.phone),
+                        labeledField(colors: colors, controller: _ownPhoneCtrl, hint: _isBn ? 'ফোন নম্বর' : 'Phone number', keyboardType: TextInputType.phone),
                       ]),
                     ),
                     const SizedBox(height: 14),
                     sectionCard(
+                      colors: colors,
                       title: _isBn ? 'কাজের এলাকা' : 'Work areas',
                       child: Column(crossAxisAlignment: CrossAxisAlignment.start, children: [
                         Row(children: [
@@ -188,7 +191,7 @@ class _HouseholdHelpProfileScreenState extends State<HouseholdHelpProfileScreen>
                             child: TextField(
                               controller: _workAreaCtrl,
                               onSubmitted: (_) => _addWorkArea(),
-                              style: const TextStyle(color: AppColors.textPrimary, fontSize: 14),
+                              style: TextStyle(color: colors.onSurface, fontSize: 14),
                               decoration: InputDecoration(hintText: _isBn ? 'যেমন: মিরপুর, ধানমন্ডি' : 'e.g. Mirpur, Dhanmondi'),
                             ),
                           ),
@@ -200,18 +203,20 @@ class _HouseholdHelpProfileScreenState extends State<HouseholdHelpProfileScreen>
                           Wrap(spacing: 6, runSpacing: 6, children: _workAreas.map((s) => Chip(
                             label: Text(s, style: const TextStyle(fontSize: 12.5)),
                             onDeleted: () => setState(() => _workAreas.remove(s)),
-                            backgroundColor: AppColors.deepBlue.withOpacity(0.08),
+                            backgroundColor: colors.primary.withOpacity(0.08),
                           )).toList()),
                         ],
                       ]),
                     ),
                     const SizedBox(height: 14),
                     sectionCard(
+                      colors: colors,
                       title: _isBn ? 'প্রতি কাজের রেট (৳)' : 'Rate per task (৳)',
-                      child: labeledField(controller: _rateCtrl, hint: _isBn ? 'যেমন: ৫০০' : 'e.g. 500', keyboardType: const TextInputType.numberWithOptions(decimal: true)),
+                      child: labeledField(colors: colors, controller: _rateCtrl, hint: _isBn ? 'যেমন: ৫০০' : 'e.g. 500', keyboardType: const TextInputType.numberWithOptions(decimal: true)),
                     ),
                     const SizedBox(height: 14),
                     liabilityDisclaimerCheckbox(
+                      context: context,
                       value: _liabilityAccepted,
                       onChanged: (v) => setState(() => _liabilityAccepted = v),
                       isBn: _isBn,

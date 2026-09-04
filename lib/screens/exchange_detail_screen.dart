@@ -5,7 +5,6 @@ import 'package:provider/provider.dart';
 import '../core/network/api_client.dart';
 import '../core/utils/app_strings.dart';
 import '../services/skill_share_service.dart';
-import '../theme/app_theme.dart';
 import '../widgets/glass_button.dart';
 import 'payment_waiting_screen.dart';
 
@@ -63,14 +62,15 @@ class _ExchangeDetailScreenState extends State<ExchangeDetailScreen> {
   }
 
   Future<void> _cancel() async {
+    final colors = Theme.of(context).colorScheme;
     final confirm = await showDialog<bool>(
       context: context,
       builder: (ctx) => AlertDialog(
-        backgroundColor: AppColors.bgMid,
-        title: Text(_isBn ? 'বাতিল করুন?' : 'Cancel?', style: const TextStyle(color: AppColors.textPrimary)),
-        content: Text(_isBn ? 'এই এক্সচেঞ্জ বাতিল করতে চান?' : 'Do you want to cancel this exchange?', style: const TextStyle(color: AppColors.textMuted)),
+        backgroundColor: colors.surface,
+        title: Text(_isBn ? 'বাতিল করুন?' : 'Cancel?', style: TextStyle(color: colors.onSurface)),
+        content: Text(_isBn ? 'এই এক্সচেঞ্জ বাতিল করতে চান?' : 'Do you want to cancel this exchange?', style: TextStyle(color: colors.outline)),
         actions: [
-          TextButton(onPressed: () => Navigator.pop(ctx, false), child: Text(_isBn ? 'না' : 'No', style: const TextStyle(color: AppColors.textMuted))),
+          TextButton(onPressed: () => Navigator.pop(ctx, false), child: Text(_isBn ? 'না' : 'No', style: TextStyle(color: colors.outline))),
           TextButton(onPressed: () => Navigator.pop(ctx, true), child: Text(_isBn ? 'হ্যাঁ' : 'Yes', style: const TextStyle(color: Color(0xFFEF4444)))),
         ],
       ),
@@ -88,6 +88,7 @@ class _ExchangeDetailScreenState extends State<ExchangeDetailScreen> {
   }
 
   void _scheduleSession() {
+    final colors = Theme.of(context).colorScheme;
     DateTime? picked;
     final dateLabelCtrl = TextEditingController();
     int duration = 60;
@@ -106,19 +107,19 @@ class _ExchangeDetailScreenState extends State<ExchangeDetailScreen> {
             child: BackdropFilter(
               filter: ImageFilter.blur(sigmaX: 12, sigmaY: 12),
               child: Container(
-                color: AppColors.bgMid,
+                color: colors.surface,
                 padding: const EdgeInsets.fromLTRB(20, 20, 20, 32),
                 child: Column(
                   mainAxisSize: MainAxisSize.min,
                   crossAxisAlignment: CrossAxisAlignment.start,
                   children: [
-                    Center(child: Container(width: 40, height: 4, decoration: BoxDecoration(color: AppColors.glassBorder, borderRadius: BorderRadius.circular(2)))),
+                    Center(child: Container(width: 40, height: 4, decoration: BoxDecoration(color: colors.outlineVariant, borderRadius: BorderRadius.circular(2)))),
                     const SizedBox(height: 16),
-                    Text(_isBn ? 'সেশন শিডিউল করুন' : 'Schedule a Session', style: const TextStyle(color: AppColors.textPrimary, fontSize: 18, fontWeight: FontWeight.w700)),
+                    Text(_isBn ? 'সেশন শিডিউল করুন' : 'Schedule a Session', style: TextStyle(color: colors.onSurface, fontSize: 18, fontWeight: FontWeight.w700)),
                     const SizedBox(height: 16),
                     TextField(
                       controller: dateLabelCtrl,
-                      style: const TextStyle(color: AppColors.textPrimary),
+                      style: TextStyle(color: colors.onSurface),
                       readOnly: true,
                       onTap: () async {
                         final p = await _showDateTimePicker(ctx);
@@ -129,30 +130,30 @@ class _ExchangeDetailScreenState extends State<ExchangeDetailScreen> {
                       },
                       decoration: InputDecoration(
                         hintText: _isBn ? 'তারিখ ও সময়' : 'Date and time',
-                        hintStyle: const TextStyle(color: AppColors.textMuted),
-                        prefixIcon: const Icon(Icons.calendar_today_outlined, color: AppColors.textMuted, size: 18),
+                        hintStyle: TextStyle(color: colors.outline),
+                        prefixIcon: Icon(Icons.calendar_today_outlined, color: colors.outline, size: 18),
                         filled: true,
-                        fillColor: AppColors.glassWhite,
+                        fillColor: colors.surface,
                         border: const OutlineInputBorder(borderRadius: BorderRadius.all(Radius.circular(12)), borderSide: BorderSide.none),
                       ),
                     ),
                     const SizedBox(height: 12),
                     Row(children: [
-                      Text(_isBn ? 'সময়কাল (মিনিট):' : 'Duration (minutes):', style: const TextStyle(color: AppColors.textMuted, fontSize: 12)),
+                      Text(_isBn ? 'সময়কাল (মিনিট):' : 'Duration (minutes):', style: TextStyle(color: colors.outline, fontSize: 12)),
                       const Spacer(),
-                      IconButton(onPressed: () => setS(() => duration = (duration - 30).clamp(30, 120)), icon: const Icon(Icons.remove_rounded, color: AppColors.textMuted, size: 18)),
-                      Text('$duration', style: const TextStyle(color: AppColors.textPrimary, fontWeight: FontWeight.w700)),
-                      IconButton(onPressed: () => setS(() => duration = (duration + 30).clamp(30, 120)), icon: const Icon(Icons.add_rounded, color: AppColors.deepBlue, size: 18)),
+                      IconButton(onPressed: () => setS(() => duration = (duration - 30).clamp(30, 120)), icon: Icon(Icons.remove_rounded, color: colors.outline, size: 18)),
+                      Text('$duration', style: TextStyle(color: colors.onSurface, fontWeight: FontWeight.w700)),
+                      IconButton(onPressed: () => setS(() => duration = (duration + 30).clamp(30, 120)), icon: Icon(Icons.add_rounded, color: colors.primary, size: 18)),
                     ]),
                     const SizedBox(height: 12),
                     TextField(
                       controller: notesCtrl,
-                      style: const TextStyle(color: AppColors.textPrimary),
+                      style: TextStyle(color: colors.onSurface),
                       decoration: InputDecoration(
                         hintText: _isBn ? 'নোট' : 'Notes',
-                        hintStyle: const TextStyle(color: AppColors.textMuted),
+                        hintStyle: TextStyle(color: colors.outline),
                         filled: true,
-                        fillColor: AppColors.glassWhite,
+                        fillColor: colors.surface,
                         border: const OutlineInputBorder(borderRadius: BorderRadius.all(Radius.circular(12)), borderSide: BorderSide.none),
                       ),
                     ),
@@ -242,17 +243,18 @@ class _ExchangeDetailScreenState extends State<ExchangeDetailScreen> {
   }
 
   void _showReciprocityPrompt() {
+    final colors = Theme.of(context).colorScheme;
     showDialog(
       context: context,
       builder: (ctx) => AlertDialog(
-        backgroundColor: AppColors.bgMid,
+        backgroundColor: colors.surface,
         shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(20)),
-        title: Text(_isBn ? 'তিনি কি স্কিলটি শিখিয়েছেন?' : 'Did they actually teach the skill?', style: const TextStyle(color: AppColors.textPrimary, fontSize: 16, fontWeight: FontWeight.w700)),
+        title: Text(_isBn ? 'তিনি কি স্কিলটি শিখিয়েছেন?' : 'Did they actually teach the skill?', style: TextStyle(color: colors.onSurface, fontSize: 16, fontWeight: FontWeight.w700)),
         content: Text(
           _isBn
               ? 'তারা যে স্কিল অফার করেছিলেন সেটা কি সত্যিই শিখিয়েছেন? "না" দিলে তারা প্ল্যাটফর্ম থেকে স্থায়ীভাবে নিষিদ্ধ হবেন।'
               : 'Did they genuinely teach you the skill they offered? Answering "No" permanently bans them from skill-share.',
-          style: const TextStyle(color: AppColors.textMuted, fontSize: 13, height: 1.5),
+          style: TextStyle(color: colors.outline, fontSize: 13, height: 1.5),
         ),
         actions: [
           TextButton(onPressed: () { Navigator.pop(ctx); _reportReciprocity(false); }, child: Text(_isBn ? 'না' : 'No', style: const TextStyle(color: Color(0xFFEF4444), fontWeight: FontWeight.w700))),
@@ -263,15 +265,16 @@ class _ExchangeDetailScreenState extends State<ExchangeDetailScreen> {
   }
 
   void _showReviewDialog() {
+    final colors = Theme.of(context).colorScheme;
     int rating = 5;
     final reviewCtrl = TextEditingController();
     showDialog(
       context: context,
       builder: (ctx) => StatefulBuilder(
         builder: (ctx, setS) => AlertDialog(
-          backgroundColor: AppColors.bgMid,
+          backgroundColor: colors.surface,
           shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(20)),
-          title: Text(_isBn ? 'রিভিউ দিন' : 'Leave a Review', style: const TextStyle(color: AppColors.textPrimary, fontSize: 16, fontWeight: FontWeight.w700)),
+          title: Text(_isBn ? 'রিভিউ দিন' : 'Leave a Review', style: TextStyle(color: colors.onSurface, fontSize: 16, fontWeight: FontWeight.w700)),
           content: Column(
             mainAxisSize: MainAxisSize.min,
             crossAxisAlignment: CrossAxisAlignment.start,
@@ -293,18 +296,18 @@ class _ExchangeDetailScreenState extends State<ExchangeDetailScreen> {
               TextField(
                 controller: reviewCtrl,
                 maxLines: 3,
-                style: const TextStyle(color: AppColors.textPrimary, fontSize: 14),
+                style: TextStyle(color: colors.onSurface, fontSize: 14),
                 decoration: InputDecoration(
                   hintText: _isBn ? 'আপনার অভিজ্ঞতা লিখুন…' : 'Describe your experience…',
-                  hintStyle: const TextStyle(color: AppColors.textMuted, fontSize: 13),
-                  border: OutlineInputBorder(borderRadius: BorderRadius.circular(10), borderSide: BorderSide(color: AppColors.glassBorder)),
-                  focusedBorder: OutlineInputBorder(borderRadius: BorderRadius.circular(10), borderSide: const BorderSide(color: AppColors.deepBlue)),
+                  hintStyle: TextStyle(color: colors.outline, fontSize: 13),
+                  border: OutlineInputBorder(borderRadius: BorderRadius.circular(10), borderSide: BorderSide(color: colors.outlineVariant)),
+                  focusedBorder: OutlineInputBorder(borderRadius: BorderRadius.circular(10), borderSide: BorderSide(color: colors.primary)),
                 ),
               ),
             ],
           ),
           actions: [
-            TextButton(onPressed: () => Navigator.pop(ctx), child: Text(_isBn ? 'বাতিল' : 'Cancel', style: const TextStyle(color: AppColors.textMuted))),
+            TextButton(onPressed: () => Navigator.pop(ctx), child: Text(_isBn ? 'বাতিল' : 'Cancel', style: TextStyle(color: colors.outline))),
             TextButton(
               onPressed: () async {
                 final text = reviewCtrl.text.trim();
@@ -312,7 +315,7 @@ class _ExchangeDetailScreenState extends State<ExchangeDetailScreen> {
                 Navigator.pop(ctx);
                 await _submitReview(rating, text);
               },
-              child: Text(_isBn ? 'জমা দিন' : 'Submit', style: const TextStyle(color: AppColors.deepBlue, fontWeight: FontWeight.w700)),
+              child: Text(_isBn ? 'জমা দিন' : 'Submit', style: TextStyle(color: colors.primary, fontWeight: FontWeight.w700)),
             ),
           ],
         ),
@@ -347,6 +350,7 @@ class _ExchangeDetailScreenState extends State<ExchangeDetailScreen> {
 
   @override
   Widget build(BuildContext context) {
+    final colors = Theme.of(context).colorScheme;
     _isBn = context.watch<LanguageNotifier>().isBengali;
     final status = _exchange?['status'] as String? ?? '';
     final isRequester = _exchange?['requesterId'] == _userId;
@@ -358,13 +362,13 @@ class _ExchangeDetailScreenState extends State<ExchangeDetailScreen> {
     final myReciprocityReport = isRequester ? requesterReciprocityReport : responderReciprocityReport;
 
     return Scaffold(
-      backgroundColor: AppColors.bgDark,
+      backgroundColor: colors.surfaceContainerHighest,
       appBar: AppBar(
         backgroundColor: Colors.transparent,
         elevation: 0,
-        title: Text(_isBn ? 'এক্সচেঞ্জ বিবরণ' : 'Exchange Details', style: const TextStyle(color: AppColors.textPrimary, fontSize: 18, fontWeight: FontWeight.w700)),
+        title: Text(_isBn ? 'এক্সচেঞ্জ বিবরণ' : 'Exchange Details', style: TextStyle(color: colors.onSurface, fontSize: 18, fontWeight: FontWeight.w700)),
         leading: IconButton(
-          icon: const Icon(Icons.arrow_back_ios_new_rounded, color: AppColors.textPrimary, size: 18),
+          icon: Icon(Icons.arrow_back_ios_new_rounded, color: colors.onSurface, size: 18),
           onPressed: () => Navigator.pop(context),
         ),
         actions: [
@@ -377,12 +381,12 @@ class _ExchangeDetailScreenState extends State<ExchangeDetailScreen> {
         ],
       ),
       body: _isLoading
-          ? const Center(child: CircularProgressIndicator(color: AppColors.deepBlue))
+          ? Center(child: CircularProgressIndicator(color: colors.primary))
           : _exchange == null
-              ? Center(child: Text(_isBn ? 'লোড করা যায়নি' : 'Could not load', style: const TextStyle(color: AppColors.textMuted)))
+              ? Center(child: Text(_isBn ? 'লোড করা যায়নি' : 'Could not load', style: TextStyle(color: colors.outline)))
               : RefreshIndicator(
-                  color: AppColors.deepBlue,
-                  backgroundColor: AppColors.bgMid,
+                  color: colors.primary,
+                  backgroundColor: colors.surface,
                   onRefresh: _load,
                   child: ListView(
                     padding: const EdgeInsets.fromLTRB(16, 12, 16, 100),
@@ -392,14 +396,14 @@ class _ExchangeDetailScreenState extends State<ExchangeDetailScreen> {
                       _buildSkillSwap(isRequester),
                       const SizedBox(height: 16),
                       if (status == 'proposed' && isRequester) ...[
-                        Text(_isBn ? 'অন্য কেউ সাড়া দেওয়ার অপেক্ষায় — "অনুরোধ" ফিডে দেখা যাচ্ছে' : 'Waiting for someone to respond — visible in the "Requests" feed', style: const TextStyle(color: AppColors.textMuted, fontSize: 12.5, height: 1.5)),
+                        Text(_isBn ? 'অন্য কেউ সাড়া দেওয়ার অপেক্ষায় — "অনুরোধ" ফিডে দেখা যাচ্ছে' : 'Waiting for someone to respond — visible in the "Requests" feed', style: TextStyle(color: colors.outline, fontSize: 12.5, height: 1.5)),
                         const SizedBox(height: 16),
                       ],
                       if (status == 'accepted') ...[
                         if (!myFeePaid) ...[
                           Text(
                             _isBn ? 'সেশন শিডিউল করার আগে ৳১০০ প্ল্যাটফর্ম ফি দিতে হবে (উভয় পক্ষকেই)।' : 'A ৳100 platform fee is required from both sides before a session can be scheduled.',
-                            style: const TextStyle(color: AppColors.textMuted, fontSize: 12.5, height: 1.5),
+                            style: TextStyle(color: colors.outline, fontSize: 12.5, height: 1.5),
                           ),
                           const SizedBox(height: 10),
                           GlassButton(label: _isBn ? '৳১০০ ফি দিন' : 'Pay ৳100 fee', onPressed: _payFee),
@@ -416,11 +420,11 @@ class _ExchangeDetailScreenState extends State<ExchangeDetailScreen> {
                         if (myReciprocityReport == null)
                           OutlinedButton(
                             onPressed: _showReciprocityPrompt,
-                            style: OutlinedButton.styleFrom(side: const BorderSide(color: AppColors.glassBorder), padding: const EdgeInsets.symmetric(vertical: 13), shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12))),
-                            child: Text(_isBn ? 'তিনি কি সত্যিই শিখিয়েছেন? জানান' : 'Report whether they actually taught you', style: const TextStyle(color: AppColors.textSecondary, fontSize: 13, fontWeight: FontWeight.w600)),
+                            style: OutlinedButton.styleFrom(side: BorderSide(color: colors.outlineVariant), padding: const EdgeInsets.symmetric(vertical: 13), shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12))),
+                            child: Text(_isBn ? 'তিনি কি সত্যিই শিখিয়েছেন? জানান' : 'Report whether they actually taught you', style: TextStyle(color: colors.onSurfaceVariant, fontSize: 13, fontWeight: FontWeight.w600)),
                           )
                         else
-                          Text(_isBn ? 'আপনি ইতিমধ্যে জানিয়েছেন ✓' : 'You already reported this ✓', style: const TextStyle(color: AppColors.textMuted, fontSize: 12)),
+                          Text(_isBn ? 'আপনি ইতিমধ্যে জানিয়েছেন ✓' : 'You already reported this ✓', style: TextStyle(color: colors.outline, fontSize: 12)),
                         const SizedBox(height: 16),
                       ],
                       _buildSessionsSection(),
@@ -431,13 +435,15 @@ class _ExchangeDetailScreenState extends State<ExchangeDetailScreen> {
   }
 
   Widget _buildStatusCard(String status) {
-    final colors = {
+    final colors = Theme.of(context).colorScheme;
+    // Renamed from `colors` — that name now belongs to the ColorScheme.
+    final statusColors = {
       'proposed': const Color(0xFFF59E0B),
       'accepted': const Color(0xFF10B981),
       'completed': const Color(0xFF8B5CF6),
       'cancelled': const Color(0xFFEF4444),
     };
-    final color = colors[status] ?? AppColors.textMuted;
+    final color = statusColors[status] ?? colors.outline;
     return Container(
       padding: const EdgeInsets.all(16),
       decoration: BoxDecoration(
@@ -450,13 +456,14 @@ class _ExchangeDetailScreenState extends State<ExchangeDetailScreen> {
         const SizedBox(width: 12),
         Column(crossAxisAlignment: CrossAxisAlignment.start, children: [
           Text(_isBn ? 'স্ট্যাটাস: $status' : 'Status: $status', style: TextStyle(color: color, fontSize: 14, fontWeight: FontWeight.w700)),
-          Text(_isBn ? '${_exchange?['agreedSessionCount'] ?? 1} সেশন প্রস্তাবিত' : '${_exchange?['agreedSessionCount'] ?? 1} session(s) proposed', style: const TextStyle(color: AppColors.textMuted, fontSize: 12)),
+          Text(_isBn ? '${_exchange?['agreedSessionCount'] ?? 1} সেশন প্রস্তাবিত' : '${_exchange?['agreedSessionCount'] ?? 1} session(s) proposed', style: TextStyle(color: colors.outline, fontSize: 12)),
         ]),
       ]),
     ).animate().fadeIn();
   }
 
   Widget _buildSkillSwap(bool isRequester) {
+    final colors = Theme.of(context).colorScheme;
     final offered = _exchange?['offeredSkill'] as Map<String, dynamic>?;
     final wanted = _exchange?['wantedSkill'] as Map<String, dynamic>?;
     final offeredName = offered?['skillName'] as String? ?? (_isBn ? 'অজানা' : 'Unknown');
@@ -464,34 +471,34 @@ class _ExchangeDetailScreenState extends State<ExchangeDetailScreen> {
     return Container(
       padding: const EdgeInsets.all(16),
       decoration: BoxDecoration(
-        color: AppColors.bgMid,
+        color: colors.surface,
         borderRadius: BorderRadius.circular(16),
-        border: Border.all(color: AppColors.glassBorder),
+        border: Border.all(color: colors.outlineVariant),
       ),
       child: Row(children: [
         Expanded(
           child: Column(children: [
-            const Icon(Icons.person_outline_rounded, color: AppColors.deepBlue, size: 24),
+            Icon(Icons.person_outline_rounded, color: colors.primary, size: 24),
             const SizedBox(height: 4),
             Text(
               isRequester ? (_isBn ? 'আপনি দিচ্ছেন' : 'You\'re giving') : (_isBn ? 'উনি দিচ্ছেন' : 'They\'re giving'),
-              style: const TextStyle(color: AppColors.textMuted, fontSize: 10.5),
+              style: TextStyle(color: colors.outline, fontSize: 10.5),
             ),
             const SizedBox(height: 2),
-            Text(offeredName, textAlign: TextAlign.center, style: const TextStyle(color: AppColors.textPrimary, fontSize: 12.5, fontWeight: FontWeight.w600)),
+            Text(offeredName, textAlign: TextAlign.center, style: TextStyle(color: colors.onSurface, fontSize: 12.5, fontWeight: FontWeight.w600)),
           ]),
         ),
-        const Icon(Icons.swap_horiz_rounded, color: AppColors.deepBlue, size: 28),
+        Icon(Icons.swap_horiz_rounded, color: colors.primary, size: 28),
         Expanded(
           child: Column(children: [
-            const Icon(Icons.person_outline_rounded, color: AppColors.deepBlue, size: 24),
+            Icon(Icons.person_outline_rounded, color: colors.primary, size: 24),
             const SizedBox(height: 4),
             Text(
               isRequester ? (_isBn ? 'উনি দিচ্ছেন' : 'They\'re giving') : (_isBn ? 'আপনি দিচ্ছেন' : 'You\'re giving'),
-              style: const TextStyle(color: AppColors.textMuted, fontSize: 10.5),
+              style: TextStyle(color: colors.outline, fontSize: 10.5),
             ),
             const SizedBox(height: 2),
-            Text(wantedName, textAlign: TextAlign.center, style: const TextStyle(color: AppColors.textPrimary, fontSize: 12.5, fontWeight: FontWeight.w600)),
+            Text(wantedName, textAlign: TextAlign.center, style: TextStyle(color: colors.onSurface, fontSize: 12.5, fontWeight: FontWeight.w600)),
           ]),
         ),
       ]),
@@ -499,14 +506,15 @@ class _ExchangeDetailScreenState extends State<ExchangeDetailScreen> {
   }
 
   Widget _buildSessionsSection() {
+    final colors = Theme.of(context).colorScheme;
     final sessions = (_exchange?['sessions'] as List?)?.cast<Map<String, dynamic>>() ?? [];
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
-        Text(_isBn ? 'সেশনসমূহ' : 'Sessions', style: const TextStyle(color: AppColors.textMuted, fontSize: 12, fontWeight: FontWeight.w600, letterSpacing: 1)),
+        Text(_isBn ? 'সেশনসমূহ' : 'Sessions', style: TextStyle(color: colors.outline, fontSize: 12, fontWeight: FontWeight.w600, letterSpacing: 1)),
         const SizedBox(height: 10),
         if (sessions.isEmpty)
-          Text(_isBn ? 'কোনো সেশন নেই' : 'No sessions yet', style: const TextStyle(color: AppColors.textMuted, fontSize: 13))
+          Text(_isBn ? 'কোনো সেশন নেই' : 'No sessions yet', style: TextStyle(color: colors.outline, fontSize: 13))
         else
           ...sessions.map((s) {
             final done = s['status'] == 'completed';
@@ -514,16 +522,16 @@ class _ExchangeDetailScreenState extends State<ExchangeDetailScreen> {
               margin: const EdgeInsets.only(bottom: 8),
               padding: const EdgeInsets.all(12),
               decoration: BoxDecoration(
-                color: AppColors.bgMid,
+                color: colors.surface,
                 borderRadius: BorderRadius.circular(12),
-                border: Border.all(color: AppColors.glassBorder),
+                border: Border.all(color: colors.outlineVariant),
               ),
               child: Row(children: [
-                Icon(done ? Icons.check_circle_rounded : Icons.schedule_rounded, color: done ? const Color(0xFF10B981) : AppColors.textMuted, size: 18),
+                Icon(done ? Icons.check_circle_rounded : Icons.schedule_rounded, color: done ? const Color(0xFF10B981) : colors.outline, size: 18),
                 const SizedBox(width: 10),
                 Expanded(child: Column(crossAxisAlignment: CrossAxisAlignment.start, children: [
-                  Text(s['scheduledAt']?.toString().substring(0, 16) ?? '', style: const TextStyle(color: AppColors.textPrimary, fontSize: 13)),
-                  Text(_isBn ? '${s['durationMins'] ?? 0} মিনিট' : '${s['durationMins'] ?? 0} min', style: const TextStyle(color: AppColors.textMuted, fontSize: 11)),
+                  Text(s['scheduledAt']?.toString().substring(0, 16) ?? '', style: TextStyle(color: colors.onSurface, fontSize: 13)),
+                  Text(_isBn ? '${s['durationMins'] ?? 0} মিনিট' : '${s['durationMins'] ?? 0} min', style: TextStyle(color: colors.outline, fontSize: 11)),
                 ])),
                 if (!done)
                   TextButton(
@@ -535,7 +543,7 @@ class _ExchangeDetailScreenState extends State<ExchangeDetailScreen> {
                         _showError(ApiClient.mapError(e).localized(_isBn));
                       }
                     },
-                    child: Text(_isBn ? 'সম্পন্ন' : 'Complete', style: const TextStyle(color: AppColors.deepBlue, fontSize: 12)),
+                    child: Text(_isBn ? 'সম্পন্ন' : 'Complete', style: TextStyle(color: colors.primary, fontSize: 12)),
                   ),
               ]),
             );

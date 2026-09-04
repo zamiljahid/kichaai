@@ -2,7 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:speech_to_text/speech_to_text.dart' as stt;
 import 'package:url_launcher/url_launcher.dart';
 import '../services/ai_chat_service.dart';
-import '../theme/app_theme.dart';
+import '../theme/app_gradients.dart';
 
 class _Bubble {
   final String text;
@@ -173,22 +173,23 @@ class _LawyerAiChatScreenState extends State<LawyerAiChatScreen> {
 
   @override
   Widget build(BuildContext context) {
+    final colors = Theme.of(context).colorScheme;
     return Scaffold(
-      backgroundColor: AppColors.bgDark,
+      backgroundColor: colors.surfaceContainerHighest,
       appBar: AppBar(
-        backgroundColor: AppColors.bgMid,
+        backgroundColor: colors.surface,
         elevation: 0,
-        iconTheme: const IconThemeData(color: AppColors.textPrimary),
+        iconTheme: IconThemeData(color: colors.onSurface),
         title: Text(
           widget.isBn ? 'AI দিয়ে lawyer খুঁজুন' : 'Find a lawyer with AI',
-          style: const TextStyle(color: AppColors.textPrimary, fontWeight: FontWeight.w700, fontSize: 16),
+          style: TextStyle(color: colors.onSurface, fontWeight: FontWeight.w700, fontSize: 16),
         ),
       ),
       body: Column(
         children: [
           Expanded(
             child: _loadingHistory
-                ? const Center(child: CircularProgressIndicator(color: AppColors.deepBlue))
+                ? Center(child: CircularProgressIndicator(color: colors.primary))
                 : _messages.isEmpty
                 ? Padding(
                     padding: const EdgeInsets.all(24),
@@ -198,7 +199,7 @@ class _LawyerAiChatScreenState extends State<LawyerAiChatScreen> {
                             ? 'আপনার আইনি সমস্যাটি বলুন — কী হয়েছে, কে জড়িত, কী চান। আমি বুঝে নেব কোন ধরনের lawyer লাগবে, এবং চাইলে একটা প্রাথমিক নোটিশ/ডকুমেন্ট draft করে দিতে পারি।'
                             : 'Tell me about your legal issue — what happened, who\'s involved, what you want. I\'ll figure out which kind of lawyer you need, and can draft a starting-point notice/document if you ask.',
                         textAlign: TextAlign.center,
-                        style: const TextStyle(color: AppColors.textMuted, fontSize: 13, height: 1.5),
+                        style: TextStyle(color: colors.outline, fontSize: 13, height: 1.5),
                       ),
                     ),
                   )
@@ -220,22 +221,23 @@ class _LawyerAiChatScreenState extends State<LawyerAiChatScreen> {
   }
 
   Widget _suggestionBar() {
+    final colors = Theme.of(context).colorScheme;
     return Container(
       margin: const EdgeInsets.fromLTRB(16, 0, 16, 8),
       padding: const EdgeInsets.all(12),
       decoration: BoxDecoration(
-        color: AppColors.glassBlue,
+        color: colors.primary.withValues(alpha: 0.08),
         borderRadius: BorderRadius.circular(14),
-        border: Border.all(color: AppColors.glassBorderBlue),
+        border: Border.all(color: colors.primary.withValues(alpha: 0.20)),
       ),
       child: Row(
         children: [
-          const Icon(Icons.gavel_rounded, color: AppColors.deepBlue, size: 20),
+          Icon(Icons.gavel_rounded, color: colors.primary, size: 20),
           const SizedBox(width: 10),
           Expanded(
             child: Text(
               widget.isBn ? 'AI একটা lawyer category suggest করেছে' : 'AI has a lawyer category suggestion',
-              style: const TextStyle(fontSize: 12, color: AppColors.textPrimary, fontWeight: FontWeight.w600),
+              style: TextStyle(fontSize: 12, color: colors.onSurface, fontWeight: FontWeight.w600),
             ),
           ),
           TextButton(
@@ -248,6 +250,7 @@ class _LawyerAiChatScreenState extends State<LawyerAiChatScreen> {
   }
 
   Widget _bubble(_Bubble m) {
+    final colors = Theme.of(context).colorScheme;
     return Column(
       crossAxisAlignment: m.isUser ? CrossAxisAlignment.end : CrossAxisAlignment.start,
       children: [
@@ -258,9 +261,9 @@ class _LawyerAiChatScreenState extends State<LawyerAiChatScreen> {
             padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 10),
             constraints: BoxConstraints(maxWidth: MediaQuery.of(context).size.width * 0.78),
             decoration: BoxDecoration(
-              gradient: m.isUser ? AppColors.blueGradient : null,
-              color: m.isUser ? null : AppColors.glassWhite,
-              border: m.isUser ? null : Border.all(color: AppColors.glassBorder),
+              gradient: m.isUser ? AppGradients.primary(colors) : null,
+              color: m.isUser ? null : colors.surface,
+              border: m.isUser ? null : Border.all(color: colors.outlineVariant),
               borderRadius: BorderRadius.only(
                 topLeft: const Radius.circular(16),
                 topRight: const Radius.circular(16),
@@ -270,7 +273,7 @@ class _LawyerAiChatScreenState extends State<LawyerAiChatScreen> {
             ),
             child: Text(
               m.text,
-              style: TextStyle(color: m.isUser ? Colors.white : AppColors.textPrimary, fontSize: 14, height: 1.4),
+              style: TextStyle(color: m.isUser ? Colors.white : colors.onSurface, fontSize: 14, height: 1.4),
             ),
           ),
         ),
@@ -282,19 +285,19 @@ class _LawyerAiChatScreenState extends State<LawyerAiChatScreen> {
               child: Container(
                 padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 10),
                 decoration: BoxDecoration(
-                  color: AppColors.fuchsiaGradient.colors.first.withOpacity(0.12),
+                  color: AppGradients.accent(colors).colors.first.withOpacity(0.12),
                   borderRadius: BorderRadius.circular(12),
-                  border: Border.all(color: AppColors.fuchsia.withOpacity(0.4)),
+                  border: Border.all(color: colors.secondary.withOpacity(0.4)),
                 ),
                 child: Row(
                   mainAxisSize: MainAxisSize.min,
                   children: [
-                    const Icon(Icons.picture_as_pdf_rounded, color: AppColors.fuchsia, size: 18),
+                    Icon(Icons.picture_as_pdf_rounded, color: colors.secondary, size: 18),
                     const SizedBox(width: 8),
                     Flexible(
                       child: Text(
                         m.draftTitle ?? (widget.isBn ? 'Draft PDF দেখুন' : 'View draft PDF'),
-                        style: const TextStyle(color: AppColors.fuchsia, fontSize: 12, fontWeight: FontWeight.w700),
+                        style: TextStyle(color: colors.secondary, fontSize: 12, fontWeight: FontWeight.w700),
                       ),
                     ),
                   ],
@@ -307,26 +310,28 @@ class _LawyerAiChatScreenState extends State<LawyerAiChatScreen> {
   }
 
   Widget _typingBubble() {
+    final colors = Theme.of(context).colorScheme;
     return Align(
       alignment: Alignment.centerLeft,
       child: Container(
         margin: const EdgeInsets.symmetric(vertical: 4),
         padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 12),
         decoration: BoxDecoration(
-          color: AppColors.glassWhite,
-          border: Border.all(color: AppColors.glassBorder),
+          color: colors.surface,
+          border: Border.all(color: colors.outlineVariant),
           borderRadius: BorderRadius.circular(16),
         ),
-        child: const SizedBox(
+        child: SizedBox(
           width: 16,
           height: 16,
-          child: CircularProgressIndicator(strokeWidth: 2, color: AppColors.deepBlue),
+          child: CircularProgressIndicator(strokeWidth: 2, color: colors.primary),
         ),
       ),
     );
   }
 
   Widget _inputBar() {
+    final colors = Theme.of(context).colorScheme;
     return SafeArea(
       top: false,
       child: Padding(
@@ -340,13 +345,13 @@ class _LawyerAiChatScreenState extends State<LawyerAiChatScreen> {
                   margin: const EdgeInsets.only(right: 8),
                   padding: const EdgeInsets.all(12),
                   decoration: BoxDecoration(
-                    color: _listening ? const Color(0xFFEF4444) : AppColors.glassWhite,
+                    color: _listening ? const Color(0xFFEF4444) : colors.surface,
                     shape: BoxShape.circle,
-                    border: Border.all(color: _listening ? const Color(0xFFEF4444) : AppColors.glassBorder),
+                    border: Border.all(color: _listening ? const Color(0xFFEF4444) : colors.outlineVariant),
                   ),
                   child: Icon(
                     _listening ? Icons.mic_rounded : Icons.mic_none_rounded,
-                    color: _listening ? Colors.white : AppColors.textMuted,
+                    color: _listening ? Colors.white : colors.outline,
                     size: 20,
                   ),
                 ),
@@ -363,11 +368,11 @@ class _LawyerAiChatScreenState extends State<LawyerAiChatScreen> {
                       ? (widget.isBn ? 'শুনছি...' : 'Listening...')
                       : (widget.isBn ? 'আপনার সমস্যা লিখুন...' : 'Describe your issue...'),
                   filled: true,
-                  fillColor: AppColors.bgDark,
+                  fillColor: colors.surfaceContainerHighest,
                   contentPadding: const EdgeInsets.symmetric(horizontal: 16, vertical: 10),
                   border: OutlineInputBorder(
                     borderRadius: BorderRadius.circular(20),
-                    borderSide: const BorderSide(color: AppColors.glassBorder),
+                    borderSide: BorderSide(color: colors.outlineVariant),
                   ),
                 ),
               ),
@@ -377,7 +382,7 @@ class _LawyerAiChatScreenState extends State<LawyerAiChatScreen> {
               onTap: _send,
               child: Container(
                 padding: const EdgeInsets.all(12),
-                decoration: BoxDecoration(gradient: AppColors.blueGradient, shape: BoxShape.circle),
+                decoration: BoxDecoration(gradient: AppGradients.primary(colors), shape: BoxShape.circle),
                 child: const Icon(Icons.send_rounded, color: Colors.white, size: 18),
               ),
             ),

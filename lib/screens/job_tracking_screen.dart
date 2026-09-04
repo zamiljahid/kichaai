@@ -13,7 +13,8 @@ import '../models/messaging_model.dart';
 import '../services/auth_service.dart';
 import '../services/dispatch_service.dart';
 import '../services/messaging_service.dart';
-import '../theme/app_theme.dart';
+import '../theme/app_gradients.dart';
+import '../theme/status_colors.dart';
 import '../widgets/animated_background.dart';
 import '../widgets/glass_button.dart';
 import '../widgets/glass_card.dart';
@@ -166,6 +167,7 @@ class _JobTrackingScreenState extends State<JobTrackingScreen> {
 
   @override
   Widget build(BuildContext context) {
+    final colors = Theme.of(context).colorScheme;
     _isBn = context.watch<LanguageNotifier>().isBengali;
     return Scaffold(
       body: AnimatedBackground(
@@ -174,9 +176,9 @@ class _JobTrackingScreenState extends State<JobTrackingScreen> {
             children: [
               _buildHeader(context),
               if (_isLoading && _job == null)
-                const Expanded(child: Center(child: CircularProgressIndicator(color: AppColors.deepBlue)))
+                Expanded(child: Center(child: CircularProgressIndicator(color: colors.primary)))
               else if (_job == null)
-                Expanded(child: Center(child: Text(_isBn ? 'তথ্য পাওয়া যাচ্ছে না' : 'Could not load information', style: const TextStyle(color: AppColors.textMuted))))
+                Expanded(child: Center(child: Text(_isBn ? 'তথ্য পাওয়া যাচ্ছে না' : 'Could not load information', style: TextStyle(color: colors.outline))))
               else
                 Expanded(child: SingleChildScrollView(
                   padding: const EdgeInsets.fromLTRB(16, 0, 16, 24),
@@ -227,21 +229,37 @@ class _JobTrackingScreenState extends State<JobTrackingScreen> {
   }
 
   Widget _buildHeader(BuildContext context) {
+    final colors = Theme.of(context).colorScheme;
     return Padding(
       padding: const EdgeInsets.fromLTRB(20, 16, 20, 20),
       child: Row(
         children: [
+          // Back, not home. This screen is a notification target — tapping a
+          // job notification opens it on top of the notification list, and a
+          // popUntil(isFirst) threw that list away and dumped the user on the
+          // dashboard with no way back to what they were reading. Popping one
+          // route returns them wherever they came from: the list, Orders, or
+          // the service picker after a request was submitted.
           GestureDetector(
-            onTap: () => Navigator.of(context).popUntil((r) => r.isFirst),
+            onTap: () {
+              final nav = Navigator.of(context);
+              // Only reachable as a route on top of something, but a cold-start
+              // deep link could in principle land here first.
+              if (nav.canPop()) {
+                nav.pop();
+              } else {
+                nav.popUntil((r) => r.isFirst);
+              }
+            },
             child: Container(
               width: 40, height: 40,
-              decoration: BoxDecoration(color: AppColors.glassWhite, borderRadius: BorderRadius.circular(12), border: Border.all(color: AppColors.glassBorder, width: 1.5)),
-              child: const Icon(Icons.home_rounded, color: AppColors.textPrimary, size: 20),
+              decoration: BoxDecoration(color: colors.surface, borderRadius: BorderRadius.circular(12), border: Border.all(color: colors.outlineVariant, width: 1.5)),
+              child: Icon(Icons.arrow_back_ios_new_rounded, color: colors.onSurface, size: 18),
             ),
           ),
           const SizedBox(width: 16),
           Column(crossAxisAlignment: CrossAxisAlignment.start, children: [
-            Text(_isBn ? 'অনুরোধ ট্র্যাকিং' : 'Job Tracking', style: const TextStyle(color: AppColors.textPrimary, fontSize: 18, fontWeight: FontWeight.w700)),
+            Text(_isBn ? 'অনুরোধ ট্র্যাকিং' : 'Job Tracking', style: TextStyle(color: colors.onSurface, fontSize: 18, fontWeight: FontWeight.w700)),
           ]),
           const Spacer(),
           _buildPulsingDot(),
@@ -251,12 +269,13 @@ class _JobTrackingScreenState extends State<JobTrackingScreen> {
   }
 
   Widget _buildPulsingDot() {
+    final colors = Theme.of(context).colorScheme;
     final job = _job;
     final isActive = job != null && job.isActive;
     return Container(
       width: 10, height: 10,
       decoration: BoxDecoration(
-        color: isActive ? const Color(0xFF22C55E) : AppColors.glassBorder,
+        color: isActive ? const Color(0xFF22C55E) : colors.outlineVariant,
         shape: BoxShape.circle,
         boxShadow: isActive ? [BoxShadow(color: const Color(0xFF22C55E).withOpacity(0.5), blurRadius: 8)] : null,
       ),
@@ -264,6 +283,7 @@ class _JobTrackingScreenState extends State<JobTrackingScreen> {
   }
 
   Widget _buildStatusCard(JobModel job) {
+    final colors = Theme.of(context).colorScheme;
     final info = _statusInfo(job.status);
     return GlassCard(
       child: Column(
@@ -280,22 +300,23 @@ class _JobTrackingScreenState extends State<JobTrackingScreen> {
           const SizedBox(height: 16),
           Text(info.$1, textAlign: TextAlign.center, style: TextStyle(color: info.$2, fontSize: 18, fontWeight: FontWeight.w700)),
           const SizedBox(height: 6),
-          Text('#${job.id.substring(0, 8).toUpperCase()}', style: TextStyle(color: AppColors.textMuted, fontSize: 12, letterSpacing: 1)),
+          Text('#${job.id.substring(0, 8).toUpperCase()}', style: TextStyle(color: colors.outline, fontSize: 12, letterSpacing: 1)),
         ],
       ),
     ).animate().fadeIn(duration: 400.ms).scale(begin: const Offset(0.95, 0.95));
   }
 
   (String, Color, IconData) _statusInfo(String status) {
+    final colors = Theme.of(context).colorScheme;
     switch (status) {
-      case 'searching': return (_isBn ? 'কাছের provider খোঁজা হচ্ছে...' : 'Finding a nearby provider...', AppColors.deepBlue, Icons.search_rounded);
+      case 'searching': return (_isBn ? 'কাছের provider খোঁজা হচ্ছে...' : 'Finding a nearby provider...', colors.primary, Icons.search_rounded);
       case 'assigned': return (_isBn ? 'সেবাদাতা পাওয়া গেছে, নিশ্চিত করার অপেক্ষায়' : 'Provider found, awaiting confirmation', const Color(0xFFF59E0B), Icons.person_add_rounded);
       case 'accepted': return (_isBn ? 'সেবাদাতা আসছেন' : 'Provider is on the way', const Color(0xFF8B5CF6), Icons.directions_walk_rounded);
       case 'arriving': return (_isBn ? 'সেবাদাতা কাছাকাছি!' : 'Provider is nearby!', const Color(0xFF06B6D4), Icons.near_me_rounded);
       case 'in_progress': return (_isBn ? 'কাজ চলছে' : 'Job in progress', const Color(0xFF10B981), Icons.build_circle_rounded);
       case 'completed': return (_isBn ? 'কাজ সম্পন্ন! ⭐' : 'Job complete! ⭐', const Color(0xFF22C55E), Icons.check_circle_rounded);
       case 'cancelled': return (_isBn ? 'অনুরোধ বাতিল হয়েছে' : 'Request cancelled', const Color(0xFFEF4444), Icons.cancel_rounded);
-      default: return (status, AppColors.textMuted, Icons.info_rounded);
+      default: return (status, colors.outline, Icons.info_rounded);
     }
   }
 
@@ -304,6 +325,7 @@ class _JobTrackingScreenState extends State<JobTrackingScreen> {
   //    explanatory placeholder rather than a blank map when the provider
   //    hasn't started sharing yet.
   Widget _buildLiveLocation(JobModel job) {
+    final colors = Theme.of(context).colorScheme;
     // Newest first per backend contract.
     final latest = job.locationTracks.isNotEmpty ? job.locationTracks.first : null;
 
@@ -313,10 +335,10 @@ class _JobTrackingScreenState extends State<JobTrackingScreen> {
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
           Row(children: [
-            const Icon(Icons.my_location_rounded, color: AppColors.deepBlue, size: 18),
+            Icon(Icons.my_location_rounded, color: colors.primary, size: 18),
             const SizedBox(width: 6),
             Text(_isBn ? 'লাইভ লোকেশন' : 'Live location',
-                style: const TextStyle(color: AppColors.textSecondary, fontSize: 12, fontWeight: FontWeight.w700)),
+                style: TextStyle(color: colors.onSurfaceVariant, fontSize: 12, fontWeight: FontWeight.w700)),
           ]),
           const SizedBox(height: 10),
           if (latest == null)
@@ -324,15 +346,15 @@ class _JobTrackingScreenState extends State<JobTrackingScreen> {
               height: 160,
               alignment: Alignment.center,
               decoration: BoxDecoration(
-                color: AppColors.glassWhite,
+                color: colors.surface,
                 borderRadius: BorderRadius.circular(12),
-                border: Border.all(color: AppColors.glassBorder),
+                border: Border.all(color: colors.outlineVariant),
               ),
               child: Padding(
                 padding: const EdgeInsets.symmetric(horizontal: 16),
                 child: Text(
                   _isBn ? 'প্রোভাইডার এখনো লোকেশন শেয়ার করেননি' : 'The provider hasn\'t shared their location yet',
-                  style: const TextStyle(color: AppColors.textMuted, fontSize: 13),
+                  style: TextStyle(color: colors.outline, fontSize: 13),
                   textAlign: TextAlign.center,
                 ),
               ),
@@ -394,7 +416,7 @@ class _JobTrackingScreenState extends State<JobTrackingScreen> {
                                       LatLng(job.pickupLatitude, job.pickupLongitude),
                                       LatLng(job.dropoffLatitude!, job.dropoffLongitude!),
                                     ],
-                              color: AppColors.deepBlue,
+                              color: colors.primary,
                               width: hasRoute ? 5 : 3,
                               patterns: hasRoute
                                   ? const []
@@ -411,13 +433,13 @@ class _JobTrackingScreenState extends State<JobTrackingScreen> {
             ),
             const SizedBox(height: 8),
             Row(children: [
-              const Icon(Icons.social_distance_rounded, color: AppColors.textMuted, size: 16),
+              Icon(Icons.social_distance_rounded, color: colors.outline, size: 16),
               const SizedBox(width: 6),
               Text(
                 _isBn
                     ? '~${_distanceKm(latest.latitude, latest.longitude, job.pickupLatitude, job.pickupLongitude).toStringAsFixed(1)} কিমি দূরে'
                     : '~${_distanceKm(latest.latitude, latest.longitude, job.pickupLatitude, job.pickupLongitude).toStringAsFixed(1)} km away',
-                style: const TextStyle(color: AppColors.textSecondary, fontSize: 12.5, fontWeight: FontWeight.w600),
+                style: TextStyle(color: colors.onSurfaceVariant, fontSize: 12.5, fontWeight: FontWeight.w600),
               ),
             ]),
           ],
@@ -438,6 +460,7 @@ class _JobTrackingScreenState extends State<JobTrackingScreen> {
   }
 
   Widget _buildProviderCard(JobModel job) {
+    final colors = Theme.of(context).colorScheme;
     final name = job.providerNameSnapshot ?? job.assignedProviderId ?? '?';
     final phone = job.providerPhoneSnapshot;
     return GlassCard(
@@ -446,20 +469,20 @@ class _JobTrackingScreenState extends State<JobTrackingScreen> {
         children: [
           Container(
             width: 48, height: 48,
-            decoration: BoxDecoration(gradient: AppColors.blueGradient, shape: BoxShape.circle),
+            decoration: BoxDecoration(gradient: AppGradients.primary(colors), shape: BoxShape.circle),
             child: Center(
               child: Text(
                 name[0].toUpperCase(),
-                style: const TextStyle(color: AppColors.ivory, fontSize: 20, fontWeight: FontWeight.w700),
+                style: TextStyle(color: colors.onPrimary, fontSize: 20, fontWeight: FontWeight.w700),
               ),
             ),
           ),
           const SizedBox(width: 14),
           Expanded(
             child: Column(crossAxisAlignment: CrossAxisAlignment.start, children: [
-              Text(_isBn ? 'নির্ধারিত সেবাদাতা' : 'Assigned Provider', style: const TextStyle(color: AppColors.textMuted, fontSize: 11)),
-              Text(name, style: const TextStyle(color: AppColors.textPrimary, fontSize: 14, fontWeight: FontWeight.w600)),
-              if (phone != null) Text(phone, style: TextStyle(color: AppColors.textMuted, fontSize: 12)),
+              Text(_isBn ? 'নির্ধারিত সেবাদাতা' : 'Assigned Provider', style: TextStyle(color: colors.outline, fontSize: 11)),
+              Text(name, style: TextStyle(color: colors.onSurface, fontSize: 14, fontWeight: FontWeight.w600)),
+              if (phone != null) Text(phone, style: TextStyle(color: colors.outline, fontSize: 12)),
             ]),
           ),
           if (job.serviceKind != 'lawyer')
@@ -467,15 +490,15 @@ class _JobTrackingScreenState extends State<JobTrackingScreen> {
               onTap: _isOpeningChat ? null : _openJobChat,
               child: Container(
                 padding: const EdgeInsets.all(8),
-                decoration: BoxDecoration(color: AppColors.glassWhite, shape: BoxShape.circle, border: Border.all(color: AppColors.glassBorder)),
+                decoration: BoxDecoration(color: colors.surface, shape: BoxShape.circle, border: Border.all(color: colors.outlineVariant)),
                 child: _isOpeningChat
-                    ? const SizedBox(width: 18, height: 18, child: CircularProgressIndicator(strokeWidth: 2, color: AppColors.deepBlue))
-                    : const Icon(Icons.chat_bubble_outline_rounded, color: AppColors.deepBlue, size: 18),
+                    ? SizedBox(width: 18, height: 18, child: CircularProgressIndicator(strokeWidth: 2, color: colors.primary))
+                    : Icon(Icons.chat_bubble_outline_rounded, color: colors.primary, size: 18),
               ),
             ),
           if (phone != null) ...[
             const SizedBox(width: 8),
-            const Icon(Icons.phone_rounded, color: AppColors.deepBlue, size: 22),
+            Icon(Icons.phone_rounded, color: colors.primary, size: 22),
           ],
         ],
       ),
@@ -485,6 +508,7 @@ class _JobTrackingScreenState extends State<JobTrackingScreen> {
   // Shown between accept and the customer's explicit confirm — phone numbers are hidden on
   // both sides until this happens (chat is the only channel meanwhile).
   Widget _buildConfirmProviderCard(JobModel job) {
+    final colors = Theme.of(context).colorScheme;
     return GlassCard(
       padding: const EdgeInsets.all(16),
       child: Column(
@@ -496,7 +520,7 @@ class _JobTrackingScreenState extends State<JobTrackingScreen> {
             Expanded(
               child: Text(
                 _isBn ? 'নম্বর দেখতে ও কল করতে আগে নিশ্চিত করুন — ততক্ষণ চ্যাটে কথা বলতে পারবেন' : 'Confirm to see the number and call — you can chat until then',
-                style: const TextStyle(color: AppColors.textSecondary, fontSize: 12.5, height: 1.4),
+                style: TextStyle(color: colors.onSurfaceVariant, fontSize: 12.5, height: 1.4),
               ),
             ),
           ]),
@@ -509,11 +533,11 @@ class _JobTrackingScreenState extends State<JobTrackingScreen> {
                   padding: const EdgeInsets.symmetric(vertical: 12),
                   alignment: Alignment.center,
                   decoration: BoxDecoration(
-                    color: AppColors.glassWhite,
+                    color: colors.surface,
                     borderRadius: BorderRadius.circular(12),
-                    border: Border.all(color: AppColors.glassBorder, width: 1.5),
+                    border: Border.all(color: colors.outlineVariant, width: 1.5),
                   ),
-                  child: Text(_isBn ? 'চ্যাট করুন' : 'Chat', style: const TextStyle(color: AppColors.textPrimary, fontSize: 13.5, fontWeight: FontWeight.w600)),
+                  child: Text(_isBn ? 'চ্যাট করুন' : 'Chat', style: TextStyle(color: colors.onSurface, fontSize: 13.5, fontWeight: FontWeight.w600)),
                 ),
               ),
             ),
@@ -524,10 +548,10 @@ class _JobTrackingScreenState extends State<JobTrackingScreen> {
                 child: Container(
                   padding: const EdgeInsets.symmetric(vertical: 12),
                   alignment: Alignment.center,
-                  decoration: BoxDecoration(gradient: AppColors.blueGradient, borderRadius: BorderRadius.circular(12)),
+                  decoration: BoxDecoration(gradient: AppGradients.primary(colors), borderRadius: BorderRadius.circular(12)),
                   child: _isConfirming
                       ? const SizedBox(width: 16, height: 16, child: CircularProgressIndicator(strokeWidth: 2, color: Colors.white))
-                      : Text(_isBn ? 'নিশ্চিত করুন' : 'Confirm', style: const TextStyle(color: AppColors.ivory, fontSize: 13.5, fontWeight: FontWeight.w700)),
+                      : Text(_isBn ? 'নিশ্চিত করুন' : 'Confirm', style: TextStyle(color: colors.onPrimary, fontSize: 13.5, fontWeight: FontWeight.w700)),
                 ),
               ),
             ),
@@ -538,12 +562,13 @@ class _JobTrackingScreenState extends State<JobTrackingScreen> {
   }
 
   Widget _buildJobDetails(JobModel job) {
+    final colors = Theme.of(context).colorScheme;
     return GlassCard(
       padding: const EdgeInsets.all(16),
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
-          Text(_isBn ? 'অনুরোধের বিবরণ' : 'Request details', style: const TextStyle(color: AppColors.textSecondary, fontSize: 12, fontWeight: FontWeight.w600)),
+          Text(_isBn ? 'অনুরোধের বিবরণ' : 'Request details', style: TextStyle(color: colors.onSurfaceVariant, fontSize: 12, fontWeight: FontWeight.w600)),
           const SizedBox(height: 12),
           _detail(_isBn ? 'সেবার ধরন' : 'Service type', job.serviceKind),
           _detail(_isBn ? 'জরুরি মাত্রা' : 'Urgency', job.urgencyLevel ?? 'normal'),
@@ -555,19 +580,21 @@ class _JobTrackingScreenState extends State<JobTrackingScreen> {
   }
 
   Widget _detail(String label, String value) {
+    final colors = Theme.of(context).colorScheme;
     return Padding(
       padding: const EdgeInsets.only(bottom: 8),
       child: Row(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
-          SizedBox(width: 100, child: Text(label, style: TextStyle(color: AppColors.textMuted, fontSize: 12))),
-          Expanded(child: Text(value, style: const TextStyle(color: AppColors.textPrimary, fontSize: 12, fontWeight: FontWeight.w500))),
+          SizedBox(width: 100, child: Text(label, style: TextStyle(color: colors.outline, fontSize: 12))),
+          Expanded(child: Text(value, style: TextStyle(color: colors.onSurface, fontSize: 12, fontWeight: FontWeight.w500))),
         ],
       ),
     );
   }
 
   Widget _buildQuoteApprovalCard(JobModel job) {
+    final colors = Theme.of(context).colorScheme;
     return GlassCard(
       padding: const EdgeInsets.all(16),
       child: Column(
@@ -577,13 +604,13 @@ class _JobTrackingScreenState extends State<JobTrackingScreen> {
             children: [
               const Icon(Icons.request_quote_rounded, color: Color(0xFFF59E0B), size: 20),
               const SizedBox(width: 8),
-              Text(_isBn ? 'সেবাদাতার কোট' : 'Provider\'s quote', style: const TextStyle(color: AppColors.textSecondary, fontSize: 12, fontWeight: FontWeight.w600)),
+              Text(_isBn ? 'সেবাদাতার কোট' : 'Provider\'s quote', style: TextStyle(color: colors.onSurfaceVariant, fontSize: 12, fontWeight: FontWeight.w600)),
             ],
           ),
           const SizedBox(height: 12),
           Center(
             child: Text('৳ ${job.quotedAmount!.toStringAsFixed(0)}',
-                style: const TextStyle(color: AppColors.textPrimary, fontSize: 30, fontWeight: FontWeight.w800)),
+                style: TextStyle(color: colors.onSurface, fontSize: 30, fontWeight: FontWeight.w800)),
           ),
           if (_rateForJob != null) ...[
             const SizedBox(height: 8),
@@ -621,7 +648,7 @@ class _JobTrackingScreenState extends State<JobTrackingScreen> {
           const SizedBox(height: 4),
           Center(
             child: Text(_isBn ? 'অনুমোদন না করলে শুধু ভিজিট ফি দিতে হবে, কাজ বাতিল হবে।' : 'If you don\'t approve, only the visiting fee applies and the job is cancelled.',
-                textAlign: TextAlign.center, style: const TextStyle(color: AppColors.textMuted, fontSize: 11)),
+                textAlign: TextAlign.center, style: TextStyle(color: colors.outline, fontSize: 11)),
           ),
           const SizedBox(height: 16),
           Row(
@@ -649,10 +676,10 @@ class _JobTrackingScreenState extends State<JobTrackingScreen> {
                     padding: const EdgeInsets.symmetric(vertical: 13),
                     alignment: Alignment.center,
                     decoration: BoxDecoration(
-                      gradient: AppColors.blueGradient,
+                      gradient: AppGradients.primary(colors),
                       borderRadius: BorderRadius.circular(12),
                     ),
-                    child: Text(_isBn ? 'অনুমোদন করুন' : 'Approve', style: const TextStyle(color: AppColors.ivory, fontSize: 14, fontWeight: FontWeight.w700)),
+                    child: Text(_isBn ? 'অনুমোদন করুন' : 'Approve', style: TextStyle(color: colors.onPrimary, fontSize: 14, fontWeight: FontWeight.w700)),
                   ),
                 ),
               ),
@@ -672,6 +699,7 @@ class _JobTrackingScreenState extends State<JobTrackingScreen> {
   /// It has been stored on the job since the feature shipped and shown nowhere — after the
   /// Meet ended the app simply went quiet.
   Widget _buildOpinionCard(JobModel job) {
+    final colors = Theme.of(context).colorScheme;
     final summary = (job.opinionSummary ?? '').trim();
     if (summary.isEmpty) return const SizedBox.shrink();
     final advice = (job.opinionAdvice ?? '').trim();
@@ -681,17 +709,17 @@ class _JobTrackingScreenState extends State<JobTrackingScreen> {
           padding: const EdgeInsets.only(top: 14),
           child: Column(crossAxisAlignment: CrossAxisAlignment.start, children: [
             Row(children: [
-              Icon(icon, size: 15, color: AppColors.deepBlue),
+              Icon(icon, size: 15, color: colors.primary),
               const SizedBox(width: 6),
               Text(_isBn ? labelBn : labelEn,
-                  style: const TextStyle(
-                      color: AppColors.deepBlue, fontSize: 12, fontWeight: FontWeight.w700)),
+                  style: TextStyle(
+                      color: colors.primary, fontSize: 12, fontWeight: FontWeight.w700)),
             ]),
             const SizedBox(height: 5),
             SelectableText(
               value,
-              style: const TextStyle(
-                  color: AppColors.textPrimary, fontSize: 14, height: 1.55),
+              style: TextStyle(
+                  color: colors.onSurface, fontSize: 14, height: 1.55),
             ),
           ]),
         );
@@ -700,19 +728,19 @@ class _JobTrackingScreenState extends State<JobTrackingScreen> {
       padding: const EdgeInsets.all(18),
       child: Column(crossAxisAlignment: CrossAxisAlignment.start, children: [
         Row(children: [
-          const Icon(Icons.gavel_rounded, color: AppColors.deepBlue, size: 19),
+          Icon(Icons.gavel_rounded, color: colors.primary, size: 19),
           const SizedBox(width: 8),
           Expanded(
             child: Text(_isBn ? 'আপনার আইনি পরামর্শ' : 'Your legal opinion',
-                style: const TextStyle(
-                    color: AppColors.textPrimary,
+                style: TextStyle(
+                    color: colors.onSurface,
                     fontSize: 15.5,
                     fontWeight: FontWeight.w800)),
           ),
           if (job.opinionDeliveredAt != null)
             Text(
               '${job.opinionDeliveredAt!.toLocal().day}/${job.opinionDeliveredAt!.toLocal().month}',
-              style: const TextStyle(color: AppColors.textMuted, fontSize: 11),
+              style: TextStyle(color: colors.outline, fontSize: 11),
             ),
         ]),
         const SizedBox(height: 2),
@@ -720,7 +748,7 @@ class _JobTrackingScreenState extends State<JobTrackingScreen> {
           _isBn
               ? 'আইনজীবী ${job.providerNameSnapshot ?? ''} এই পরামর্শ দিয়েছেন'.trim()
               : 'Written by ${job.providerNameSnapshot ?? 'your lawyer'}',
-          style: const TextStyle(color: AppColors.textMuted, fontSize: 11.5),
+          style: TextStyle(color: colors.outline, fontSize: 11.5),
         ),
         section('সারসংক্ষেপ', 'Summary', summary, Icons.summarize_outlined),
         if (advice.isNotEmpty)
@@ -748,10 +776,10 @@ class _JobTrackingScreenState extends State<JobTrackingScreen> {
                 ));
               },
               style: OutlinedButton.styleFrom(
-                  side: const BorderSide(color: AppColors.glassBorder)),
-              icon: const Icon(Icons.copy_rounded, size: 15, color: AppColors.textSecondary),
+                  side: BorderSide(color: colors.outlineVariant)),
+              icon: Icon(Icons.copy_rounded, size: 15, color: colors.onSurfaceVariant),
               label: Text(_isBn ? 'কপি করুন' : 'Copy',
-                  style: const TextStyle(color: AppColors.textSecondary, fontSize: 12)),
+                  style: TextStyle(color: colors.onSurfaceVariant, fontSize: 12)),
             ),
           ),
         ]),
@@ -760,18 +788,19 @@ class _JobTrackingScreenState extends State<JobTrackingScreen> {
   }
 
   Widget _buildMeetLinkCard(JobModel job) {
+    final colors = Theme.of(context).colorScheme;
     final link = job.meetLink!;
     return GlassCard(
       padding: const EdgeInsets.all(16),
       child: Column(children: [
         Row(mainAxisAlignment: MainAxisAlignment.center, children: [
-          const Icon(Icons.videocam_rounded, color: AppColors.deepBlue, size: 20),
+          Icon(Icons.videocam_rounded, color: colors.primary, size: 20),
           const SizedBox(width: 8),
           Text(_isBn ? 'ভিডিও কলের লিংক তৈরি হয়েছে' : 'Video call link created',
-              style: const TextStyle(color: AppColors.deepBlue, fontSize: 14, fontWeight: FontWeight.w700)),
+              style: TextStyle(color: colors.primary, fontSize: 14, fontWeight: FontWeight.w700)),
         ]),
         const SizedBox(height: 8),
-        SelectableText(link, textAlign: TextAlign.center, style: const TextStyle(color: AppColors.textSecondary, fontSize: 12)),
+        SelectableText(link, textAlign: TextAlign.center, style: TextStyle(color: colors.onSurfaceVariant, fontSize: 12)),
         const SizedBox(height: 10),
         GlassButton(
           label: _isBn ? 'মিটিং এ যোগ দিন' : 'Join meeting',
@@ -798,6 +827,7 @@ class _JobTrackingScreenState extends State<JobTrackingScreen> {
   /// Ride summary — route, vehicle and fare, shown from the moment the request is posted so
   /// the customer can see what they asked for while it's still "searching".
   Widget _buildRideSummaryCard(JobModel job) {
+    final colors = Theme.of(context).colorScheme;
     final vehicle = job.rideDetail?.vehicleType;
     final vehicleLabel = vehicle == null
         ? null
@@ -805,44 +835,44 @@ class _JobTrackingScreenState extends State<JobTrackingScreen> {
     return GlassCard(
       padding: const EdgeInsets.all(16),
       child: Column(crossAxisAlignment: CrossAxisAlignment.start, children: [
-        _rideRow(Icons.trip_origin_rounded, AppColors.deepBlue,
+        _rideRow(Icons.trip_origin_rounded, colors.primary,
             job.pickupAddressSnapshot ?? (_isBn ? 'আপনার অবস্থান' : 'Your location')),
         Padding(
           padding: const EdgeInsets.only(left: 8, top: 2, bottom: 2),
-          child: Container(width: 2, height: 14, color: AppColors.glassBorder),
+          child: Container(width: 2, height: 14, color: colors.outlineVariant),
         ),
-        _rideRow(Icons.flag_rounded, AppColors.softAmber,
+        _rideRow(Icons.flag_rounded, StatusColors.amber,
             job.dropoffAddressSnapshot ?? (_isBn ? 'গন্তব্য' : 'Destination')),
         const SizedBox(height: 12),
-        const Divider(height: 1, color: AppColors.glassBorder),
+        Divider(height: 1, color: colors.outlineVariant),
         const SizedBox(height: 12),
         Row(children: [
           if (vehicleLabel != null) ...[
-            const Icon(Icons.two_wheeler_rounded, size: 16, color: AppColors.textMuted),
+            Icon(Icons.two_wheeler_rounded, size: 16, color: colors.outline),
             const SizedBox(width: 5),
             Text(vehicleLabel,
-                style: const TextStyle(
-                    color: AppColors.textSecondary, fontSize: 12.5, fontWeight: FontWeight.w600)),
+                style: TextStyle(
+                    color: colors.onSurfaceVariant, fontSize: 12.5, fontWeight: FontWeight.w600)),
             const SizedBox(width: 14),
           ],
           if (job.distanceKm != null) ...[
-            const Icon(Icons.social_distance_rounded, size: 16, color: AppColors.textMuted),
+            Icon(Icons.social_distance_rounded, size: 16, color: colors.outline),
             const SizedBox(width: 5),
             Text('${job.distanceKm!.toStringAsFixed(1)} ${_isBn ? 'কিমি' : 'km'}',
-                style: const TextStyle(color: AppColors.textSecondary, fontSize: 12.5)),
+                style: TextStyle(color: colors.onSurfaceVariant, fontSize: 12.5)),
           ],
           if (job.rideDetail?.durationMinutes != null) ...[
             const SizedBox(width: 14),
-            const Icon(Icons.schedule_rounded, size: 16, color: AppColors.textMuted),
+            Icon(Icons.schedule_rounded, size: 16, color: colors.outline),
             const SizedBox(width: 5),
             Text('~${job.rideDetail!.durationMinutes} ${_isBn ? 'মিনিট' : 'min'}',
-                style: const TextStyle(color: AppColors.textSecondary, fontSize: 12.5)),
+                style: TextStyle(color: colors.onSurfaceVariant, fontSize: 12.5)),
           ],
           const Spacer(),
           if (job.estimatedAmount != null)
             Text('৳${job.estimatedAmount!.round()}',
-                style: const TextStyle(
-                    color: AppColors.deepBlue, fontSize: 17, fontWeight: FontWeight.w800)),
+                style: TextStyle(
+                    color: colors.primary, fontSize: 17, fontWeight: FontWeight.w800)),
         ]),
         if (job.rideDetail?.hasSurge == true) ...[
           const SizedBox(height: 6),
@@ -850,23 +880,26 @@ class _JobTrackingScreenState extends State<JobTrackingScreen> {
             _isBn
                 ? 'এখন চাহিদা বেশি — ভাড়া কিছুটা বেশি'
                 : 'High demand right now — fare is slightly higher',
-            style: const TextStyle(color: AppColors.softAmber, fontSize: 11.5, fontWeight: FontWeight.w600),
+            style: const TextStyle(color: StatusColors.amber, fontSize: 11.5, fontWeight: FontWeight.w600),
           ),
         ],
       ]),
     ).animate(delay: 80.ms).fadeIn().slideY(begin: 0.1);
   }
 
-  Widget _rideRow(IconData icon, Color color, String text) => Row(children: [
+  Widget _rideRow(IconData icon, Color color, String text) {
+    final colors = Theme.of(context).colorScheme;
+    return Row(children: [
         Icon(icon, size: 16, color: color),
         const SizedBox(width: 10),
         Expanded(
           child: Text(text,
-              style: const TextStyle(color: AppColors.textPrimary, fontSize: 13),
+              style: TextStyle(color: colors.onSurface, fontSize: 13),
               maxLines: 2,
               overflow: TextOverflow.ellipsis),
         ),
       ]);
+  }
 
   // Cash-on-completion stays the default for every on-demand service — this is an opt-in
   // alternative. Rides are included because paying a stranger driver in cash for a fare the
@@ -880,19 +913,20 @@ class _JobTrackingScreenState extends State<JobTrackingScreen> {
       job.depositStatus != 'paid';
 
   Widget _buildOnlinePaymentCard(JobModel job) {
+    final colors = Theme.of(context).colorScheme;
     final alreadyOptedIn = job.depositStatus == 'pending';
     return GlassCard(
       padding: const EdgeInsets.all(16),
       child: Column(crossAxisAlignment: CrossAxisAlignment.stretch, children: [
         Row(children: [
-          const Icon(Icons.payments_rounded, color: AppColors.deepBlue, size: 20),
+          Icon(Icons.payments_rounded, color: colors.primary, size: 20),
           const SizedBox(width: 8),
           Expanded(
             child: Text(
               alreadyOptedIn
                   ? (_isBn ? 'অনলাইন পেমেন্ট বাকি আছে' : 'Online payment is pending')
                   : (_isBn ? 'ক্যাশের বদলে অনলাইনে পরিশোধ করুন' : 'Pay online instead of cash'),
-              style: const TextStyle(color: AppColors.textPrimary, fontSize: 13.5, fontWeight: FontWeight.w700),
+              style: TextStyle(color: colors.onSurface, fontSize: 13.5, fontWeight: FontWeight.w700),
             ),
           ),
         ]),
@@ -908,7 +942,7 @@ class _JobTrackingScreenState extends State<JobTrackingScreen> {
               : (_isBn
                   ? 'না করলে কাজ শেষে যথারীতি সরাসরি ক্যাশ দিতে হবে।'
                   : 'If you skip this, pay the provider cash directly as usual when the job is done.'),
-          style: const TextStyle(color: AppColors.textMuted, fontSize: 11.5),
+          style: TextStyle(color: colors.outline, fontSize: 11.5),
         ),
         const SizedBox(height: 12),
         GestureDetector(
@@ -916,14 +950,14 @@ class _JobTrackingScreenState extends State<JobTrackingScreen> {
           child: Container(
             padding: const EdgeInsets.symmetric(vertical: 12),
             alignment: Alignment.center,
-            decoration: BoxDecoration(gradient: AppColors.blueGradient, borderRadius: BorderRadius.circular(12)),
+            decoration: BoxDecoration(gradient: AppGradients.primary(colors), borderRadius: BorderRadius.circular(12)),
             child: _isPayingOnline
                 ? const SizedBox(width: 18, height: 18, child: CircularProgressIndicator(strokeWidth: 2, color: Colors.white))
                 : Text(
                     alreadyOptedIn
                         ? (_isBn ? 'পেমেন্ট সম্পন্ন করুন' : 'Complete payment')
                         : (_isBn ? 'অনলাইনে পরিশোধ করুন' : 'Pay online'),
-                    style: const TextStyle(color: AppColors.ivory, fontSize: 14, fontWeight: FontWeight.w700),
+                    style: TextStyle(color: colors.onPrimary, fontSize: 14, fontWeight: FontWeight.w700),
                   ),
           ),
         ),
@@ -987,17 +1021,18 @@ class _JobTrackingScreenState extends State<JobTrackingScreen> {
   }
 
   Future<void> _respondQuote(bool approved) async {
+    final colors = Theme.of(context).colorScheme;
     if (!approved) {
       final ok = await showDialog<bool>(
         context: context,
         builder: (ctx) => AlertDialog(
-          backgroundColor: AppColors.bgMid,
+          backgroundColor: colors.surface,
           shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)),
-          title: Text(_isBn ? 'কোট প্রত্যাখ্যান?' : 'Reject quote?', style: const TextStyle(color: AppColors.textPrimary, fontSize: 16, fontWeight: FontWeight.w700)),
+          title: Text(_isBn ? 'কোট প্রত্যাখ্যান?' : 'Reject quote?', style: TextStyle(color: colors.onSurface, fontSize: 16, fontWeight: FontWeight.w700)),
           content: Text(_isBn ? 'কাজটি বাতিল হয়ে যাবে এবং শুধু ভিজিট ফি প্রযোজ্য হবে।' : 'The job will be cancelled and only the visiting fee will apply.',
-              style: const TextStyle(color: AppColors.textSecondary, fontSize: 14)),
+              style: TextStyle(color: colors.onSurfaceVariant, fontSize: 14)),
           actions: [
-            TextButton(onPressed: () => Navigator.pop(ctx, false), child: Text(_isBn ? 'না' : 'No', style: const TextStyle(color: AppColors.textMuted))),
+            TextButton(onPressed: () => Navigator.pop(ctx, false), child: Text(_isBn ? 'না' : 'No', style: TextStyle(color: colors.outline))),
             TextButton(onPressed: () => Navigator.pop(ctx, true),
                 child: Text(_isBn ? 'হ্যাঁ, প্রত্যাখ্যান' : 'Yes, reject', style: const TextStyle(color: Color(0xFFEF4444), fontWeight: FontWeight.w600))),
           ],

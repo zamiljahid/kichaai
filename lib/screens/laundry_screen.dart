@@ -8,7 +8,6 @@ import '../models/messaging_model.dart';
 import '../services/auth_service.dart';
 import '../services/laundry_service.dart';
 import '../services/messaging_service.dart';
-import '../theme/app_theme.dart';
 import '../widgets/glass_button.dart';
 import '../widgets/policy_agreement_checkbox.dart';
 import 'chat_screen.dart';
@@ -276,19 +275,20 @@ class _LaundryScreenState extends State<LaundryScreen> with SingleTickerProvider
 
   @override
   Widget build(BuildContext context) {
+    final colors = Theme.of(context).colorScheme;
     _isBn = context.watch<LanguageNotifier>().isBengali;
     return Scaffold(
-      backgroundColor: AppColors.bgDark,
+      backgroundColor: colors.surfaceContainerHighest,
       appBar: AppBar(
-        backgroundColor: AppColors.bgMid,
+        backgroundColor: colors.surface,
         elevation: 0,
-        leading: IconButton(icon: const Icon(Icons.arrow_back_ios_new_rounded, color: AppColors.textPrimary, size: 18), onPressed: () => Navigator.of(context).pop()),
-        title: Text(_isBn ? 'লন্ড্রি' : 'Laundry', style: const TextStyle(color: AppColors.textPrimary, fontSize: 18, fontWeight: FontWeight.w700)),
+        leading: IconButton(icon: Icon(Icons.arrow_back_ios_new_rounded, color: colors.onSurface, size: 18), onPressed: () => Navigator.of(context).pop()),
+        title: Text(_isBn ? 'লন্ড্রি' : 'Laundry', style: TextStyle(color: colors.onSurface, fontSize: 18, fontWeight: FontWeight.w700)),
         bottom: TabBar(
           controller: _tabController,
-          labelColor: AppColors.deepBlue,
-          unselectedLabelColor: AppColors.textMuted,
-          indicatorColor: AppColors.deepBlue,
+          labelColor: colors.primary,
+          unselectedLabelColor: colors.outline,
+          indicatorColor: colors.primary,
           tabs: [Tab(text: _isBn ? 'নতুন বুকিং' : 'New Booking'), Tab(text: _isBn ? 'আমার বুকিং' : 'My Bookings')],
         ),
       ),
@@ -296,23 +296,30 @@ class _LaundryScreenState extends State<LaundryScreen> with SingleTickerProvider
     );
   }
 
-  Widget _label(String t) => Text(t, style: const TextStyle(color: AppColors.textPrimary, fontSize: 13, fontWeight: FontWeight.w600));
+  Widget _label(String t) {
+    final colors = Theme.of(context).colorScheme;
+    return Text(t, style: TextStyle(color: colors.onSurface, fontSize: 13, fontWeight: FontWeight.w600));
+  }
 
-  InputDecoration _deco({String? hint}) => InputDecoration(
+  InputDecoration _deco({String? hint}) {
+    final colors = Theme.of(context).colorScheme;
+    return InputDecoration(
         hintText: hint,
-        hintStyle: const TextStyle(color: AppColors.textMuted, fontSize: 14),
+        hintStyle: TextStyle(color: colors.outline, fontSize: 14),
         filled: true,
-        fillColor: AppColors.glassWhite,
+        fillColor: colors.surface,
         contentPadding: const EdgeInsets.symmetric(horizontal: 20, vertical: 16),
-        border: OutlineInputBorder(borderRadius: BorderRadius.circular(16), borderSide: const BorderSide(color: AppColors.glassBorder)),
-        enabledBorder: OutlineInputBorder(borderRadius: BorderRadius.circular(16), borderSide: const BorderSide(color: AppColors.glassBorder)),
-        focusedBorder: OutlineInputBorder(borderRadius: BorderRadius.circular(16), borderSide: const BorderSide(color: AppColors.deepBlue, width: 1.5)),
+        border: OutlineInputBorder(borderRadius: BorderRadius.circular(16), borderSide: BorderSide(color: colors.outlineVariant)),
+        enabledBorder: OutlineInputBorder(borderRadius: BorderRadius.circular(16), borderSide: BorderSide(color: colors.outlineVariant)),
+        focusedBorder: OutlineInputBorder(borderRadius: BorderRadius.circular(16), borderSide: BorderSide(color: colors.primary, width: 1.5)),
       );
+  }
 
   Widget _buildNewBookingTab() {
-    if (_catalogLoading) return const Center(child: CircularProgressIndicator(color: AppColors.deepBlue));
+    final colors = Theme.of(context).colorScheme;
+    if (_catalogLoading) return Center(child: CircularProgressIndicator(color: colors.primary));
     if (_hubs.isEmpty || _catalog.isEmpty) {
-      return Center(child: Text(_isBn ? 'এই মুহূর্তে কোনো লন্ড্রি হাব উপলব্ধ নেই' : 'No laundry hub available right now', style: const TextStyle(color: AppColors.textMuted)));
+      return Center(child: Text(_isBn ? 'এই মুহূর্তে কোনো লন্ড্রি হাব উপলব্ধ নেই' : 'No laundry hub available right now', style: TextStyle(color: colors.outline)));
     }
     final kinds = _catalog.map((c) => c.serviceKind).toSet().toList();
 
@@ -326,8 +333,8 @@ class _LaundryScreenState extends State<LaundryScreen> with SingleTickerProvider
           DropdownButtonFormField<LaundryHubModel>(
             value: _selectedHub,
             decoration: _deco(),
-            dropdownColor: AppColors.bgMid,
-            items: _hubs.map((h) => DropdownMenuItem(value: h, child: Text(h.name, style: const TextStyle(color: AppColors.textPrimary)))).toList(),
+            dropdownColor: colors.surface,
+            items: _hubs.map((h) => DropdownMenuItem(value: h, child: Text(h.name, style: TextStyle(color: colors.onSurface)))).toList(),
             onChanged: (v) => setState(() => _selectedHub = v),
           ),
           const SizedBox(height: 20),
@@ -340,8 +347,8 @@ class _LaundryScreenState extends State<LaundryScreen> with SingleTickerProvider
               return ChoiceChip(
                 label: Text(k.replaceAll('_', ' ')),
                 selected: selected,
-                selectedColor: AppColors.deepBlue.withOpacity(0.15),
-                labelStyle: TextStyle(color: selected ? AppColors.deepBlue : AppColors.textMuted, fontWeight: FontWeight.w600, fontSize: 12),
+                selectedColor: colors.primary.withOpacity(0.15),
+                labelStyle: TextStyle(color: selected ? colors.primary : colors.outline, fontWeight: FontWeight.w600, fontSize: 12),
                 onSelected: (_) => setState(() {
                   _selectedServiceKind = k;
                   final card = _catalog.firstWhere((c) => c.serviceKind == k, orElse: () => _catalog.first);
@@ -353,15 +360,15 @@ class _LaundryScreenState extends State<LaundryScreen> with SingleTickerProvider
           const SizedBox(height: 20),
           _label(_isBn ? 'পরিমাণ (${_selectedRateCard?.pricingUnit == 'per_item' ? "আইটেম" : "কেজি"})' : 'Amount (${_selectedRateCard?.pricingUnit == 'per_item' ? 'items' : 'kg'})'),
           const SizedBox(height: 8),
-          TextField(controller: _loadCtrl, keyboardType: const TextInputType.numberWithOptions(decimal: true), onChanged: (_) => setState(() {}), style: const TextStyle(color: AppColors.textPrimary), decoration: _deco()),
+          TextField(controller: _loadCtrl, keyboardType: const TextInputType.numberWithOptions(decimal: true), onChanged: (_) => setState(() {}), style: TextStyle(color: colors.onSurface), decoration: _deco()),
           if (_selectedRateCard != null) ...[
             const SizedBox(height: 8),
-            Text(_isBn ? 'আনুমানিক মূল্য: ৳${_estimatedPrice.toStringAsFixed(0)}' : 'Estimated: ৳${_estimatedPrice.toStringAsFixed(0)}', style: const TextStyle(color: AppColors.deepBlue, fontSize: 13, fontWeight: FontWeight.w700)),
+            Text(_isBn ? 'আনুমানিক মূল্য: ৳${_estimatedPrice.toStringAsFixed(0)}' : 'Estimated: ৳${_estimatedPrice.toStringAsFixed(0)}', style: TextStyle(color: colors.primary, fontSize: 13, fontWeight: FontWeight.w700)),
           ],
           const SizedBox(height: 20),
           _label(_isBn ? 'পিকআপ ঠিকানা' : 'Pickup address'),
           const SizedBox(height: 8),
-          TextField(controller: _addressCtrl, style: const TextStyle(color: AppColors.textPrimary), decoration: _deco(hint: _isBn ? 'পূর্ণ ঠিকানা লিখুন' : 'Enter full address')),
+          TextField(controller: _addressCtrl, style: TextStyle(color: colors.onSurface), decoration: _deco(hint: _isBn ? 'পূর্ণ ঠিকানা লিখুন' : 'Enter full address')),
           const SizedBox(height: 20),
           _label(_isBn ? 'পিকআপ সময়' : 'Pickup slot'),
           const SizedBox(height: 8),
@@ -369,12 +376,12 @@ class _LaundryScreenState extends State<LaundryScreen> with SingleTickerProvider
             onTap: _pickSlot,
             child: Container(
               padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 16),
-              decoration: BoxDecoration(color: AppColors.glassWhite, borderRadius: BorderRadius.circular(16), border: Border.all(color: AppColors.glassBorder)),
+              decoration: BoxDecoration(color: colors.surface, borderRadius: BorderRadius.circular(16), border: Border.all(color: colors.outlineVariant)),
               child: Row(children: [
-                const Icon(Icons.schedule_outlined, color: AppColors.textMuted, size: 16),
+                Icon(Icons.schedule_outlined, color: colors.outline, size: 16),
                 const SizedBox(width: 10),
                 Text(_slotDate == null ? (_isBn ? 'সময় বেছে নিন' : 'Choose a slot') : _fmtDate(DateTime(_slotDate!.year, _slotDate!.month, _slotDate!.day, _slotTime!.hour, _slotTime!.minute)),
-                    style: TextStyle(color: _slotDate == null ? AppColors.textMuted : AppColors.textPrimary, fontSize: 14, fontWeight: FontWeight.w600)),
+                    style: TextStyle(color: _slotDate == null ? colors.outline : colors.onSurface, fontSize: 14, fontWeight: FontWeight.w600)),
               ]),
             ),
           ),
@@ -384,13 +391,13 @@ class _LaundryScreenState extends State<LaundryScreen> with SingleTickerProvider
           Row(children: [
             Expanded(child: RadioListTile<String>(
               value: 'pay_at_booking', groupValue: _paymentTiming, onChanged: (v) => setState(() => _paymentTiming = v!),
-              title: Text(_isBn ? 'বুকিং করার সময়' : 'At booking', style: const TextStyle(color: AppColors.textPrimary, fontSize: 12)),
-              activeColor: AppColors.deepBlue, contentPadding: EdgeInsets.zero, dense: true,
+              title: Text(_isBn ? 'বুকিং করার সময়' : 'At booking', style: TextStyle(color: colors.onSurface, fontSize: 12)),
+              activeColor: colors.primary, contentPadding: EdgeInsets.zero, dense: true,
             )),
             Expanded(child: RadioListTile<String>(
               value: 'pay_on_delivery', groupValue: _paymentTiming, onChanged: (v) => setState(() => _paymentTiming = v!),
-              title: Text(_isBn ? 'ডেলিভারিতে' : 'On delivery', style: const TextStyle(color: AppColors.textPrimary, fontSize: 12)),
-              activeColor: AppColors.deepBlue, contentPadding: EdgeInsets.zero, dense: true,
+              title: Text(_isBn ? 'ডেলিভারিতে' : 'On delivery', style: TextStyle(color: colors.onSurface, fontSize: 12)),
+              activeColor: colors.primary, contentPadding: EdgeInsets.zero, dense: true,
             )),
           ]),
           const SizedBox(height: 24),
@@ -401,13 +408,14 @@ class _LaundryScreenState extends State<LaundryScreen> with SingleTickerProvider
   }
 
   Widget _buildMyBookingsTab() {
-    if (_bookingsLoading) return const Center(child: CircularProgressIndicator(color: AppColors.deepBlue));
+    final colors = Theme.of(context).colorScheme;
+    if (_bookingsLoading) return Center(child: CircularProgressIndicator(color: colors.primary));
     if (_myBookings.isEmpty) {
-      return Center(child: Text(_isBn ? 'কোনো বুকিং নেই' : 'No bookings yet', style: const TextStyle(color: AppColors.textMuted)));
+      return Center(child: Text(_isBn ? 'কোনো বুকিং নেই' : 'No bookings yet', style: TextStyle(color: colors.outline)));
     }
     return RefreshIndicator(
       onRefresh: _loadMyBookings,
-      color: AppColors.deepBlue,
+      color: colors.primary,
       child: ListView.builder(
         padding: const EdgeInsets.fromLTRB(16, 16, 16, 40),
         itemCount: _myBookings.length,
@@ -417,36 +425,37 @@ class _LaundryScreenState extends State<LaundryScreen> with SingleTickerProvider
   }
 
   Widget _bookingCard(LaundryBookingModel b) {
+    final colors = Theme.of(context).colorScheme;
     final canPay = b.paymentStatus != 'paid' && b.status != 'cancelled';
     final canCancel = b.status == 'booked';
     return Container(
       margin: const EdgeInsets.only(bottom: 12),
       padding: const EdgeInsets.all(16),
-      decoration: BoxDecoration(color: AppColors.bgMid, borderRadius: BorderRadius.circular(16), border: Border.all(color: AppColors.glassBorder)),
+      decoration: BoxDecoration(color: colors.surface, borderRadius: BorderRadius.circular(16), border: Border.all(color: colors.outlineVariant)),
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
           Row(children: [
-            Expanded(child: Text(b.serviceKind.replaceAll('_', ' '), style: const TextStyle(color: AppColors.textPrimary, fontSize: 15, fontWeight: FontWeight.w700))),
+            Expanded(child: Text(b.serviceKind.replaceAll('_', ' '), style: TextStyle(color: colors.onSurface, fontSize: 15, fontWeight: FontWeight.w700))),
             Container(
               padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 4),
-              decoration: BoxDecoration(color: AppColors.deepBlue.withOpacity(0.12), borderRadius: BorderRadius.circular(8)),
-              child: Text(b.status.replaceAll('_', ' '), style: const TextStyle(color: AppColors.deepBlue, fontSize: 11, fontWeight: FontWeight.w700)),
+              decoration: BoxDecoration(color: colors.primary.withOpacity(0.12), borderRadius: BorderRadius.circular(8)),
+              child: Text(b.status.replaceAll('_', ' '), style: TextStyle(color: colors.primary, fontSize: 11, fontWeight: FontWeight.w700)),
             ),
           ]),
           const SizedBox(height: 8),
-          Text(b.pickupAddress, style: const TextStyle(color: AppColors.textMuted, fontSize: 12)),
+          Text(b.pickupAddress, style: TextStyle(color: colors.outline, fontSize: 12)),
           const SizedBox(height: 4),
-          Text(_fmtDate(b.pickupSlotStart), style: const TextStyle(color: AppColors.textMuted, fontSize: 12)),
+          Text(_fmtDate(b.pickupSlotStart), style: TextStyle(color: colors.outline, fontSize: 12)),
           const SizedBox(height: 8),
-          Text(_isBn ? 'মূল্য: ৳${b.displayAmount.toStringAsFixed(0)} (${b.paymentStatus})' : 'Amount: ৳${b.displayAmount.toStringAsFixed(0)} (${b.paymentStatus})', style: const TextStyle(color: AppColors.textPrimary, fontSize: 13, fontWeight: FontWeight.w600)),
+          Text(_isBn ? 'মূল্য: ৳${b.displayAmount.toStringAsFixed(0)} (${b.paymentStatus})' : 'Amount: ৳${b.displayAmount.toStringAsFixed(0)} (${b.paymentStatus})', style: TextStyle(color: colors.onSurface, fontSize: 13, fontWeight: FontWeight.w600)),
           if (b.status != 'booked') ...[
             if (b.assignedStaffPhoneSnapshot != null) ...[
               const SizedBox(height: 8),
               Row(children: [
-                const Icon(Icons.phone_rounded, color: AppColors.deepBlue, size: 18),
+                Icon(Icons.phone_rounded, color: colors.primary, size: 18),
                 const SizedBox(width: 8),
-                Text(b.assignedStaffPhoneSnapshot!, style: const TextStyle(color: AppColors.textPrimary, fontSize: 14)),
+                Text(b.assignedStaffPhoneSnapshot!, style: TextStyle(color: colors.onSurface, fontSize: 14)),
               ]),
             ],
             const SizedBox(height: 10),
@@ -454,10 +463,10 @@ class _LaundryScreenState extends State<LaundryScreen> with SingleTickerProvider
               onTap: _openingChatBookingId == b.id ? null : () => _openChat(b.id),
               child: Row(children: [
                 _openingChatBookingId == b.id
-                    ? const SizedBox(width: 16, height: 16, child: CircularProgressIndicator(strokeWidth: 2, color: AppColors.deepBlue))
-                    : const Icon(Icons.chat_bubble_outline_rounded, color: AppColors.deepBlue, size: 16),
+                    ? SizedBox(width: 16, height: 16, child: CircularProgressIndicator(strokeWidth: 2, color: colors.primary))
+                    : Icon(Icons.chat_bubble_outline_rounded, color: colors.primary, size: 16),
                 const SizedBox(width: 8),
-                Text(_isBn ? 'স্টাফের সাথে চ্যাট করুন' : 'Chat with staff', style: const TextStyle(color: AppColors.deepBlue, fontSize: 13, fontWeight: FontWeight.w600)),
+                Text(_isBn ? 'স্টাফের সাথে চ্যাট করুন' : 'Chat with staff', style: TextStyle(color: colors.primary, fontSize: 13, fontWeight: FontWeight.w600)),
               ]),
             ),
           ],

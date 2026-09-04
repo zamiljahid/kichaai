@@ -10,7 +10,7 @@ import '../models/dispatch_model.dart';
 import '../services/alarm_notification_service.dart';
 import '../services/commute_service.dart';
 import '../services/dispatch_service.dart';
-import '../theme/app_theme.dart';
+import '../theme/status_colors.dart';
 import '../widgets/provider_completeness_gate.dart';
 import 'active_job_screen.dart';
 
@@ -165,6 +165,7 @@ class _DriverModeScreenState extends State<DriverModeScreen> {
 
   /// Vehicle comes from the commute profile; ask once when it is missing or is legacy free text.
   Future<String?> _resolveVehicle() async {
+    final colors = Theme.of(context).colorScheme;
     if (_vehicleType != null) return _vehicleType;
     String? stored;
     try {
@@ -179,16 +180,16 @@ class _DriverModeScreenState extends State<DriverModeScreen> {
     final picked = await showDialog<String>(
       context: context,
       builder: (ctx) => AlertDialog(
-        backgroundColor: AppColors.bgMid,
+        backgroundColor: colors.surface,
         title: Text(
           _isBn ? 'আপনি কী চালান?' : 'What do you drive?',
-          style: const TextStyle(color: AppColors.textPrimary, fontSize: 17),
+          style: TextStyle(color: colors.onSurface, fontSize: 17),
         ),
         content: Text(
           _isBn
               ? 'যাত্রী যে বাহন চান, সেই বাহনের চালকদের কাছেই রাইড যায়।'
               : 'Rides only reach drivers with the vehicle the passenger asked for.',
-          style: const TextStyle(color: AppColors.textSecondary, fontSize: 13),
+          style: TextStyle(color: colors.onSurfaceVariant, fontSize: 13),
         ),
         // A dialog action per class was fine with three; with six it needs the
         // requirement spelled out, or a driver cannot tell Bike from Bike Plus.
@@ -204,14 +205,14 @@ class _DriverModeScreenState extends State<DriverModeScreen> {
                   children: [
                     Text(
                       _isBn ? kRideVehicleLabelsBn[t]! : kRideVehicleLabelsEn[t]!,
-                      style: const TextStyle(
-                          color: AppColors.deepBlue, fontWeight: FontWeight.w700),
+                      style: TextStyle(
+                          color: colors.primary, fontWeight: FontWeight.w700),
                     ),
                     if (_isBn && kRideVehicleHintBn[t] != null)
                       Text(
                         kRideVehicleHintBn[t]!,
-                        style: const TextStyle(
-                            color: AppColors.textMuted, fontSize: 11.5),
+                        style: TextStyle(
+                            color: colors.outline, fontSize: 11.5),
                       ),
                   ],
                 ),
@@ -320,10 +321,11 @@ class _DriverModeScreenState extends State<DriverModeScreen> {
   }
 
   void _snack(String msg, {bool error = false}) {
+    final colors = Theme.of(context).colorScheme;
     if (!mounted) return;
     ScaffoldMessenger.of(context).showSnackBar(SnackBar(
       content: Text(msg, style: const TextStyle(color: Colors.white)),
-      backgroundColor: error ? AppColors.softRed : AppColors.deepBlue,
+      backgroundColor: error ? colors.error : colors.primary,
       behavior: SnackBarBehavior.floating,
     ));
   }
@@ -366,6 +368,7 @@ class _DriverModeScreenState extends State<DriverModeScreen> {
   }
 
   Set<Polyline> _lines() {
+    final colors = Theme.of(context).colorScheme;
     final job = _focusJob;
     if (job == null || !job.isRide) return const {};
     // Prefer the real driving route Directions returned at quote time; fall back to a straight
@@ -383,7 +386,7 @@ class _DriverModeScreenState extends State<DriverModeScreen> {
                 LatLng(job.pickupLatitude, job.pickupLongitude),
                 LatLng(job.dropoffLatitude!, job.dropoffLongitude!),
               ],
-        color: AppColors.deepBlue,
+        color: colors.primary,
         width: hasRoute ? 5 : 4,
         patterns: hasRoute ? const [] : [PatternItem.dash(18), PatternItem.gap(10)],
       ),
@@ -394,9 +397,10 @@ class _DriverModeScreenState extends State<DriverModeScreen> {
 
   @override
   Widget build(BuildContext context) {
+    final colors = Theme.of(context).colorScheme;
     final isBn = context.watch<LanguageNotifier>().isBengali;
     return Scaffold(
-      backgroundColor: AppColors.bgDark,
+      backgroundColor: colors.surfaceContainerHighest,
       body: Stack(
         children: [
           GoogleMap(
@@ -433,11 +437,12 @@ class _DriverModeScreenState extends State<DriverModeScreen> {
   }
 
   Widget _buildTopBar(bool isBn) {
+    final colors = Theme.of(context).colorScheme;
     return Container(
       margin: const EdgeInsets.fromLTRB(12, 8, 12, 0),
       padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 8),
       decoration: BoxDecoration(
-        color: AppColors.bgMid,
+        color: colors.surface,
         borderRadius: BorderRadius.circular(16),
         boxShadow: [
           BoxShadow(
@@ -449,8 +454,8 @@ class _DriverModeScreenState extends State<DriverModeScreen> {
       child: Row(
         children: [
           IconButton(
-            icon: const Icon(Icons.arrow_back_rounded,
-                color: AppColors.textPrimary, size: 20),
+            icon: Icon(Icons.arrow_back_rounded,
+                color: colors.onSurface, size: 20),
             onPressed: () => Navigator.of(context).pop(),
             padding: EdgeInsets.zero,
             constraints: const BoxConstraints(),
@@ -462,8 +467,8 @@ class _DriverModeScreenState extends State<DriverModeScreen> {
             decoration: BoxDecoration(
               shape: BoxShape.circle,
               color: _checkingSession
-                  ? AppColors.textMuted
-                  : (_isOnline ? const Color(0xFF22C55E) : AppColors.textMuted),
+                  ? colors.outline
+                  : (_isOnline ? const Color(0xFF22C55E) : colors.outline),
             ),
           ),
           const SizedBox(width: 7),
@@ -473,8 +478,8 @@ class _DriverModeScreenState extends State<DriverModeScreen> {
                 : (_isOnline
                     ? (isBn ? 'অনলাইন' : 'Online')
                     : (isBn ? 'অফলাইন' : 'Offline')),
-            style: const TextStyle(
-                color: AppColors.textPrimary,
+            style: TextStyle(
+                color: colors.onSurface,
                 fontSize: 13.5,
                 fontWeight: FontWeight.w700),
           ),
@@ -484,13 +489,13 @@ class _DriverModeScreenState extends State<DriverModeScreen> {
               isBn
                   ? kRideVehicleLabelsBn[_vehicleType]!
                   : kRideVehicleLabelsEn[_vehicleType]!,
-              style: const TextStyle(color: AppColors.textMuted, fontSize: 12),
+              style: TextStyle(color: colors.outline, fontSize: 12),
             ),
           ],
           const Spacer(),
           IconButton(
-            icon: const Icon(Icons.my_location_rounded,
-                color: AppColors.deepBlue, size: 20),
+            icon: Icon(Icons.my_location_rounded,
+                color: colors.primary, size: 20),
             onPressed: _locate,
             padding: EdgeInsets.zero,
             constraints: const BoxConstraints(),
@@ -501,11 +506,12 @@ class _DriverModeScreenState extends State<DriverModeScreen> {
   }
 
   Widget _buildStatusCard(bool isBn) {
+    final colors = Theme.of(context).colorScheme;
     return Container(
       margin: const EdgeInsets.all(12),
       padding: const EdgeInsets.all(18),
       decoration: BoxDecoration(
-        color: AppColors.bgMid,
+        color: colors.surface,
         borderRadius: BorderRadius.circular(20),
         boxShadow: [
           BoxShadow(
@@ -521,8 +527,8 @@ class _DriverModeScreenState extends State<DriverModeScreen> {
             _isOnline
                 ? (isBn ? 'রাইডের অপেক্ষায়…' : 'Waiting for rides…')
                 : (isBn ? 'অনলাইন হলে রাইড পাবেন' : 'Go online to receive rides'),
-            style: const TextStyle(
-                color: AppColors.textPrimary,
+            style: TextStyle(
+                color: colors.onSurface,
                 fontSize: 15,
                 fontWeight: FontWeight.w700),
           ),
@@ -536,8 +542,8 @@ class _DriverModeScreenState extends State<DriverModeScreen> {
                     ? 'অনলাইন থাকলে আপনার বাহনের রাইড আপনার কাছে আসবে'
                     : 'While online, rides for your vehicle come to you'),
             textAlign: TextAlign.center,
-            style: const TextStyle(
-                color: AppColors.textMuted, fontSize: 12.5, height: 1.45),
+            style: TextStyle(
+                color: colors.outline, fontSize: 12.5, height: 1.45),
           ),
           const SizedBox(height: 16),
           SizedBox(
@@ -547,7 +553,7 @@ class _DriverModeScreenState extends State<DriverModeScreen> {
               onPressed: _busy ? null : _toggleOnline,
               style: ElevatedButton.styleFrom(
                 backgroundColor:
-                    _isOnline ? AppColors.softRed : AppColors.deepBlue,
+                    _isOnline ? colors.error : colors.primary,
                 shape: RoundedRectangleBorder(
                     borderRadius: BorderRadius.circular(15)),
               ),
@@ -574,17 +580,18 @@ class _DriverModeScreenState extends State<DriverModeScreen> {
   }
 
   Widget _buildOfferCard(JobOffer offer, bool isBn) {
+    final colors = Theme.of(context).colorScheme;
     final job = offer.job;
     return Container(
       margin: const EdgeInsets.all(12),
       padding: const EdgeInsets.all(18),
       decoration: BoxDecoration(
-        color: AppColors.bgMid,
+        color: colors.surface,
         borderRadius: BorderRadius.circular(20),
-        border: Border.all(color: AppColors.deepBlue, width: 1.5),
+        border: Border.all(color: colors.primary, width: 1.5),
         boxShadow: [
           BoxShadow(
-              color: AppColors.deepBlue.withValues(alpha: 0.25),
+              color: colors.primary.withValues(alpha: 0.25),
               blurRadius: 24,
               offset: const Offset(0, 8)),
         ],
@@ -596,15 +603,15 @@ class _DriverModeScreenState extends State<DriverModeScreen> {
           Row(
             children: [
               Text(isBn ? 'নতুন রাইড' : 'New ride',
-                  style: const TextStyle(
-                      color: AppColors.textPrimary,
+                  style: TextStyle(
+                      color: colors.onSurface,
                       fontSize: 16,
                       fontWeight: FontWeight.w800)),
               const Spacer(),
               if (job.estimatedAmount != null)
                 Text('৳${job.estimatedAmount!.round()}',
-                    style: const TextStyle(
-                        color: AppColors.deepBlue,
+                    style: TextStyle(
+                        color: colors.primary,
                         fontSize: 22,
                         fontWeight: FontWeight.w800)),
             ],
@@ -616,45 +623,45 @@ class _DriverModeScreenState extends State<DriverModeScreen> {
               job.pickupAddressSnapshot ??
                   (isBn ? 'যাত্রীর অবস্থান' : 'Passenger location')),
           const SizedBox(height: 6),
-          _pointRow(Icons.flag_rounded, AppColors.softAmber,
+          _pointRow(Icons.flag_rounded, StatusColors.amber,
               job.dropoffAddressSnapshot ?? (isBn ? 'গন্তব্য' : 'Destination')),
           const SizedBox(height: 10),
           Row(
             children: [
               if (offer.distanceKm != null) ...[
-                const Icon(Icons.directions_walk_rounded,
-                    size: 15, color: AppColors.textMuted),
+                Icon(Icons.directions_walk_rounded,
+                    size: 15, color: colors.outline),
                 const SizedBox(width: 4),
                 Text(
                   isBn
                       ? '${offer.distanceKm!.toStringAsFixed(1)} কিমি দূরে'
                       : '${offer.distanceKm!.toStringAsFixed(1)} km away',
-                  style: const TextStyle(
-                      color: AppColors.textSecondary, fontSize: 12.5),
+                  style: TextStyle(
+                      color: colors.onSurfaceVariant, fontSize: 12.5),
                 ),
                 const SizedBox(width: 14),
               ],
               if (job.distanceKm != null) ...[
-                const Icon(Icons.route_rounded,
-                    size: 15, color: AppColors.textMuted),
+                Icon(Icons.route_rounded,
+                    size: 15, color: colors.outline),
                 const SizedBox(width: 4),
                 Text(
                   isBn
                       ? 'যাত্রা ${job.distanceKm!.toStringAsFixed(1)} কিমি'
                       : 'Trip ${job.distanceKm!.toStringAsFixed(1)} km',
-                  style: const TextStyle(
-                      color: AppColors.textSecondary, fontSize: 12.5),
+                  style: TextStyle(
+                      color: colors.onSurfaceVariant, fontSize: 12.5),
                 ),
               ],
               if (job.rideDetail?.durationMinutes != null) ...[
                 const SizedBox(width: 14),
-                const Icon(Icons.schedule_rounded,
-                    size: 15, color: AppColors.textMuted),
+                Icon(Icons.schedule_rounded,
+                    size: 15, color: colors.outline),
                 const SizedBox(width: 4),
                 Text(
                   '~${job.rideDetail!.durationMinutes} ${isBn ? 'মিনিট' : 'min'}',
-                  style: const TextStyle(
-                      color: AppColors.textSecondary, fontSize: 12.5),
+                  style: TextStyle(
+                      color: colors.onSurfaceVariant, fontSize: 12.5),
                 ),
               ],
             ],
@@ -666,14 +673,14 @@ class _DriverModeScreenState extends State<DriverModeScreen> {
                 child: OutlinedButton(
                   onPressed: () => _respond(offer, 'rejected'),
                   style: OutlinedButton.styleFrom(
-                    side: const BorderSide(color: AppColors.glassBorder),
+                    side: BorderSide(color: colors.outlineVariant),
                     padding: const EdgeInsets.symmetric(vertical: 14),
                     shape: RoundedRectangleBorder(
                         borderRadius: BorderRadius.circular(14)),
                   ),
                   child: Text(isBn ? 'বাদ দিন' : 'Skip',
-                      style: const TextStyle(
-                          color: AppColors.textSecondary,
+                      style: TextStyle(
+                          color: colors.onSurfaceVariant,
                           fontWeight: FontWeight.w600)),
                 ),
               ),
@@ -683,7 +690,7 @@ class _DriverModeScreenState extends State<DriverModeScreen> {
                 child: ElevatedButton(
                   onPressed: () => _respond(offer, 'accepted'),
                   style: ElevatedButton.styleFrom(
-                    backgroundColor: AppColors.deepBlue,
+                    backgroundColor: colors.primary,
                     padding: const EdgeInsets.symmetric(vertical: 14),
                     shape: RoundedRectangleBorder(
                         borderRadius: BorderRadius.circular(14)),
@@ -703,11 +710,12 @@ class _DriverModeScreenState extends State<DriverModeScreen> {
   }
 
   Widget _buildActiveTripCard(JobModel job, bool isBn) {
+    final colors = Theme.of(context).colorScheme;
     return Container(
       margin: const EdgeInsets.all(12),
       padding: const EdgeInsets.all(18),
       decoration: BoxDecoration(
-        color: AppColors.bgMid,
+        color: colors.surface,
         borderRadius: BorderRadius.circular(20),
         boxShadow: [
           BoxShadow(
@@ -723,15 +731,15 @@ class _DriverModeScreenState extends State<DriverModeScreen> {
           Row(
             children: [
               Text(isBn ? 'চলমান রাইড' : 'Active ride',
-                  style: const TextStyle(
-                      color: AppColors.textPrimary,
+                  style: TextStyle(
+                      color: colors.onSurface,
                       fontSize: 15.5,
                       fontWeight: FontWeight.w800)),
               const Spacer(),
               if (job.estimatedAmount != null)
                 Text('৳${job.estimatedAmount!.round()}',
-                    style: const TextStyle(
-                        color: AppColors.deepBlue,
+                    style: TextStyle(
+                        color: colors.primary,
                         fontSize: 18,
                         fontWeight: FontWeight.w800)),
             ],
@@ -743,7 +751,7 @@ class _DriverModeScreenState extends State<DriverModeScreen> {
               job.pickupAddressSnapshot ??
                   (isBn ? 'যাত্রীর অবস্থান' : 'Passenger location')),
           const SizedBox(height: 6),
-          _pointRow(Icons.flag_rounded, AppColors.softAmber,
+          _pointRow(Icons.flag_rounded, StatusColors.amber,
               job.dropoffAddressSnapshot ?? (isBn ? 'গন্তব্য' : 'Destination')),
           const SizedBox(height: 14),
           Row(
@@ -759,14 +767,14 @@ class _DriverModeScreenState extends State<DriverModeScreen> {
                       toDest ? job.dropoffLongitude! : job.pickupLongitude,
                     );
                   },
-                  icon: const Icon(Icons.navigation_rounded,
-                      size: 17, color: AppColors.deepBlue),
+                  icon: Icon(Icons.navigation_rounded,
+                      size: 17, color: colors.primary),
                   label: Text(isBn ? 'নেভিগেট' : 'Navigate',
-                      style: const TextStyle(
-                          color: AppColors.deepBlue,
+                      style: TextStyle(
+                          color: colors.primary,
                           fontWeight: FontWeight.w700)),
                   style: OutlinedButton.styleFrom(
-                    side: const BorderSide(color: AppColors.deepBlue),
+                    side: BorderSide(color: colors.primary),
                     padding: const EdgeInsets.symmetric(vertical: 13),
                     shape: RoundedRectangleBorder(
                         borderRadius: BorderRadius.circular(14)),
@@ -779,7 +787,7 @@ class _DriverModeScreenState extends State<DriverModeScreen> {
                 child: ElevatedButton(
                   onPressed: () => _openTrip(job),
                   style: ElevatedButton.styleFrom(
-                    backgroundColor: AppColors.deepBlue,
+                    backgroundColor: colors.primary,
                     padding: const EdgeInsets.symmetric(vertical: 13),
                     shape: RoundedRectangleBorder(
                         borderRadius: BorderRadius.circular(14)),
@@ -798,17 +806,20 @@ class _DriverModeScreenState extends State<DriverModeScreen> {
     );
   }
 
-  Widget _pointRow(IconData icon, Color color, String text) => Row(
+  Widget _pointRow(IconData icon, Color color, String text) {
+    final colors = Theme.of(context).colorScheme;
+    return Row(
         children: [
           Icon(icon, size: 15, color: color),
           const SizedBox(width: 9),
           Expanded(
             child: Text(text,
-                style: const TextStyle(
-                    color: AppColors.textPrimary, fontSize: 13),
+                style: TextStyle(
+                    color: colors.onSurface, fontSize: 13),
                 maxLines: 1,
                 overflow: TextOverflow.ellipsis),
           ),
         ],
       );
+  }
 }

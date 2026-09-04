@@ -16,11 +16,11 @@ import '../services/auth_service.dart';
 import '../services/dispatch_service.dart';
 import '../services/messaging_service.dart';
 import '../services/onboarding_service.dart';
-import '../theme/app_theme.dart';
 import '../widgets/animated_background.dart';
 import '../widgets/glass_button.dart';
 import '../widgets/glass_card.dart';
 import 'chat_screen.dart';
+import '../theme/status_colors.dart';
 
 class ActiveJobScreen extends StatefulWidget {
   final JobModel job;
@@ -232,44 +232,45 @@ class _ActiveJobScreenState extends State<ActiveJobScreen> {
   }
 
   Future<void> _submitQuote() async {
+    final colors = Theme.of(context).colorScheme;
     final amountCtrl = TextEditingController();
     final amount = await showDialog<double>(
       context: context,
       builder: (ctx) => AlertDialog(
-        backgroundColor: AppColors.bgMid,
+        backgroundColor: colors.surface,
         shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)),
-        title: Text(_isBn ? 'কাজ দেখে কোট দিন' : 'Quote after seeing the job', style: const TextStyle(color: AppColors.textPrimary, fontSize: 16, fontWeight: FontWeight.w700)),
+        title: Text(_isBn ? 'কাজ দেখে কোট দিন' : 'Quote after seeing the job', style: TextStyle(color: colors.onSurface, fontSize: 16, fontWeight: FontWeight.w700)),
         content: Column(
           mainAxisSize: MainAxisSize.min,
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
             Text(_isBn ? 'আপনার প্রস্তাবিত মূল্য (৳)। গ্রাহক অনুমোদন করলেই কাজ শুরু হবে।' : 'Your proposed price (৳). Work begins once the customer approves.',
-                style: const TextStyle(color: AppColors.textSecondary, fontSize: 13)),
+                style: TextStyle(color: colors.onSurfaceVariant, fontSize: 13)),
             const SizedBox(height: 14),
             TextField(
               controller: amountCtrl,
               autofocus: true,
               keyboardType: const TextInputType.numberWithOptions(decimal: true),
-              style: const TextStyle(color: AppColors.textPrimary, fontSize: 18, fontWeight: FontWeight.w700),
+              style: TextStyle(color: colors.onSurface, fontSize: 18, fontWeight: FontWeight.w700),
               decoration: InputDecoration(
                 prefixText: '৳ ',
-                prefixStyle: const TextStyle(color: AppColors.deepBlue, fontSize: 18, fontWeight: FontWeight.w700),
+                prefixStyle: TextStyle(color: colors.primary, fontSize: 18, fontWeight: FontWeight.w700),
                 hintText: '2500',
-                hintStyle: const TextStyle(color: AppColors.textMuted),
-                border: OutlineInputBorder(borderRadius: BorderRadius.circular(10), borderSide: BorderSide(color: AppColors.glassBorder)),
-                focusedBorder: OutlineInputBorder(borderRadius: BorderRadius.circular(10), borderSide: const BorderSide(color: AppColors.deepBlue)),
+                hintStyle: TextStyle(color: colors.outline),
+                border: OutlineInputBorder(borderRadius: BorderRadius.circular(10), borderSide: BorderSide(color: colors.outlineVariant)),
+                focusedBorder: OutlineInputBorder(borderRadius: BorderRadius.circular(10), borderSide: BorderSide(color: colors.primary)),
               ),
             ),
           ],
         ),
         actions: [
-          TextButton(onPressed: () => Navigator.pop(ctx), child: Text(_isBn ? 'বাতিল' : 'Cancel', style: const TextStyle(color: AppColors.textMuted))),
+          TextButton(onPressed: () => Navigator.pop(ctx), child: Text(_isBn ? 'বাতিল' : 'Cancel', style: TextStyle(color: colors.outline))),
           TextButton(
             onPressed: () {
               final v = double.tryParse(amountCtrl.text.trim());
               if (v != null && v > 0) Navigator.pop(ctx, v);
             },
-            child: Text(_isBn ? 'কোট পাঠান' : 'Send quote', style: const TextStyle(color: AppColors.deepBlue, fontWeight: FontWeight.w700)),
+            child: Text(_isBn ? 'কোট পাঠান' : 'Send quote', style: TextStyle(color: colors.primary, fontWeight: FontWeight.w700)),
           ),
         ],
       ),
@@ -290,38 +291,39 @@ class _ActiveJobScreenState extends State<ActiveJobScreen> {
   }
 
   Future<String?> _showOtpDialog(String title, {String? devOtp}) async {
+    final colors = Theme.of(context).colorScheme;
     _otpController.text = devOtp ?? '';
     return showDialog<String>(
       context: context,
       builder: (ctx) => AlertDialog(
-        backgroundColor: AppColors.bgMid,
+        backgroundColor: colors.surface,
         shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)),
-        title: Text(title, style: const TextStyle(color: AppColors.textPrimary, fontSize: 16, fontWeight: FontWeight.w700)),
+        title: Text(title, style: TextStyle(color: colors.onSurface, fontSize: 16, fontWeight: FontWeight.w700)),
         content: Column(
           mainAxisSize: MainAxisSize.min,
           children: [
             if (devOtp != null) ...[
               Text(_isBn ? 'টেস্ট মোড — OTP নিজে থেকেই ভরা হয়েছে: $devOtp' : 'Test mode — OTP auto-filled: $devOtp',
-                  style: const TextStyle(color: AppColors.textMuted, fontSize: 12)),
+                  style: TextStyle(color: colors.outline, fontSize: 12)),
               const SizedBox(height: 10),
             ],
             TextField(
               controller: _otpController,
               keyboardType: TextInputType.number,
               maxLength: 6,
-              style: const TextStyle(color: AppColors.textPrimary, fontSize: 20, letterSpacing: 4),
+              style: TextStyle(color: colors.onSurface, fontSize: 20, letterSpacing: 4),
               textAlign: TextAlign.center,
               decoration: InputDecoration(
                 hintText: '••••••',
-                hintStyle: TextStyle(color: AppColors.textMuted),
+                hintStyle: TextStyle(color: colors.outline),
                 counterText: '',
                 border: OutlineInputBorder(
                   borderRadius: BorderRadius.circular(10),
-                  borderSide: BorderSide(color: AppColors.glassBorder),
+                  borderSide: BorderSide(color: colors.outlineVariant),
                 ),
                 focusedBorder: OutlineInputBorder(
                   borderRadius: BorderRadius.circular(10),
-                  borderSide: const BorderSide(color: AppColors.deepBlue),
+                  borderSide: BorderSide(color: colors.primary),
                 ),
               ),
             ),
@@ -330,11 +332,11 @@ class _ActiveJobScreenState extends State<ActiveJobScreen> {
         actions: [
           TextButton(
             onPressed: () => Navigator.pop(ctx),
-            child: Text(_isBn ? 'বাতিল' : 'Cancel', style: const TextStyle(color: AppColors.textMuted)),
+            child: Text(_isBn ? 'বাতিল' : 'Cancel', style: TextStyle(color: colors.outline)),
           ),
           TextButton(
             onPressed: () => Navigator.pop(ctx, _otpController.text.trim()),
-            child: Text(_isBn ? 'নিশ্চিত' : 'Confirm', style: const TextStyle(color: AppColors.deepBlue, fontWeight: FontWeight.w700)),
+            child: Text(_isBn ? 'নিশ্চিত' : 'Confirm', style: TextStyle(color: colors.primary, fontWeight: FontWeight.w700)),
           ),
         ],
       ),
@@ -400,6 +402,7 @@ class _ActiveJobScreenState extends State<ActiveJobScreen> {
   }
 
   Widget _buildHeader() {
+    final colors = Theme.of(context).colorScheme;
     return Padding(
       padding: const EdgeInsets.fromLTRB(20, 16, 20, 8),
       child: Row(
@@ -410,31 +413,32 @@ class _ActiveJobScreenState extends State<ActiveJobScreen> {
               width: 40,
               height: 40,
               decoration: BoxDecoration(
-                color: AppColors.glassWhite,
+                color: colors.surface,
                 borderRadius: BorderRadius.circular(12),
-                border: Border.all(color: AppColors.glassBorder, width: 1.5),
+                border: Border.all(color: colors.outlineVariant, width: 1.5),
               ),
-              child: const Icon(Icons.arrow_back_ios_new_rounded, color: AppColors.textPrimary, size: 18),
+              child: Icon(Icons.arrow_back_ios_new_rounded, color: colors.onSurface, size: 18),
             ),
           ),
           const SizedBox(width: 16),
-          Text(_isBn ? 'সক্রিয় কাজ' : 'Active job', style: const TextStyle(color: AppColors.textPrimary, fontSize: 18, fontWeight: FontWeight.w700)),
+          Text(_isBn ? 'সক্রিয় কাজ' : 'Active job', style: TextStyle(color: colors.onSurface, fontSize: 18, fontWeight: FontWeight.w700)),
         ],
       ),
     );
   }
 
   Widget _buildStatusCard() {
+    final colors = Theme.of(context).colorScheme;
     final Color statusColor;
     switch (_job.status) {
       case 'in_progress':
-        statusColor = AppColors.deepBlue;
+        statusColor = colors.primary;
       case 'arriving':
         statusColor = const Color(0xFFF59E0B);
       case 'completed':
         statusColor = const Color(0xFF10B981);
       default:
-        statusColor = AppColors.textMuted;
+        statusColor = colors.outline;
     }
     return GlassCard(
       padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 14),
@@ -510,6 +514,7 @@ class _ActiveJobScreenState extends State<ActiveJobScreen> {
   }
 
   Widget _buildPhotoProofCard() {
+    final colors = Theme.of(context).colorScheme;
     final hasAny = _job.startPhotoUrl != null || _job.endPhotoUrl != null;
     return GlassCard(
       padding: const EdgeInsets.all(16),
@@ -518,9 +523,9 @@ class _ActiveJobScreenState extends State<ActiveJobScreen> {
         children: [
           Row(
             children: [
-              const Icon(Icons.photo_camera_rounded, color: AppColors.deepBlue, size: 20),
+              Icon(Icons.photo_camera_rounded, color: colors.primary, size: 20),
               const SizedBox(width: 8),
-              Text(_isBn ? 'কাজের ছবি' : 'Job photos', style: const TextStyle(color: AppColors.textSecondary, fontSize: 12, fontWeight: FontWeight.w600)),
+              Text(_isBn ? 'কাজের ছবি' : 'Job photos', style: TextStyle(color: colors.onSurfaceVariant, fontSize: 12, fontWeight: FontWeight.w600)),
               const Spacer(),
               Container(
                 padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 3),
@@ -542,7 +547,7 @@ class _ActiveJobScreenState extends State<ActiveJobScreen> {
           ),
           const SizedBox(height: 6),
           Text(_isBn ? 'কাজ শুরু ও শেষের ছবি তুলুন — ছবি থাকলে কমিশন ২০% এর বদলে ১৫%।' : 'Take start and end photos — commission drops from 20% to 15% with a photo.',
-              style: const TextStyle(color: AppColors.textMuted, fontSize: 11)),
+              style: TextStyle(color: colors.outline, fontSize: 11)),
           const SizedBox(height: 12),
           Row(
             children: [
@@ -557,15 +562,16 @@ class _ActiveJobScreenState extends State<ActiveJobScreen> {
   }
 
   Widget _photoSlot(String label, String photoType, String? url, bool uploading) {
+    final colors = Theme.of(context).colorScheme;
     return GestureDetector(
       onTap: uploading ? null : () => _takeJobPhoto(photoType),
       child: Container(
         height: 110,
         decoration: BoxDecoration(
-          color: AppColors.glassWhite,
+          color: colors.surface,
           borderRadius: BorderRadius.circular(12),
           border: Border.all(
-            color: url != null ? const Color(0xFF10B981) : AppColors.glassBorder,
+            color: url != null ? const Color(0xFF10B981) : colors.outlineVariant,
             width: url != null ? 1.6 : 1.2,
           ),
         ),
@@ -575,7 +581,7 @@ class _ActiveJobScreenState extends State<ActiveJobScreen> {
                 fit: StackFit.expand,
                 children: [
                   Image.network(url, fit: BoxFit.cover,
-                      errorBuilder: (_, __, ___) => const Center(child: Icon(Icons.image_outlined, color: AppColors.textMuted))),
+                      errorBuilder: (_, __, ___) => Center(child: Icon(Icons.image_outlined, color: colors.outline))),
                   Positioned(
                     top: 6, right: 6,
                     child: Container(
@@ -590,11 +596,11 @@ class _ActiveJobScreenState extends State<ActiveJobScreen> {
                 mainAxisAlignment: MainAxisAlignment.center,
                 children: [
                   if (uploading)
-                    const SizedBox(width: 22, height: 22, child: CircularProgressIndicator(strokeWidth: 2, color: AppColors.deepBlue))
+                    SizedBox(width: 22, height: 22, child: CircularProgressIndicator(strokeWidth: 2, color: colors.primary))
                   else
-                    const Icon(Icons.add_a_photo_rounded, color: AppColors.deepBlue, size: 26),
+                    Icon(Icons.add_a_photo_rounded, color: colors.primary, size: 26),
                   const SizedBox(height: 8),
-                  Text(label, style: const TextStyle(color: AppColors.textSecondary, fontSize: 12, fontWeight: FontWeight.w600)),
+                  Text(label, style: TextStyle(color: colors.onSurfaceVariant, fontSize: 12, fontWeight: FontWeight.w600)),
                 ],
               ),
       ),
@@ -602,27 +608,28 @@ class _ActiveJobScreenState extends State<ActiveJobScreen> {
   }
 
   Widget _buildCustomerCard() {
+    final colors = Theme.of(context).colorScheme;
     return GlassCard(
       padding: const EdgeInsets.all(16),
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
-          Text(_isBn ? 'গ্রাহকের তথ্য' : 'Customer info', style: const TextStyle(color: AppColors.textMuted, fontSize: 12)),
+          Text(_isBn ? 'গ্রাহকের তথ্য' : 'Customer info', style: TextStyle(color: colors.outline, fontSize: 12)),
           const SizedBox(height: 10),
           Row(children: [
-            const Icon(Icons.person_rounded, color: AppColors.deepBlue, size: 18),
+            Icon(Icons.person_rounded, color: colors.primary, size: 18),
             const SizedBox(width: 8),
             Text(
               _job.customerNameSnapshot ?? (_isBn ? 'অজানা' : 'Unknown'),
-              style: const TextStyle(color: AppColors.textPrimary, fontSize: 15, fontWeight: FontWeight.w600),
+              style: TextStyle(color: colors.onSurface, fontSize: 15, fontWeight: FontWeight.w600),
             ),
           ]),
           if (_job.customerPhoneSnapshot != null) ...[
             const SizedBox(height: 8),
             Row(children: [
-              const Icon(Icons.phone_rounded, color: AppColors.deepBlue, size: 18),
+              Icon(Icons.phone_rounded, color: colors.primary, size: 18),
               const SizedBox(width: 8),
-              Text(_job.customerPhoneSnapshot!, style: const TextStyle(color: AppColors.textPrimary, fontSize: 14)),
+              Text(_job.customerPhoneSnapshot!, style: TextStyle(color: colors.onSurface, fontSize: 14)),
             ]),
           ] else if (_job.serviceKind != 'lawyer') ...[
             const SizedBox(height: 8),
@@ -630,7 +637,7 @@ class _ActiveJobScreenState extends State<ActiveJobScreen> {
               (_job.startConfirmed || _job.providerConfirmed)
                   ? (_isBn ? 'গ্রাহক কোনো ফোন নম্বর দেননি — চ্যাটে যোগাযোগ করুন' : 'The customer did not provide a phone number — contact them via chat')
                   : (_isBn ? 'গ্রাহক নিশ্চিত না করা পর্যন্ত নম্বর দেখা যাবে না — ততক্ষণ চ্যাটে কথা বলুন' : 'The number stays hidden until the customer confirms — chat until then'),
-              style: const TextStyle(color: AppColors.textMuted, fontSize: 12, height: 1.4),
+              style: TextStyle(color: colors.outline, fontSize: 12, height: 1.4),
             ),
           ],
           if (_job.serviceKind != 'lawyer') ...[
@@ -639,10 +646,10 @@ class _ActiveJobScreenState extends State<ActiveJobScreen> {
               onTap: _isOpeningChat ? null : _openJobChat,
               child: Row(children: [
                 _isOpeningChat
-                    ? const SizedBox(width: 16, height: 16, child: CircularProgressIndicator(strokeWidth: 2, color: AppColors.deepBlue))
-                    : const Icon(Icons.chat_bubble_outline_rounded, color: AppColors.deepBlue, size: 16),
+                    ? SizedBox(width: 16, height: 16, child: CircularProgressIndicator(strokeWidth: 2, color: colors.primary))
+                    : Icon(Icons.chat_bubble_outline_rounded, color: colors.primary, size: 16),
                 const SizedBox(width: 8),
-                Text(_isBn ? 'গ্রাহকের সাথে চ্যাট করুন' : 'Chat with customer', style: const TextStyle(color: AppColors.deepBlue, fontSize: 13, fontWeight: FontWeight.w600)),
+                Text(_isBn ? 'গ্রাহকের সাথে চ্যাট করুন' : 'Chat with customer', style: TextStyle(color: colors.primary, fontSize: 13, fontWeight: FontWeight.w600)),
               ]),
             ),
           ],
@@ -656,7 +663,7 @@ class _ActiveJobScreenState extends State<ActiveJobScreen> {
             Row(children: [
               const Icon(Icons.videocam_rounded, color: Color(0xFF6A1B9A), size: 18),
               const SizedBox(width: 8),
-              Text(_isBn ? 'রিমোট কনসালটেশন (Google Meet) — কোনো ফিজিক্যাল লোকেশন নেই' : 'Remote consultation (Google Meet) — no physical location', style: const TextStyle(color: AppColors.textSecondary, fontSize: 13, fontWeight: FontWeight.w600)),
+              Text(_isBn ? 'রিমোট কনসালটেশন (Google Meet) — কোনো ফিজিক্যাল লোকেশন নেই' : 'Remote consultation (Google Meet) — no physical location', style: TextStyle(color: colors.onSurfaceVariant, fontSize: 13, fontWeight: FontWeight.w600)),
             ]),
             // No Meet link exists until the customer pays the consultation fee (see
             // dispatch.service.ts's confirmDepositPayment) — without this, accepting a job
@@ -666,9 +673,9 @@ class _ActiveJobScreenState extends State<ActiveJobScreen> {
               Container(
                 padding: const EdgeInsets.all(12),
                 decoration: BoxDecoration(
-                  color: const Color(0xFFD98A0B).withOpacity(0.08),
+                  color: StatusColors.amber.withValues(alpha: 0.08),
                   borderRadius: BorderRadius.circular(12),
-                  border: Border.all(color: const Color(0xFFD98A0B).withOpacity(0.3)),
+                  border: Border.all(color: StatusColors.amber.withValues(alpha: 0.3)),
                 ),
                 child: Row(children: [
                   const Icon(Icons.hourglass_top_rounded, color: Color(0xFFB27107), size: 18),
@@ -699,7 +706,7 @@ class _ActiveJobScreenState extends State<ActiveJobScreen> {
                 child: Column(crossAxisAlignment: CrossAxisAlignment.start, children: [
                   Text(_isBn ? 'মিটিং লিংক' : 'Meeting link', style: const TextStyle(color: Color(0xFF6A1B9A), fontSize: 12, fontWeight: FontWeight.w700)),
                   const SizedBox(height: 6),
-                  SelectableText(_job.meetLink!, style: const TextStyle(color: AppColors.textPrimary, fontSize: 13)),
+                  SelectableText(_job.meetLink!, style: TextStyle(color: colors.onSurface, fontSize: 13)),
                   const SizedBox(height: 10),
                   Row(children: [
                     Expanded(
@@ -740,12 +747,12 @@ class _ActiveJobScreenState extends State<ActiveJobScreen> {
             if (_job.pickupAddressSnapshot != null) ...[
               const SizedBox(height: 8),
               Row(crossAxisAlignment: CrossAxisAlignment.start, children: [
-                const Icon(Icons.location_on_rounded, color: AppColors.deepBlue, size: 18),
+                Icon(Icons.location_on_rounded, color: colors.primary, size: 18),
                 const SizedBox(width: 8),
                 Expanded(
                   child: Text(
                     _job.pickupAddressSnapshot!,
-                    style: const TextStyle(color: AppColors.textPrimary, fontSize: 14),
+                    style: TextStyle(color: colors.onSurface, fontSize: 14),
                   ),
                 ),
               ]),
@@ -782,17 +789,18 @@ class _ActiveJobScreenState extends State<ActiveJobScreen> {
   }
 
   Widget _buildJobCard() {
+    final colors = Theme.of(context).colorScheme;
     return GlassCard(
       padding: const EdgeInsets.all(16),
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
-          Text(_isBn ? 'কাজের বিবরণ' : 'Job details', style: const TextStyle(color: AppColors.textMuted, fontSize: 12)),
+          Text(_isBn ? 'কাজের বিবরণ' : 'Job details', style: TextStyle(color: colors.outline, fontSize: 12)),
           const SizedBox(height: 10),
-          Text(_job.title, style: const TextStyle(color: AppColors.textPrimary, fontSize: 15, fontWeight: FontWeight.w600)),
+          Text(_job.title, style: TextStyle(color: colors.onSurface, fontSize: 15, fontWeight: FontWeight.w600)),
           if (_job.description != null && _job.description!.isNotEmpty) ...[
             const SizedBox(height: 6),
-            Text(_job.description!, style: const TextStyle(color: AppColors.textMuted, fontSize: 13)),
+            Text(_job.description!, style: TextStyle(color: colors.outline, fontSize: 13)),
           ],
           if (_job.serviceKind == 'caregiver' && _hasCaregiverInfo(_job)) ...[
             const SizedBox(height: 10),
@@ -806,7 +814,7 @@ class _ActiveJobScreenState extends State<ActiveJobScreen> {
             const SizedBox(height: 8),
             Text(
               _isBn ? 'আনুমানিক মূল্য: ৳ ${_job.estimatedAmount!.toStringAsFixed(0)}' : 'Estimated price: ৳ ${_job.estimatedAmount!.toStringAsFixed(0)}',
-              style: const TextStyle(color: AppColors.deepBlue, fontSize: 14, fontWeight: FontWeight.w600),
+              style: TextStyle(color: colors.primary, fontSize: 14, fontWeight: FontWeight.w600),
             ),
           ],
         ],
@@ -818,6 +826,7 @@ class _ActiveJobScreenState extends State<ActiveJobScreen> {
   // A driver was previously shown the pickup and nothing else — no destination anywhere on this
   // screen, and no way to navigate to either end.
   Widget _buildRideRouteBlock() {
+    final colors = Theme.of(context).colorScheme;
     // vehicleType lives on RideDetails (the backend also mirrors it into job.specialization,
     // which is what the broadcast filters on, but that field is not on this model).
     final vehicle = _job.rideDetail?.vehicleType;
@@ -836,7 +845,7 @@ class _ActiveJobScreenState extends State<ActiveJobScreen> {
         const SizedBox(height: 8),
         _routeRow(
           Icons.flag_rounded,
-          AppColors.deepBlue,
+          colors.primary,
           _isBn ? 'গন্তব্য' : 'Destination',
           _job.dropoffAddressSnapshot ?? (_isBn ? 'ম্যাপে দেখানো আছে' : 'Pinned on the map'),
           _job.dropoffLatitude,
@@ -854,15 +863,15 @@ class _ActiveJobScreenState extends State<ActiveJobScreen> {
                     _ => Icons.directions_car_filled_rounded,
                   },
                   size: 15,
-                  color: AppColors.textMuted,
+                  color: colors.outline,
                 ),
                 const SizedBox(width: 6),
                 Text(
                   _isBn
                       ? (kRideVehicleLabelsBn[vehicle] ?? vehicle)
                       : (kRideVehicleLabelsEn[vehicle] ?? vehicle),
-                  style: const TextStyle(
-                      color: AppColors.textMuted, fontSize: 12, fontWeight: FontWeight.w600),
+                  style: TextStyle(
+                      color: colors.outline, fontSize: 12, fontWeight: FontWeight.w600),
                 ),
               ],
               if (_job.distanceKm != null) ...[
@@ -871,16 +880,16 @@ class _ActiveJobScreenState extends State<ActiveJobScreen> {
                   _isBn
                       ? 'প্রায় ${_job.distanceKm!.toStringAsFixed(1)} কিমি'
                       : 'About ${_job.distanceKm!.toStringAsFixed(1)} km',
-                  style: const TextStyle(color: AppColors.textMuted, fontSize: 12),
+                  style: TextStyle(color: colors.outline, fontSize: 12),
                 ),
               ],
               if (passengers != null && passengers > 1) ...[
                 const SizedBox(width: 10),
-                const Icon(Icons.people_alt_rounded, size: 14, color: AppColors.textMuted),
+                Icon(Icons.people_alt_rounded, size: 14, color: colors.outline),
                 const SizedBox(width: 4),
                 Text(
                   _isBn ? '$passengers জন' : '$passengers passengers',
-                  style: const TextStyle(color: AppColors.textMuted, fontSize: 12),
+                  style: TextStyle(color: colors.outline, fontSize: 12),
                 ),
               ],
             ],
@@ -898,6 +907,7 @@ class _ActiveJobScreenState extends State<ActiveJobScreen> {
     double? lat,
     double? lon,
   ) {
+    final colors = Theme.of(context).colorScheme;
     final canNavigate = lat != null && lon != null;
     return Row(
       crossAxisAlignment: CrossAxisAlignment.start,
@@ -908,11 +918,11 @@ class _ActiveJobScreenState extends State<ActiveJobScreen> {
           child: Column(
             crossAxisAlignment: CrossAxisAlignment.start,
             children: [
-              Text(label, style: const TextStyle(color: AppColors.textMuted, fontSize: 11)),
+              Text(label, style: TextStyle(color: colors.outline, fontSize: 11)),
               Text(
                 address,
-                style: const TextStyle(
-                    color: AppColors.textPrimary, fontSize: 13, fontWeight: FontWeight.w600),
+                style: TextStyle(
+                    color: colors.onSurface, fontSize: 13, fontWeight: FontWeight.w600),
                 maxLines: 2,
                 overflow: TextOverflow.ellipsis,
               ),
@@ -925,19 +935,19 @@ class _ActiveJobScreenState extends State<ActiveJobScreen> {
             child: Container(
               padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 6),
               decoration: BoxDecoration(
-                color: AppColors.glassBlue,
+                color: colors.primary.withValues(alpha: 0.08),
                 borderRadius: BorderRadius.circular(10),
-                border: Border.all(color: AppColors.glassBorderBlue),
+                border: Border.all(color: colors.primary.withValues(alpha: 0.20)),
               ),
               child: Row(
                 mainAxisSize: MainAxisSize.min,
                 children: [
-                  const Icon(Icons.navigation_rounded, size: 14, color: AppColors.deepBlue),
+                  Icon(Icons.navigation_rounded, size: 14, color: colors.primary),
                   const SizedBox(width: 5),
                   Text(
                     _isBn ? 'চলুন' : 'Go',
-                    style: const TextStyle(
-                        color: AppColors.deepBlue, fontSize: 11.5, fontWeight: FontWeight.w700),
+                    style: TextStyle(
+                        color: colors.primary, fontSize: 11.5, fontWeight: FontWeight.w700),
                   ),
                 ],
               ),
@@ -951,6 +961,7 @@ class _ActiveJobScreenState extends State<ActiveJobScreen> {
   /// is the Android intent that starts turn-by-turn straight away; the https URL is the
   /// cross-platform fallback (and what iOS/web get).
   Future<void> _navigateTo(double lat, double lon) async {
+    final colors = Theme.of(context).colorScheme;
     final candidates = [
       Uri.parse('google.navigation:q=$lat,$lon&mode=d'),
       Uri.parse('https://www.google.com/maps/dir/?api=1&destination=$lat,$lon&travelmode=driving'),
@@ -968,7 +979,7 @@ class _ActiveJobScreenState extends State<ActiveJobScreen> {
         _isBn ? 'ম্যাপ অ্যাপ খোলা যায়নি' : 'Could not open a maps app',
         style: const TextStyle(color: Colors.white),
       ),
-      backgroundColor: AppColors.softRed,
+      backgroundColor: colors.error,
       behavior: SnackBarBehavior.floating,
       shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
       margin: const EdgeInsets.all(16),
@@ -983,6 +994,7 @@ class _ActiveJobScreenState extends State<ActiveJobScreen> {
   // Caregiver-only info block — patient condition/age + the customer's self-declared
   // gender preference (informational only, never filters who gets the broadcast).
   Widget _buildCaregiverInfoBlock() {
+    final colors = Theme.of(context).colorScheme;
     final detail = _job.caregiverDetail;
     final rows = <Widget>[];
     void addRow(IconData icon, String text) {
@@ -990,9 +1002,9 @@ class _ActiveJobScreenState extends State<ActiveJobScreen> {
       rows.add(Row(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
-          Icon(icon, size: 15, color: AppColors.deepBlue),
+          Icon(icon, size: 15, color: colors.primary),
           const SizedBox(width: 8),
-          Expanded(child: Text(text, style: const TextStyle(color: AppColors.textSecondary, fontSize: 12.5))),
+          Expanded(child: Text(text, style: TextStyle(color: colors.onSurfaceVariant, fontSize: 12.5))),
         ],
       ));
     }
@@ -1010,24 +1022,25 @@ class _ActiveJobScreenState extends State<ActiveJobScreen> {
     return Container(
       padding: const EdgeInsets.all(12),
       decoration: BoxDecoration(
-        color: AppColors.deepBlue.withValues(alpha: 0.07),
+        color: colors.primary.withValues(alpha: 0.07),
         borderRadius: BorderRadius.circular(12),
-        border: Border.all(color: AppColors.deepBlue.withValues(alpha: 0.25)),
+        border: Border.all(color: colors.primary.withValues(alpha: 0.25)),
       ),
       child: Column(crossAxisAlignment: CrossAxisAlignment.start, children: rows),
     );
   }
 
   Future<void> _submitOpinion() async {
+    final colors = Theme.of(context).colorScheme;
     final summaryCtrl = TextEditingController();
     final adviceCtrl = TextEditingController();
     final stepsCtrl = TextEditingController();
     final submitted = await showDialog<bool>(
       context: context,
       builder: (ctx) => AlertDialog(
-        backgroundColor: AppColors.bgMid,
+        backgroundColor: colors.surface,
         shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)),
-        title: Text(_isBn ? 'আইনি মতামত জমা দিন' : 'Submit legal opinion', style: const TextStyle(color: AppColors.textPrimary, fontSize: 16, fontWeight: FontWeight.w700)),
+        title: Text(_isBn ? 'আইনি মতামত জমা দিন' : 'Submit legal opinion', style: TextStyle(color: colors.onSurface, fontSize: 16, fontWeight: FontWeight.w700)),
         content: SingleChildScrollView(
           child: Column(
             mainAxisSize: MainAxisSize.min,
@@ -1041,13 +1054,13 @@ class _ActiveJobScreenState extends State<ActiveJobScreen> {
           ),
         ),
         actions: [
-          TextButton(onPressed: () => Navigator.pop(ctx, false), child: Text(_isBn ? 'বাতিল' : 'Cancel', style: const TextStyle(color: AppColors.textMuted))),
+          TextButton(onPressed: () => Navigator.pop(ctx, false), child: Text(_isBn ? 'বাতিল' : 'Cancel', style: TextStyle(color: colors.outline))),
           TextButton(
             onPressed: () {
               if (summaryCtrl.text.trim().isEmpty) return;
               Navigator.pop(ctx, true);
             },
-            child: Text(_isBn ? 'জমা দিন' : 'Submit', style: const TextStyle(color: AppColors.deepBlue, fontWeight: FontWeight.w700)),
+            child: Text(_isBn ? 'জমা দিন' : 'Submit', style: TextStyle(color: colors.primary, fontWeight: FontWeight.w700)),
           ),
         ],
       ),
@@ -1073,15 +1086,16 @@ class _ActiveJobScreenState extends State<ActiveJobScreen> {
   }
 
   Widget _opinionField(TextEditingController c, String hint, {int maxLines = 1}) {
+    final colors = Theme.of(context).colorScheme;
     return TextField(
       controller: c,
       maxLines: maxLines,
-      style: const TextStyle(color: AppColors.textPrimary, fontSize: 14),
+      style: TextStyle(color: colors.onSurface, fontSize: 14),
       decoration: InputDecoration(
         hintText: hint,
-        hintStyle: TextStyle(color: AppColors.textMuted, fontSize: 13),
-        border: OutlineInputBorder(borderRadius: BorderRadius.circular(10), borderSide: BorderSide(color: AppColors.glassBorder)),
-        focusedBorder: OutlineInputBorder(borderRadius: BorderRadius.circular(10), borderSide: const BorderSide(color: AppColors.deepBlue)),
+        hintStyle: TextStyle(color: colors.outline, fontSize: 13),
+        border: OutlineInputBorder(borderRadius: BorderRadius.circular(10), borderSide: BorderSide(color: colors.outlineVariant)),
+        focusedBorder: OutlineInputBorder(borderRadius: BorderRadius.circular(10), borderSide: BorderSide(color: colors.primary)),
       ),
     );
   }
@@ -1094,6 +1108,7 @@ class _ActiveJobScreenState extends State<ActiveJobScreen> {
 
   // A muted "cancel job" link + a one-line hint of what cancelling costs right now.
   Widget _buildCancelLink() {
+    final colors = Theme.of(context).colorScheme;
     final kind = _job.cancelPenaltyKind;
     late final String hint;
     late final Color hintColor;
@@ -1102,7 +1117,7 @@ class _ActiveJobScreenState extends State<ActiveJobScreen> {
         hint = _isBn
             ? '১৫ মিনিটের মধ্যে বাতিল ফ্রি (${_job.cancelGraceMinutesLeft} মিনিট বাকি)'
             : 'Free cancellation within 15 minutes (${_job.cancelGraceMinutesLeft} min left)';
-        hintColor = AppColors.textMuted;
+        hintColor = colors.outline;
         break;
       case 'fee':
         hint = _isBn
@@ -1129,6 +1144,7 @@ class _ActiveJobScreenState extends State<ActiveJobScreen> {
   }
 
   Future<void> _cancelJob() async {
+    final colors = Theme.of(context).colorScheme;
     final kind = _job.cancelPenaltyKind;
     late final String body;
     switch (kind) {
@@ -1152,12 +1168,12 @@ class _ActiveJobScreenState extends State<ActiveJobScreen> {
     final confirmed = await showDialog<bool>(
       context: context,
       builder: (ctx) => AlertDialog(
-        backgroundColor: AppColors.bgMid,
+        backgroundColor: colors.surface,
         shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)),
-        title: Text(_isBn ? 'কাজ বাতিল' : 'Cancel job', style: const TextStyle(color: AppColors.textPrimary, fontSize: 16, fontWeight: FontWeight.w700)),
-        content: Text(body, style: const TextStyle(color: AppColors.textSecondary, fontSize: 14, height: 1.5)),
+        title: Text(_isBn ? 'কাজ বাতিল' : 'Cancel job', style: TextStyle(color: colors.onSurface, fontSize: 16, fontWeight: FontWeight.w700)),
+        content: Text(body, style: TextStyle(color: colors.onSurfaceVariant, fontSize: 14, height: 1.5)),
         actions: [
-          TextButton(onPressed: () => Navigator.pop(ctx, false), child: Text(_isBn ? 'না' : 'No', style: const TextStyle(color: AppColors.textMuted))),
+          TextButton(onPressed: () => Navigator.pop(ctx, false), child: Text(_isBn ? 'না' : 'No', style: TextStyle(color: colors.outline))),
           TextButton(onPressed: () => Navigator.pop(ctx, true), child: Text(_isBn ? 'হ্যাঁ, বাতিল করুন' : 'Yes, cancel', style: const TextStyle(color: Color(0xFFEF4444), fontWeight: FontWeight.w700))),
         ],
       ),
@@ -1178,6 +1194,7 @@ class _ActiveJobScreenState extends State<ActiveJobScreen> {
   }
 
   Future<void> _showCancelResult(CancelResult r) {
+    final colors = Theme.of(context).colorScheme;
     String msg;
     if (!r.hadPenalty) {
       msg = _isBn ? 'কাজ বাতিল হয়েছে। কোনো জরিমানা হয়নি।' : 'Job cancelled. No penalty applied.';
@@ -1205,16 +1222,16 @@ class _ActiveJobScreenState extends State<ActiveJobScreen> {
     return showDialog(
       context: context,
       builder: (ctx) => AlertDialog(
-        backgroundColor: AppColors.bgMid,
+        backgroundColor: colors.surface,
         shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)),
         title: Text(
             r.hadPenalty
                 ? (_isBn ? 'বাতিল হয়েছে (জরিমানা প্রযোজ্য)' : 'Cancelled (penalty applied)')
                 : (_isBn ? 'বাতিল হয়েছে' : 'Cancelled'),
-            style: const TextStyle(color: AppColors.textPrimary, fontSize: 16, fontWeight: FontWeight.w700)),
-        content: Text(msg, style: const TextStyle(color: AppColors.textSecondary, fontSize: 14, height: 1.5)),
+            style: TextStyle(color: colors.onSurface, fontSize: 16, fontWeight: FontWeight.w700)),
+        content: Text(msg, style: TextStyle(color: colors.onSurfaceVariant, fontSize: 14, height: 1.5)),
         actions: [
-          TextButton(onPressed: () => Navigator.pop(ctx), child: Text(_isBn ? 'ঠিক আছে' : 'OK', style: const TextStyle(color: AppColors.deepBlue, fontWeight: FontWeight.w700))),
+          TextButton(onPressed: () => Navigator.pop(ctx), child: Text(_isBn ? 'ঠিক আছে' : 'OK', style: TextStyle(color: colors.primary, fontWeight: FontWeight.w700))),
         ],
       ),
     );
@@ -1226,8 +1243,9 @@ class _ActiveJobScreenState extends State<ActiveJobScreen> {
   }
 
   Widget _buildActionButton() {
+    final colors = Theme.of(context).colorScheme;
     if (_isLoading) {
-      return const CircularProgressIndicator(color: AppColors.deepBlue);
+      return CircularProgressIndicator(color: colors.primary);
     }
     // Lawyer consultation — provider completes it by submitting a written opinion.
     if (_job.serviceKind == 'lawyer' && _job.isActive &&

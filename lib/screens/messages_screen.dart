@@ -6,9 +6,10 @@ import '../core/utils/app_strings.dart';
 import '../models/messaging_model.dart';
 import '../services/auth_service.dart';
 import '../services/messaging_service.dart';
-import '../theme/app_theme.dart';
+import '../theme/app_gradients.dart';
 import '../widgets/glass_card.dart';
 import 'chat_screen.dart';
+import '../widgets/custom_bottom_nav.dart';
 
 class MessagesScreen extends StatefulWidget {
   const MessagesScreen({super.key});
@@ -88,11 +89,12 @@ class _MessagesScreenState extends State<MessagesScreen> {
 
   @override
   Widget build(BuildContext context) {
+    final colors = Theme.of(context).colorScheme;
     final strings = AppStrings.of(context);
     return RefreshIndicator(
       onRefresh: _loadData,
-      color: AppColors.deepBlue,
-      backgroundColor: AppColors.bgMid,
+      color: colors.primary,
+      backgroundColor: colors.surface,
       child: CustomScrollView(
         slivers: [
           SliverAppBar(
@@ -100,6 +102,17 @@ class _MessagesScreenState extends State<MessagesScreen> {
             floating: true,
             snap: true,
             backgroundColor: Colors.transparent,
+            foregroundColor: colors.onSurface,
+            // foregroundColor reaches the icons but NOT the title — a non-null
+            // AppBarTheme.titleTextStyle (this app defines one, in onPrimary)
+            // wins outright. See profile_screen.dart for the full precedence.
+            titleTextStyle: Theme.of(context)
+                .appBarTheme
+                .titleTextStyle
+                ?.copyWith(color: colors.onSurface),
+            // This bar is transparent over the light canvas, so it must not
+            // inherit the theme's primary-bar rounding either.
+            shape: const RoundedRectangleBorder(),
             actions: [
               // Global language toggle is in the nav bar — no per-screen chip.
               IconButton(
@@ -122,13 +135,14 @@ class _MessagesScreenState extends State<MessagesScreen> {
                 childCount: _filteredThreads.length,
               ),
             ),
-          const SliverToBoxAdapter(child: SizedBox(height: 100)),
+          SliverToBoxAdapter(child: SizedBox(height: bottomNavClearance(context))),
         ],
       ),
     );
   }
 
   Widget _buildSearch(AppStrings strings) {
+    final colors = Theme.of(context).colorScheme;
     return Padding(
       padding: const EdgeInsets.fromLTRB(16, 0, 16, 16),
       child: ClipRRect(
@@ -136,14 +150,14 @@ class _MessagesScreenState extends State<MessagesScreen> {
         child: BackdropFilter(
           filter: ImageFilter.blur(sigmaX: 10, sigmaY: 10),
           child: TextField(
-            style: const TextStyle(color: AppColors.textPrimary),
+            style: TextStyle(color: colors.onSurface),
             onChanged: (v) => setState(() => _searchQuery = v),
             decoration: InputDecoration(
               hintText: context.read<LanguageNotifier>().isBengali
                   ? 'বার্তা খুঁজুন...'
                   : 'Search messages...',
               prefixIcon:
-                  const Icon(Icons.search_rounded, color: AppColors.textMuted),
+                  Icon(Icons.search_rounded, color: colors.outline),
             ),
           ),
         ),
@@ -154,6 +168,7 @@ class _MessagesScreenState extends State<MessagesScreen> {
   // ── Skeleton ──────────────────────────────────────────────────────
 
   Widget _buildSkeletonList() {
+    final colors = Theme.of(context).colorScheme;
     return SliverList(
       delegate: SliverChildBuilderDelegate(
         (_, __) => Padding(
@@ -161,9 +176,9 @@ class _MessagesScreenState extends State<MessagesScreen> {
           child: Container(
             height: 74,
             decoration: BoxDecoration(
-              color: AppColors.glassWhite,
+              color: colors.surface,
               borderRadius: BorderRadius.circular(20),
-              border: Border.all(color: AppColors.glassBorder, width: 1.5),
+              border: Border.all(color: colors.outlineVariant, width: 1.5),
             ),
           )
               .animate(onPlay: (c) => c.repeat(reverse: true))
@@ -177,17 +192,18 @@ class _MessagesScreenState extends State<MessagesScreen> {
   // ── Error / empty ─────────────────────────────────────────────────
 
   Widget _buildErrorState(AppStrings strings) {
+    final colors = Theme.of(context).colorScheme;
     return Padding(
       padding: const EdgeInsets.all(24),
       child: GlassCard(
         child: Column(
           children: [
-            const Icon(Icons.wifi_off_rounded,
-                color: AppColors.textMuted, size: 48),
+            Icon(Icons.wifi_off_rounded,
+                color: colors.outline, size: 48),
             const SizedBox(height: 12),
             Text(strings.errNetwork,
                 style:
-                    const TextStyle(color: AppColors.textSecondary, fontSize: 14),
+                    TextStyle(color: colors.onSurfaceVariant, fontSize: 14),
                 textAlign: TextAlign.center),
             const SizedBox(height: 16),
             GestureDetector(
@@ -196,12 +212,12 @@ class _MessagesScreenState extends State<MessagesScreen> {
                 padding: const EdgeInsets.symmetric(
                     horizontal: 24, vertical: 10),
                 decoration: BoxDecoration(
-                  gradient: AppColors.blueGradient,
+                  gradient: AppGradients.primary(colors),
                   borderRadius: BorderRadius.circular(12),
                 ),
                 child: Text(strings.retry,
-                    style: const TextStyle(
-                        color: AppColors.ivory,
+                    style: TextStyle(
+                        color: colors.onPrimary,
                         fontSize: 14,
                         fontWeight: FontWeight.w600)),
               ),
@@ -213,15 +229,16 @@ class _MessagesScreenState extends State<MessagesScreen> {
   }
 
   Widget _buildEmptyState(AppStrings strings) {
+    final colors = Theme.of(context).colorScheme;
     return Padding(
       padding: const EdgeInsets.symmetric(vertical: 60),
       child: Column(
         children: [
-          const Icon(Icons.chat_bubble_outline_rounded,
-              size: 64, color: AppColors.textMuted),
+          Icon(Icons.chat_bubble_outline_rounded,
+              size: 64, color: colors.outline),
           const SizedBox(height: 16),
           Text(strings.noMessages,
-              style: const TextStyle(color: AppColors.textMuted, fontSize: 16)),
+              style: TextStyle(color: colors.outline, fontSize: 16)),
         ],
       ),
     );
@@ -231,6 +248,7 @@ class _MessagesScreenState extends State<MessagesScreen> {
 
   Widget _buildThreadItem(
       ThreadModel thread, int index, AppStrings strings) {
+    final colors = Theme.of(context).colorScheme;
     final hasUnread = thread.unreadCount > 0;
     final otherName = thread.otherParticipantName(_currentUserId);
     final isOnline = thread.participants
@@ -245,8 +263,8 @@ class _MessagesScreenState extends State<MessagesScreen> {
       child: GlassCard(
         padding: const EdgeInsets.all(14),
         borderColor:
-            hasUnread ? AppColors.glassBorderBlue : AppColors.glassBorder,
-        glassColor: hasUnread ? AppColors.glassBlue : AppColors.glassWhite,
+            hasUnread ? colors.primary.withValues(alpha: 0.20) : colors.outlineVariant,
+        glassColor: hasUnread ? colors.primary.withValues(alpha: 0.08) : colors.surface,
         onTap: () => _openThread(thread),
         child: Row(
           children: [
@@ -257,11 +275,11 @@ class _MessagesScreenState extends State<MessagesScreen> {
                   width: 50,
                   height: 50,
                   decoration: BoxDecoration(
-                    gradient: AppColors.blueGradient,
+                    gradient: AppGradients.primary(colors),
                     shape: BoxShape.circle,
                     boxShadow: [
                       BoxShadow(
-                        color: AppColors.deepBlue.withValues(alpha: 0.3),
+                        color: colors.primary.withValues(alpha: 0.3),
                         blurRadius: 10,
                       ),
                     ],
@@ -271,8 +289,8 @@ class _MessagesScreenState extends State<MessagesScreen> {
                       otherName.isNotEmpty
                           ? otherName[0].toUpperCase()
                           : '?',
-                      style: const TextStyle(
-                        color: AppColors.ivory,
+                      style: TextStyle(
+                        color: colors.onPrimary,
                         fontSize: 20,
                         fontWeight: FontWeight.w700,
                       ),
@@ -290,7 +308,7 @@ class _MessagesScreenState extends State<MessagesScreen> {
                         color: const Color(0xFF4CAF50),
                         shape: BoxShape.circle,
                         border:
-                            Border.all(color: AppColors.bgDark, width: 2),
+                            Border.all(color: colors.surfaceContainerHighest, width: 2),
                       ),
                     ),
                   ),
@@ -307,7 +325,7 @@ class _MessagesScreenState extends State<MessagesScreen> {
                       Text(
                         otherName,
                         style: TextStyle(
-                          color: AppColors.textPrimary,
+                          color: colors.onSurface,
                           fontSize: 14,
                           fontWeight: hasUnread
                               ? FontWeight.w700
@@ -319,8 +337,8 @@ class _MessagesScreenState extends State<MessagesScreen> {
                         timeStr,
                         style: TextStyle(
                           color: hasUnread
-                              ? AppColors.deepBlue
-                              : AppColors.textMuted,
+                              ? colors.primary
+                              : colors.outline,
                           fontSize: 11,
                           fontWeight: hasUnread
                               ? FontWeight.w600
@@ -343,8 +361,8 @@ class _MessagesScreenState extends State<MessagesScreen> {
                                   : 'Start a conversation'),
                           style: TextStyle(
                             color: hasUnread
-                                ? AppColors.textSecondary
-                                : AppColors.textMuted,
+                                ? colors.onSurfaceVariant
+                                : colors.outline,
                             fontSize: 12,
                             fontWeight: hasUnread
                                 ? FontWeight.w500
@@ -360,14 +378,14 @@ class _MessagesScreenState extends State<MessagesScreen> {
                           width: 20,
                           height: 20,
                           decoration: BoxDecoration(
-                            gradient: AppColors.blueGradient,
+                            gradient: AppGradients.primary(colors),
                             shape: BoxShape.circle,
                           ),
                           child: Center(
                             child: Text(
                               '${thread.unreadCount > 9 ? '9+' : thread.unreadCount}',
-                              style: const TextStyle(
-                                  color: AppColors.ivory,
+                              style: TextStyle(
+                                  color: colors.onPrimary,
                                   fontSize: 10,
                                   fontWeight: FontWeight.w700),
                             ),

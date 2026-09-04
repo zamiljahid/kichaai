@@ -66,8 +66,13 @@
 		<string>UIInterfaceOrientationLandscapeLeft</string>
 		<string>UIInterfaceOrientationLandscapeRight</string>
 	</array>
+	<!-- iOS OAuth client for bundle com.kichaai.app in Firebase project ki-chaai
+	     (635941830068). The previous value belonged to project 722468376620, an
+	     unrelated GCP project this app has no client in, so the iOS SDK could
+	     never mint a usable token. Must stay in the same project as the Android
+	     client and the web serverClientId in AuthService. -->
 	<key>GIDClientID</key>
-	<string>722468376620-tgjc8u3qomk7r2p1q9td4l74fo4f1jru.apps.googleusercontent.com</string>
+	<string>635941830068-6r3qrip9832datf0p11ef8kabf36lqsg.apps.googleusercontent.com</string>
 	<key>UIBackgroundModes</key>
 	<array>
 		<string>remote-notification</string>
@@ -88,9 +93,11 @@
 	<key>CFBundleURLTypes</key>
 	<array>
 		<dict>
+			<key>CFBundleURLName</key>
+			<string>com.kichaai.google-signin</string>
 			<key>CFBundleURLSchemes</key>
 			<array>
-				<string>com.googleusercontent.apps.722468376620-tgjc8u3qomk7r2p1q9td4l74fo4f1jru</string>
+				<string>com.googleusercontent.apps.635941830068-6r3qrip9832datf0p11ef8kabf36lqsg</string>
 			</array>
 		</dict>
 		<dict>

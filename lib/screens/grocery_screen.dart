@@ -6,7 +6,7 @@ import '../core/network/api_client.dart';
 import '../core/utils/app_strings.dart';
 import '../models/groceries_model.dart';
 import '../services/groceries_service.dart';
-import '../theme/app_theme.dart';
+import '../theme/app_gradients.dart';
 import '../widgets/animated_background.dart';
 import '../widgets/glass_button.dart';
 import '../widgets/glass_card.dart';
@@ -169,9 +169,10 @@ class _GroceryScreenState extends State<GroceryScreen> {
   }
 
   void _showError(String msg) {
+    final colors = Theme.of(context).colorScheme;
     if (!mounted) return;
     ScaffoldMessenger.of(context).showSnackBar(SnackBar(
-      content: Text(msg, style: const TextStyle(color: AppColors.ivory)),
+      content: Text(msg, style: TextStyle(color: colors.onPrimary)),
       backgroundColor: const Color(0xFFEF4444),
       behavior: SnackBarBehavior.floating,
       shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
@@ -181,6 +182,7 @@ class _GroceryScreenState extends State<GroceryScreen> {
 
   @override
   Widget build(BuildContext context) {
+    final colors = Theme.of(context).colorScheme;
     _isBn = context.watch<LanguageNotifier>().isBengali;
     final itemCount = _cart?.itemCount ?? 0;
     final total = _cart?.totalAmount ?? 0;
@@ -196,16 +198,16 @@ class _GroceryScreenState extends State<GroceryScreen> {
               ],
               Expanded(
                 child: _isLoadingHubs
-                    ? const Center(child: CircularProgressIndicator(color: AppColors.deepBlue))
+                    ? Center(child: CircularProgressIndicator(color: colors.primary))
                     : _selectedHub == null
                         ? _buildHubPicker()
                         : _isLoading
-                            ? const Center(child: CircularProgressIndicator(color: AppColors.deepBlue))
+                            ? Center(child: CircularProgressIndicator(color: colors.primary))
                             : _products.isEmpty
                                 ? _buildEmpty()
                                 : RefreshIndicator(
                                     onRefresh: _loadProducts,
-                                    color: AppColors.deepBlue,
+                                    color: colors.primary,
                                     child: GridView.builder(
                                       padding: const EdgeInsets.fromLTRB(16, 0, 16, 100),
                                       itemCount: _products.length,
@@ -238,6 +240,7 @@ class _GroceryScreenState extends State<GroceryScreen> {
   }
 
   Widget _buildHeader(BuildContext context, int itemCount) {
+    final colors = Theme.of(context).colorScheme;
     return Padding(
       padding: const EdgeInsets.fromLTRB(20, 16, 20, 16),
       child: Row(
@@ -246,17 +249,17 @@ class _GroceryScreenState extends State<GroceryScreen> {
             onTap: () => Navigator.of(context).pop(),
             child: Container(
               width: 40, height: 40,
-              decoration: BoxDecoration(color: AppColors.glassWhite, borderRadius: BorderRadius.circular(12), border: Border.all(color: AppColors.glassBorder, width: 1.5)),
-              child: const Icon(Icons.arrow_back_ios_new_rounded, color: AppColors.textPrimary, size: 18),
+              decoration: BoxDecoration(color: colors.surface, borderRadius: BorderRadius.circular(12), border: Border.all(color: colors.outlineVariant, width: 1.5)),
+              child: Icon(Icons.arrow_back_ios_new_rounded, color: colors.onSurface, size: 18),
             ),
           ),
           const SizedBox(width: 16),
-          Text(_isBn ? 'গ্রোসারি' : 'Groceries', style: const TextStyle(color: AppColors.textPrimary, fontSize: 18, fontWeight: FontWeight.w700)),
+          Text(_isBn ? 'গ্রোসারি' : 'Groceries', style: TextStyle(color: colors.onSurface, fontSize: 18, fontWeight: FontWeight.w700)),
           const Spacer(),
           Stack(
             clipBehavior: Clip.none,
             children: [
-              const Icon(Icons.shopping_basket_rounded, color: AppColors.deepBlue, size: 28),
+              Icon(Icons.shopping_basket_rounded, color: colors.primary, size: 28),
               if (itemCount > 0)
                 Positioned(
                   top: -6, right: -6,
@@ -276,9 +279,9 @@ class _GroceryScreenState extends State<GroceryScreen> {
                 width: 38,
                 height: 38,
                 decoration: BoxDecoration(
-                  color: AppColors.glassWhite,
+                  color: colors.surface,
                   borderRadius: BorderRadius.circular(12),
-                  border: Border.all(color: AppColors.glassBorder),
+                  border: Border.all(color: colors.outlineVariant),
                 ),
                 child: const Icon(Icons.delete_sweep_rounded,
                     color: Color(0xFFEF4444), size: 19),
@@ -293,23 +296,24 @@ class _GroceryScreenState extends State<GroceryScreen> {
   /// Empty the whole cart. Without this the only way out of a wrong cart was to
   /// decrement every line to zero one at a time.
   Future<void> _confirmClearCart() async {
+    final colors = Theme.of(context).colorScheme;
     if (_userId == null) return;
     final ok = await showDialog<bool>(
       context: context,
       builder: (ctx) => AlertDialog(
-        backgroundColor: AppColors.bgMid,
+        backgroundColor: colors.surface,
         title: Text(_isBn ? 'কার্ট খালি করবেন?' : 'Clear the cart?',
-            style: const TextStyle(
-                color: AppColors.textPrimary, fontSize: 17, fontWeight: FontWeight.w700)),
+            style: TextStyle(
+                color: colors.onSurface, fontSize: 17, fontWeight: FontWeight.w700)),
         content: Text(
           _isBn ? 'কার্টের সব পণ্য সরিয়ে ফেলা হবে।' : 'Every item will be removed.',
-          style: const TextStyle(color: AppColors.textSecondary, fontSize: 13),
+          style: TextStyle(color: colors.onSurfaceVariant, fontSize: 13),
         ),
         actions: [
           TextButton(
             onPressed: () => Navigator.pop(ctx, false),
             child: Text(_isBn ? 'বাতিল' : 'Cancel',
-                style: const TextStyle(color: AppColors.textMuted)),
+                style: TextStyle(color: colors.outline)),
           ),
           TextButton(
             onPressed: () => Navigator.pop(ctx, true),
@@ -331,6 +335,7 @@ class _GroceryScreenState extends State<GroceryScreen> {
   }
 
   Widget _buildHubBar() {
+    final colors = Theme.of(context).colorScheme;
     final hub = _selectedHub!;
     return Padding(
       padding: const EdgeInsets.fromLTRB(20, 0, 20, 12),
@@ -339,26 +344,26 @@ class _GroceryScreenState extends State<GroceryScreen> {
         child: Container(
           padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 10),
           decoration: BoxDecoration(
-            color: AppColors.glassWhite,
+            color: colors.surface,
             borderRadius: BorderRadius.circular(12),
-            border: Border.all(color: AppColors.glassBorder),
+            border: Border.all(color: colors.outlineVariant),
           ),
           child: Row(
             children: [
-              const Icon(Icons.storefront_rounded, color: AppColors.deepBlue, size: 18),
+              Icon(Icons.storefront_rounded, color: colors.primary, size: 18),
               const SizedBox(width: 8),
               Expanded(
                 child: Column(
                   crossAxisAlignment: CrossAxisAlignment.start,
                   children: [
-                    Text(hub.name, style: const TextStyle(color: AppColors.textPrimary, fontSize: 13, fontWeight: FontWeight.w700)),
-                    Text(_isBn ? 'এই হাব থেকে পণ্য দেখানো হচ্ছে' : 'Showing products from this hub', style: const TextStyle(color: AppColors.textMuted, fontSize: 10.5)),
+                    Text(hub.name, style: TextStyle(color: colors.onSurface, fontSize: 13, fontWeight: FontWeight.w700)),
+                    Text(_isBn ? 'এই হাব থেকে পণ্য দেখানো হচ্ছে' : 'Showing products from this hub', style: TextStyle(color: colors.outline, fontSize: 10.5)),
                   ],
                 ),
               ),
-              Text(_isBn ? 'পরিবর্তন' : 'Change', style: const TextStyle(color: AppColors.deepBlue, fontSize: 12, fontWeight: FontWeight.w700)),
+              Text(_isBn ? 'পরিবর্তন' : 'Change', style: TextStyle(color: colors.primary, fontSize: 12, fontWeight: FontWeight.w700)),
               const SizedBox(width: 2),
-              const Icon(Icons.chevron_right_rounded, color: AppColors.deepBlue, size: 16),
+              Icon(Icons.chevron_right_rounded, color: colors.primary, size: 16),
             ],
           ),
         ),
@@ -367,20 +372,21 @@ class _GroceryScreenState extends State<GroceryScreen> {
   }
 
   Widget _buildHubPicker() {
+    final colors = Theme.of(context).colorScheme;
     if (_hubs.isEmpty) {
       return Center(
         child: Padding(
           padding: const EdgeInsets.all(24),
-          child: Text(_isBn ? 'কোনো হাব পাওয়া যায়নি' : 'No hub found', style: const TextStyle(color: AppColors.textMuted, fontSize: 14)),
+          child: Text(_isBn ? 'কোনো হাব পাওয়া যায়নি' : 'No hub found', style: TextStyle(color: colors.outline, fontSize: 14)),
         ),
       );
     }
     return ListView(
       padding: const EdgeInsets.fromLTRB(20, 8, 20, 100),
       children: [
-        Text(_isBn ? 'আপনার হাব বেছে নিন' : 'Choose your hub', style: const TextStyle(color: AppColors.textPrimary, fontSize: 17, fontWeight: FontWeight.w700)),
+        Text(_isBn ? 'আপনার হাব বেছে নিন' : 'Choose your hub', style: TextStyle(color: colors.onSurface, fontSize: 17, fontWeight: FontWeight.w700)),
         const SizedBox(height: 4),
-        Text(_isBn ? 'যে হাব থেকে পণ্য সংগ্রহ/ডেলিভারি হবে, সেটা আগে বেছে নিন' : 'Choose which hub your order will be fulfilled/delivered from', style: const TextStyle(color: AppColors.textMuted, fontSize: 12.5)),
+        Text(_isBn ? 'যে হাব থেকে পণ্য সংগ্রহ/ডেলিভারি হবে, সেটা আগে বেছে নিন' : 'Choose which hub your order will be fulfilled/delivered from', style: TextStyle(color: colors.outline, fontSize: 12.5)),
         const SizedBox(height: 16),
         ..._hubs.map((h) => Padding(
               padding: const EdgeInsets.only(bottom: 10),
@@ -390,21 +396,21 @@ class _GroceryScreenState extends State<GroceryScreen> {
                   padding: const EdgeInsets.all(14),
                   child: Row(
                     children: [
-                      const Icon(Icons.storefront_rounded, color: AppColors.deepBlue, size: 22),
+                      Icon(Icons.storefront_rounded, color: colors.primary, size: 22),
                       const SizedBox(width: 12),
                       Expanded(
                         child: Column(
                           crossAxisAlignment: CrossAxisAlignment.start,
                           children: [
-                            Text(h.name, style: const TextStyle(color: AppColors.textPrimary, fontSize: 14, fontWeight: FontWeight.w700)),
-                            Text(h.address, style: const TextStyle(color: AppColors.textMuted, fontSize: 11.5), maxLines: 1, overflow: TextOverflow.ellipsis),
+                            Text(h.name, style: TextStyle(color: colors.onSurface, fontSize: 14, fontWeight: FontWeight.w700)),
+                            Text(h.address, style: TextStyle(color: colors.outline, fontSize: 11.5), maxLines: 1, overflow: TextOverflow.ellipsis),
                           ],
                         ),
                       ),
                       if (h.distanceKm != null)
-                        Text(_isBn ? '${h.distanceKm!.toStringAsFixed(1)} কিমি' : '${h.distanceKm!.toStringAsFixed(1)} km', style: const TextStyle(color: AppColors.deepBlue, fontSize: 12, fontWeight: FontWeight.w700))
+                        Text(_isBn ? '${h.distanceKm!.toStringAsFixed(1)} কিমি' : '${h.distanceKm!.toStringAsFixed(1)} km', style: TextStyle(color: colors.primary, fontSize: 12, fontWeight: FontWeight.w700))
                       else
-                        const Icon(Icons.chevron_right_rounded, color: AppColors.textMuted, size: 18),
+                        Icon(Icons.chevron_right_rounded, color: colors.outline, size: 18),
                     ],
                   ),
                 ),
@@ -429,6 +435,7 @@ class _GroceryScreenState extends State<GroceryScreen> {
   }
 
   Widget _categoryChip(String? id, String label) {
+    final colors = Theme.of(context).colorScheme;
     final selected = _selectedCategoryId == id;
     return Padding(
       padding: const EdgeInsets.only(right: 8, bottom: 8),
@@ -437,18 +444,19 @@ class _GroceryScreenState extends State<GroceryScreen> {
         child: Container(
           padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
           decoration: BoxDecoration(
-            gradient: selected ? AppColors.blueGradient : null,
-            color: selected ? null : AppColors.glassWhite,
+            gradient: selected ? AppGradients.primary(colors) : null,
+            color: selected ? null : colors.surface,
             borderRadius: BorderRadius.circular(100),
-            border: Border.all(color: selected ? Colors.transparent : AppColors.glassBorder),
+            border: Border.all(color: selected ? Colors.transparent : colors.outlineVariant),
           ),
-          child: Text(label, style: TextStyle(color: selected ? Colors.white : AppColors.textSecondary, fontSize: 13, fontWeight: FontWeight.w600)),
+          child: Text(label, style: TextStyle(color: selected ? Colors.white : colors.onSurfaceVariant, fontSize: 13, fontWeight: FontWeight.w600)),
         ),
       ),
     );
   }
 
   Widget _buildProductCard(GroceryProductModel p, int index) {
+    final colors = Theme.of(context).colorScheme;
     final qty = _qtyOf(p.id);
     final busy = _busyProductIds.contains(p.id);
 
@@ -460,24 +468,24 @@ class _GroceryScreenState extends State<GroceryScreen> {
           Expanded(
             child: Container(
               decoration: BoxDecoration(
-                gradient: LinearGradient(colors: [AppColors.deepBlue.withOpacity(0.2), AppColors.deepBlue.withOpacity(0.05)]),
+                gradient: LinearGradient(colors: [colors.primary.withOpacity(0.2), colors.primary.withOpacity(0.05)]),
                 borderRadius: BorderRadius.circular(10),
               ),
               child: p.imageUrl?.isNotEmpty ?? false
                   ? ClipRRect(
                       borderRadius: BorderRadius.circular(10),
                       child: Image.network(p.imageUrl!, fit: BoxFit.cover, width: double.infinity,
-                        errorBuilder: (_, __, ___) => const Center(child: Icon(Icons.image_rounded, color: AppColors.textMuted, size: 36))),
+                        errorBuilder: (_, __, ___) => Center(child: Icon(Icons.image_rounded, color: colors.outline, size: 36))),
                     )
-                  : const Center(child: Icon(Icons.shopping_basket_outlined, color: AppColors.textMuted, size: 36)),
+                  : Center(child: Icon(Icons.shopping_basket_outlined, color: colors.outline, size: 36)),
             ),
           ),
           const SizedBox(height: 8),
-          Text(p.name, style: const TextStyle(color: AppColors.textPrimary, fontSize: 13, fontWeight: FontWeight.w600), maxLines: 2, overflow: TextOverflow.ellipsis),
+          Text(p.name, style: TextStyle(color: colors.onSurface, fontSize: 13, fontWeight: FontWeight.w600), maxLines: 2, overflow: TextOverflow.ellipsis),
           const SizedBox(height: 4),
-          Text('৳ ${p.price.toStringAsFixed(0)}/${p.unit}', style: const TextStyle(color: AppColors.deepBlue, fontSize: 13, fontWeight: FontWeight.w700)),
+          Text('৳ ${p.price.toStringAsFixed(0)}/${p.unit}', style: TextStyle(color: colors.primary, fontSize: 13, fontWeight: FontWeight.w700)),
           if (p.hubName?.isNotEmpty ?? false)
-            Text(p.hubName!, style: const TextStyle(color: AppColors.textMuted, fontSize: 10.5), maxLines: 1, overflow: TextOverflow.ellipsis),
+            Text(p.hubName!, style: TextStyle(color: colors.outline, fontSize: 10.5), maxLines: 1, overflow: TextOverflow.ellipsis),
           if (!p.inStock) ...[
             const SizedBox(height: 4),
             Text(_isBn ? 'স্টক নেই' : 'Out of stock', style: const TextStyle(color: Color(0xFFEF4444), fontSize: 11, fontWeight: FontWeight.w600)),
@@ -490,11 +498,11 @@ class _GroceryScreenState extends State<GroceryScreen> {
               onTap: busy ? null : () => _addToCart(p.id),
               child: Container(
                 height: 32,
-                decoration: BoxDecoration(gradient: AppColors.blueGradient, borderRadius: BorderRadius.circular(8)),
+                decoration: BoxDecoration(gradient: AppGradients.primary(colors), borderRadius: BorderRadius.circular(8)),
                 child: Center(
                   child: busy
-                      ? const SizedBox(width: 14, height: 14, child: CircularProgressIndicator(strokeWidth: 2, color: AppColors.ivory))
-                      : const Icon(Icons.add_rounded, color: AppColors.ivory, size: 20),
+                      ? SizedBox(width: 14, height: 14, child: CircularProgressIndicator(strokeWidth: 2, color: colors.onPrimary))
+                      : Icon(Icons.add_rounded, color: colors.onPrimary, size: 20),
                 ),
               ),
             )
@@ -505,17 +513,17 @@ class _GroceryScreenState extends State<GroceryScreen> {
                   onTap: busy ? null : () => _decrement(p.id),
                   child: Container(
                     width: 30, height: 30,
-                    decoration: BoxDecoration(color: AppColors.glassWhite, borderRadius: BorderRadius.circular(8), border: Border.all(color: AppColors.glassBorder)),
-                    child: const Icon(Icons.remove_rounded, color: AppColors.textPrimary, size: 16),
+                    decoration: BoxDecoration(color: colors.surface, borderRadius: BorderRadius.circular(8), border: Border.all(color: colors.outlineVariant)),
+                    child: Icon(Icons.remove_rounded, color: colors.onSurface, size: 16),
                   ),
                 ),
-                Expanded(child: Center(child: Text('$qty', style: const TextStyle(color: AppColors.textPrimary, fontSize: 14, fontWeight: FontWeight.w700)))),
+                Expanded(child: Center(child: Text('$qty', style: TextStyle(color: colors.onSurface, fontSize: 14, fontWeight: FontWeight.w700)))),
                 GestureDetector(
                   onTap: busy ? null : () => _addToCart(p.id),
                   child: Container(
                     width: 30, height: 30,
-                    decoration: BoxDecoration(gradient: AppColors.blueGradient, borderRadius: BorderRadius.circular(8)),
-                    child: const Icon(Icons.add_rounded, color: AppColors.ivory, size: 16),
+                    decoration: BoxDecoration(gradient: AppGradients.primary(colors), borderRadius: BorderRadius.circular(8)),
+                    child: Icon(Icons.add_rounded, color: colors.onPrimary, size: 16),
                   ),
                 ),
               ],
@@ -528,13 +536,16 @@ class _GroceryScreenState extends State<GroceryScreen> {
         .scale(begin: const Offset(0.95, 0.95));
   }
 
-  Widget _buildEmpty() => Center(
+  Widget _buildEmpty() {
+    final colors = Theme.of(context).colorScheme;
+    return Center(
     child: Column(mainAxisSize: MainAxisSize.min, children: [
-      const Icon(Icons.shopping_basket_outlined, color: AppColors.textMuted, size: 56),
+      Icon(Icons.shopping_basket_outlined, color: colors.outline, size: 56),
       const SizedBox(height: 12),
-      Text(_isBn ? 'কোনো পণ্য পাওয়া যায়নি' : 'No products found', style: const TextStyle(color: AppColors.textMuted, fontSize: 14)),
+      Text(_isBn ? 'কোনো পণ্য পাওয়া যায়নি' : 'No products found', style: TextStyle(color: colors.outline, fontSize: 14)),
     ]),
   );
+  }
 }
 
 extension _FirstOrNull<T> on Iterable<T> {

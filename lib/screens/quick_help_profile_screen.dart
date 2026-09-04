@@ -3,7 +3,6 @@ import 'package:provider/provider.dart';
 import '../core/network/api_client.dart';
 import '../core/utils/app_strings.dart';
 import '../services/onboarding_service.dart';
-import '../theme/app_theme.dart';
 import '../widgets/animated_background.dart';
 import '../widgets/glass_button.dart';
 import 'photographer_profile_screen.dart' show sectionCard, labeledField;
@@ -74,6 +73,7 @@ class _QuickHelpProfileScreenState extends State<QuickHelpProfileScreen> {
 
   @override
   Widget build(BuildContext context) {
+    final colors = Theme.of(context).colorScheme;
     _isBn = context.watch<LanguageNotifier>().isBengali;
     return Scaffold(
       body: AnimatedBackground(
@@ -83,8 +83,8 @@ class _QuickHelpProfileScreenState extends State<QuickHelpProfileScreen> {
               Padding(
                 padding: const EdgeInsets.fromLTRB(8, 8, 16, 4),
                 child: Row(children: [
-                  IconButton(icon: const Icon(Icons.arrow_back_rounded, color: AppColors.textPrimary), onPressed: () => Navigator.of(context).pop()),
-                  Text(_isBn ? 'কুইক হেল্প প্রোফাইল' : 'Quick Help Profile', style: const TextStyle(color: AppColors.textPrimary, fontSize: 18, fontWeight: FontWeight.w700)),
+                  IconButton(icon: Icon(Icons.arrow_back_rounded, color: colors.onSurface), onPressed: () => Navigator.of(context).pop()),
+                  Text(_isBn ? 'কুইক হেল্প প্রোফাইল' : 'Quick Help Profile', style: TextStyle(color: colors.onSurface, fontSize: 18, fontWeight: FontWeight.w700)),
                 ]),
               ),
               Expanded(
@@ -92,19 +92,21 @@ class _QuickHelpProfileScreenState extends State<QuickHelpProfileScreen> {
                   padding: const EdgeInsets.fromLTRB(16, 8, 16, 32),
                   child: Column(crossAxisAlignment: CrossAxisAlignment.stretch, children: [
                     sectionCard(
+                      colors: colors,
                       title: _isBn ? 'কোন ইনস্টিটিউশনে পড়েন/কাজ করেন (ঐচ্ছিক)' : 'Institution / employer affiliation (optional)',
-                      child: labeledField(
+                      child: labeledField(colors: colors, 
                         controller: _institutionCtrl,
                         hint: _isBn ? 'যেমন: ঢাকা কলেজ, XYZ কোম্পানি' : 'e.g. Dhaka College, XYZ Company',
                       ),
                     ),
                     const SizedBox(height: 14),
                     sectionCard(
+                      colors: colors,
                       title: _isBn ? 'কোন কোন কাজ করতে পারেন' : 'Tasks you can do',
                       child: Column(crossAxisAlignment: CrossAxisAlignment.start, children: [
                         for (var i = 0; i < _taskCtrls.length; i++) ...[
                           if (i > 0) const SizedBox(height: 10),
-                          labeledField(
+                          labeledField(colors: colors, 
                             controller: _taskCtrls[i],
                             hint: i == 0
                                 ? (_isBn ? 'কাজ ১ (আবশ্যক)' : 'Task 1 (required)')

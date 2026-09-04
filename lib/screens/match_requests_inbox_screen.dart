@@ -6,7 +6,7 @@ import '../core/network/api_client.dart';
 import '../core/utils/app_strings.dart';
 import '../models/matchmaking_model.dart';
 import '../services/matchmaking_service.dart';
-import '../theme/app_theme.dart';
+import '../theme/app_gradients.dart';
 import '../widgets/animated_background.dart';
 import '../widgets/glass_card.dart';
 import '../widgets/glass_button.dart';
@@ -128,9 +128,10 @@ class _MatchRequestsInboxScreenState extends State<MatchRequestsInboxScreen> {
   }
 
   void _showError(String msg) {
+    final colors = Theme.of(context).colorScheme;
     if (!mounted) return;
     ScaffoldMessenger.of(context).showSnackBar(SnackBar(
-      content: Text(msg, style: const TextStyle(color: AppColors.ivory)),
+      content: Text(msg, style: TextStyle(color: colors.onPrimary)),
       backgroundColor: const Color(0xFFEF4444),
       behavior: SnackBarBehavior.floating,
       shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
@@ -139,9 +140,10 @@ class _MatchRequestsInboxScreenState extends State<MatchRequestsInboxScreen> {
   }
 
   void _showInfo(String msg) {
+    final colors = Theme.of(context).colorScheme;
     if (!mounted) return;
     ScaffoldMessenger.of(context).showSnackBar(SnackBar(
-      content: Text(msg, style: const TextStyle(color: AppColors.ivory, fontWeight: FontWeight.w600)),
+      content: Text(msg, style: TextStyle(color: colors.onPrimary, fontWeight: FontWeight.w600)),
       backgroundColor: const Color(0xFF22C55E),
       behavior: SnackBarBehavior.floating,
       shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
@@ -162,6 +164,7 @@ class _MatchRequestsInboxScreenState extends State<MatchRequestsInboxScreen> {
   }
 
   void _openResponseSheet(MatchRequestModel request) {
+    final colors = Theme.of(context).colorScheme;
     final coverController = TextEditingController();
     final amountController = TextEditingController();
     String amountType = 'monthly';
@@ -175,8 +178,8 @@ class _MatchRequestsInboxScreenState extends State<MatchRequestsInboxScreen> {
         builder: (ctx, setSheetState) => Padding(
           padding: EdgeInsets.only(bottom: MediaQuery.of(ctx).viewInsets.bottom),
           child: Container(
-            decoration: const BoxDecoration(
-              color: AppColors.bgMid,
+            decoration: BoxDecoration(
+              color: colors.surface,
               borderRadius: BorderRadius.vertical(top: Radius.circular(24)),
             ),
             padding: const EdgeInsets.fromLTRB(20, 16, 20, 28),
@@ -187,32 +190,32 @@ class _MatchRequestsInboxScreenState extends State<MatchRequestsInboxScreen> {
                 Center(
                   child: Container(
                     width: 36, height: 4,
-                    decoration: BoxDecoration(color: AppColors.glassBorder, borderRadius: BorderRadius.circular(2)),
+                    decoration: BoxDecoration(color: colors.outlineVariant, borderRadius: BorderRadius.circular(2)),
                   ),
                 ),
                 const SizedBox(height: 16),
-                Text(request.title, style: const TextStyle(color: AppColors.textPrimary, fontSize: 16, fontWeight: FontWeight.w700)),
+                Text(request.title, style: TextStyle(color: colors.onSurface, fontSize: 16, fontWeight: FontWeight.w700)),
                 const SizedBox(height: 4),
-                Text(request.description, style: const TextStyle(color: AppColors.textMuted, fontSize: 13, height: 1.4)),
+                Text(request.description, style: TextStyle(color: colors.outline, fontSize: 13, height: 1.4)),
                 const SizedBox(height: 18),
-                Text(_isBn ? 'আপনার বার্তা' : 'Your message', style: const TextStyle(color: AppColors.textSecondary, fontSize: 12.5, fontWeight: FontWeight.w600)),
+                Text(_isBn ? 'আপনার বার্তা' : 'Your message', style: TextStyle(color: colors.onSurfaceVariant, fontSize: 12.5, fontWeight: FontWeight.w600)),
                 const SizedBox(height: 8),
                 TextField(
                   controller: coverController,
                   maxLines: 3,
-                  style: const TextStyle(color: AppColors.textPrimary, fontSize: 14),
+                  style: TextStyle(color: colors.onSurface, fontSize: 14),
                   decoration: InputDecoration(hintText: _isBn ? 'নিজের সম্পর্কে ও অভিজ্ঞতা লিখুন...' : 'Write about yourself and your experience...'),
                 ),
                 const SizedBox(height: 14),
-                Text(_isBn ? 'আপনার মূল্য (৳)' : 'Your price (৳)', style: const TextStyle(color: AppColors.textSecondary, fontSize: 12.5, fontWeight: FontWeight.w600)),
+                Text(_isBn ? 'আপনার মূল্য (৳)' : 'Your price (৳)', style: TextStyle(color: colors.onSurfaceVariant, fontSize: 12.5, fontWeight: FontWeight.w600)),
                 const SizedBox(height: 8),
                 TextField(
                   controller: amountController,
                   keyboardType: TextInputType.number,
-                  style: const TextStyle(color: AppColors.textPrimary, fontSize: 14),
+                  style: TextStyle(color: colors.onSurface, fontSize: 14),
                   decoration: InputDecoration(
                     hintText: _isBn ? 'যেমন ৩০০০' : 'e.g. 3000',
-                    prefixIcon: const Icon(Icons.currency_exchange_rounded, color: AppColors.textMuted, size: 18),
+                    prefixIcon: Icon(Icons.currency_exchange_rounded, color: colors.outline, size: 18),
                   ),
                 ),
                 const SizedBox(height: 10),
@@ -229,12 +232,12 @@ class _MatchRequestsInboxScreenState extends State<MatchRequestsInboxScreen> {
                       child: Container(
                         padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 7),
                         decoration: BoxDecoration(
-                          gradient: active ? AppColors.blueGradient : null,
-                          color: active ? null : AppColors.glassWhite,
+                          gradient: active ? AppGradients.primary(colors) : null,
+                          color: active ? null : colors.surface,
                           borderRadius: BorderRadius.circular(16),
-                          border: Border.all(color: active ? AppColors.deepBlue : AppColors.glassBorder),
+                          border: Border.all(color: active ? colors.primary : colors.outlineVariant),
                         ),
-                        child: Text(opt.$2, style: TextStyle(color: active ? AppColors.ivory : AppColors.textSecondary, fontSize: 12, fontWeight: FontWeight.w600)),
+                        child: Text(opt.$2, style: TextStyle(color: active ? colors.onPrimary : colors.onSurfaceVariant, fontSize: 12, fontWeight: FontWeight.w600)),
                       ),
                     );
                   }).toList(),
@@ -302,6 +305,7 @@ class _MatchRequestsInboxScreenState extends State<MatchRequestsInboxScreen> {
   }
 
   Widget _buildHeader() {
+    final colors = Theme.of(context).colorScheme;
     return Padding(
       padding: const EdgeInsets.fromLTRB(20, 16, 20, 0),
       child: Row(
@@ -310,14 +314,14 @@ class _MatchRequestsInboxScreenState extends State<MatchRequestsInboxScreen> {
             onTap: () => Navigator.of(context).pop(),
             child: Container(
               width: 40, height: 40,
-              decoration: BoxDecoration(color: AppColors.glassWhite, borderRadius: BorderRadius.circular(12), border: Border.all(color: AppColors.glassBorder, width: 1.5)),
-              child: const Icon(Icons.arrow_back_ios_new_rounded, color: AppColors.textPrimary, size: 18),
+              decoration: BoxDecoration(color: colors.surface, borderRadius: BorderRadius.circular(12), border: Border.all(color: colors.outlineVariant, width: 1.5)),
+              child: Icon(Icons.arrow_back_ios_new_rounded, color: colors.onSurface, size: 18),
             ),
           ),
           const SizedBox(width: 16),
           Column(crossAxisAlignment: CrossAxisAlignment.start, children: [
-            Text(_isBn ? 'ম্যাচ অনুরোধ' : 'Match Requests', style: const TextStyle(color: AppColors.textPrimary, fontSize: 18, fontWeight: FontWeight.w700)),
-            Text(_isBn ? 'টিউটর • পেট কেয়ার • মেস • গৃহকর্মী' : 'Tutor • Pet Care • Mess • Household Help', style: const TextStyle(color: AppColors.textMuted, fontSize: 12)),
+            Text(_isBn ? 'ম্যাচ অনুরোধ' : 'Match Requests', style: TextStyle(color: colors.onSurface, fontSize: 18, fontWeight: FontWeight.w700)),
+            Text(_isBn ? 'টিউটর • পেট কেয়ার • মেস • গৃহকর্মী' : 'Tutor • Pet Care • Mess • Household Help', style: TextStyle(color: colors.outline, fontSize: 12)),
           ]),
         ],
       ),
@@ -325,6 +329,7 @@ class _MatchRequestsInboxScreenState extends State<MatchRequestsInboxScreen> {
   }
 
   Widget _buildModeToggle() {
+    final colors = Theme.of(context).colorScheme;
     return Padding(
       padding: const EdgeInsets.symmetric(horizontal: 16),
       child: Row(children: [
@@ -335,11 +340,11 @@ class _MatchRequestsInboxScreenState extends State<MatchRequestsInboxScreen> {
               padding: const EdgeInsets.symmetric(vertical: 10),
               alignment: Alignment.center,
               decoration: BoxDecoration(
-                color: !_showMyResponses ? AppColors.deepBlue : AppColors.glassWhite,
+                color: !_showMyResponses ? colors.primary : colors.surface,
                 borderRadius: const BorderRadius.horizontal(left: Radius.circular(12)),
-                border: Border.all(color: AppColors.glassBorder),
+                border: Border.all(color: colors.outlineVariant),
               ),
-              child: Text(_isBn ? 'খোলা রিকোয়েস্ট' : 'Open requests', style: TextStyle(color: !_showMyResponses ? Colors.white : AppColors.textSecondary, fontSize: 13, fontWeight: FontWeight.w600)),
+              child: Text(_isBn ? 'খোলা রিকোয়েস্ট' : 'Open requests', style: TextStyle(color: !_showMyResponses ? Colors.white : colors.onSurfaceVariant, fontSize: 13, fontWeight: FontWeight.w600)),
             ),
           ),
         ),
@@ -350,11 +355,11 @@ class _MatchRequestsInboxScreenState extends State<MatchRequestsInboxScreen> {
               padding: const EdgeInsets.symmetric(vertical: 10),
               alignment: Alignment.center,
               decoration: BoxDecoration(
-                color: _showMyResponses ? AppColors.deepBlue : AppColors.glassWhite,
+                color: _showMyResponses ? colors.primary : colors.surface,
                 borderRadius: const BorderRadius.horizontal(right: Radius.circular(12)),
-                border: Border.all(color: AppColors.glassBorder),
+                border: Border.all(color: colors.outlineVariant),
               ),
-              child: Text(_isBn ? 'আমার রেসপন্স' : 'My responses', style: TextStyle(color: _showMyResponses ? Colors.white : AppColors.textSecondary, fontSize: 13, fontWeight: FontWeight.w600)),
+              child: Text(_isBn ? 'আমার রেসপন্স' : 'My responses', style: TextStyle(color: _showMyResponses ? Colors.white : colors.onSurfaceVariant, fontSize: 13, fontWeight: FontWeight.w600)),
             ),
           ),
         ),
@@ -363,11 +368,12 @@ class _MatchRequestsInboxScreenState extends State<MatchRequestsInboxScreen> {
   }
 
   Widget _buildMyResponsesBody() {
-    if (_myResponsesLoading) return const Center(child: CircularProgressIndicator(color: AppColors.deepBlue));
-    if (_myResponses.isEmpty) return Center(child: Text(_isBn ? 'আপনি এখনো কোনো রিকোয়েস্টে সাড়া দেননি' : 'You haven\'t responded to any requests yet', style: const TextStyle(color: AppColors.textMuted, fontSize: 13)));
+    final colors = Theme.of(context).colorScheme;
+    if (_myResponsesLoading) return Center(child: CircularProgressIndicator(color: colors.primary));
+    if (_myResponses.isEmpty) return Center(child: Text(_isBn ? 'আপনি এখনো কোনো রিকোয়েস্টে সাড়া দেননি' : 'You haven\'t responded to any requests yet', style: TextStyle(color: colors.outline, fontSize: 13)));
     return RefreshIndicator(
       onRefresh: _loadMyResponses,
-      color: AppColors.deepBlue,
+      color: colors.primary,
       child: ListView.builder(
         padding: const EdgeInsets.fromLTRB(16, 0, 16, 24),
         itemCount: _myResponses.length,
@@ -377,6 +383,7 @@ class _MatchRequestsInboxScreenState extends State<MatchRequestsInboxScreen> {
   }
 
   Widget _buildMyResponseCard(Map<String, dynamic> resp) {
+    final colors = Theme.of(context).colorScheme;
     final req = resp['request'] as Map<String, dynamic>?;
     final status = resp['status'] as String? ?? 'interested';
     final meetRequestedAt = resp['meetRequestedAt'];
@@ -387,19 +394,19 @@ class _MatchRequestsInboxScreenState extends State<MatchRequestsInboxScreen> {
     return Container(
       margin: const EdgeInsets.only(bottom: 10),
       padding: const EdgeInsets.all(14),
-      decoration: BoxDecoration(color: AppColors.bgMid, borderRadius: BorderRadius.circular(14), border: Border.all(color: AppColors.glassBorder)),
+      decoration: BoxDecoration(color: colors.surface, borderRadius: BorderRadius.circular(14), border: Border.all(color: colors.outlineVariant)),
       child: Column(crossAxisAlignment: CrossAxisAlignment.start, children: [
         Row(children: [
-          Expanded(child: Text(req?['title'] as String? ?? '—', style: const TextStyle(color: AppColors.textPrimary, fontWeight: FontWeight.w700))),
+          Expanded(child: Text(req?['title'] as String? ?? '—', style: TextStyle(color: colors.onSurface, fontWeight: FontWeight.w700))),
           Container(
             padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 3),
-            decoration: BoxDecoration(color: AppColors.deepBlue.withValues(alpha: 0.1), borderRadius: BorderRadius.circular(8)),
-            child: Text(status, style: const TextStyle(color: AppColors.deepBlue, fontSize: 10.5, fontWeight: FontWeight.w700)),
+            decoration: BoxDecoration(color: colors.primary.withValues(alpha: 0.1), borderRadius: BorderRadius.circular(8)),
+            child: Text(status, style: TextStyle(color: colors.primary, fontSize: 10.5, fontWeight: FontWeight.w700)),
           ),
         ]),
         if (resp['quotedAmount'] != null) ...[
           const SizedBox(height: 4),
-          Text('৳${resp['quotedAmount']}', style: const TextStyle(color: AppColors.textSecondary, fontSize: 12.5, fontWeight: FontWeight.w600)),
+          Text('৳${resp['quotedAmount']}', style: TextStyle(color: colors.onSurfaceVariant, fontSize: 12.5, fontWeight: FontWeight.w600)),
         ],
         if (meetRequestedAt != null && meetLink == null) ...[
           const SizedBox(height: 10),
@@ -429,6 +436,7 @@ class _MatchRequestsInboxScreenState extends State<MatchRequestsInboxScreen> {
   }
 
   Widget _buildFilterChips() {
+    final colors = Theme.of(context).colorScheme;
     return SizedBox(
       height: 38,
       child: ListView(
@@ -444,12 +452,12 @@ class _MatchRequestsInboxScreenState extends State<MatchRequestsInboxScreen> {
                 duration: const Duration(milliseconds: 160),
                 padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 8),
                 decoration: BoxDecoration(
-                  gradient: active ? AppColors.blueGradient : null,
-                  color: active ? null : AppColors.glassWhite,
+                  gradient: active ? AppGradients.primary(colors) : null,
+                  color: active ? null : colors.surface,
                   borderRadius: BorderRadius.circular(20),
-                  border: Border.all(color: active ? AppColors.deepBlue : AppColors.glassBorder, width: active ? 1.5 : 1),
+                  border: Border.all(color: active ? colors.primary : colors.outlineVariant, width: active ? 1.5 : 1),
                 ),
-                child: Text(_isBn ? f.$2 : f.$3, style: TextStyle(color: active ? AppColors.ivory : AppColors.textSecondary, fontSize: 13, fontWeight: active ? FontWeight.w700 : FontWeight.w500)),
+                child: Text(_isBn ? f.$2 : f.$3, style: TextStyle(color: active ? colors.onPrimary : colors.onSurfaceVariant, fontSize: 13, fontWeight: active ? FontWeight.w700 : FontWeight.w500)),
               ),
             ),
           );
@@ -459,6 +467,7 @@ class _MatchRequestsInboxScreenState extends State<MatchRequestsInboxScreen> {
   }
 
   Widget _buildTutorFilters() {
+    final colors = Theme.of(context).colorScheme;
     return Padding(
       padding: const EdgeInsets.symmetric(horizontal: 16),
       child: Row(children: [
@@ -467,22 +476,22 @@ class _MatchRequestsInboxScreenState extends State<MatchRequestsInboxScreen> {
             height: 38,
             child: TextField(
               controller: _subjectController,
-              style: const TextStyle(color: AppColors.textPrimary, fontSize: 13),
+              style: TextStyle(color: colors.onSurface, fontSize: 13),
               textInputAction: TextInputAction.search,
               onSubmitted: (_) => _load(),
               decoration: InputDecoration(
                 isDense: true,
                 hintText: _isBn ? 'বিষয় খুঁজুন (যেমন Math)...' : 'Search subject (e.g. Math)...',
                 hintStyle: const TextStyle(fontSize: 12.5),
-                prefixIcon: const Icon(Icons.search_rounded, size: 18, color: AppColors.textMuted),
+                prefixIcon: Icon(Icons.search_rounded, size: 18, color: colors.outline),
                 filled: true,
-                fillColor: AppColors.glassWhite,
+                fillColor: colors.surface,
                 contentPadding: const EdgeInsets.symmetric(horizontal: 12),
-                border: OutlineInputBorder(borderRadius: BorderRadius.circular(12), borderSide: const BorderSide(color: AppColors.glassBorder)),
+                border: OutlineInputBorder(borderRadius: BorderRadius.circular(12), borderSide: BorderSide(color: colors.outlineVariant)),
                 suffixIcon: _subjectController.text.isEmpty
                     ? null
                     : IconButton(
-                        icon: const Icon(Icons.close_rounded, size: 16, color: AppColors.textMuted),
+                        icon: Icon(Icons.close_rounded, size: 16, color: colors.outline),
                         onPressed: () { _subjectController.clear(); _load(); },
                       ),
               ),
@@ -500,6 +509,7 @@ class _MatchRequestsInboxScreenState extends State<MatchRequestsInboxScreen> {
   }
 
   Widget _buildHelpingHandFilters() {
+    final colors = Theme.of(context).colorScheme;
     return Padding(
       padding: const EdgeInsets.symmetric(horizontal: 16),
       child: Row(children: [
@@ -508,22 +518,22 @@ class _MatchRequestsInboxScreenState extends State<MatchRequestsInboxScreen> {
             height: 38,
             child: TextField(
               controller: _workTypeController,
-              style: const TextStyle(color: AppColors.textPrimary, fontSize: 13),
+              style: TextStyle(color: colors.onSurface, fontSize: 13),
               textInputAction: TextInputAction.search,
               onSubmitted: (_) => _load(),
               decoration: InputDecoration(
                 isDense: true,
                 hintText: _isBn ? 'কাজের ধরন (যেমন cooking)...' : 'Work type (e.g. cooking)...',
                 hintStyle: const TextStyle(fontSize: 12.5),
-                prefixIcon: const Icon(Icons.search_rounded, size: 18, color: AppColors.textMuted),
+                prefixIcon: Icon(Icons.search_rounded, size: 18, color: colors.outline),
                 filled: true,
-                fillColor: AppColors.glassWhite,
+                fillColor: colors.surface,
                 contentPadding: const EdgeInsets.symmetric(horizontal: 12),
-                border: OutlineInputBorder(borderRadius: BorderRadius.circular(12), borderSide: const BorderSide(color: AppColors.glassBorder)),
+                border: OutlineInputBorder(borderRadius: BorderRadius.circular(12), borderSide: BorderSide(color: colors.outlineVariant)),
                 suffixIcon: _workTypeController.text.isEmpty
                     ? null
                     : IconButton(
-                        icon: const Icon(Icons.close_rounded, size: 16, color: AppColors.textMuted),
+                        icon: Icon(Icons.close_rounded, size: 16, color: colors.outline),
                         onPressed: () { _workTypeController.clear(); _load(); },
                       ),
               ),
@@ -541,6 +551,7 @@ class _MatchRequestsInboxScreenState extends State<MatchRequestsInboxScreen> {
   }
 
   Widget _genderChip(String? value, String label) {
+    final colors = Theme.of(context).colorScheme;
     final active = _genderFilter == value;
     return GestureDetector(
       onTap: () { setState(() => _genderFilter = value); _load(); },
@@ -549,37 +560,38 @@ class _MatchRequestsInboxScreenState extends State<MatchRequestsInboxScreen> {
         padding: const EdgeInsets.symmetric(horizontal: 10),
         alignment: Alignment.center,
         decoration: BoxDecoration(
-          gradient: active ? AppColors.blueGradient : null,
-          color: active ? null : AppColors.glassWhite,
+          gradient: active ? AppGradients.primary(colors) : null,
+          color: active ? null : colors.surface,
           borderRadius: BorderRadius.circular(10),
-          border: Border.all(color: active ? AppColors.deepBlue : AppColors.glassBorder),
+          border: Border.all(color: active ? colors.primary : colors.outlineVariant),
         ),
-        child: Text(label, style: TextStyle(color: active ? AppColors.ivory : AppColors.textSecondary, fontSize: 12, fontWeight: FontWeight.w600)),
+        child: Text(label, style: TextStyle(color: active ? colors.onPrimary : colors.onSurfaceVariant, fontSize: 12, fontWeight: FontWeight.w600)),
       ),
     );
   }
 
   Widget _buildBody() {
+    final colors = Theme.of(context).colorScheme;
     if (_isLoading) {
-      return const Center(child: CircularProgressIndicator(color: AppColors.deepBlue));
+      return Center(child: CircularProgressIndicator(color: colors.primary));
     }
     if (_loadError != null) {
       return Center(
         child: Column(mainAxisSize: MainAxisSize.min, children: [
-          Text(_isBn ? 'লোড করা যায়নি: $_loadError' : 'Could not load: $_loadError', style: const TextStyle(color: AppColors.textMuted, fontSize: 13), textAlign: TextAlign.center),
+          Text(_isBn ? 'লোড করা যায়নি: $_loadError' : 'Could not load: $_loadError', style: TextStyle(color: colors.outline, fontSize: 13), textAlign: TextAlign.center),
           const SizedBox(height: 10),
-          TextButton(onPressed: _load, child: Text(_isBn ? 'আবার চেষ্টা করুন' : 'Try again', style: const TextStyle(color: AppColors.deepBlue))),
+          TextButton(onPressed: _load, child: Text(_isBn ? 'আবার চেষ্টা করুন' : 'Try again', style: TextStyle(color: colors.primary))),
         ]),
       );
     }
     if (_requests.isEmpty) {
       return Center(
-        child: Text(_isBn ? 'এই মুহূর্তে কোনো খোলা অনুরোধ নেই' : 'No open requests right now', style: const TextStyle(color: AppColors.textMuted, fontSize: 13)),
+        child: Text(_isBn ? 'এই মুহূর্তে কোনো খোলা অনুরোধ নেই' : 'No open requests right now', style: TextStyle(color: colors.outline, fontSize: 13)),
       );
     }
     return RefreshIndicator(
       onRefresh: _load,
-      color: AppColors.deepBlue,
+      color: colors.primary,
       child: ListView.builder(
         padding: const EdgeInsets.fromLTRB(16, 0, 16, 24),
         itemCount: _requests.length,
@@ -611,6 +623,7 @@ class _MatchRequestsInboxScreenState extends State<MatchRequestsInboxScreen> {
   };
 
   Widget _tutorDetailsRow(Map<String, dynamic> d) {
+    final colors = Theme.of(context).colorScheme;
     final medium = d['medium'] as String?;
     final bits = <String>[
       if (d['studentClass'] != null) d['studentClass'] as String,
@@ -625,8 +638,8 @@ class _MatchRequestsInboxScreenState extends State<MatchRequestsInboxScreen> {
       runSpacing: 6,
       children: bits.map((b) => Container(
         padding: const EdgeInsets.symmetric(horizontal: 9, vertical: 4),
-        decoration: BoxDecoration(color: AppColors.deepBlue.withValues(alpha: 0.08), borderRadius: BorderRadius.circular(8)),
-        child: Text(b, style: const TextStyle(color: AppColors.deepBlue, fontSize: 11, fontWeight: FontWeight.w600)),
+        decoration: BoxDecoration(color: colors.primary.withValues(alpha: 0.08), borderRadius: BorderRadius.circular(8)),
+        child: Text(b, style: TextStyle(color: colors.primary, fontSize: 11, fontWeight: FontWeight.w600)),
       )).toList(),
     );
   }
@@ -641,6 +654,7 @@ class _MatchRequestsInboxScreenState extends State<MatchRequestsInboxScreen> {
   };
 
   Widget _helpingHandDetailsRow(Map<String, dynamic> d) {
+    final colors = Theme.of(context).colorScheme;
     final workTypes = (d['workTypes'] as List?)?.cast<String>() ?? [];
     final bits = <String>[
       ...workTypes.map((w) => (_isBn ? _workTypeLabels[w] : _workTypeLabelsEn[w]) ?? w),
@@ -654,13 +668,14 @@ class _MatchRequestsInboxScreenState extends State<MatchRequestsInboxScreen> {
       runSpacing: 6,
       children: bits.map((b) => Container(
         padding: const EdgeInsets.symmetric(horizontal: 9, vertical: 4),
-        decoration: BoxDecoration(color: AppColors.deepBlue.withValues(alpha: 0.08), borderRadius: BorderRadius.circular(8)),
-        child: Text(b, style: const TextStyle(color: AppColors.deepBlue, fontSize: 11, fontWeight: FontWeight.w600)),
+        decoration: BoxDecoration(color: colors.primary.withValues(alpha: 0.08), borderRadius: BorderRadius.circular(8)),
+        child: Text(b, style: TextStyle(color: colors.primary, fontSize: 11, fontWeight: FontWeight.w600)),
       )).toList(),
     );
   }
 
   Widget _buildRequestCard(MatchRequestModel r) {
+    final colors = Theme.of(context).colorScheme;
     final budget = r.budgetMin != null || r.budgetMax != null
         ? '৳${(r.budgetMin ?? r.budgetMax)!.toStringAsFixed(0)}${r.budgetMax != null && r.budgetMin != null && r.budgetMax != r.budgetMin ? '-${r.budgetMax!.toStringAsFixed(0)}' : ''}'
         : null;
@@ -672,16 +687,16 @@ class _MatchRequestsInboxScreenState extends State<MatchRequestsInboxScreen> {
           Row(children: [
             Container(
               padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 3),
-              decoration: BoxDecoration(color: AppColors.deepBlue.withValues(alpha: 0.1), borderRadius: BorderRadius.circular(8)),
-              child: Text((_isBn ? _typeLabels[r.requestType] : _typeLabelsEn[r.requestType]) ?? r.requestType, style: const TextStyle(color: AppColors.deepBlue, fontSize: 10.5, fontWeight: FontWeight.w700)),
+              decoration: BoxDecoration(color: colors.primary.withValues(alpha: 0.1), borderRadius: BorderRadius.circular(8)),
+              child: Text((_isBn ? _typeLabels[r.requestType] : _typeLabelsEn[r.requestType]) ?? r.requestType, style: TextStyle(color: colors.primary, fontSize: 10.5, fontWeight: FontWeight.w700)),
             ),
             const Spacer(),
-            Text(_timeAgo(r.createdAt), style: const TextStyle(color: AppColors.textMuted, fontSize: 11)),
+            Text(_timeAgo(r.createdAt), style: TextStyle(color: colors.outline, fontSize: 11)),
           ]),
           const SizedBox(height: 8),
-          Text(r.title, style: const TextStyle(color: AppColors.textPrimary, fontSize: 14.5, fontWeight: FontWeight.w700)),
+          Text(r.title, style: TextStyle(color: colors.onSurface, fontSize: 14.5, fontWeight: FontWeight.w700)),
           const SizedBox(height: 4),
-          Text(r.description, maxLines: 2, overflow: TextOverflow.ellipsis, style: const TextStyle(color: AppColors.textMuted, fontSize: 12.5, height: 1.4)),
+          Text(r.description, maxLines: 2, overflow: TextOverflow.ellipsis, style: TextStyle(color: colors.outline, fontSize: 12.5, height: 1.4)),
           if (r.requestType == 'tutor' && r.tutorDetails != null) ...[
             const SizedBox(height: 8),
             _tutorDetailsRow(r.tutorDetails!),
@@ -693,14 +708,14 @@ class _MatchRequestsInboxScreenState extends State<MatchRequestsInboxScreen> {
           const SizedBox(height: 10),
           Row(children: [
             if (budget != null) ...[
-              const Icon(Icons.currency_exchange_rounded, color: AppColors.textMuted, size: 14),
+              Icon(Icons.currency_exchange_rounded, color: colors.outline, size: 14),
               const SizedBox(width: 4),
-              Text(budget, style: const TextStyle(color: AppColors.textSecondary, fontSize: 12, fontWeight: FontWeight.w600)),
+              Text(budget, style: TextStyle(color: colors.onSurfaceVariant, fontSize: 12, fontWeight: FontWeight.w600)),
               const SizedBox(width: 14),
             ],
-            const Icon(Icons.people_outline_rounded, color: AppColors.textMuted, size: 14),
+            Icon(Icons.people_outline_rounded, color: colors.outline, size: 14),
             const SizedBox(width: 4),
-            Text(_isBn ? '${r.responseCount}/${r.maxResponses} রেসপন্স' : '${r.responseCount}/${r.maxResponses} responses', style: const TextStyle(color: AppColors.textSecondary, fontSize: 12)),
+            Text(_isBn ? '${r.responseCount}/${r.maxResponses} রেসপন্স' : '${r.responseCount}/${r.maxResponses} responses', style: TextStyle(color: colors.onSurfaceVariant, fontSize: 12)),
           ]),
         ],
       ),

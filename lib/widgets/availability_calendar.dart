@@ -1,6 +1,5 @@
 import 'package:flutter/material.dart';
 import '../services/dispatch_service.dart';
-import '../theme/app_theme.dart';
 
 /// "Booked vs blocked vs free" calendar for a photographer/cinematographer/
 /// makeup_artist — used both on the provider's own wall (interactive: true —
@@ -71,6 +70,7 @@ class _AvailabilityCalendarState extends State<AvailabilityCalendar> {
   }
 
   Future<void> _onDayTap(DateTime date) async {
+    final colors = Theme.of(context).colorScheme;
     if (!widget.interactive) return;
     if (_bookedDays.contains(date)) {
       ScaffoldMessenger.of(context).showSnackBar(const SnackBar(
@@ -83,19 +83,19 @@ class _AvailabilityCalendarState extends State<AvailabilityCalendar> {
     final confirm = await showDialog<bool>(
       context: context,
       builder: (ctx) => AlertDialog(
-        backgroundColor: AppColors.bgMid,
-        title: Text(isBlocked ? 'দিনটি খালি করবেন?' : 'দিনটি বন্ধ রাখবেন?', style: const TextStyle(color: AppColors.textPrimary)),
+        backgroundColor: colors.surface,
+        title: Text(isBlocked ? 'দিনটি খালি করবেন?' : 'দিনটি বন্ধ রাখবেন?', style: TextStyle(color: colors.onSurface)),
         content: Text(
           isBlocked
               ? 'এই দিন আবার বুকিং-এর জন্য খোলা হবে।'
               : 'এই দিন কোনো কাস্টমার আপনাকে বুক করতে পারবে না — যেমন ছুটির দিন।',
-          style: const TextStyle(color: AppColors.textMuted),
+          style: TextStyle(color: colors.outline),
         ),
         actions: [
-          TextButton(onPressed: () => Navigator.pop(ctx, false), child: const Text('বাতিল', style: TextStyle(color: AppColors.textMuted))),
+          TextButton(onPressed: () => Navigator.pop(ctx, false), child: Text('বাতিল', style: TextStyle(color: colors.outline))),
           TextButton(
             onPressed: () => Navigator.pop(ctx, true),
-            child: Text(isBlocked ? 'খালি করুন' : 'বন্ধ রাখুন', style: const TextStyle(color: AppColors.deepBlue)),
+            child: Text(isBlocked ? 'খালি করুন' : 'বন্ধ রাখুন', style: TextStyle(color: colors.primary)),
           ),
         ],
       ),
@@ -124,10 +124,11 @@ class _AvailabilityCalendarState extends State<AvailabilityCalendar> {
 
   @override
   Widget build(BuildContext context) {
+    final colors = Theme.of(context).colorScheme;
     if (_loading) {
-      return const Padding(
+      return Padding(
         padding: EdgeInsets.symmetric(vertical: 24),
-        child: Center(child: CircularProgressIndicator(color: AppColors.deepBlue)),
+        child: Center(child: CircularProgressIndicator(color: colors.primary)),
       );
     }
     if (_error != null) {
@@ -135,8 +136,8 @@ class _AvailabilityCalendarState extends State<AvailabilityCalendar> {
         padding: const EdgeInsets.symmetric(vertical: 16),
         child: Column(
           children: [
-            const Text('সময়সূচী লোড করা যায়নি', style: TextStyle(color: AppColors.textMuted, fontSize: 12)),
-            TextButton(onPressed: _load, child: const Text('আবার চেষ্টা করুন', style: TextStyle(color: AppColors.deepBlue))),
+            Text('সময়সূচী লোড করা যায়নি', style: TextStyle(color: colors.outline, fontSize: 12)),
+            TextButton(onPressed: _load, child: Text('আবার চেষ্টা করুন', style: TextStyle(color: colors.primary))),
           ],
         ),
       );
@@ -148,7 +149,7 @@ class _AvailabilityCalendarState extends State<AvailabilityCalendar> {
         _legend(),
         if (widget.interactive) ...[
           const SizedBox(height: 6),
-          const Text('খালি দিনে ট্যাপ করে ছুটি মার্ক করুন', style: TextStyle(color: AppColors.textMuted, fontSize: 11)),
+          Text('খালি দিনে ট্যাপ করে ছুটি মার্ক করুন', style: TextStyle(color: colors.outline, fontSize: 11)),
         ],
         const SizedBox(height: 10),
         _monthGrid(now.year, now.month),
@@ -159,18 +160,20 @@ class _AvailabilityCalendarState extends State<AvailabilityCalendar> {
   }
 
   Widget _legend() {
+    final colors = Theme.of(context).colorScheme;
     return Wrap(
       spacing: 16,
       runSpacing: 6,
       children: [
         _legendDot(const Color(0xFFEF4444), 'বুক করা'),
         _legendDot(const Color(0xFF9CA3AF), 'বন্ধ (ছুটি)'),
-        _legendDot(AppColors.glassWhite, 'খালি', border: true),
+        _legendDot(colors.surface, 'খালি', border: true),
       ],
     );
   }
 
   Widget _legendDot(Color color, String label, {bool border = false}) {
+    final colors = Theme.of(context).colorScheme;
     return Row(
       mainAxisSize: MainAxisSize.min,
       children: [
@@ -180,16 +183,17 @@ class _AvailabilityCalendarState extends State<AvailabilityCalendar> {
           decoration: BoxDecoration(
             color: color,
             shape: BoxShape.circle,
-            border: border ? Border.all(color: AppColors.glassBorder) : null,
+            border: border ? Border.all(color: colors.outlineVariant) : null,
           ),
         ),
         const SizedBox(width: 6),
-        Text(label, style: const TextStyle(color: AppColors.textMuted, fontSize: 12)),
+        Text(label, style: TextStyle(color: colors.outline, fontSize: 12)),
       ],
     );
   }
 
   Widget _monthGrid(int year, int month) {
+    final colors = Theme.of(context).colorScheme;
     final firstDay = DateTime(year, month, 1);
     final daysInMonth = DateTime(year, month + 1, 0).day;
     // Monday-first offset (weekday: Mon=1..Sun=7)
@@ -200,21 +204,21 @@ class _AvailabilityCalendarState extends State<AvailabilityCalendar> {
     return Container(
       padding: const EdgeInsets.all(12),
       decoration: BoxDecoration(
-        color: AppColors.glassWhite,
+        color: colors.surface,
         borderRadius: BorderRadius.circular(14),
-        border: Border.all(color: AppColors.glassBorder, width: 1.2),
+        border: Border.all(color: colors.outlineVariant, width: 1.2),
       ),
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
           Text('${_bnMonths[month - 1]} $year',
-              style: const TextStyle(color: AppColors.textPrimary, fontSize: 13, fontWeight: FontWeight.w700)),
+              style: TextStyle(color: colors.onSurface, fontSize: 13, fontWeight: FontWeight.w700)),
           const SizedBox(height: 8),
           Row(
             children: _bnWeekdays
                 .map((w) => Expanded(
                       child: Center(
-                        child: Text(w, style: const TextStyle(color: AppColors.textMuted, fontSize: 10, fontWeight: FontWeight.w600)),
+                        child: Text(w, style: TextStyle(color: colors.outline, fontSize: 10, fontWeight: FontWeight.w600)),
                       ),
                     ))
                 .toList(),
@@ -250,14 +254,14 @@ class _AvailabilityCalendarState extends State<AvailabilityCalendar> {
                           color: bgColor,
                           borderRadius: BorderRadius.circular(8),
                           border: (widget.interactive && !isPast && !isBooked && !isBlocked)
-                              ? Border.all(color: AppColors.deepBlue.withOpacity(0.25), width: 1)
+                              ? Border.all(color: colors.primary.withOpacity(0.25), width: 1)
                               : null,
                         ),
                         alignment: Alignment.center,
                         child: isBusy
-                            ? const SizedBox(
+                            ? SizedBox(
                                 width: 12, height: 12,
-                                child: CircularProgressIndicator(strokeWidth: 1.6, color: AppColors.textMuted),
+                                child: CircularProgressIndicator(strokeWidth: 1.6, color: colors.outline),
                               )
                             : Text(
                                 '$dayNum',
@@ -265,8 +269,8 @@ class _AvailabilityCalendarState extends State<AvailabilityCalendar> {
                                   color: (isBooked || isBlocked)
                                       ? Colors.white
                                       : isPast
-                                          ? AppColors.textMuted.withOpacity(0.4)
-                                          : AppColors.textSecondary,
+                                          ? colors.outline.withOpacity(0.4)
+                                          : colors.onSurfaceVariant,
                                   fontSize: 12,
                                   fontWeight: (isBooked || isBlocked) ? FontWeight.w700 : FontWeight.w500,
                                 ),

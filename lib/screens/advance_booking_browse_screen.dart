@@ -6,7 +6,7 @@ import '../core/network/api_client.dart';
 import '../core/utils/app_strings.dart';
 import '../models/dispatch_model.dart';
 import '../services/dispatch_service.dart';
-import '../theme/app_theme.dart';
+import '../theme/app_gradients.dart';
 import '../widgets/animated_background.dart';
 import '../widgets/glass_button.dart';
 import '../widgets/glass_card.dart';
@@ -112,6 +112,7 @@ class _AdvanceBookingBrowseScreenState extends State<AdvanceBookingBrowseScreen>
   }
 
   Widget _buildHeader(BuildContext context) {
+    final colors = Theme.of(context).colorScheme;
     return Padding(
       padding: const EdgeInsets.fromLTRB(20, 16, 20, 12),
       child: Row(
@@ -122,11 +123,11 @@ class _AdvanceBookingBrowseScreenState extends State<AdvanceBookingBrowseScreen>
               width: 40,
               height: 40,
               decoration: BoxDecoration(
-                color: AppColors.glassWhite,
+                color: colors.surface,
                 borderRadius: BorderRadius.circular(12),
-                border: Border.all(color: AppColors.glassBorder, width: 1.5),
+                border: Border.all(color: colors.outlineVariant, width: 1.5),
               ),
-              child: const Icon(Icons.arrow_back_ios_new_rounded, color: AppColors.textPrimary, size: 18),
+              child: Icon(Icons.arrow_back_ios_new_rounded, color: colors.onSurface, size: 18),
             ),
           ),
           const SizedBox(width: 14),
@@ -135,12 +136,12 @@ class _AdvanceBookingBrowseScreenState extends State<AdvanceBookingBrowseScreen>
               crossAxisAlignment: CrossAxisAlignment.start,
               children: [
                 Text(_isBn ? 'উপলব্ধ প্রোভাইডার' : 'Available Providers',
-                    style: const TextStyle(color: AppColors.textPrimary, fontSize: 17, fontWeight: FontWeight.w700)),
+                    style: TextStyle(color: colors.onSurface, fontSize: 17, fontWeight: FontWeight.w700)),
                 Text(
                   widget.eventEndDate != null
                       ? '${_formatDateOnly(widget.eventDate, _isBn)} → ${_formatDateOnly(widget.eventEndDate!, _isBn)}'
                       : _formatEventDate(widget.eventDate, _isBn),
-                  style: const TextStyle(color: AppColors.textMuted, fontSize: 12),
+                  style: TextStyle(color: colors.outline, fontSize: 12),
                 ),
               ],
             ),
@@ -151,8 +152,9 @@ class _AdvanceBookingBrowseScreenState extends State<AdvanceBookingBrowseScreen>
   }
 
   Widget _buildBody() {
+    final colors = Theme.of(context).colorScheme;
     if (_loading) {
-      return const Center(child: CircularProgressIndicator(color: AppColors.deepBlue));
+      return Center(child: CircularProgressIndicator(color: colors.primary));
     }
     if (_error != null) {
       return Center(
@@ -163,7 +165,7 @@ class _AdvanceBookingBrowseScreenState extends State<AdvanceBookingBrowseScreen>
             children: [
               const Icon(Icons.error_outline_rounded, color: Color(0xFFEF4444), size: 40),
               const SizedBox(height: 12),
-              Text(_error!, style: const TextStyle(color: AppColors.textSecondary, fontSize: 13), textAlign: TextAlign.center),
+              Text(_error!, style: TextStyle(color: colors.onSurfaceVariant, fontSize: 13), textAlign: TextAlign.center),
               const SizedBox(height: 16),
               GlassButton(label: _isBn ? 'আবার চেষ্টা করুন' : 'Try again', icon: Icons.refresh_rounded, isOutlined: true, onPressed: _fetch),
             ],
@@ -178,14 +180,14 @@ class _AdvanceBookingBrowseScreenState extends State<AdvanceBookingBrowseScreen>
           child: Column(
             mainAxisSize: MainAxisSize.min,
             children: [
-              const Icon(Icons.event_busy_rounded, color: AppColors.textMuted, size: 48),
+              Icon(Icons.event_busy_rounded, color: colors.outline, size: 48),
               const SizedBox(height: 16),
               Text(_isBn ? 'এই তারিখে কেউ ফ্রি নেই' : 'No one is free on this date',
-                  style: const TextStyle(color: AppColors.textPrimary, fontSize: 16, fontWeight: FontWeight.w700)),
+                  style: TextStyle(color: colors.onSurface, fontSize: 16, fontWeight: FontWeight.w700)),
               const SizedBox(height: 8),
               Text(
                 _isBn ? 'অন্য দিন বা সময় বেছে নিয়ে আবার চেষ্টা করুন।' : 'Try a different day or time.',
-                style: const TextStyle(color: AppColors.textMuted, fontSize: 13),
+                style: TextStyle(color: colors.outline, fontSize: 13),
                 textAlign: TextAlign.center,
               ),
               const SizedBox(height: 20),
@@ -202,7 +204,7 @@ class _AdvanceBookingBrowseScreenState extends State<AdvanceBookingBrowseScreen>
       );
     }
     return RefreshIndicator(
-      color: AppColors.deepBlue,
+      color: colors.primary,
       onRefresh: _fetch,
       child: ListView.builder(
         padding: const EdgeInsets.fromLTRB(16, 8, 16, 24),
@@ -225,6 +227,7 @@ class _ProviderCard extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    final colors = Theme.of(context).colorScheme;
     return GestureDetector(
       onTap: onTap,
       child: Container(
@@ -247,8 +250,8 @@ class _ProviderCard extends StatelessWidget {
                             Expanded(
                               child: Text(
                                 provider.name,
-                                style: const TextStyle(
-                                  color: AppColors.textPrimary,
+                                style: TextStyle(
+                                  color: colors.onSurface,
                                   fontSize: 15,
                                   fontWeight: FontWeight.w700,
                                 ),
@@ -257,7 +260,7 @@ class _ProviderCard extends StatelessWidget {
                             ),
                             if (provider.verified) ...[
                               const SizedBox(width: 6),
-                              const Icon(Icons.verified_rounded, color: AppColors.deepBlue, size: 16),
+                              Icon(Icons.verified_rounded, color: colors.primary, size: 16),
                             ],
                           ],
                         ),
@@ -266,7 +269,7 @@ class _ProviderCard extends StatelessWidget {
                       ],
                     ),
                   ),
-                  const Icon(Icons.chevron_right_rounded, color: AppColors.textMuted, size: 22),
+                  Icon(Icons.chevron_right_rounded, color: colors.outline, size: 22),
                 ],
               ),
               if (provider.portfolio.isNotEmpty) ...[
@@ -284,7 +287,7 @@ class _ProviderCard extends StatelessWidget {
                         width: 96,
                         height: 72,
                         fit: BoxFit.cover,
-                        errorBuilder: (_, __, ___) => _thumbFallback(),
+                        errorBuilder: (_, __, ___) => _thumbFallback(colors),
                       ),
                     ),
                   ),
@@ -297,13 +300,15 @@ class _ProviderCard extends StatelessWidget {
     );
   }
 
-  Widget _thumbFallback() => Container(
+  Widget _thumbFallback(ColorScheme colors) {
+    return Container(
         width: 96,
         height: 72,
-        color: AppColors.glassWhite,
+        color: colors.surface,
         alignment: Alignment.center,
-        child: const Icon(Icons.image_not_supported_rounded, color: AppColors.textMuted, size: 20),
+        child: Icon(Icons.image_not_supported_rounded, color: colors.outline, size: 20),
       );
+  }
 }
 
 class _ProfileAvatar extends StatelessWidget {
@@ -313,6 +318,7 @@ class _ProfileAvatar extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    final colors = Theme.of(context).colorScheme;
     const size = 48.0;
     if (url != null && url!.isNotEmpty) {
       return ClipRRect(
@@ -322,23 +328,23 @@ class _ProfileAvatar extends StatelessWidget {
           width: size,
           height: size,
           fit: BoxFit.cover,
-          errorBuilder: (_, __, ___) => _initial(fallback, size),
+          errorBuilder: (_, __, ___) => _initial(colors, fallback, size),
         ),
       );
     }
-    return _initial(fallback, size);
+    return _initial(colors, fallback, size);
   }
 
-  Widget _initial(String name, double size) {
+  Widget _initial(ColorScheme colors, String name, double size) {
     final ch = name.isNotEmpty ? name[0].toUpperCase() : '?';
     return Container(
       width: size,
       height: size,
-      decoration: BoxDecoration(gradient: AppColors.blueGradient, shape: BoxShape.circle),
+      decoration: BoxDecoration(gradient: AppGradients.primary(colors), shape: BoxShape.circle),
       alignment: Alignment.center,
       child: Text(
         ch,
-        style: const TextStyle(color: AppColors.ivory, fontSize: 20, fontWeight: FontWeight.w700),
+        style: TextStyle(color: colors.onPrimary, fontSize: 20, fontWeight: FontWeight.w700),
       ),
     );
   }
@@ -351,26 +357,27 @@ class _RatingRow extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    final colors = Theme.of(context).colorScheme;
     return Row(
       children: [
         const Icon(Icons.star_rounded, color: Color(0xFFF59E0B), size: 15),
         const SizedBox(width: 3),
         Text(
           rating == null ? '—' : rating!.toStringAsFixed(2),
-          style: const TextStyle(color: AppColors.textSecondary, fontSize: 12, fontWeight: FontWeight.w700),
+          style: TextStyle(color: colors.onSurfaceVariant, fontSize: 12, fontWeight: FontWeight.w700),
         ),
         if (level != null && level!.isNotEmpty) ...[
           const SizedBox(width: 8),
           Container(
             padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 2),
             decoration: BoxDecoration(
-              color: AppColors.glassWhite,
+              color: colors.surface,
               borderRadius: BorderRadius.circular(6),
-              border: Border.all(color: AppColors.glassBorder),
+              border: Border.all(color: colors.outlineVariant),
             ),
             child: Text(
               level!,
-              style: const TextStyle(color: AppColors.textMuted, fontSize: 10, fontWeight: FontWeight.w600),
+              style: TextStyle(color: colors.outline, fontSize: 10, fontWeight: FontWeight.w600),
             ),
           ),
         ],
@@ -503,8 +510,9 @@ class _ProviderDetailScreenState extends State<_ProviderDetailScreen> {
   }
 
   void _showSnack(String msg) {
+    final colors = Theme.of(context).colorScheme;
     ScaffoldMessenger.of(context).showSnackBar(SnackBar(
-      content: Text(msg, style: const TextStyle(color: AppColors.ivory)),
+      content: Text(msg, style: TextStyle(color: colors.onPrimary)),
       backgroundColor: const Color(0xFFEF4444),
       behavior: SnackBarBehavior.floating,
       shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
@@ -514,6 +522,7 @@ class _ProviderDetailScreenState extends State<_ProviderDetailScreen> {
 
   @override
   Widget build(BuildContext context) {
+    final colors = Theme.of(context).colorScheme;
     _isBn = context.watch<LanguageNotifier>().isBengali;
     final p = widget.provider;
     return Scaffold(
@@ -531,18 +540,18 @@ class _ProviderDetailScreenState extends State<_ProviderDetailScreen> {
                         width: 40,
                         height: 40,
                         decoration: BoxDecoration(
-                          color: AppColors.glassWhite,
+                          color: colors.surface,
                           borderRadius: BorderRadius.circular(12),
-                          border: Border.all(color: AppColors.glassBorder, width: 1.5),
+                          border: Border.all(color: colors.outlineVariant, width: 1.5),
                         ),
-                        child: const Icon(Icons.arrow_back_ios_new_rounded, color: AppColors.textPrimary, size: 18),
+                        child: Icon(Icons.arrow_back_ios_new_rounded, color: colors.onSurface, size: 18),
                       ),
                     ),
                     const SizedBox(width: 14),
                     Expanded(
                       child: Text(
                         p.name,
-                        style: const TextStyle(color: AppColors.textPrimary, fontSize: 18, fontWeight: FontWeight.w700),
+                        style: TextStyle(color: colors.onSurface, fontSize: 18, fontWeight: FontWeight.w700),
                         overflow: TextOverflow.ellipsis,
                       ),
                     ),
@@ -570,8 +579,8 @@ class _ProviderDetailScreenState extends State<_ProviderDetailScreen> {
                                       Expanded(
                                         child: Text(
                                           p.name,
-                                          style: const TextStyle(
-                                            color: AppColors.textPrimary,
+                                          style: TextStyle(
+                                            color: colors.onSurface,
                                             fontSize: 17,
                                             fontWeight: FontWeight.w700,
                                           ),
@@ -579,9 +588,9 @@ class _ProviderDetailScreenState extends State<_ProviderDetailScreen> {
                                         ),
                                       ),
                                       if (p.verified)
-                                        const Padding(
+                                        Padding(
                                           padding: EdgeInsets.only(left: 6),
-                                          child: Icon(Icons.verified_rounded, color: AppColors.deepBlue, size: 18),
+                                          child: Icon(Icons.verified_rounded, color: colors.primary, size: 18),
                                         ),
                                     ],
                                   ),
@@ -596,13 +605,13 @@ class _ProviderDetailScreenState extends State<_ProviderDetailScreen> {
                                           .map((s) => Container(
                                                 padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 3),
                                                 decoration: BoxDecoration(
-                                                  color: AppColors.glassWhite,
+                                                  color: colors.surface,
                                                   borderRadius: BorderRadius.circular(8),
-                                                  border: Border.all(color: AppColors.glassBorder),
+                                                  border: Border.all(color: colors.outlineVariant),
                                                 ),
                                                 child: Text(
                                                   s,
-                                                  style: const TextStyle(color: AppColors.textSecondary, fontSize: 11),
+                                                  style: TextStyle(color: colors.onSurfaceVariant, fontSize: 11),
                                                 ),
                                               ))
                                           .toList(),
@@ -619,7 +628,7 @@ class _ProviderDetailScreenState extends State<_ProviderDetailScreen> {
                         Padding(
                           padding: const EdgeInsets.only(left: 4, bottom: 8),
                           child: Text(_isBn ? 'পোর্টফোলিও' : 'Portfolio',
-                              style: const TextStyle(color: AppColors.textMuted, fontSize: 12, fontWeight: FontWeight.w700)),
+                              style: TextStyle(color: colors.outline, fontSize: 12, fontWeight: FontWeight.w700)),
                         ),
                         GridView.builder(
                           shrinkWrap: true,
@@ -636,9 +645,9 @@ class _ProviderDetailScreenState extends State<_ProviderDetailScreen> {
                               p.portfolio[i],
                               fit: BoxFit.cover,
                               errorBuilder: (_, __, ___) => Container(
-                                color: AppColors.glassWhite,
+                                color: colors.surface,
                                 alignment: Alignment.center,
-                                child: const Icon(Icons.image_not_supported_rounded, color: AppColors.textMuted),
+                                child: Icon(Icons.image_not_supported_rounded, color: colors.outline),
                               ),
                             ),
                           ),
@@ -648,7 +657,7 @@ class _ProviderDetailScreenState extends State<_ProviderDetailScreen> {
                       Padding(
                         padding: const EdgeInsets.only(left: 4, bottom: 8),
                         child: Text(_isBn ? 'আসন্ন সময়সূচী' : 'Upcoming Schedule',
-                            style: const TextStyle(color: AppColors.textMuted, fontSize: 12, fontWeight: FontWeight.w700)),
+                            style: TextStyle(color: colors.outline, fontSize: 12, fontWeight: FontWeight.w700)),
                       ),
                       AvailabilityCalendar(providerId: p.providerId),
                       const SizedBox(height: 12),

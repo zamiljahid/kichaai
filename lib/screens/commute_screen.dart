@@ -12,7 +12,6 @@ import '../services/dispatch_service.dart';
 import '../widgets/pin_picker_screen.dart';
 import 'package:google_maps_flutter/google_maps_flutter.dart';
 import '../services/messaging_service.dart';
-import '../theme/app_theme.dart';
 import '../widgets/glass_button.dart';
 import '../widgets/policy_agreement_checkbox.dart';
 import 'chat_screen.dart';
@@ -99,19 +98,20 @@ class _CommuteScreenState extends State<CommuteScreen> with SingleTickerProvider
 
   @override
   Widget build(BuildContext context) {
+    final colors = Theme.of(context).colorScheme;
     _isBn = context.watch<LanguageNotifier>().isBengali;
     return Scaffold(
-      backgroundColor: AppColors.bgDark,
+      backgroundColor: colors.surfaceContainerHighest,
       appBar: AppBar(
-        backgroundColor: AppColors.bgMid,
+        backgroundColor: colors.surface,
         elevation: 0,
-        leading: IconButton(icon: const Icon(Icons.arrow_back_ios_new_rounded, color: AppColors.textPrimary, size: 18), onPressed: () => Navigator.of(context).pop()),
-        title: Text(_isBn ? 'কমিউট পার্টনার' : 'Commute Partner', style: const TextStyle(color: AppColors.textPrimary, fontSize: 17, fontWeight: FontWeight.w700)),
+        leading: IconButton(icon: Icon(Icons.arrow_back_ios_new_rounded, color: colors.onSurface, size: 18), onPressed: () => Navigator.of(context).pop()),
+        title: Text(_isBn ? 'কমিউট পার্টনার' : 'Commute Partner', style: TextStyle(color: colors.onSurface, fontSize: 17, fontWeight: FontWeight.w700)),
         bottom: TabBar(
           controller: _tabController,
-          labelColor: AppColors.deepBlue,
-          unselectedLabelColor: AppColors.textMuted,
-          indicatorColor: AppColors.deepBlue,
+          labelColor: colors.primary,
+          unselectedLabelColor: colors.outline,
+          indicatorColor: colors.primary,
           isScrollable: true,
           tabs: [Tab(text: _isBn ? 'খুঁজুন' : 'Find a ride'), Tab(text: _isBn ? 'অফার দিন' : 'Offer a ride'), Tab(text: _isBn ? 'আমার ট্রিপ' : 'My trips'), Tab(text: _isBn ? 'প্রোফাইল' : 'Profile')],
         ),
@@ -124,17 +124,17 @@ class _CommuteScreenState extends State<CommuteScreen> with SingleTickerProvider
           Container(
             width: double.infinity,
             padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 10),
-            color: AppColors.glassBlue,
+            color: colors.primary.withValues(alpha: 0.08),
             child: Row(
               children: [
-                const Icon(Icons.info_outline_rounded, size: 16, color: AppColors.deepBlue),
+                Icon(Icons.info_outline_rounded, size: 16, color: colors.primary),
                 const SizedBox(width: 8),
                 Expanded(
                   child: Text(
                     _isBn
                         ? 'এখানে নিয়মিত/শিডিউল করা রাইড। এখনই দরকার — এমন রাইড পেতে ড্যাশবোর্ড থেকে অনলাইন হোন।'
                         : 'This is for recurring/scheduled rides. For on-demand rides, go online from your dashboard.',
-                    style: const TextStyle(color: AppColors.textSecondary, fontSize: 11.5, height: 1.35),
+                    style: TextStyle(color: colors.onSurfaceVariant, fontSize: 11.5, height: 1.35),
                   ),
                 ),
               ],
@@ -166,15 +166,16 @@ void _showSnack(BuildContext context, String message, {bool success = false}) {
   ));
 }
 
-InputDecoration _commuteDeco({String? hint}) => InputDecoration(
+InputDecoration _commuteDeco(ColorScheme colors, {String? hint}) =>
+    InputDecoration(
       hintText: hint,
-      hintStyle: const TextStyle(color: AppColors.textMuted, fontSize: 14),
+      hintStyle: TextStyle(color: colors.outline, fontSize: 14),
       filled: true,
-      fillColor: AppColors.glassWhite,
+      fillColor: colors.surface,
       contentPadding: const EdgeInsets.symmetric(horizontal: 20, vertical: 16),
-      border: OutlineInputBorder(borderRadius: BorderRadius.circular(16), borderSide: const BorderSide(color: AppColors.glassBorder)),
-      enabledBorder: OutlineInputBorder(borderRadius: BorderRadius.circular(16), borderSide: const BorderSide(color: AppColors.glassBorder)),
-      focusedBorder: OutlineInputBorder(borderRadius: BorderRadius.circular(16), borderSide: const BorderSide(color: AppColors.deepBlue, width: 1.5)),
+      border: OutlineInputBorder(borderRadius: BorderRadius.circular(16), borderSide: BorderSide(color: colors.outlineVariant)),
+      enabledBorder: OutlineInputBorder(borderRadius: BorderRadius.circular(16), borderSide: BorderSide(color: colors.outlineVariant)),
+      focusedBorder: OutlineInputBorder(borderRadius: BorderRadius.circular(16), borderSide: BorderSide(color: colors.primary, width: 1.5)),
     );
 
 // ─────────────────────────────────────────────────────────────────────────
@@ -234,6 +235,7 @@ class _FindTabState extends State<_FindTab> {
   }
 
   Future<void> _matchOneOff(OneOffCommutePostModel p) async {
+    final colors = Theme.of(context).colorScheme;
     try {
       final trip = await CommuteService.instance.matchOneOffPost(p.id);
       if (!mounted) return;
@@ -242,7 +244,7 @@ class _FindTabState extends State<_FindTab> {
       if (!mounted) return;
       await showModalBottomSheet(
         context: context,
-        backgroundColor: AppColors.bgDark,
+        backgroundColor: colors.surfaceContainerHighest,
         isScrollControlled: true,
         shape: const RoundedRectangleBorder(borderRadius: BorderRadius.vertical(top: Radius.circular(20))),
         builder: (ctx) => _OneOffTripSheet(trip: trip, post: p),
@@ -253,9 +255,10 @@ class _FindTabState extends State<_FindTab> {
   }
 
   Future<void> _postNeedARide() async {
+    final colors = Theme.of(context).colorScheme;
     final result = await showModalBottomSheet<bool>(
       context: context,
-      backgroundColor: AppColors.bgDark,
+      backgroundColor: colors.surfaceContainerHighest,
       isScrollControlled: true,
       shape: const RoundedRectangleBorder(borderRadius: BorderRadius.vertical(top: Radius.circular(20))),
       builder: (ctx) => const _CreateOneOffSheet(role: 'passenger'),
@@ -265,14 +268,15 @@ class _FindTabState extends State<_FindTab> {
 
   @override
   Widget build(BuildContext context) {
+    final colors = Theme.of(context).colorScheme;
     _isBn = context.watch<LanguageNotifier>().isBengali;
     return Column(children: [
       Padding(
         padding: const EdgeInsets.fromLTRB(16, 16, 16, 0),
         child: OutlinedButton(
           onPressed: _postNeedARide,
-          style: OutlinedButton.styleFrom(side: const BorderSide(color: AppColors.deepBlue), padding: const EdgeInsets.symmetric(vertical: 14), shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(14))),
-          child: Text(_isBn ? '+ আমার একটি রাইড দরকার' : '+ I need a ride', style: const TextStyle(color: AppColors.deepBlue, fontWeight: FontWeight.w700)),
+          style: OutlinedButton.styleFrom(side: BorderSide(color: colors.primary), padding: const EdgeInsets.symmetric(vertical: 14), shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(14))),
+          child: Text(_isBn ? '+ আমার একটি রাইড দরকার' : '+ I need a ride', style: TextStyle(color: colors.primary, fontWeight: FontWeight.w700)),
         ),
       ),
       Padding(
@@ -280,30 +284,30 @@ class _FindTabState extends State<_FindTab> {
         child: TextField(
           controller: _areaCtrl,
           onSubmitted: (_) => _search(),
-          style: const TextStyle(color: AppColors.textPrimary),
-          decoration: _commuteDeco(hint: _isBn ? 'যাত্রা শুরুর এলাকা' : 'Origin area').copyWith(suffixIcon: IconButton(icon: const Icon(Icons.search, color: AppColors.textMuted), onPressed: _search)),
+          style: TextStyle(color: colors.onSurface),
+          decoration: _commuteDeco(colors, hint: _isBn ? 'যাত্রা শুরুর এলাকা' : 'Origin area').copyWith(suffixIcon: IconButton(icon: Icon(Icons.search, color: colors.outline), onPressed: _search)),
         ),
       ),
       Expanded(
         child: _loading
-            ? const Center(child: CircularProgressIndicator(color: AppColors.deepBlue))
+            ? Center(child: CircularProgressIndicator(color: colors.primary))
             : (_offers.isEmpty && _oneOffs.isEmpty)
-                ? Center(child: Text(_isBn ? 'কোনো রাইড পাওয়া যায়নি' : 'No rides found', style: const TextStyle(color: AppColors.textMuted)))
+                ? Center(child: Text(_isBn ? 'কোনো রাইড পাওয়া যায়নি' : 'No rides found', style: TextStyle(color: colors.outline)))
                 : ListView(
                     padding: const EdgeInsets.fromLTRB(16, 0, 16, 40),
                     children: [
                       if (_offers.isNotEmpty) ...[
-                        Text(_isBn ? 'নিয়মিত অফার' : 'Recurring offers', style: const TextStyle(color: AppColors.textPrimary, fontWeight: FontWeight.w700)),
+                        Text(_isBn ? 'নিয়মিত অফার' : 'Recurring offers', style: TextStyle(color: colors.onSurface, fontWeight: FontWeight.w700)),
                         const SizedBox(height: 8),
                         ..._offers.map((o) => Container(
                               margin: const EdgeInsets.only(bottom: 10),
                               padding: const EdgeInsets.all(14),
-                              decoration: BoxDecoration(color: AppColors.bgMid, borderRadius: BorderRadius.circular(14), border: Border.all(color: AppColors.glassBorder)),
+                              decoration: BoxDecoration(color: colors.surface, borderRadius: BorderRadius.circular(14), border: Border.all(color: colors.outlineVariant)),
                               child: Column(crossAxisAlignment: CrossAxisAlignment.start, children: [
-                                Text('${o.originArea} → ${o.destinationArea ?? ''}', style: const TextStyle(color: AppColors.textPrimary, fontWeight: FontWeight.w700)),
+                                Text('${o.originArea} → ${o.destinationArea ?? ''}', style: TextStyle(color: colors.onSurface, fontWeight: FontWeight.w700)),
                                 const SizedBox(height: 4),
-                                Text('${o.windowStart} - ${o.windowEnd} · ${o.vehicleType} · ${o.seatsAvailable} ${_isBn ? "সিট" : "seats"}', style: const TextStyle(color: AppColors.textMuted, fontSize: 12)),
-                                Text('৳${o.costShareAmount.toStringAsFixed(0)}/${_isBn ? "মাস" : "mo"}', style: const TextStyle(color: AppColors.deepBlue, fontSize: 12, fontWeight: FontWeight.w700)),
+                                Text('${o.windowStart} - ${o.windowEnd} · ${o.vehicleType} · ${o.seatsAvailable} ${_isBn ? "সিট" : "seats"}', style: TextStyle(color: colors.outline, fontSize: 12)),
+                                Text('৳${o.costShareAmount.toStringAsFixed(0)}/${_isBn ? "মাস" : "mo"}', style: TextStyle(color: colors.primary, fontSize: 12, fontWeight: FontWeight.w700)),
                                 const SizedBox(height: 8),
                                 GlassButton(label: _isBn ? 'যোগ দিতে চান' : 'Request to join', onPressed: () => _requestJoin(o), width: double.infinity),
                               ]),
@@ -311,17 +315,17 @@ class _FindTabState extends State<_FindTab> {
                         const SizedBox(height: 16),
                       ],
                       if (_oneOffs.isNotEmpty) ...[
-                        Text(_isBn ? 'একবারের পোস্ট' : 'One-off rides', style: const TextStyle(color: AppColors.textPrimary, fontWeight: FontWeight.w700)),
+                        Text(_isBn ? 'একবারের পোস্ট' : 'One-off rides', style: TextStyle(color: colors.onSurface, fontWeight: FontWeight.w700)),
                         const SizedBox(height: 8),
                         ..._oneOffs.map((p) => Container(
                               margin: const EdgeInsets.only(bottom: 10),
                               padding: const EdgeInsets.all(14),
-                              decoration: BoxDecoration(color: AppColors.bgMid, borderRadius: BorderRadius.circular(14), border: Border.all(color: AppColors.glassBorder)),
+                              decoration: BoxDecoration(color: colors.surface, borderRadius: BorderRadius.circular(14), border: Border.all(color: colors.outlineVariant)),
                               child: Column(crossAxisAlignment: CrossAxisAlignment.start, children: [
-                                Text('${p.originArea} → ${p.destinationArea ?? ''}', style: const TextStyle(color: AppColors.textPrimary, fontWeight: FontWeight.w700)),
+                                Text('${p.originArea} → ${p.destinationArea ?? ''}', style: TextStyle(color: colors.onSurface, fontWeight: FontWeight.w700)),
                                 const SizedBox(height: 4),
-                                Text('${p.tripDateTime.day}/${p.tripDateTime.month} ${p.tripDateTime.hour.toString().padLeft(2, '0')}:${p.tripDateTime.minute.toString().padLeft(2, '0')}', style: const TextStyle(color: AppColors.textMuted, fontSize: 12)),
-                                if (p.costShareAmount != null) Text('৳${p.costShareAmount!.toStringAsFixed(0)}', style: const TextStyle(color: AppColors.deepBlue, fontSize: 12, fontWeight: FontWeight.w700)),
+                                Text('${p.tripDateTime.day}/${p.tripDateTime.month} ${p.tripDateTime.hour.toString().padLeft(2, '0')}:${p.tripDateTime.minute.toString().padLeft(2, '0')}', style: TextStyle(color: colors.outline, fontSize: 12)),
+                                if (p.costShareAmount != null) Text('৳${p.costShareAmount!.toStringAsFixed(0)}', style: TextStyle(color: colors.primary, fontSize: 12, fontWeight: FontWeight.w700)),
                                 const SizedBox(height: 8),
                                 GlassButton(label: _isBn ? 'যোগাযোগ করুন' : 'Match this ride', onPressed: () => _matchOneOff(p), width: double.infinity),
                               ]),
@@ -375,6 +379,7 @@ class _OfferTabState extends State<_OfferTab> {
   }
 
   Future<void> _matchPassenger(OneOffCommutePostModel p) async {
+    final colors = Theme.of(context).colorScheme;
     try {
       final trip = await CommuteService.instance.matchOneOffPost(p.id);
       if (!mounted) return;
@@ -383,7 +388,7 @@ class _OfferTabState extends State<_OfferTab> {
       if (!mounted) return;
       await showModalBottomSheet(
         context: context,
-        backgroundColor: AppColors.bgDark,
+        backgroundColor: colors.surfaceContainerHighest,
         isScrollControlled: true,
         shape: const RoundedRectangleBorder(borderRadius: BorderRadius.vertical(top: Radius.circular(20))),
         builder: (ctx) => _OneOffTripSheet(trip: trip, post: p),
@@ -394,9 +399,10 @@ class _OfferTabState extends State<_OfferTab> {
   }
 
   Future<void> _createOffer() async {
+    final colors = Theme.of(context).colorScheme;
     final result = await showModalBottomSheet<bool>(
       context: context,
-      backgroundColor: AppColors.bgDark,
+      backgroundColor: colors.surfaceContainerHighest,
       isScrollControlled: true,
       shape: const RoundedRectangleBorder(borderRadius: BorderRadius.vertical(top: Radius.circular(20))),
       builder: (ctx) => const _CreateOfferSheet(),
@@ -405,9 +411,10 @@ class _OfferTabState extends State<_OfferTab> {
   }
 
   Future<void> _createOneOff() async {
+    final colors = Theme.of(context).colorScheme;
     final result = await showModalBottomSheet<bool>(
       context: context,
-      backgroundColor: AppColors.bgDark,
+      backgroundColor: colors.surfaceContainerHighest,
       isScrollControlled: true,
       shape: const RoundedRectangleBorder(borderRadius: BorderRadius.vertical(top: Radius.circular(20))),
       builder: (ctx) => const _CreateOneOffSheet(role: 'driver'),
@@ -416,9 +423,10 @@ class _OfferTabState extends State<_OfferTab> {
   }
 
   Future<void> _viewRequests(CommuteOfferModel o) async {
+    final colors = Theme.of(context).colorScheme;
     await showModalBottomSheet(
       context: context,
-      backgroundColor: AppColors.bgDark,
+      backgroundColor: colors.surfaceContainerHighest,
       isScrollControlled: true,
       shape: const RoundedRectangleBorder(borderRadius: BorderRadius.vertical(top: Radius.circular(20))),
       builder: (ctx) => _OfferRequestsSheet(offer: o),
@@ -427,6 +435,7 @@ class _OfferTabState extends State<_OfferTab> {
 
   @override
   Widget build(BuildContext context) {
+    final colors = Theme.of(context).colorScheme;
     _isBn = context.watch<LanguageNotifier>().isBengali;
     return Column(children: [
       Padding(
@@ -434,49 +443,49 @@ class _OfferTabState extends State<_OfferTab> {
         child: Row(children: [
           Expanded(child: GlassButton(label: _isBn ? '+ নিয়মিত অফার' : '+ Recurring offer', onPressed: _createOffer)),
           const SizedBox(width: 10),
-          Expanded(child: OutlinedButton(onPressed: _createOneOff, style: OutlinedButton.styleFrom(side: const BorderSide(color: AppColors.glassBorder), padding: const EdgeInsets.symmetric(vertical: 16), shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16))), child: Text(_isBn ? '+ একবারের পোস্ট' : '+ One-off post', style: const TextStyle(color: AppColors.textPrimary)))),
+          Expanded(child: OutlinedButton(onPressed: _createOneOff, style: OutlinedButton.styleFrom(side: BorderSide(color: colors.outlineVariant), padding: const EdgeInsets.symmetric(vertical: 16), shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16))), child: Text(_isBn ? '+ একবারের পোস্ট' : '+ One-off post', style: TextStyle(color: colors.onSurface)))),
         ]),
       ),
       Expanded(
         child: _loading
-            ? const Center(child: CircularProgressIndicator(color: AppColors.deepBlue))
+            ? Center(child: CircularProgressIndicator(color: colors.primary))
             : RefreshIndicator(
                 onRefresh: _load,
-                color: AppColors.deepBlue,
+                color: colors.primary,
                 child: ListView(
                   padding: const EdgeInsets.fromLTRB(16, 0, 16, 40),
                   children: [
-                    Text(_isBn ? 'আমার নিয়মিত অফার' : 'My recurring offers', style: const TextStyle(color: AppColors.textPrimary, fontWeight: FontWeight.w700)),
+                    Text(_isBn ? 'আমার নিয়মিত অফার' : 'My recurring offers', style: TextStyle(color: colors.onSurface, fontWeight: FontWeight.w700)),
                     const SizedBox(height: 8),
                     if (_myOffers.isEmpty)
-                      Padding(padding: const EdgeInsets.symmetric(vertical: 8), child: Text(_isBn ? 'কোনো অফার নেই' : 'No offers yet', style: const TextStyle(color: AppColors.textMuted, fontSize: 13)))
+                      Padding(padding: const EdgeInsets.symmetric(vertical: 8), child: Text(_isBn ? 'কোনো অফার নেই' : 'No offers yet', style: TextStyle(color: colors.outline, fontSize: 13)))
                     else
                       ..._myOffers.map((o) => Container(
                             margin: const EdgeInsets.only(bottom: 10),
                             padding: const EdgeInsets.all(14),
-                            decoration: BoxDecoration(color: AppColors.bgMid, borderRadius: BorderRadius.circular(14), border: Border.all(color: AppColors.glassBorder)),
+                            decoration: BoxDecoration(color: colors.surface, borderRadius: BorderRadius.circular(14), border: Border.all(color: colors.outlineVariant)),
                             child: Column(crossAxisAlignment: CrossAxisAlignment.start, children: [
-                              Text('${o.originArea} → ${o.destinationArea ?? ''}', style: const TextStyle(color: AppColors.textPrimary, fontWeight: FontWeight.w700)),
+                              Text('${o.originArea} → ${o.destinationArea ?? ''}', style: TextStyle(color: colors.onSurface, fontWeight: FontWeight.w700)),
                               const SizedBox(height: 4),
-                              Text('${o.windowStart} - ${o.windowEnd} · ${o.seatsAvailable} ${_isBn ? "সিট বাকি" : "seats left"}', style: const TextStyle(color: AppColors.textMuted, fontSize: 12)),
+                              Text('${o.windowStart} - ${o.windowEnd} · ${o.seatsAvailable} ${_isBn ? "সিট বাকি" : "seats left"}', style: TextStyle(color: colors.outline, fontSize: 12)),
                               const SizedBox(height: 8),
-                              OutlinedButton(onPressed: () => _viewRequests(o), style: OutlinedButton.styleFrom(side: const BorderSide(color: AppColors.deepBlue)), child: Text(_isBn ? 'অনুরোধ দেখুন' : 'View requests', style: const TextStyle(color: AppColors.deepBlue, fontWeight: FontWeight.w700))),
+                              OutlinedButton(onPressed: () => _viewRequests(o), style: OutlinedButton.styleFrom(side: BorderSide(color: colors.primary)), child: Text(_isBn ? 'অনুরোধ দেখুন' : 'View requests', style: TextStyle(color: colors.primary, fontWeight: FontWeight.w700))),
                             ]),
                           )),
                     const SizedBox(height: 20),
-                    Text(_isBn ? 'যাত্রী খুঁজছেন রাইড' : 'Passengers looking for a ride', style: const TextStyle(color: AppColors.textPrimary, fontWeight: FontWeight.w700)),
+                    Text(_isBn ? 'যাত্রী খুঁজছেন রাইড' : 'Passengers looking for a ride', style: TextStyle(color: colors.onSurface, fontWeight: FontWeight.w700)),
                     const SizedBox(height: 8),
                     if (_passengerPosts.isEmpty)
-                      Padding(padding: const EdgeInsets.symmetric(vertical: 8), child: Text(_isBn ? 'কোনো পোস্ট নেই' : 'No posts yet', style: const TextStyle(color: AppColors.textMuted, fontSize: 13)))
+                      Padding(padding: const EdgeInsets.symmetric(vertical: 8), child: Text(_isBn ? 'কোনো পোস্ট নেই' : 'No posts yet', style: TextStyle(color: colors.outline, fontSize: 13)))
                     else
                       ..._passengerPosts.map((p) => Container(
                             margin: const EdgeInsets.only(bottom: 10),
                             padding: const EdgeInsets.all(14),
-                            decoration: BoxDecoration(color: AppColors.bgMid, borderRadius: BorderRadius.circular(14), border: Border.all(color: AppColors.glassBorder)),
+                            decoration: BoxDecoration(color: colors.surface, borderRadius: BorderRadius.circular(14), border: Border.all(color: colors.outlineVariant)),
                             child: Column(crossAxisAlignment: CrossAxisAlignment.start, children: [
-                              Text('${p.originArea} → ${p.destinationArea ?? ''}', style: const TextStyle(color: AppColors.textPrimary, fontWeight: FontWeight.w700)),
+                              Text('${p.originArea} → ${p.destinationArea ?? ''}', style: TextStyle(color: colors.onSurface, fontWeight: FontWeight.w700)),
                               const SizedBox(height: 4),
-                              Text('${p.tripDateTime.day}/${p.tripDateTime.month} ${p.tripDateTime.hour.toString().padLeft(2, '0')}:${p.tripDateTime.minute.toString().padLeft(2, '0')}', style: const TextStyle(color: AppColors.textMuted, fontSize: 12)),
+                              Text('${p.tripDateTime.day}/${p.tripDateTime.month} ${p.tripDateTime.hour.toString().padLeft(2, '0')}:${p.tripDateTime.minute.toString().padLeft(2, '0')}', style: TextStyle(color: colors.outline, fontSize: 12)),
                               const SizedBox(height: 8),
                               GlassButton(label: _isBn ? 'যাত্রীকে নিন' : 'Offer this ride', onPressed: () => _matchPassenger(p), width: double.infinity),
                             ]),
@@ -579,6 +588,7 @@ class _CreateOfferSheetState extends State<_CreateOfferSheet> {
   }
 
   Widget _pinRow() {
+    final colors = Theme.of(context).colorScheme;
     Widget one(bool origin) {
       final pin = origin ? _originPin : _destPin;
       final isSet = pin != null;
@@ -586,17 +596,17 @@ class _CreateOfferSheetState extends State<_CreateOfferSheet> {
         child: OutlinedButton.icon(
           onPressed: () => _pick(origin: origin),
           style: OutlinedButton.styleFrom(
-            side: BorderSide(color: isSet ? const Color(0xFF10B981) : AppColors.glassBorder),
+            side: BorderSide(color: isSet ? const Color(0xFF10B981) : colors.outlineVariant),
             padding: const EdgeInsets.symmetric(vertical: 12),
           ),
           icon: Icon(isSet ? Icons.check_circle_rounded : Icons.place_outlined,
-              size: 16, color: isSet ? const Color(0xFF10B981) : AppColors.deepBlue),
+              size: 16, color: isSet ? const Color(0xFF10B981) : colors.primary),
           label: Text(
             origin
                 ? (_isBn ? 'শুরুর পিন' : 'Pickup pin')
                 : (_isBn ? 'গন্তব্যের পিন' : 'Destination pin'),
             style: TextStyle(
-                color: isSet ? const Color(0xFF10B981) : AppColors.textSecondary, fontSize: 12),
+                color: isSet ? const Color(0xFF10B981) : colors.onSurfaceVariant, fontSize: 12),
           ),
         ),
       );
@@ -607,23 +617,24 @@ class _CreateOfferSheetState extends State<_CreateOfferSheet> {
 
   @override
   Widget build(BuildContext context) {
+    final colors = Theme.of(context).colorScheme;
     _isBn = context.watch<LanguageNotifier>().isBengali;
     return Padding(
       padding: EdgeInsets.only(bottom: MediaQuery.of(context).viewInsets.bottom, left: 20, right: 20, top: 20),
       child: SingleChildScrollView(
         child: Column(mainAxisSize: MainAxisSize.min, crossAxisAlignment: CrossAxisAlignment.start, children: [
-          Text(_isBn ? 'নিয়মিত অফার তৈরি করুন' : 'Create recurring offer', style: const TextStyle(color: AppColors.textPrimary, fontSize: 17, fontWeight: FontWeight.w800)),
+          Text(_isBn ? 'নিয়মিত অফার তৈরি করুন' : 'Create recurring offer', style: TextStyle(color: colors.onSurface, fontSize: 17, fontWeight: FontWeight.w800)),
           const SizedBox(height: 6),
           Text(
             _isBn
                 ? 'যাত্রী প্রতি ট্রিপে এই রুটের নরমাল ভাড়ার অর্ধেক দেবেন। জোড়া বাঁধার সময় দুজনকেই এই শর্তে রাজি হতে হবে।'
                 : 'The passenger pays half the normal fare for this route, every trip. Both of you accept that when you pair up.',
-            style: const TextStyle(color: AppColors.textMuted, fontSize: 12, height: 1.4),
+            style: TextStyle(color: colors.outline, fontSize: 12, height: 1.4),
           ),
           const SizedBox(height: 16),
-          TextField(controller: _originCtrl, style: const TextStyle(color: AppColors.textPrimary), decoration: _commuteDeco(hint: _isBn ? 'যাত্রা শুরুর এলাকা' : 'Origin area')),
+          TextField(controller: _originCtrl, style: TextStyle(color: colors.onSurface), decoration: _commuteDeco(colors, hint: _isBn ? 'যাত্রা শুরুর এলাকা' : 'Origin area')),
           const SizedBox(height: 12),
-          TextField(controller: _destCtrl, style: const TextStyle(color: AppColors.textPrimary), decoration: _commuteDeco(hint: _isBn ? 'গন্তব্য এলাকা' : 'Destination area')),
+          TextField(controller: _destCtrl, style: TextStyle(color: colors.onSurface), decoration: _commuteDeco(colors, hint: _isBn ? 'গন্তব্য এলাকা' : 'Destination area')),
           const SizedBox(height: 12),
           _pinRow(),
           const SizedBox(height: 12),
@@ -633,8 +644,8 @@ class _CreateOfferSheetState extends State<_CreateOfferSheet> {
             return ChoiceChip(
               label: Text(_isBn ? _kDayLabelsBn[i] : _kDayLabelsEn[i]),
               selected: selected,
-              selectedColor: AppColors.deepBlue.withOpacity(0.15),
-              labelStyle: TextStyle(color: selected ? AppColors.deepBlue : AppColors.textMuted, fontSize: 12, fontWeight: FontWeight.w600),
+              selectedColor: colors.primary.withOpacity(0.15),
+              labelStyle: TextStyle(color: selected ? colors.primary : colors.outline, fontSize: 12, fontWeight: FontWeight.w600),
               onSelected: (v) => setState(() => v ? _days.add(code) : _days.remove(code)),
             );
           })),
@@ -646,18 +657,18 @@ class _CreateOfferSheetState extends State<_CreateOfferSheet> {
           ]),
           const SizedBox(height: 12),
           Row(children: [
-            Expanded(child: TextField(controller: _vehicleCtrl, style: const TextStyle(color: AppColors.textPrimary), decoration: _commuteDeco(hint: _isBn ? 'গাড়ির ধরন' : 'Vehicle type'))),
+            Expanded(child: TextField(controller: _vehicleCtrl, style: TextStyle(color: colors.onSurface), decoration: _commuteDeco(colors, hint: _isBn ? 'গাড়ির ধরন' : 'Vehicle type'))),
             const SizedBox(width: 10),
-            Expanded(child: TextField(controller: _seatsCtrl, keyboardType: TextInputType.number, style: const TextStyle(color: AppColors.textPrimary), decoration: _commuteDeco(hint: _isBn ? 'সিট' : 'Seats'))),
+            Expanded(child: TextField(controller: _seatsCtrl, keyboardType: TextInputType.number, style: TextStyle(color: colors.onSurface), decoration: _commuteDeco(colors, hint: _isBn ? 'সিট' : 'Seats'))),
           ]),
           const SizedBox(height: 12),
-          TextField(controller: _costCtrl, keyboardType: const TextInputType.numberWithOptions(decimal: true), style: const TextStyle(color: AppColors.textPrimary), decoration: _commuteDeco(hint: _isBn ? 'ব্যাকআপ ভাড়া প্রতি ট্রিপ (৳)' : 'Fallback fare per trip (৳)')),
+          TextField(controller: _costCtrl, keyboardType: const TextInputType.numberWithOptions(decimal: true), style: TextStyle(color: colors.onSurface), decoration: _commuteDeco(colors, hint: _isBn ? 'ব্যাকআপ ভাড়া প্রতি ট্রিপ (৳)' : 'Fallback fare per trip (৳)')),
           const SizedBox(height: 6),
           Text(
             _isBn
                 ? 'ভাড়া বের করা না গেলে শুধু তখনই এই দামটা ধরা হবে।'
                 : 'Used only if the route fare cannot be worked out.',
-            style: const TextStyle(color: AppColors.textMuted, fontSize: 11),
+            style: TextStyle(color: colors.outline, fontSize: 11),
           ),
           if (_error != null) ...[
             const SizedBox(height: 12),
@@ -720,16 +731,17 @@ class _CreateOneOffSheetState extends State<_CreateOneOffSheet> {
 
   @override
   Widget build(BuildContext context) {
+    final colors = Theme.of(context).colorScheme;
     _isBn = context.watch<LanguageNotifier>().isBengali;
     return Padding(
       padding: EdgeInsets.only(bottom: MediaQuery.of(context).viewInsets.bottom, left: 20, right: 20, top: 20),
       child: SingleChildScrollView(
         child: Column(mainAxisSize: MainAxisSize.min, crossAxisAlignment: CrossAxisAlignment.start, children: [
-          Text(_isBn ? 'একবারের পোস্ট' : 'One-off post', style: const TextStyle(color: AppColors.textPrimary, fontSize: 17, fontWeight: FontWeight.w800)),
+          Text(_isBn ? 'একবারের পোস্ট' : 'One-off post', style: TextStyle(color: colors.onSurface, fontSize: 17, fontWeight: FontWeight.w800)),
           const SizedBox(height: 16),
-          TextField(controller: _originCtrl, style: const TextStyle(color: AppColors.textPrimary), decoration: _commuteDeco(hint: _isBn ? 'যাত্রা শুরুর এলাকা' : 'Origin area')),
+          TextField(controller: _originCtrl, style: TextStyle(color: colors.onSurface), decoration: _commuteDeco(colors, hint: _isBn ? 'যাত্রা শুরুর এলাকা' : 'Origin area')),
           const SizedBox(height: 12),
-          TextField(controller: _destCtrl, style: const TextStyle(color: AppColors.textPrimary), decoration: _commuteDeco(hint: _isBn ? 'গন্তব্য এলাকা' : 'Destination area')),
+          TextField(controller: _destCtrl, style: TextStyle(color: colors.onSurface), decoration: _commuteDeco(colors, hint: _isBn ? 'গন্তব্য এলাকা' : 'Destination area')),
           const SizedBox(height: 12),
           Row(children: [
             Expanded(child: OutlinedButton(onPressed: () async { final now = DateTime.now(); final d = await showDatePicker(context: context, initialDate: now, firstDate: now, lastDate: now.add(const Duration(days: 30))); if (d != null) setState(() => _date = d); }, child: Text(_date == null ? (_isBn ? 'তারিখ' : 'Date') : '${_date!.day}/${_date!.month}'))),
@@ -738,9 +750,9 @@ class _CreateOneOffSheetState extends State<_CreateOneOffSheet> {
           ]),
           const SizedBox(height: 12),
           Row(children: [
-            Expanded(child: TextField(controller: _seatsCtrl, keyboardType: TextInputType.number, style: const TextStyle(color: AppColors.textPrimary), decoration: _commuteDeco(hint: _isBn ? 'সিট' : 'Seats'))),
+            Expanded(child: TextField(controller: _seatsCtrl, keyboardType: TextInputType.number, style: TextStyle(color: colors.onSurface), decoration: _commuteDeco(colors, hint: _isBn ? 'সিট' : 'Seats'))),
             const SizedBox(width: 10),
-            Expanded(child: TextField(controller: _costCtrl, keyboardType: const TextInputType.numberWithOptions(decimal: true), style: const TextStyle(color: AppColors.textPrimary), decoration: _commuteDeco(hint: _isBn ? 'খরচ ভাগ (৳)' : 'Cost share (৳)'))),
+            Expanded(child: TextField(controller: _costCtrl, keyboardType: const TextInputType.numberWithOptions(decimal: true), style: TextStyle(color: colors.onSurface), decoration: _commuteDeco(colors, hint: _isBn ? 'খরচ ভাগ (৳)' : 'Cost share (৳)'))),
           ]),
           const SizedBox(height: 20),
           GlassButton(label: _submitting ? (_isBn ? 'পোস্ট হচ্ছে...' : 'Posting...') : (_isBn ? 'পোস্ট করুন' : 'Post'), onPressed: _submitting ? null : _submit),
@@ -793,24 +805,25 @@ class _OfferRequestsSheetState extends State<_OfferRequestsSheet> {
 
   @override
   Widget build(BuildContext context) {
+    final colors = Theme.of(context).colorScheme;
     _isBn = context.watch<LanguageNotifier>().isBengali;
     return Padding(
       padding: const EdgeInsets.fromLTRB(20, 20, 20, 32),
       child: Column(mainAxisSize: MainAxisSize.min, crossAxisAlignment: CrossAxisAlignment.start, children: [
-        Text(_isBn ? 'যোগদানের অনুরোধ' : 'Join requests', style: const TextStyle(color: AppColors.textPrimary, fontSize: 17, fontWeight: FontWeight.w800)),
+        Text(_isBn ? 'যোগদানের অনুরোধ' : 'Join requests', style: TextStyle(color: colors.onSurface, fontSize: 17, fontWeight: FontWeight.w800)),
         const SizedBox(height: 16),
-        if (_loading) const Center(child: CircularProgressIndicator(color: AppColors.deepBlue))
-        else if (_requests.isEmpty) Text(_isBn ? 'কোনো অনুরোধ নেই' : 'No requests yet', style: const TextStyle(color: AppColors.textMuted))
+        if (_loading) Center(child: CircularProgressIndicator(color: colors.primary))
+        else if (_requests.isEmpty) Text(_isBn ? 'কোনো অনুরোধ নেই' : 'No requests yet', style: TextStyle(color: colors.outline))
         else ..._requests.map((r) {
           final status = r['status'] as String? ?? 'requested';
           return Container(
             margin: const EdgeInsets.only(bottom: 10),
             padding: const EdgeInsets.all(14),
-            decoration: BoxDecoration(color: AppColors.glassWhite, borderRadius: BorderRadius.circular(14), border: Border.all(color: AppColors.glassBorder)),
+            decoration: BoxDecoration(color: colors.surface, borderRadius: BorderRadius.circular(14), border: Border.all(color: colors.outlineVariant)),
             child: Row(children: [
               Expanded(child: Column(crossAxisAlignment: CrossAxisAlignment.start, children: [
-                Text(r['passengerNameSnapshot'] as String? ?? (_isBn ? 'যাত্রী' : 'Passenger'), style: const TextStyle(color: AppColors.textPrimary, fontWeight: FontWeight.w700)),
-                Text(status, style: const TextStyle(color: AppColors.textMuted, fontSize: 12)),
+                Text(r['passengerNameSnapshot'] as String? ?? (_isBn ? 'যাত্রী' : 'Passenger'), style: TextStyle(color: colors.onSurface, fontWeight: FontWeight.w700)),
+                Text(status, style: TextStyle(color: colors.outline, fontSize: 12)),
               ])),
               if (status == 'requested') ...[
                 IconButton(icon: const Icon(Icons.check_circle, color: Color(0xFF10B981)), onPressed: () => _respond(r['id'] as String, true)),
@@ -947,24 +960,25 @@ class _MyTripsTabState extends State<_MyTripsTab> {
 
   /// Cash changes hands in the car; this is only the record of it.
   Future<void> _payCash(String pairingId) async {
+    final colors = Theme.of(context).colorScheme;
     final owed = _unpaid(pairingId);
     if (owed.isEmpty) return;
     final total = owed.fold<double>(0, (s, t) => s + (_asDoubleOrNull(t['fare']) ?? 0));
     final ok = await showDialog<bool>(
       context: context,
       builder: (ctx) => AlertDialog(
-        backgroundColor: AppColors.bgMid,
+        backgroundColor: colors.surface,
         title: Text(_isBn ? 'নগদ পরিশোধ' : 'Paid in cash',
-            style: const TextStyle(color: AppColors.textPrimary, fontSize: 17)),
+            style: TextStyle(color: colors.onSurface, fontSize: 17)),
         content: Text(
           _isBn
               ? '৳${total.toStringAsFixed(0)} নগদে দেওয়া হয়েছে বলে ${owed.length} টি ট্রিপ পরিশোধিত ধরা হবে।'
               : '${owed.length} trip(s) totalling ৳${total.toStringAsFixed(0)} will be marked paid in cash.',
-          style: const TextStyle(color: AppColors.textSecondary, fontSize: 13),
+          style: TextStyle(color: colors.onSurfaceVariant, fontSize: 13),
         ),
         actions: [
-          TextButton(onPressed: () => Navigator.pop(ctx, false), child: Text(_isBn ? 'বাতিল' : 'Cancel', style: const TextStyle(color: AppColors.textMuted))),
-          TextButton(onPressed: () => Navigator.pop(ctx, true), child: Text(_isBn ? 'হ্যাঁ' : 'Yes', style: const TextStyle(color: AppColors.deepBlue, fontWeight: FontWeight.w700))),
+          TextButton(onPressed: () => Navigator.pop(ctx, false), child: Text(_isBn ? 'বাতিল' : 'Cancel', style: TextStyle(color: colors.outline))),
+          TextButton(onPressed: () => Navigator.pop(ctx, true), child: Text(_isBn ? 'হ্যাঁ' : 'Yes', style: TextStyle(color: colors.primary, fontWeight: FontWeight.w700))),
         ],
       ),
     );
@@ -1041,12 +1055,13 @@ class _MyTripsTabState extends State<_MyTripsTab> {
   }
 
   Future<void> _rate(String pairingId, String otherUserId) async {
+    final colors = Theme.of(context).colorScheme;
     int rating = 5;
     final confirmed = await showDialog<bool>(
       context: context,
       builder: (ctx) => StatefulBuilder(builder: (ctx, setD) => AlertDialog(
-        backgroundColor: AppColors.bgMid,
-        title: Text(_isBn ? 'রেটিং দিন' : 'Rate partner', style: const TextStyle(color: AppColors.textPrimary)),
+        backgroundColor: colors.surface,
+        title: Text(_isBn ? 'রেটিং দিন' : 'Rate partner', style: TextStyle(color: colors.onSurface)),
         content: Row(mainAxisSize: MainAxisSize.min, children: List.generate(5, (i) => IconButton(icon: Icon(i < rating ? Icons.star_rounded : Icons.star_border_rounded, color: const Color(0xFFF59E0B)), onPressed: () => setD(() => rating = i + 1)))),
         actions: [
           TextButton(onPressed: () => Navigator.pop(ctx, false), child: Text(_isBn ? 'বাতিল' : 'Cancel')),
@@ -1065,6 +1080,7 @@ class _MyTripsTabState extends State<_MyTripsTab> {
 
   /// The price, in the passenger's words, before anything is charged.
   Widget _fareLine(String pairingId) {
+    final colors = Theme.of(context).colorScheme;
     final q = _quotes[pairingId];
     if (q == null) return const SizedBox.shrink();
     final fare = _asDoubleOrNull(q['fare']) ?? 0;
@@ -1072,7 +1088,7 @@ class _MyTripsTabState extends State<_MyTripsTab> {
     return Padding(
       padding: const EdgeInsets.only(top: 8),
       child: Row(children: [
-        const Icon(Icons.payments_outlined, color: AppColors.deepBlue, size: 16),
+        Icon(Icons.payments_outlined, color: colors.primary, size: 16),
         const SizedBox(width: 8),
         Expanded(
           child: Text(
@@ -1083,7 +1099,7 @@ class _MyTripsTabState extends State<_MyTripsTab> {
                 : (_isBn
                     ? 'প্রতি ট্রিপ ৳${fare.toStringAsFixed(0)}'
                     : '৳${fare.toStringAsFixed(0)} per trip'),
-            style: const TextStyle(color: AppColors.textSecondary, fontSize: 12.5),
+            style: TextStyle(color: colors.onSurfaceVariant, fontSize: 12.5),
           ),
         ),
       ]),
@@ -1091,6 +1107,7 @@ class _MyTripsTabState extends State<_MyTripsTab> {
   }
 
   Widget _termsBanner(Map<String, dynamic> p, bool isDriver) {
+    final colors = Theme.of(context).colorScheme;
     final pairingId = p['id'] as String;
     final mineAgreed = isDriver
         ? p['halfFareAgreedByDriverAt'] != null
@@ -1113,14 +1130,14 @@ class _MyTripsTabState extends State<_MyTripsTab> {
           _isBn
               ? 'শর্ত: যাত্রী প্রতি ট্রিপে এই রুটের নরমাল ভাড়ার অর্ধেক দেবেন।'
               : 'Terms: the passenger pays half the normal fare for this route, every trip.',
-          style: const TextStyle(color: AppColors.textPrimary, fontSize: 12.5, height: 1.4, fontWeight: FontWeight.w600),
+          style: TextStyle(color: colors.onSurface, fontSize: 12.5, height: 1.4, fontWeight: FontWeight.w600),
         ),
         const SizedBox(height: 6),
         Text(
           mineAgreed
               ? (_isBn ? 'আপনি রাজি হয়েছেন — সঙ্গীর অপেক্ষায়।' : 'You accepted — waiting for your partner.')
               : (_isBn ? 'দুজনে রাজি না হওয়া পর্যন্ত কোনো ট্রিপ যোগ করা যাবে না।' : 'No trip can be added until both of you accept.'),
-          style: const TextStyle(color: AppColors.textMuted, fontSize: 11.5),
+          style: TextStyle(color: colors.outline, fontSize: 11.5),
         ),
         if (!mineAgreed) ...[
           const SizedBox(height: 10),
@@ -1139,6 +1156,7 @@ class _MyTripsTabState extends State<_MyTripsTab> {
   }
 
   Widget _dueRow(String pairingId, bool isDriver) {
+    final colors = Theme.of(context).colorScheme;
     final owed = _unpaid(pairingId);
     if (owed.isEmpty) return const SizedBox.shrink();
     final total = owed.fold<double>(0, (s, t) => s + (_asDoubleOrNull(t['fare']) ?? 0));
@@ -1163,11 +1181,11 @@ class _MyTripsTabState extends State<_MyTripsTab> {
                 child: OutlinedButton(
                   onPressed: busy ? null : () => _payCash(pairingId),
                   style: OutlinedButton.styleFrom(
-                    side: const BorderSide(color: AppColors.glassBorder),
+                    side: BorderSide(color: colors.outlineVariant),
                     shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)),
                   ),
                   child: Text(_isBn ? 'নগদ দিয়েছি' : 'Paid cash',
-                      style: const TextStyle(color: AppColors.textSecondary, fontSize: 12)),
+                      style: TextStyle(color: colors.onSurfaceVariant, fontSize: 12)),
                 ),
               ),
             ),
@@ -1186,12 +1204,13 @@ class _MyTripsTabState extends State<_MyTripsTab> {
 
   @override
   Widget build(BuildContext context) {
+    final colors = Theme.of(context).colorScheme;
     _isBn = context.watch<LanguageNotifier>().isBengali;
-    if (_loading) return const Center(child: CircularProgressIndicator(color: AppColors.deepBlue));
-    if (_pairings.isEmpty) return Center(child: Text(_isBn ? 'কোনো ট্রিপ নেই' : 'No trips yet', style: const TextStyle(color: AppColors.textMuted)));
+    if (_loading) return Center(child: CircularProgressIndicator(color: colors.primary));
+    if (_pairings.isEmpty) return Center(child: Text(_isBn ? 'কোনো ট্রিপ নেই' : 'No trips yet', style: TextStyle(color: colors.outline)));
     return RefreshIndicator(
       onRefresh: _load,
-      color: AppColors.deepBlue,
+      color: colors.primary,
       child: ListView.builder(
         padding: const EdgeInsets.fromLTRB(16, 16, 16, 40),
         itemCount: _pairings.length,
@@ -1209,21 +1228,21 @@ class _MyTripsTabState extends State<_MyTripsTab> {
           return Container(
             margin: const EdgeInsets.only(bottom: 12),
             padding: const EdgeInsets.all(16),
-            decoration: BoxDecoration(color: AppColors.bgMid, borderRadius: BorderRadius.circular(16), border: Border.all(color: AppColors.glassBorder)),
+            decoration: BoxDecoration(color: colors.surface, borderRadius: BorderRadius.circular(16), border: Border.all(color: colors.outlineVariant)),
             child: Column(crossAxisAlignment: CrossAxisAlignment.start, children: [
               Row(children: [
-                Expanded(child: Text(offer != null ? '${offer['originArea']} → ${offer['destinationArea'] ?? ''}' : (_isBn ? 'রুট অজানা' : 'Unknown route'), style: const TextStyle(color: AppColors.textPrimary, fontWeight: FontWeight.w700))),
-                Container(padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 4), decoration: BoxDecoration(color: AppColors.deepBlue.withOpacity(0.12), borderRadius: BorderRadius.circular(8)), child: Text(status, style: const TextStyle(color: AppColors.deepBlue, fontSize: 11, fontWeight: FontWeight.w700))),
+                Expanded(child: Text(offer != null ? '${offer['originArea']} → ${offer['destinationArea'] ?? ''}' : (_isBn ? 'রুট অজানা' : 'Unknown route'), style: TextStyle(color: colors.onSurface, fontWeight: FontWeight.w700))),
+                Container(padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 4), decoration: BoxDecoration(color: colors.primary.withOpacity(0.12), borderRadius: BorderRadius.circular(8)), child: Text(status, style: TextStyle(color: colors.primary, fontSize: 11, fontWeight: FontWeight.w700))),
               ]),
               const SizedBox(height: 4),
-              Text(isDriver ? (_isBn ? 'আপনি চালক' : 'You are the driver') : (_isBn ? 'আপনি যাত্রী' : 'You are the passenger'), style: const TextStyle(color: AppColors.textMuted, fontSize: 12)),
+              Text(isDriver ? (_isBn ? 'আপনি চালক' : 'You are the driver') : (_isBn ? 'আপনি যাত্রী' : 'You are the passenger'), style: TextStyle(color: colors.outline, fontSize: 12)),
               if (status == 'active') _fareLine(pairingId),
               if (otherPhone != null) ...[
                 const SizedBox(height: 8),
                 Row(children: [
-                  const Icon(Icons.phone_rounded, color: AppColors.deepBlue, size: 18),
+                  Icon(Icons.phone_rounded, color: colors.primary, size: 18),
                   const SizedBox(width: 8),
-                  Text(otherPhone, style: const TextStyle(color: AppColors.textPrimary, fontSize: 14)),
+                  Text(otherPhone, style: TextStyle(color: colors.onSurface, fontSize: 14)),
                 ]),
               ],
               const SizedBox(height: 8),
@@ -1231,10 +1250,10 @@ class _MyTripsTabState extends State<_MyTripsTab> {
                 onTap: isOpeningChat ? null : () => _openChat(pairingId),
                 child: Row(children: [
                   isOpeningChat
-                      ? const SizedBox(width: 16, height: 16, child: CircularProgressIndicator(strokeWidth: 2, color: AppColors.deepBlue))
-                      : const Icon(Icons.chat_bubble_outline_rounded, color: AppColors.deepBlue, size: 16),
+                      ? SizedBox(width: 16, height: 16, child: CircularProgressIndicator(strokeWidth: 2, color: colors.primary))
+                      : Icon(Icons.chat_bubble_outline_rounded, color: colors.primary, size: 16),
                   const SizedBox(width: 8),
-                  Text(isDriver ? (_isBn ? 'যাত্রীর সাথে চ্যাট করুন' : 'Chat with passenger') : (_isBn ? 'চালকের সাথে চ্যাট করুন' : 'Chat with driver'), style: const TextStyle(color: AppColors.deepBlue, fontSize: 13, fontWeight: FontWeight.w600)),
+                  Text(isDriver ? (_isBn ? 'যাত্রীর সাথে চ্যাট করুন' : 'Chat with passenger') : (_isBn ? 'চালকের সাথে চ্যাট করুন' : 'Chat with driver'), style: TextStyle(color: colors.primary, fontSize: 13, fontWeight: FontWeight.w600)),
                 ]),
               ),
               if (status == 'active') ...[
@@ -1255,10 +1274,10 @@ class _MyTripsTabState extends State<_MyTripsTab> {
                     Expanded(
                       child: OutlinedButton.icon(
                         onPressed: _loggingTripIds.contains(pairingId) ? null : () => _skippedToday(pairingId),
-                        style: OutlinedButton.styleFrom(side: const BorderSide(color: AppColors.glassBorder)),
-                        icon: const Icon(Icons.remove_rounded, color: AppColors.textMuted, size: 16),
+                        style: OutlinedButton.styleFrom(side: BorderSide(color: colors.outlineVariant)),
+                        icon: Icon(Icons.remove_rounded, color: colors.outline, size: 16),
                         label: Text(_isBn ? 'আজ যাইনি' : 'Skipped',
-                            style: const TextStyle(color: AppColors.textMuted, fontSize: 12)),
+                            style: TextStyle(color: colors.outline, fontSize: 12)),
                       ),
                     ),
                   ]),
@@ -1272,7 +1291,7 @@ class _MyTripsTabState extends State<_MyTripsTab> {
               ],
               if (status == 'ended') ...[
                 const SizedBox(height: 12),
-                OutlinedButton(onPressed: () => _rate(pairingId, otherUserId), style: OutlinedButton.styleFrom(side: const BorderSide(color: AppColors.deepBlue)), child: Text(_isBn ? 'রেটিং দিন' : 'Rate', style: const TextStyle(color: AppColors.deepBlue))),
+                OutlinedButton(onPressed: () => _rate(pairingId, otherUserId), style: OutlinedButton.styleFrom(side: BorderSide(color: colors.primary)), child: Text(_isBn ? 'রেটিং দিন' : 'Rate', style: TextStyle(color: colors.primary))),
               ],
             ]),
           ).animate(delay: Duration(milliseconds: 40 * i)).fadeIn(duration: 250.ms);
@@ -1359,6 +1378,7 @@ class _ProfileTabState extends State<_ProfileTab> {
   }
 
   Widget _buildVehiclePicker() {
+    final colors = Theme.of(context).colorScheme;
     final current = _vehicleCtrl.text.trim().toLowerCase();
     return Row(
       children: [
@@ -1372,10 +1392,10 @@ class _ProfileTabState extends State<_ProfileTab> {
                   duration: const Duration(milliseconds: 150),
                   padding: const EdgeInsets.symmetric(vertical: 12),
                   decoration: BoxDecoration(
-                    color: current == type ? AppColors.glassBlue : AppColors.glassWhite,
+                    color: current == type ? colors.primary.withValues(alpha: 0.08) : colors.surface,
                     borderRadius: BorderRadius.circular(12),
                     border: Border.all(
-                      color: current == type ? AppColors.deepBlue : AppColors.glassBorder,
+                      color: current == type ? colors.primary : colors.outlineVariant,
                       width: current == type ? 1.5 : 1,
                     ),
                   ),
@@ -1388,7 +1408,7 @@ class _ProfileTabState extends State<_ProfileTab> {
                           _ => Icons.directions_car_filled_rounded,
                         },
                         size: 20,
-                        color: current == type ? AppColors.deepBlue : AppColors.textMuted,
+                        color: current == type ? colors.primary : colors.outline,
                       ),
                       const SizedBox(height: 4),
                       Text(
@@ -1396,7 +1416,7 @@ class _ProfileTabState extends State<_ProfileTab> {
                         // type added server-side) must not crash the profile tab.
                         (_isBn ? kRideVehicleLabelsBn[type] : kRideVehicleLabelsEn[type]) ?? type,
                         style: TextStyle(
-                          color: current == type ? AppColors.deepBlue : AppColors.textPrimary,
+                          color: current == type ? colors.primary : colors.onSurface,
                           fontSize: 12,
                           fontWeight: FontWeight.w700,
                         ),
@@ -1413,8 +1433,9 @@ class _ProfileTabState extends State<_ProfileTab> {
 
   @override
   Widget build(BuildContext context) {
+    final colors = Theme.of(context).colorScheme;
     _isBn = context.watch<LanguageNotifier>().isBengali;
-    if (_loading) return const Center(child: CircularProgressIndicator(color: AppColors.deepBlue));
+    if (_loading) return Center(child: CircularProgressIndicator(color: colors.primary));
     return SingleChildScrollView(
       padding: const EdgeInsets.fromLTRB(20, 24, 20, 40),
       child: Column(crossAxisAlignment: CrossAxisAlignment.start, children: [
@@ -1422,12 +1443,12 @@ class _ProfileTabState extends State<_ProfileTab> {
           Container(
             margin: const EdgeInsets.only(bottom: 20),
             padding: const EdgeInsets.all(14),
-            decoration: BoxDecoration(color: AppColors.deepBlue.withValues(alpha: 0.1), borderRadius: BorderRadius.circular(14), border: Border.all(color: AppColors.deepBlue.withValues(alpha: 0.35))),
+            decoration: BoxDecoration(color: colors.primary.withValues(alpha: 0.1), borderRadius: BorderRadius.circular(14), border: Border.all(color: colors.primary.withValues(alpha: 0.35))),
             child: Column(crossAxisAlignment: CrossAxisAlignment.start, children: [
               Row(children: [
-                const Icon(Icons.verified_user_outlined, color: AppColors.deepBlue, size: 20),
+                Icon(Icons.verified_user_outlined, color: colors.primary, size: 20),
                 const SizedBox(width: 8),
-                Expanded(child: Text(_isBn ? 'পেয়ারিং কনফার্ম করতে ফোন ভেরিফিকেশন লাগবে' : 'Phone verification is required before pairing can be confirmed', style: const TextStyle(color: AppColors.deepBlue, fontSize: 12.5, fontWeight: FontWeight.w700))),
+                Expanded(child: Text(_isBn ? 'পেয়ারিং কনফার্ম করতে ফোন ভেরিফিকেশন লাগবে' : 'Phone verification is required before pairing can be confirmed', style: TextStyle(color: colors.primary, fontSize: 12.5, fontWeight: FontWeight.w700))),
               ]),
               const SizedBox(height: 10),
               GlassButton(label: _requesting ? (_isBn ? 'পাঠানো হচ্ছে...' : 'Sending...') : (_isBn ? 'ভেরিফিকেশনের জন্য অনুরোধ করুন' : 'Request verification'), onPressed: _requesting ? null : _requestVerification),
@@ -1447,17 +1468,17 @@ class _ProfileTabState extends State<_ProfileTab> {
               )),
             ]),
           ),
-        Text(_isBn ? 'ডিফল্ট এলাকা' : 'Default area', style: const TextStyle(color: AppColors.textPrimary, fontSize: 13, fontWeight: FontWeight.w600)),
+        Text(_isBn ? 'ডিফল্ট এলাকা' : 'Default area', style: TextStyle(color: colors.onSurface, fontSize: 13, fontWeight: FontWeight.w600)),
         const SizedBox(height: 8),
-        TextField(controller: _areaCtrl, style: const TextStyle(color: AppColors.textPrimary), decoration: _commuteDeco(hint: _isBn ? 'যেমন: মিরপুর-১০' : 'e.g. Mirpur-10')),
+        TextField(controller: _areaCtrl, style: TextStyle(color: colors.onSurface), decoration: _commuteDeco(colors, hint: _isBn ? 'যেমন: মিরপুর-১০' : 'e.g. Mirpur-10')),
         const SizedBox(height: 20),
-        Text(_isBn ? 'গাড়ির ধরন (যদি চালক হন)' : 'Vehicle type (if you drive)', style: const TextStyle(color: AppColors.textPrimary, fontSize: 13, fontWeight: FontWeight.w600)),
+        Text(_isBn ? 'গাড়ির ধরন (যদি চালক হন)' : 'Vehicle type (if you drive)', style: TextStyle(color: colors.onSurface, fontSize: 13, fontWeight: FontWeight.w600)),
         const SizedBox(height: 4),
         Text(
           _isBn
               ? 'অন-ডিমান্ড রাইড শুধু এই ধরনের চালকদের কাছেই যায় — তাই সঠিকটি বেছে নিন।'
               : 'On-demand rides are only offered to drivers of the matching type, so pick accurately.',
-          style: const TextStyle(color: AppColors.textMuted, fontSize: 11.5),
+          style: TextStyle(color: colors.outline, fontSize: 11.5),
         ),
         const SizedBox(height: 8),
         // This used to be free text. Nothing typed here ("car", "কার", "Toyota") ever matched
@@ -1574,13 +1595,14 @@ class _OneOffTripSheetState extends State<_OneOffTripSheet> {
   }
 
   Future<void> _rate() async {
+    final colors = Theme.of(context).colorScheme;
     final otherUserId = (_isPassenger ? _trip['driverId'] : _trip['passengerId']) as String;
     int rating = 5;
     final confirmed = await showDialog<bool>(
       context: context,
       builder: (ctx) => StatefulBuilder(builder: (ctx, setD) => AlertDialog(
-        backgroundColor: AppColors.bgMid,
-        title: Text(_isBn ? 'রেটিং দিন' : 'Rate partner', style: const TextStyle(color: AppColors.textPrimary)),
+        backgroundColor: colors.surface,
+        title: Text(_isBn ? 'রেটিং দিন' : 'Rate partner', style: TextStyle(color: colors.onSurface)),
         content: Row(mainAxisSize: MainAxisSize.min, children: List.generate(5, (i) => IconButton(icon: Icon(i < rating ? Icons.star_rounded : Icons.star_border_rounded, color: const Color(0xFFF59E0B)), onPressed: () => setD(() => rating = i + 1)))),
         actions: [
           TextButton(onPressed: () => Navigator.pop(ctx, false), child: Text(_isBn ? 'বাতিল' : 'Cancel')),
@@ -1599,28 +1621,29 @@ class _OneOffTripSheetState extends State<_OneOffTripSheet> {
 
   @override
   Widget build(BuildContext context) {
+    final colors = Theme.of(context).colorScheme;
     _isBn = context.watch<LanguageNotifier>().isBengali;
     final p = widget.post;
     final amount = _asDoubleOrNull(_trip['amount']) ?? p.costShareAmount;
     return Padding(
       padding: const EdgeInsets.fromLTRB(20, 20, 20, 32),
       child: Column(mainAxisSize: MainAxisSize.min, crossAxisAlignment: CrossAxisAlignment.start, children: [
-        Text(_isBn ? 'ট্রিপ ম্যাচ হয়েছে!' : 'Trip matched!', style: const TextStyle(color: AppColors.textPrimary, fontSize: 17, fontWeight: FontWeight.w800)),
+        Text(_isBn ? 'ট্রিপ ম্যাচ হয়েছে!' : 'Trip matched!', style: TextStyle(color: colors.onSurface, fontSize: 17, fontWeight: FontWeight.w800)),
         const SizedBox(height: 12),
-        Text('${p.originArea} → ${p.destinationArea ?? ''}', style: const TextStyle(color: AppColors.textPrimary, fontWeight: FontWeight.w700)),
+        Text('${p.originArea} → ${p.destinationArea ?? ''}', style: TextStyle(color: colors.onSurface, fontWeight: FontWeight.w700)),
         const SizedBox(height: 4),
-        Text('${p.tripDateTime.day}/${p.tripDateTime.month} ${p.tripDateTime.hour.toString().padLeft(2, '0')}:${p.tripDateTime.minute.toString().padLeft(2, '0')}', style: const TextStyle(color: AppColors.textMuted, fontSize: 12)),
+        Text('${p.tripDateTime.day}/${p.tripDateTime.month} ${p.tripDateTime.hour.toString().padLeft(2, '0')}:${p.tripDateTime.minute.toString().padLeft(2, '0')}', style: TextStyle(color: colors.outline, fontSize: 12)),
         if (amount != null) ...[
           const SizedBox(height: 4),
-          Text('৳${amount.toStringAsFixed(0)}', style: const TextStyle(color: AppColors.deepBlue, fontSize: 13, fontWeight: FontWeight.w700)),
+          Text('৳${amount.toStringAsFixed(0)}', style: TextStyle(color: colors.primary, fontSize: 13, fontWeight: FontWeight.w700)),
         ],
         // No reveal gate for commute — phones are always visible once a trip is matched.
         if ((_isPassenger ? _trip['driverPhoneSnapshot'] : _trip['passengerPhoneSnapshot']) != null) ...[
           const SizedBox(height: 10),
           Row(children: [
-            const Icon(Icons.phone_rounded, color: AppColors.deepBlue, size: 18),
+            Icon(Icons.phone_rounded, color: colors.primary, size: 18),
             const SizedBox(width: 8),
-            Text((_isPassenger ? _trip['driverPhoneSnapshot'] : _trip['passengerPhoneSnapshot']) as String, style: const TextStyle(color: AppColors.textPrimary, fontSize: 14)),
+            Text((_isPassenger ? _trip['driverPhoneSnapshot'] : _trip['passengerPhoneSnapshot']) as String, style: TextStyle(color: colors.onSurface, fontSize: 14)),
           ]),
         ],
         const SizedBox(height: 10),
@@ -1628,25 +1651,25 @@ class _OneOffTripSheetState extends State<_OneOffTripSheet> {
           onTap: _isOpeningChat ? null : _openChat,
           child: Row(children: [
             _isOpeningChat
-                ? const SizedBox(width: 16, height: 16, child: CircularProgressIndicator(strokeWidth: 2, color: AppColors.deepBlue))
-                : const Icon(Icons.chat_bubble_outline_rounded, color: AppColors.deepBlue, size: 16),
+                ? SizedBox(width: 16, height: 16, child: CircularProgressIndicator(strokeWidth: 2, color: colors.primary))
+                : Icon(Icons.chat_bubble_outline_rounded, color: colors.primary, size: 16),
             const SizedBox(width: 8),
-            Text(_isPassenger ? (_isBn ? 'চালকের সাথে চ্যাট করুন' : 'Chat with driver') : (_isBn ? 'যাত্রীর সাথে চ্যাট করুন' : 'Chat with passenger'), style: const TextStyle(color: AppColors.deepBlue, fontSize: 13, fontWeight: FontWeight.w600)),
+            Text(_isPassenger ? (_isBn ? 'চালকের সাথে চ্যাট করুন' : 'Chat with driver') : (_isBn ? 'যাত্রীর সাথে চ্যাট করুন' : 'Chat with passenger'), style: TextStyle(color: colors.primary, fontSize: 13, fontWeight: FontWeight.w600)),
           ]),
         ),
         const SizedBox(height: 20),
         if (_isCompleted)
-          OutlinedButton(onPressed: _rate, style: OutlinedButton.styleFrom(side: const BorderSide(color: AppColors.deepBlue)), child: Text(_isBn ? 'রেটিং দিন' : 'Rate', style: const TextStyle(color: AppColors.deepBlue)))
+          OutlinedButton(onPressed: _rate, style: OutlinedButton.styleFrom(side: BorderSide(color: colors.primary)), child: Text(_isBn ? 'রেটিং দিন' : 'Rate', style: TextStyle(color: colors.primary)))
         else ...[
           if (_isPassenger && _paymentStatus != 'paid')
             GlassButton(label: _busy ? (_isBn ? 'অপেক্ষা করুন...' : 'Please wait...') : (_isBn ? 'পেমেন্ট করুন' : 'Pay now'), onPressed: _busy ? null : _pay)
           else if (!_isPassenger && _paymentStatus != 'paid')
-            Text(_isBn ? 'যাত্রীর পেমেন্টের অপেক্ষায়' : 'Waiting for the passenger to pay', style: const TextStyle(color: AppColors.textMuted, fontSize: 12.5)),
+            Text(_isBn ? 'যাত্রীর পেমেন্টের অপেক্ষায়' : 'Waiting for the passenger to pay', style: TextStyle(color: colors.outline, fontSize: 12.5)),
           const SizedBox(height: 10),
           OutlinedButton(
             onPressed: _busy ? null : _complete,
-            style: OutlinedButton.styleFrom(side: const BorderSide(color: AppColors.glassBorder)),
-            child: Text(_isBn ? 'ট্রিপ সম্পন্ন হিসেবে চিহ্নিত করুন' : 'Mark trip complete', style: const TextStyle(color: AppColors.textPrimary)),
+            style: OutlinedButton.styleFrom(side: BorderSide(color: colors.outlineVariant)),
+            child: Text(_isBn ? 'ট্রিপ সম্পন্ন হিসেবে চিহ্নিত করুন' : 'Mark trip complete', style: TextStyle(color: colors.onSurface)),
           ),
         ],
       ]),

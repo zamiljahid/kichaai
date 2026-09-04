@@ -1,7 +1,6 @@
 import 'package:flutter/gestures.dart';
 import 'package:flutter/material.dart';
 import 'package:url_launcher/url_launcher.dart';
-import '../theme/app_theme.dart';
 
 /// Blank-by-default checkbox + hyperlinked Terms/Privacy/Refund text, meant to sit
 /// right above a "place order" / "pay now" button per payment-gateway compliance
@@ -27,13 +26,14 @@ class PolicyAgreementCheckbox extends StatelessWidget {
   /// have no natural checkout page to put the checkbox on inline. Returns
   /// true only if the customer both checked the box and pressed Confirm.
   static Future<bool> confirm(BuildContext context, {required bool isBn}) async {
+    final colors = Theme.of(context).colorScheme;
     bool agreed = false;
     final result = await showDialog<bool>(
       context: context,
       builder: (ctx) => StatefulBuilder(
         builder: (ctx, setDialogState) => AlertDialog(
-          backgroundColor: AppColors.bgMid,
-          title: Text(isBn ? 'পেমেন্ট নিশ্চিত করুন' : 'Confirm Payment', style: const TextStyle(color: AppColors.textPrimary)),
+          backgroundColor: colors.surface,
+          title: Text(isBn ? 'পেমেন্ট নিশ্চিত করুন' : 'Confirm Payment', style: TextStyle(color: colors.onSurface)),
           content: PolicyAgreementCheckbox(
             value: agreed,
             onChanged: (v) => setDialogState(() => agreed = v),
@@ -42,11 +42,11 @@ class PolicyAgreementCheckbox extends StatelessWidget {
           actions: [
             TextButton(
               onPressed: () => Navigator.pop(ctx, false),
-              child: Text(isBn ? 'বাতিল' : 'Cancel', style: const TextStyle(color: AppColors.textMuted)),
+              child: Text(isBn ? 'বাতিল' : 'Cancel', style: TextStyle(color: colors.outline)),
             ),
             TextButton(
               onPressed: agreed ? () => Navigator.pop(ctx, true) : null,
-              child: Text(isBn ? 'নিশ্চিত করুন' : 'Confirm', style: TextStyle(color: agreed ? AppColors.deepBlue : AppColors.textMuted)),
+              child: Text(isBn ? 'নিশ্চিত করুন' : 'Confirm', style: TextStyle(color: agreed ? colors.primary : colors.outline)),
             ),
           ],
         ),
@@ -57,13 +57,14 @@ class PolicyAgreementCheckbox extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    const linkStyle = TextStyle(
-      color: AppColors.deepBlue,
+    final colors = Theme.of(context).colorScheme;
+    final linkStyle = TextStyle(
+      color: colors.primary,
       fontSize: 12.5,
       fontWeight: FontWeight.w700,
       decoration: TextDecoration.underline,
     );
-    const baseStyle = TextStyle(color: AppColors.textSecondary, fontSize: 12.5, height: 1.4);
+    final baseStyle = TextStyle(color: colors.onSurfaceVariant, fontSize: 12.5, height: 1.4);
 
     return InkWell(
       onTap: () => onChanged(!value),
@@ -74,7 +75,7 @@ class PolicyAgreementCheckbox extends StatelessWidget {
           Checkbox(
             value: value,
             onChanged: (v) => onChanged(v ?? false),
-            activeColor: AppColors.deepBlue,
+            activeColor: colors.primary,
           ),
           Expanded(
             child: Padding(

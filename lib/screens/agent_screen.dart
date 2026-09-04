@@ -5,7 +5,7 @@ import 'package:flutter_animate/flutter_animate.dart';
 import 'package:provider/provider.dart';
 import '../core/network/api_client.dart';
 import '../core/utils/app_strings.dart';
-import '../theme/app_theme.dart';
+import '../theme/app_gradients.dart';
 import '../widgets/glass_button.dart';
 
 // ── Data models ───────────────────────────────────────────────────────────────
@@ -214,15 +214,16 @@ class _AgentScreenState extends State<AgentScreen> {
   }
 
   Future<void> _deleteTechnician(_Technician t) async {
+    final colors = Theme.of(context).colorScheme;
     final ok = await showDialog<bool>(
       context: context,
       builder: (ctx) => AlertDialog(
-        backgroundColor: AppColors.bgMid,
+        backgroundColor: colors.surface,
         shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)),
-        title: Text(_isBn ? 'মুছবেন?' : 'Delete?', style: const TextStyle(color: AppColors.textPrimary, fontSize: 16, fontWeight: FontWeight.w700)),
-        content: Text(_isBn ? '"${t.technicianName}" সরানো হবে।' : '"${t.technicianName}" will be removed.', style: const TextStyle(color: AppColors.textSecondary, fontSize: 14)),
+        title: Text(_isBn ? 'মুছবেন?' : 'Delete?', style: TextStyle(color: colors.onSurface, fontSize: 16, fontWeight: FontWeight.w700)),
+        content: Text(_isBn ? '"${t.technicianName}" সরানো হবে।' : '"${t.technicianName}" will be removed.', style: TextStyle(color: colors.onSurfaceVariant, fontSize: 14)),
         actions: [
-          TextButton(onPressed: () => Navigator.pop(ctx, false), child: Text(_isBn ? 'বাতিল' : 'Cancel', style: const TextStyle(color: AppColors.textMuted))),
+          TextButton(onPressed: () => Navigator.pop(ctx, false), child: Text(_isBn ? 'বাতিল' : 'Cancel', style: TextStyle(color: colors.outline))),
           TextButton(onPressed: () => Navigator.pop(ctx, true), child: Text(_isBn ? 'মুছুন' : 'Delete', style: const TextStyle(color: Color(0xFFEF4444), fontWeight: FontWeight.w700))),
         ],
       ),
@@ -272,6 +273,7 @@ class _AgentScreenState extends State<AgentScreen> {
     required List<(TextEditingController, String, TextInputType)> fields,
     required Future<void> Function() onSubmit,
   }) async {
+    final colors = Theme.of(context).colorScheme;
     bool saving = false;
     final result = await showModalBottomSheet<bool>(
       context: context,
@@ -281,27 +283,27 @@ class _AgentScreenState extends State<AgentScreen> {
         builder: (ctx, setS) => Padding(
           padding: EdgeInsets.only(bottom: MediaQuery.of(ctx).viewInsets.bottom),
           child: Container(
-            decoration: const BoxDecoration(color: AppColors.bgMid, borderRadius: BorderRadius.vertical(top: Radius.circular(24))),
+            decoration: BoxDecoration(color: colors.surface, borderRadius: BorderRadius.vertical(top: Radius.circular(24))),
             padding: const EdgeInsets.all(20),
             child: Column(mainAxisSize: MainAxisSize.min, crossAxisAlignment: CrossAxisAlignment.start, children: [
-              Center(child: Container(width: 40, height: 4, decoration: BoxDecoration(color: AppColors.glassBorder, borderRadius: BorderRadius.circular(2)))),
+              Center(child: Container(width: 40, height: 4, decoration: BoxDecoration(color: colors.outlineVariant, borderRadius: BorderRadius.circular(2)))),
               const SizedBox(height: 18),
-              Text(title, style: const TextStyle(color: AppColors.textPrimary, fontSize: 18, fontWeight: FontWeight.w700)),
+              Text(title, style: TextStyle(color: colors.onSurface, fontSize: 18, fontWeight: FontWeight.w700)),
               const SizedBox(height: 18),
               ...fields.map((f) => Padding(
                     padding: const EdgeInsets.only(bottom: 12),
                     child: TextField(
                       controller: f.$1,
                       keyboardType: f.$3,
-                      style: const TextStyle(color: AppColors.textPrimary, fontSize: 14),
+                      style: TextStyle(color: colors.onSurface, fontSize: 14),
                       decoration: InputDecoration(
                         hintText: f.$2,
-                        hintStyle: const TextStyle(color: AppColors.textMuted, fontSize: 13),
+                        hintStyle: TextStyle(color: colors.outline, fontSize: 13),
                         filled: true,
-                        fillColor: AppColors.glassWhite,
-                        border: OutlineInputBorder(borderRadius: BorderRadius.circular(12), borderSide: const BorderSide(color: AppColors.glassBorder)),
-                        enabledBorder: OutlineInputBorder(borderRadius: BorderRadius.circular(12), borderSide: const BorderSide(color: AppColors.glassBorder)),
-                        focusedBorder: OutlineInputBorder(borderRadius: BorderRadius.circular(12), borderSide: const BorderSide(color: AppColors.deepBlue)),
+                        fillColor: colors.surface,
+                        border: OutlineInputBorder(borderRadius: BorderRadius.circular(12), borderSide: BorderSide(color: colors.outlineVariant)),
+                        enabledBorder: OutlineInputBorder(borderRadius: BorderRadius.circular(12), borderSide: BorderSide(color: colors.outlineVariant)),
+                        focusedBorder: OutlineInputBorder(borderRadius: BorderRadius.circular(12), borderSide: BorderSide(color: colors.primary)),
                       ),
                     ),
                   )),
@@ -388,24 +390,25 @@ class _AgentScreenState extends State<AgentScreen> {
 
   @override
   Widget build(BuildContext context) {
+    final colors = Theme.of(context).colorScheme;
     _isBn = context.watch<LanguageNotifier>().isBengali;
     return Scaffold(
-      backgroundColor: AppColors.bgDark,
+      backgroundColor: colors.surfaceContainerHighest,
       appBar: AppBar(
         backgroundColor: Colors.transparent,
         elevation: 0,
         title: Text(
           _isBn ? 'এজেন্ট' : 'Agent',
-          style: const TextStyle(
-            color: AppColors.textPrimary,
+          style: TextStyle(
+            color: colors.onSurface,
             fontSize: 18,
             fontWeight: FontWeight.w700,
           ),
         ),
         leading: IconButton(
-          icon: const Icon(
+          icon: Icon(
             Icons.arrow_back_ios_new_rounded,
-            color: AppColors.textPrimary,
+            color: colors.onSurface,
             size: 18,
           ),
           onPressed: () => Navigator.pop(context),
@@ -413,14 +416,14 @@ class _AgentScreenState extends State<AgentScreen> {
         actions: [
           if (_screenState == _ScreenState.isAgent)
             IconButton(
-              icon: const Icon(Icons.refresh_rounded, color: AppColors.textMuted, size: 20),
+              icon: Icon(Icons.refresh_rounded, color: colors.outline, size: 20),
               onPressed: _loadAgentInfo,
             ),
         ],
       ),
       body: switch (_screenState) {
-        _ScreenState.loading => const Center(
-            child: CircularProgressIndicator(color: AppColors.deepBlue),
+        _ScreenState.loading => Center(
+            child: CircularProgressIndicator(color: colors.primary),
           ),
         _ScreenState.notAgent => _buildRegistrationView(),
         _ScreenState.isAgent => _buildDashboardView(),
@@ -431,6 +434,7 @@ class _AgentScreenState extends State<AgentScreen> {
   // ── State A: Registration view ─────────────────────────────────────────────
 
   Widget _buildRegistrationView() {
+    final colors = Theme.of(context).colorScheme;
     return SingleChildScrollView(
       padding: const EdgeInsets.fromLTRB(24, 20, 24, 100),
       child: Column(
@@ -442,8 +446,8 @@ class _AgentScreenState extends State<AgentScreen> {
           Text(
             _isBn ? 'এজেন্ট হয়ে আয় করুন' : 'Earn as an Agent',
             textAlign: TextAlign.center,
-            style: const TextStyle(
-              color: AppColors.textPrimary,
+            style: TextStyle(
+              color: colors.onSurface,
               fontSize: 26,
               fontWeight: FontWeight.w800,
               letterSpacing: -0.3,
@@ -455,8 +459,8 @@ class _AgentScreenState extends State<AgentScreen> {
                 ? 'সার্ভিস প্রদানকারীদের নিয়োগ করুন এবং প্রতিটি সফল রেফারেলে কমিশন উপার্জন করুন।'
                 : 'Recruit service providers and earn commission on every successful referral.',
             textAlign: TextAlign.center,
-            style: const TextStyle(
-              color: AppColors.textMuted,
+            style: TextStyle(
+              color: colors.outline,
               fontSize: 14,
               height: 1.6,
             ),
@@ -481,15 +485,16 @@ class _AgentScreenState extends State<AgentScreen> {
   }
 
   Widget _buildIllustration() {
+    final colors = Theme.of(context).colorScheme;
     return Container(
       width: 110,
       height: 110,
       decoration: BoxDecoration(
-        gradient: AppColors.blueGradient,
+        gradient: AppGradients.primary(colors),
         shape: BoxShape.circle,
         boxShadow: [
           BoxShadow(
-            color: AppColors.deepBlue.withOpacity(0.4),
+            color: colors.primary.withOpacity(0.4),
             blurRadius: 32,
             offset: const Offset(0, 12),
           ),
@@ -536,13 +541,14 @@ class _AgentScreenState extends State<AgentScreen> {
   }
 
   Widget _buildMotivationField() {
+    final colors = Theme.of(context).colorScheme;
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
         Text(
           _isBn ? 'আপনার উদ্দেশ্য (ঐচ্ছিক)' : 'Your Motivation (optional)',
-          style: const TextStyle(
-            color: AppColors.textMuted,
+          style: TextStyle(
+            color: colors.outline,
             fontSize: 12,
             fontWeight: FontWeight.w600,
             letterSpacing: 0.5,
@@ -556,24 +562,24 @@ class _AgentScreenState extends State<AgentScreen> {
             child: TextField(
               controller: _motivationController,
               maxLines: 3,
-              style: const TextStyle(color: AppColors.textPrimary, fontSize: 14),
+              style: TextStyle(color: colors.onSurface, fontSize: 14),
               decoration: InputDecoration(
                 hintText: _isBn ? 'আপনি কেন এজেন্ট হতে চান তা লিখুন...' : 'Write why you want to become an agent...',
-                hintStyle: const TextStyle(color: AppColors.textMuted, fontSize: 13),
+                hintStyle: TextStyle(color: colors.outline, fontSize: 13),
                 filled: true,
-                fillColor: AppColors.glassWhite,
+                fillColor: colors.surface,
                 contentPadding: const EdgeInsets.symmetric(horizontal: 18, vertical: 14),
                 border: OutlineInputBorder(
                   borderRadius: BorderRadius.circular(16),
-                  borderSide: const BorderSide(color: AppColors.glassBorder, width: 1),
+                  borderSide: BorderSide(color: colors.outlineVariant, width: 1),
                 ),
                 enabledBorder: OutlineInputBorder(
                   borderRadius: BorderRadius.circular(16),
-                  borderSide: const BorderSide(color: AppColors.glassBorder, width: 1),
+                  borderSide: BorderSide(color: colors.outlineVariant, width: 1),
                 ),
                 focusedBorder: OutlineInputBorder(
                   borderRadius: BorderRadius.circular(16),
-                  borderSide: const BorderSide(color: AppColors.deepBlue, width: 1.5),
+                  borderSide: BorderSide(color: colors.primary, width: 1.5),
                 ),
               ),
             ),
@@ -609,9 +615,10 @@ class _AgentScreenState extends State<AgentScreen> {
   // ── State B: Agent dashboard ───────────────────────────────────────────────
 
   Widget _buildDashboardView() {
+    final colors = Theme.of(context).colorScheme;
     return RefreshIndicator(
-      color: AppColors.deepBlue,
-      backgroundColor: AppColors.bgMid,
+      color: colors.primary,
+      backgroundColor: colors.surface,
       onRefresh: _loadAgentInfo,
       child: ListView(
         padding: const EdgeInsets.fromLTRB(16, 12, 16, 100),
@@ -631,21 +638,22 @@ class _AgentScreenState extends State<AgentScreen> {
   }
 
   Widget _sectionHeader(String title, IconData icon, VoidCallback onAdd) {
+    final colors = Theme.of(context).colorScheme;
     return Row(
       children: [
-        Icon(icon, color: AppColors.textMuted, size: 16),
+        Icon(icon, color: colors.outline, size: 16),
         const SizedBox(width: 6),
-        Text(title, style: const TextStyle(color: AppColors.textMuted, fontSize: 12, fontWeight: FontWeight.w600, letterSpacing: 1)),
+        Text(title, style: TextStyle(color: colors.outline, fontSize: 12, fontWeight: FontWeight.w600, letterSpacing: 1)),
         const Spacer(),
         GestureDetector(
           onTap: onAdd,
           child: Container(
             padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 6),
-            decoration: BoxDecoration(gradient: AppColors.blueGradient, borderRadius: BorderRadius.circular(20)),
+            decoration: BoxDecoration(gradient: AppGradients.primary(colors), borderRadius: BorderRadius.circular(20)),
             child: Row(mainAxisSize: MainAxisSize.min, children: [
-              const Icon(Icons.add_rounded, color: AppColors.ivory, size: 15),
+              Icon(Icons.add_rounded, color: colors.onPrimary, size: 15),
               const SizedBox(width: 3),
-              Text(_isBn ? 'যোগ' : 'Add', style: const TextStyle(color: AppColors.ivory, fontSize: 12, fontWeight: FontWeight.w700)),
+              Text(_isBn ? 'যোগ' : 'Add', style: TextStyle(color: colors.onPrimary, fontSize: 12, fontWeight: FontWeight.w700)),
             ]),
           ),
         ),
@@ -654,8 +662,9 @@ class _AgentScreenState extends State<AgentScreen> {
   }
 
   Widget _buildTechnicianList() {
+    final colors = Theme.of(context).colorScheme;
     if (_isLoadingCrew) {
-      return const Padding(padding: EdgeInsets.symmetric(vertical: 24), child: Center(child: CircularProgressIndicator(color: AppColors.deepBlue)));
+      return Padding(padding: EdgeInsets.symmetric(vertical: 24), child: Center(child: CircularProgressIndicator(color: colors.primary)));
     }
     if (_technicians.isEmpty) return _emptyBox(_isBn ? 'এখনো কোনো টেকনিশিয়ান যোগ করা হয়নি' : 'No technicians added yet');
     return Column(
@@ -664,20 +673,20 @@ class _AgentScreenState extends State<AgentScreen> {
         return Container(
           margin: const EdgeInsets.only(bottom: 10),
           padding: const EdgeInsets.all(14),
-          decoration: BoxDecoration(color: AppColors.bgMid, borderRadius: BorderRadius.circular(16), border: Border.all(color: AppColors.glassBorder)),
+          decoration: BoxDecoration(color: colors.surface, borderRadius: BorderRadius.circular(16), border: Border.all(color: colors.outlineVariant)),
           child: Row(children: [
             Container(
               width: 44, height: 44,
-              decoration: BoxDecoration(color: AppColors.deepBlue.withOpacity(0.1), borderRadius: BorderRadius.circular(12)),
-              child: const Icon(Icons.engineering_rounded, color: AppColors.deepBlue, size: 22),
+              decoration: BoxDecoration(color: colors.primary.withOpacity(0.1), borderRadius: BorderRadius.circular(12)),
+              child: Icon(Icons.engineering_rounded, color: colors.primary, size: 22),
             ),
             const SizedBox(width: 12),
             Expanded(child: Column(crossAxisAlignment: CrossAxisAlignment.start, children: [
-              Text(t.technicianName, style: const TextStyle(color: AppColors.textPrimary, fontSize: 13, fontWeight: FontWeight.w600)),
+              Text(t.technicianName, style: TextStyle(color: colors.onSurface, fontSize: 13, fontWeight: FontWeight.w600)),
               const SizedBox(height: 3),
-              Text(t.phone, style: const TextStyle(color: AppColors.textMuted, fontSize: 11)),
+              Text(t.phone, style: TextStyle(color: colors.outline, fontSize: 11)),
             ])),
-            IconButton(icon: const Icon(Icons.edit_outlined, color: AppColors.textMuted, size: 18), onPressed: () => _addOrEditTechnician(existing: t)),
+            IconButton(icon: Icon(Icons.edit_outlined, color: colors.outline, size: 18), onPressed: () => _addOrEditTechnician(existing: t)),
             IconButton(icon: const Icon(Icons.delete_outline_rounded, color: Color(0xFFEF4444), size: 18), onPressed: () => _deleteTechnician(t)),
           ]),
         ).animate(delay: Duration(milliseconds: e.key * 50)).fadeIn().slideX(begin: 0.05, end: 0);
@@ -686,6 +695,7 @@ class _AgentScreenState extends State<AgentScreen> {
   }
 
   Widget _buildPropertyList() {
+    final colors = Theme.of(context).colorScheme;
     if (_isLoadingCrew) return const SizedBox.shrink();
     if (_properties.isEmpty) return _emptyBox(_isBn ? 'এখনো কোনো মেস প্রপার্টি যোগ করা হয়নি' : 'No mess properties added yet');
     return Column(
@@ -694,7 +704,7 @@ class _AgentScreenState extends State<AgentScreen> {
         return Container(
           margin: const EdgeInsets.only(bottom: 10),
           padding: const EdgeInsets.all(14),
-          decoration: BoxDecoration(color: AppColors.bgMid, borderRadius: BorderRadius.circular(16), border: Border.all(color: AppColors.glassBorder)),
+          decoration: BoxDecoration(color: colors.surface, borderRadius: BorderRadius.circular(16), border: Border.all(color: colors.outlineVariant)),
           child: Row(children: [
             Container(
               width: 44, height: 44,
@@ -703,11 +713,11 @@ class _AgentScreenState extends State<AgentScreen> {
             ),
             const SizedBox(width: 12),
             Expanded(child: Column(crossAxisAlignment: CrossAxisAlignment.start, children: [
-              Text(p.messName, style: const TextStyle(color: AppColors.textPrimary, fontSize: 13, fontWeight: FontWeight.w600)),
+              Text(p.messName, style: TextStyle(color: colors.onSurface, fontSize: 13, fontWeight: FontWeight.w600)),
               const SizedBox(height: 3),
-              Text(p.address, maxLines: 1, overflow: TextOverflow.ellipsis, style: const TextStyle(color: AppColors.textMuted, fontSize: 11)),
+              Text(p.address, maxLines: 1, overflow: TextOverflow.ellipsis, style: TextStyle(color: colors.outline, fontSize: 11)),
             ])),
-            Text(_isBn ? '${p.totalSeats} আসন' : '${p.totalSeats} seats', style: const TextStyle(color: AppColors.textSecondary, fontSize: 12, fontWeight: FontWeight.w600)),
+            Text(_isBn ? '${p.totalSeats} আসন' : '${p.totalSeats} seats', style: TextStyle(color: colors.onSurfaceVariant, fontSize: 12, fontWeight: FontWeight.w600)),
           ]),
         ).animate(delay: Duration(milliseconds: e.key * 50)).fadeIn().slideX(begin: 0.05, end: 0);
       }).toList(),
@@ -715,24 +725,26 @@ class _AgentScreenState extends State<AgentScreen> {
   }
 
   Widget _emptyBox(String msg) {
+    final colors = Theme.of(context).colorScheme;
     return Container(
       padding: const EdgeInsets.symmetric(vertical: 28, horizontal: 20),
-      decoration: BoxDecoration(color: AppColors.glassWhite, borderRadius: BorderRadius.circular(16), border: Border.all(color: AppColors.glassBorder)),
-      child: Center(child: Text(msg, textAlign: TextAlign.center, style: const TextStyle(color: AppColors.textMuted, fontSize: 13))),
+      decoration: BoxDecoration(color: colors.surface, borderRadius: BorderRadius.circular(16), border: Border.all(color: colors.outlineVariant)),
+      child: Center(child: Text(msg, textAlign: TextAlign.center, style: TextStyle(color: colors.outline, fontSize: 13))),
     );
   }
 
   Widget _buildAgentCard() {
+    final colors = Theme.of(context).colorScheme;
     final agent = _agentInfo!;
 
     return Container(
       padding: const EdgeInsets.all(24),
       decoration: BoxDecoration(
-        gradient: AppColors.blueGradient,
+        gradient: AppGradients.primary(colors),
         borderRadius: BorderRadius.circular(22),
         boxShadow: [
           BoxShadow(
-            color: AppColors.deepBlue.withOpacity(0.35),
+            color: colors.primary.withOpacity(0.35),
             blurRadius: 28,
             offset: const Offset(0, 10),
           ),

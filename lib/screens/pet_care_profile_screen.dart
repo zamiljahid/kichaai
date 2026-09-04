@@ -3,7 +3,7 @@ import 'package:provider/provider.dart';
 import '../core/network/api_client.dart';
 import '../core/utils/app_strings.dart';
 import '../services/onboarding_service.dart';
-import '../theme/app_theme.dart';
+import '../theme/app_gradients.dart';
 import '../widgets/animated_background.dart';
 import '../widgets/glass_button.dart';
 import 'photographer_profile_screen.dart' show sectionCard, labeledField;
@@ -149,6 +149,7 @@ class _PetCareProfileScreenState extends State<PetCareProfileScreen> {
 
   @override
   Widget build(BuildContext context) {
+    final colors = Theme.of(context).colorScheme;
     _isBn = context.watch<LanguageNotifier>().isBengali;
     return Scaffold(
       body: AnimatedBackground(
@@ -158,8 +159,8 @@ class _PetCareProfileScreenState extends State<PetCareProfileScreen> {
               Padding(
                 padding: const EdgeInsets.fromLTRB(8, 8, 16, 4),
                 child: Row(children: [
-                  IconButton(icon: const Icon(Icons.arrow_back_rounded, color: AppColors.textPrimary), onPressed: () => Navigator.of(context).pop()),
-                  Text(_isBn ? 'পেট কেয়ার প্রোফাইল' : 'Pet Care Profile', style: const TextStyle(color: AppColors.textPrimary, fontSize: 18, fontWeight: FontWeight.w700)),
+                  IconButton(icon: Icon(Icons.arrow_back_rounded, color: colors.onSurface), onPressed: () => Navigator.of(context).pop()),
+                  Text(_isBn ? 'পেট কেয়ার প্রোফাইল' : 'Pet Care Profile', style: TextStyle(color: colors.onSurface, fontSize: 18, fontWeight: FontWeight.w700)),
                 ]),
               ),
               Expanded(
@@ -167,6 +168,7 @@ class _PetCareProfileScreenState extends State<PetCareProfileScreen> {
                   padding: const EdgeInsets.fromLTRB(16, 8, 16, 32),
                   child: Column(crossAxisAlignment: CrossAxisAlignment.stretch, children: [
                     sectionCard(
+                      colors: colors,
                       title: _isBn ? 'কোন প্রাণীর যত্ন নেন' : 'Pet types you handle',
                       child: Wrap(
                         spacing: 8,
@@ -178,12 +180,12 @@ class _PetCareProfileScreenState extends State<PetCareProfileScreen> {
                             child: Container(
                               padding: const EdgeInsets.symmetric(horizontal: 13, vertical: 8),
                               decoration: BoxDecoration(
-                                gradient: active ? AppColors.blueGradient : null,
-                                color: active ? null : const Color(0xFFF9F7F0),
+                                gradient: active ? AppGradients.primary(colors) : null,
+                                color: active ? null : colors.surfaceContainerLow,
                                 borderRadius: BorderRadius.circular(20),
-                                border: Border.all(color: active ? AppColors.deepBlue : AppColors.glassBorder, width: active ? 1.5 : 1),
+                                border: Border.all(color: active ? colors.primary : colors.outlineVariant, width: active ? 1.5 : 1),
                               ),
-                              child: Text(petTypeLabel(code, _isBn), style: TextStyle(color: active ? Colors.white : AppColors.textSecondary, fontSize: 12.5, fontWeight: active ? FontWeight.w700 : FontWeight.w500)),
+                              child: Text(petTypeLabel(code, _isBn), style: TextStyle(color: active ? Colors.white : colors.onSurfaceVariant, fontSize: 12.5, fontWeight: active ? FontWeight.w700 : FontWeight.w500)),
                             ),
                           );
                         }).toList(),
@@ -191,6 +193,7 @@ class _PetCareProfileScreenState extends State<PetCareProfileScreen> {
                     ),
                     const SizedBox(height: 14),
                     sectionCard(
+                      colors: colors,
                       title: _isBn ? 'সেবার ধরন' : 'Care type',
                       child: Row(
                         children: [
@@ -202,11 +205,12 @@ class _PetCareProfileScreenState extends State<PetCareProfileScreen> {
                     ),
                     const SizedBox(height: 14),
                     sectionCard(
+                      colors: colors,
                       title: _isBn ? 'কোন কোন সেবা দেন' : 'Services you offer',
                       child: _careType == 'walking'
                           ? Text(
                               _isBn ? 'শুধু হাঁটানো সেবা নির্বাচিত' : 'Walking-only service selected',
-                              style: const TextStyle(color: AppColors.textMuted, fontSize: 12.5),
+                              style: TextStyle(color: colors.outline, fontSize: 12.5),
                             )
                           : Wrap(
                               spacing: 8,
@@ -218,12 +222,12 @@ class _PetCareProfileScreenState extends State<PetCareProfileScreen> {
                                   child: Container(
                                     padding: const EdgeInsets.symmetric(horizontal: 13, vertical: 8),
                                     decoration: BoxDecoration(
-                                      gradient: active ? AppColors.blueGradient : null,
-                                      color: active ? null : const Color(0xFFF9F7F0),
+                                      gradient: active ? AppGradients.primary(colors) : null,
+                                      color: active ? null : colors.surfaceContainerLow,
                                       borderRadius: BorderRadius.circular(20),
-                                      border: Border.all(color: active ? AppColors.deepBlue : AppColors.glassBorder, width: active ? 1.5 : 1),
+                                      border: Border.all(color: active ? colors.primary : colors.outlineVariant, width: active ? 1.5 : 1),
                                     ),
-                                    child: Text(serviceLabel(code, _isBn), style: TextStyle(color: active ? Colors.white : AppColors.textSecondary, fontSize: 12.5, fontWeight: active ? FontWeight.w700 : FontWeight.w500)),
+                                    child: Text(serviceLabel(code, _isBn), style: TextStyle(color: active ? Colors.white : colors.onSurfaceVariant, fontSize: 12.5, fontWeight: active ? FontWeight.w700 : FontWeight.w500)),
                                   ),
                                 );
                               }).toList(),
@@ -231,30 +235,33 @@ class _PetCareProfileScreenState extends State<PetCareProfileScreen> {
                     ),
                     const SizedBox(height: 14),
                     sectionCard(
+                      colors: colors,
                       title: _isBn ? 'ঘণ্টাপ্রতি রেট (৳)' : 'Hourly rate (৳)',
                       child: Row(
                         children: [
-                          Expanded(child: labeledField(controller: _rateMinCtrl, hint: _isBn ? 'সর্বনিম্ন' : 'Minimum', keyboardType: TextInputType.number)),
+                          Expanded(child: labeledField(colors: colors, controller: _rateMinCtrl, hint: _isBn ? 'সর্বনিম্ন' : 'Minimum', keyboardType: TextInputType.number)),
                           const SizedBox(width: 10),
-                          Expanded(child: labeledField(controller: _rateMaxCtrl, hint: _isBn ? 'সর্বোচ্চ' : 'Maximum', keyboardType: TextInputType.number)),
+                          Expanded(child: labeledField(colors: colors, controller: _rateMaxCtrl, hint: _isBn ? 'সর্বোচ্চ' : 'Maximum', keyboardType: TextInputType.number)),
                         ],
                       ),
                     ),
                     const SizedBox(height: 14),
                     sectionCard(
+                      colors: colors,
                       // Founder's explicit framing: "কত দিনের" (how many days) —
                       // not years. Backend column is still named experienceYears
                       // to avoid a migration; only this label changed.
                       title: _isBn ? 'অভিজ্ঞতা (দিন)' : 'Experience (days)',
-                      child: labeledField(controller: _experienceCtrl, hint: _isBn ? 'কত দিনের অভিজ্ঞতা' : 'How many days of experience', keyboardType: TextInputType.number),
+                      child: labeledField(colors: colors, controller: _experienceCtrl, hint: _isBn ? 'কত দিনের অভিজ্ঞতা' : 'How many days of experience', keyboardType: TextInputType.number),
                     ),
                     const SizedBox(height: 14),
                     sectionCard(
+                      colors: colors,
                       title: _isBn ? 'বায়ো (ঐচ্ছিক)' : 'Bio (optional)',
                       child: TextField(
                         controller: _bioCtrl,
                         maxLines: 3,
-                        style: const TextStyle(color: AppColors.textPrimary, fontSize: 14),
+                        style: TextStyle(color: colors.onSurface, fontSize: 14),
                         decoration: InputDecoration(hintText: _isBn ? 'নিজের সম্পর্কে সংক্ষেপে লিখুন...' : 'A short note about yourself...'),
                       ),
                     ),
@@ -271,6 +278,7 @@ class _PetCareProfileScreenState extends State<PetCareProfileScreen> {
   }
 
   Widget _careTypeTab(String type, String label) {
+    final colors = Theme.of(context).colorScheme;
     final active = _careType == type;
     return GestureDetector(
       onTap: () => _setCareType(type),
@@ -278,15 +286,15 @@ class _PetCareProfileScreenState extends State<PetCareProfileScreen> {
         duration: const Duration(milliseconds: 180),
         padding: const EdgeInsets.symmetric(vertical: 12, horizontal: 8),
         decoration: BoxDecoration(
-          gradient: active ? AppColors.blueGradient : null,
-          color: active ? null : const Color(0xFFF9F7F0),
+          gradient: active ? AppGradients.primary(colors) : null,
+          color: active ? null : colors.surfaceContainerLow,
           borderRadius: BorderRadius.circular(12),
-          border: Border.all(color: active ? Colors.transparent : AppColors.glassBorder),
+          border: Border.all(color: active ? Colors.transparent : colors.outlineVariant),
         ),
         child: Text(
           label,
           textAlign: TextAlign.center,
-          style: TextStyle(color: active ? Colors.white : AppColors.textSecondary, fontSize: 13, fontWeight: FontWeight.w700),
+          style: TextStyle(color: active ? Colors.white : colors.onSurfaceVariant, fontSize: 13, fontWeight: FontWeight.w700),
         ),
       ),
     );

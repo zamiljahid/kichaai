@@ -4,7 +4,7 @@ import '../core/network/api_client.dart';
 import '../core/utils/app_strings.dart';
 import '../services/auth_service.dart';
 import '../services/catalog_service.dart';
-import '../theme/app_theme.dart';
+import '../theme/app_gradients.dart';
 import '../widgets/animated_background.dart';
 import '../widgets/glass_button.dart';
 import '../widgets/glass_card.dart';
@@ -138,20 +138,21 @@ class _TechnicianSpecializationsScreenState
   }
 
   Widget _buildAppBar() {
+    final colors = Theme.of(context).colorScheme;
     return Padding(
       padding: const EdgeInsets.fromLTRB(4, 8, 16, 4),
       child: Row(
         children: [
           IconButton(
-            icon: const Icon(Icons.arrow_back_rounded,
-                color: AppColors.textPrimary),
+            icon: Icon(Icons.arrow_back_rounded,
+                color: colors.onSurface),
             onPressed: () => Navigator.of(context).pop(),
           ),
           Expanded(
             child: Text(
               _isBn ? 'আমি কোন কোন কাজ পারি?' : 'What jobs can I do?',
-              style: const TextStyle(
-                  color: AppColors.textPrimary,
+              style: TextStyle(
+                  color: colors.onSurface,
                   fontSize: 18,
                   fontWeight: FontWeight.w700),
             ),
@@ -161,13 +162,13 @@ class _TechnicianSpecializationsScreenState
               padding:
                   const EdgeInsets.symmetric(horizontal: 10, vertical: 5),
               decoration: BoxDecoration(
-                color: AppColors.deepBlue.withOpacity(0.12),
+                color: colors.primary.withOpacity(0.12),
                 borderRadius: BorderRadius.circular(12),
               ),
               child: Text(
                 '${_selected.length}',
-                style: const TextStyle(
-                    color: AppColors.deepBlue,
+                style: TextStyle(
+                    color: colors.primary,
                     fontWeight: FontWeight.w700,
                     fontSize: 13),
               ),
@@ -178,9 +179,10 @@ class _TechnicianSpecializationsScreenState
   }
 
   Widget _buildBody() {
+    final colors = Theme.of(context).colorScheme;
     if (_loading) {
-      return const Center(
-          child: CircularProgressIndicator(color: AppColors.deepBlue));
+      return Center(
+          child: CircularProgressIndicator(color: colors.primary));
     }
     if (_error != null) {
       return Padding(
@@ -194,7 +196,7 @@ class _TechnicianSpecializationsScreenState
               const SizedBox(height: 12),
               Text(_error!,
                   textAlign: TextAlign.center,
-                  style: const TextStyle(color: AppColors.textSecondary)),
+                  style: TextStyle(color: colors.onSurfaceVariant)),
               const SizedBox(height: 16),
               GlassButton(
                   label: _isBn ? 'আবার চেষ্টা করুন' : 'Try again',
@@ -218,11 +220,11 @@ class _TechnicianSpecializationsScreenState
                   width: 36,
                   height: 36,
                   decoration: BoxDecoration(
-                    color: AppColors.deepBlue.withOpacity(0.12),
+                    color: colors.primary.withOpacity(0.12),
                     borderRadius: BorderRadius.circular(10),
                   ),
-                  child: const Icon(Icons.lightbulb_outline_rounded,
-                      color: AppColors.deepBlue, size: 20),
+                  child: Icon(Icons.lightbulb_outline_rounded,
+                      color: colors.primary, size: 20),
                 ),
                 const SizedBox(width: 12),
                 Expanded(
@@ -230,8 +232,8 @@ class _TechnicianSpecializationsScreenState
                     _isBn
                         ? 'যেসব কাজ পারেন সেগুলো টিক দিন — শুধু এই কাজের অনুরোধই আপনার কাছে যাবে।'
                         : 'Tick the jobs you can do — only requests for these will reach you.',
-                    style: const TextStyle(
-                        color: AppColors.textSecondary,
+                    style: TextStyle(
+                        color: colors.onSurfaceVariant,
                         fontSize: 12.5,
                         height: 1.4),
                   ),
@@ -261,6 +263,7 @@ class _TechnicianSpecializationsScreenState
   }
 
   Widget _buildGroupCard(TechnicianSpecTreeNode node) {
+    final colors = Theme.of(context).colorScheme;
     final expanded = _expandedGroups.contains(node.group.code);
     final selectedInGroup =
         node.types.where((t) => _selected.contains(t.code)).length;
@@ -289,7 +292,7 @@ class _TechnicianSpecializationsScreenState
                       width: 42,
                       height: 42,
                       decoration: BoxDecoration(
-                        gradient: AppColors.blueGradient,
+                        gradient: AppGradients.primary(colors),
                         borderRadius: BorderRadius.circular(12),
                       ),
                       child: Icon(technicianSpecIcon(node.group.icon),
@@ -302,8 +305,8 @@ class _TechnicianSpecializationsScreenState
                         children: [
                           Text(
                             _isBn ? node.group.bn : node.group.en,
-                            style: const TextStyle(
-                                color: AppColors.textPrimary,
+                            style: TextStyle(
+                                color: colors.onSurface,
                                 fontSize: 15,
                                 fontWeight: FontWeight.w700),
                           ),
@@ -314,8 +317,8 @@ class _TechnicianSpecializationsScreenState
                                 : (_isBn ? '${node.types.length} টি বিকল্প' : '${node.types.length} options'),
                             style: TextStyle(
                               color: selectedInGroup > 0
-                                  ? AppColors.deepBlue
-                                  : AppColors.textMuted,
+                                  ? colors.primary
+                                  : colors.outline,
                               fontSize: 11.5,
                               fontWeight: selectedInGroup > 0
                                   ? FontWeight.w700
@@ -329,7 +332,7 @@ class _TechnicianSpecializationsScreenState
                       expanded
                           ? Icons.keyboard_arrow_up_rounded
                           : Icons.keyboard_arrow_down_rounded,
-                      color: AppColors.textMuted,
+                      color: colors.outline,
                     ),
                   ],
                 ),
@@ -357,14 +360,14 @@ class _TechnicianSpecializationsScreenState
                             horizontal: 14, vertical: 8),
                         decoration: BoxDecoration(
                           gradient:
-                              isSelected ? AppColors.blueGradient : null,
+                              isSelected ? AppGradients.primary(colors) : null,
                           color:
-                              isSelected ? null : AppColors.glassWhite,
+                              isSelected ? null : colors.surface,
                           borderRadius: BorderRadius.circular(100),
                           border: Border.all(
                             color: isSelected
-                                ? AppColors.deepBlue
-                                : AppColors.glassBorder,
+                                ? colors.primary
+                                : colors.outlineVariant,
                             width: 1.5,
                           ),
                         ),
@@ -381,7 +384,7 @@ class _TechnicianSpecializationsScreenState
                               style: TextStyle(
                                 color: isSelected
                                     ? Colors.white
-                                    : AppColors.textSecondary,
+                                    : colors.onSurfaceVariant,
                                 fontSize: 13,
                                 fontWeight: FontWeight.w600,
                               ),

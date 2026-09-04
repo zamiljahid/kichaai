@@ -13,7 +13,7 @@ import '../services/auth_service.dart';
 import '../services/cook_service.dart';
 import '../services/messaging_service.dart';
 import '../services/onboarding_service.dart';
-import '../theme/app_theme.dart';
+import '../theme/app_gradients.dart';
 import '../widgets/glass_button.dart';
 import 'chat_screen.dart';
 import 'photographer_profile_screen.dart' show sectionCard, labeledField, uploadRow;
@@ -152,20 +152,21 @@ class _CookProviderScreenState extends State<CookProviderScreen> with SingleTick
   }
 
   Future<void> _addRecurringSlot() async {
+    final colors = Theme.of(context).colorScheme;
     int day = 0;
     TimeOfDay start = const TimeOfDay(hour: 17, minute: 0);
     TimeOfDay end = const TimeOfDay(hour: 21, minute: 0);
     final saved = await showDialog<bool>(
       context: context,
       builder: (ctx) => StatefulBuilder(builder: (ctx, setD) => AlertDialog(
-        backgroundColor: AppColors.bgMid,
-        title: Text(_isBn ? 'সাপ্তাহিক সময়' : 'Recurring slot', style: const TextStyle(color: AppColors.textPrimary)),
+        backgroundColor: colors.surface,
+        title: Text(_isBn ? 'সাপ্তাহিক সময়' : 'Recurring slot', style: TextStyle(color: colors.onSurface)),
         content: Column(mainAxisSize: MainAxisSize.min, children: [
           DropdownButton<int>(
             value: day,
-            dropdownColor: AppColors.bgMid,
+            dropdownColor: colors.surface,
             isExpanded: true,
-            items: List.generate(7, (i) => DropdownMenuItem(value: i, child: Text(_isBn ? _kDayLabelsBn[i] : _kDayLabelsEn[i], style: const TextStyle(color: AppColors.textPrimary)))),
+            items: List.generate(7, (i) => DropdownMenuItem(value: i, child: Text(_isBn ? _kDayLabelsBn[i] : _kDayLabelsEn[i], style: TextStyle(color: colors.onSurface)))),
             onChanged: (v) => setD(() => day = v!),
           ),
           Row(children: [
@@ -206,13 +207,14 @@ class _CookProviderScreenState extends State<CookProviderScreen> with SingleTick
   }
 
   Future<void> _confirmRequest(CookRequestModel req) async {
+    final colors = Theme.of(context).colorScheme;
     final ctrl = TextEditingController(text: req.budgetAmount?.toStringAsFixed(0) ?? '');
     final quoted = await showDialog<double>(
       context: context,
       builder: (ctx) => AlertDialog(
-        backgroundColor: AppColors.bgMid,
-        title: Text(_isBn ? 'দাম প্রস্তাব করুন' : 'Quote a price', style: const TextStyle(color: AppColors.textPrimary)),
-        content: TextField(controller: ctrl, keyboardType: const TextInputType.numberWithOptions(decimal: true), style: const TextStyle(color: AppColors.textPrimary), decoration: const InputDecoration(border: OutlineInputBorder())),
+        backgroundColor: colors.surface,
+        title: Text(_isBn ? 'দাম প্রস্তাব করুন' : 'Quote a price', style: TextStyle(color: colors.onSurface)),
+        content: TextField(controller: ctrl, keyboardType: const TextInputType.numberWithOptions(decimal: true), style: TextStyle(color: colors.onSurface), decoration: const InputDecoration(border: OutlineInputBorder())),
         actions: [
           TextButton(onPressed: () => Navigator.pop(ctx), child: Text(_isBn ? 'বাতিল' : 'Cancel')),
           TextButton(onPressed: () => Navigator.pop(ctx, double.tryParse(ctrl.text.trim())), child: Text(_isBn ? 'পাঠান' : 'Send')),
@@ -294,19 +296,20 @@ class _CookProviderScreenState extends State<CookProviderScreen> with SingleTick
 
   @override
   Widget build(BuildContext context) {
+    final colors = Theme.of(context).colorScheme;
     _isBn = context.watch<LanguageNotifier>().isBengali;
     return Scaffold(
-      backgroundColor: AppColors.bgDark,
+      backgroundColor: colors.surfaceContainerHighest,
       appBar: AppBar(
-        backgroundColor: AppColors.bgMid,
+        backgroundColor: colors.surface,
         elevation: 0,
-        leading: IconButton(icon: const Icon(Icons.arrow_back_ios_new_rounded, color: AppColors.textPrimary, size: 18), onPressed: () => Navigator.of(context).pop()),
-        title: Text(_isBn ? 'রাঁধুনি ড্যাশবোর্ড' : 'Cook Dashboard', style: const TextStyle(color: AppColors.textPrimary, fontSize: 17, fontWeight: FontWeight.w700)),
+        leading: IconButton(icon: Icon(Icons.arrow_back_ios_new_rounded, color: colors.onSurface, size: 18), onPressed: () => Navigator.of(context).pop()),
+        title: Text(_isBn ? 'রাঁধুনি ড্যাশবোর্ড' : 'Cook Dashboard', style: TextStyle(color: colors.onSurface, fontSize: 17, fontWeight: FontWeight.w700)),
         bottom: TabBar(
           controller: _tabController,
-          labelColor: AppColors.deepBlue,
-          unselectedLabelColor: AppColors.textMuted,
-          indicatorColor: AppColors.deepBlue,
+          labelColor: colors.primary,
+          unselectedLabelColor: colors.outline,
+          indicatorColor: colors.primary,
           isScrollable: true,
           tabs: [Tab(text: _isBn ? 'সময়সূচি' : 'Availability'), Tab(text: _isBn ? 'খোলা রিকোয়েস্ট' : 'Open Requests'), Tab(text: _isBn ? 'আমার কাজ' : 'My Jobs')],
         ),
@@ -323,25 +326,26 @@ class _CookProviderScreenState extends State<CookProviderScreen> with SingleTick
   /// (availability, recurring requests), while "I need a cook now" is broadcast through
   /// dispatch and lands on the provider dashboard as an offer. Nothing said so before.
   Widget _buildOnDemandNotice() {
+    final colors = Theme.of(context).colorScheme;
     return Container(
       width: double.infinity,
       margin: const EdgeInsets.fromLTRB(16, 12, 16, 0),
       padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 10),
       decoration: BoxDecoration(
-        color: AppColors.glassBlue,
+        color: colors.primary.withValues(alpha: 0.08),
         borderRadius: BorderRadius.circular(12),
-        border: Border.all(color: AppColors.glassBorderBlue),
+        border: Border.all(color: colors.primary.withValues(alpha: 0.20)),
       ),
       child: Row(
         children: [
-          const Icon(Icons.info_outline_rounded, size: 16, color: AppColors.deepBlue),
+          Icon(Icons.info_outline_rounded, size: 16, color: colors.primary),
           const SizedBox(width: 8),
           Expanded(
             child: Text(
               _isBn
                   ? 'এখানে শিডিউল করা রান্নার কাজ। এখনই দরকার — এমন অর্ডার পেতে ড্যাশবোর্ড থেকে অনলাইন হোন।'
                   : 'This is for scheduled cooking work. For on-demand orders, go online from your dashboard.',
-              style: const TextStyle(color: AppColors.textSecondary, fontSize: 11.5, height: 1.35),
+              style: TextStyle(color: colors.onSurfaceVariant, fontSize: 11.5, height: 1.35),
             ),
           ),
         ],
@@ -350,10 +354,11 @@ class _CookProviderScreenState extends State<CookProviderScreen> with SingleTick
   }
 
   Widget _buildVerificationBanner() {
+    final colors = Theme.of(context).colorScheme;
     if (_statusLoading) return const SizedBox.shrink();
     if (_nidVerified) return const SizedBox.shrink();
 
-    final color = _applied ? const Color(0xFFF59E0B) : AppColors.deepBlue;
+    final color = _applied ? const Color(0xFFF59E0B) : colors.primary;
     final title = _applied
         ? (_isBn ? 'যাচাইকরণ অপেক্ষমাণ' : 'Verification pending')
         : (_isBn ? 'রাঁধুনি হিসেবে যাচাই করা হয়নি' : 'Not yet verified as a provider');
@@ -372,7 +377,7 @@ class _CookProviderScreenState extends State<CookProviderScreen> with SingleTick
           child: Column(crossAxisAlignment: CrossAxisAlignment.start, children: [
             Text(title, style: TextStyle(color: color, fontSize: 13, fontWeight: FontWeight.w700)),
             const SizedBox(height: 2),
-            Text(body, style: const TextStyle(color: AppColors.textMuted, fontSize: 11.5)),
+            Text(body, style: TextStyle(color: colors.outline, fontSize: 11.5)),
           ]),
         ),
         const SizedBox(width: 8),
@@ -388,20 +393,21 @@ class _CookProviderScreenState extends State<CookProviderScreen> with SingleTick
   }
 
   Widget _buildAvailabilityTab() {
+    final colors = Theme.of(context).colorScheme;
     return Column(children: [
       Padding(
         padding: const EdgeInsets.all(16),
         child: Row(children: [
           Expanded(child: GlassButton(label: _isBn ? '+ সাপ্তাহিক সময়' : '+ Recurring slot', onPressed: _addRecurringSlot)),
           const SizedBox(width: 10),
-          Expanded(child: OutlinedButton(onPressed: _addBlackout, style: OutlinedButton.styleFrom(side: const BorderSide(color: AppColors.glassBorder), padding: const EdgeInsets.symmetric(vertical: 16), shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16))), child: Text(_isBn ? '+ ছুটি' : '+ Blackout day', style: const TextStyle(color: AppColors.textPrimary)))),
+          Expanded(child: OutlinedButton(onPressed: _addBlackout, style: OutlinedButton.styleFrom(side: BorderSide(color: colors.outlineVariant), padding: const EdgeInsets.symmetric(vertical: 16), shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16))), child: Text(_isBn ? '+ ছুটি' : '+ Blackout day', style: TextStyle(color: colors.onSurface)))),
         ]),
       ),
       Expanded(
         child: _availLoading
-            ? const Center(child: CircularProgressIndicator(color: AppColors.deepBlue))
+            ? Center(child: CircularProgressIndicator(color: colors.primary))
             : _availability.isEmpty
-                ? Center(child: Text(_isBn ? 'কোনো সময়সূচি নেই' : 'No availability set', style: const TextStyle(color: AppColors.textMuted)))
+                ? Center(child: Text(_isBn ? 'কোনো সময়সূচি নেই' : 'No availability set', style: TextStyle(color: colors.outline)))
                 : ListView.builder(
                     padding: const EdgeInsets.fromLTRB(16, 0, 16, 40),
                     itemCount: _availability.length,
@@ -413,12 +419,12 @@ class _CookProviderScreenState extends State<CookProviderScreen> with SingleTick
                       return Container(
                         margin: const EdgeInsets.only(bottom: 10),
                         padding: const EdgeInsets.all(14),
-                        decoration: BoxDecoration(color: AppColors.bgMid, borderRadius: BorderRadius.circular(14), border: Border.all(color: AppColors.glassBorder)),
+                        decoration: BoxDecoration(color: colors.surface, borderRadius: BorderRadius.circular(14), border: Border.all(color: colors.outlineVariant)),
                         child: Row(children: [
-                          Icon(a.isBlackout ? Icons.block_rounded : Icons.schedule_rounded, color: a.isBlackout ? const Color(0xFFEF4444) : AppColors.deepBlue, size: 18),
+                          Icon(a.isBlackout ? Icons.block_rounded : Icons.schedule_rounded, color: a.isBlackout ? const Color(0xFFEF4444) : colors.primary, size: 18),
                           const SizedBox(width: 10),
-                          Expanded(child: Text(label, style: const TextStyle(color: AppColors.textPrimary, fontWeight: FontWeight.w600))),
-                          if (!a.isBlackout) Text('${a.startTime} - ${a.endTime}', style: const TextStyle(color: AppColors.textMuted, fontSize: 12)),
+                          Expanded(child: Text(label, style: TextStyle(color: colors.onSurface, fontWeight: FontWeight.w600))),
+                          if (!a.isBlackout) Text('${a.startTime} - ${a.endTime}', style: TextStyle(color: colors.outline, fontSize: 12)),
                         ]),
                       );
                     },
@@ -428,29 +434,30 @@ class _CookProviderScreenState extends State<CookProviderScreen> with SingleTick
   }
 
   Widget _buildOpenTab() {
+    final colors = Theme.of(context).colorScheme;
     return Column(children: [
       Padding(
         padding: const EdgeInsets.all(16),
         child: TextField(
           controller: _areaFilterCtrl,
           onSubmitted: (_) => _loadOpenRequests(),
-          style: const TextStyle(color: AppColors.textPrimary),
+          style: TextStyle(color: colors.onSurface),
           decoration: InputDecoration(
             hintText: _isBn ? 'এলাকা দিয়ে খুঁজুন' : 'Search by area',
-            suffixIcon: IconButton(icon: const Icon(Icons.search, color: AppColors.textMuted), onPressed: _loadOpenRequests),
-            filled: true, fillColor: AppColors.glassWhite,
-            border: OutlineInputBorder(borderRadius: BorderRadius.circular(16), borderSide: const BorderSide(color: AppColors.glassBorder)),
+            suffixIcon: IconButton(icon: Icon(Icons.search, color: colors.outline), onPressed: _loadOpenRequests),
+            filled: true, fillColor: colors.surface,
+            border: OutlineInputBorder(borderRadius: BorderRadius.circular(16), borderSide: BorderSide(color: colors.outlineVariant)),
           ),
         ),
       ),
       Expanded(
         child: _openLoading
-            ? const Center(child: CircularProgressIndicator(color: AppColors.deepBlue))
+            ? Center(child: CircularProgressIndicator(color: colors.primary))
             : _openRequests.isEmpty
-                ? Center(child: Text(_isBn ? 'কোনো খোলা রিকোয়েস্ট নেই' : 'No open requests', style: const TextStyle(color: AppColors.textMuted)))
+                ? Center(child: Text(_isBn ? 'কোনো খোলা রিকোয়েস্ট নেই' : 'No open requests', style: TextStyle(color: colors.outline)))
                 : RefreshIndicator(
                     onRefresh: _loadOpenRequests,
-                    color: AppColors.deepBlue,
+                    color: colors.primary,
                     child: ListView.builder(
                       padding: const EdgeInsets.fromLTRB(16, 0, 16, 40),
                       itemCount: _openRequests.length,
@@ -459,13 +466,13 @@ class _CookProviderScreenState extends State<CookProviderScreen> with SingleTick
                         return Container(
                           margin: const EdgeInsets.only(bottom: 10),
                           padding: const EdgeInsets.all(14),
-                          decoration: BoxDecoration(color: AppColors.bgMid, borderRadius: BorderRadius.circular(14), border: Border.all(color: AppColors.glassBorder)),
+                          decoration: BoxDecoration(color: colors.surface, borderRadius: BorderRadius.circular(14), border: Border.all(color: colors.outlineVariant)),
                           child: Column(crossAxisAlignment: CrossAxisAlignment.start, children: [
-                            Text(r.dishName, style: const TextStyle(color: AppColors.textPrimary, fontWeight: FontWeight.w700)),
+                            Text(r.dishName, style: TextStyle(color: colors.onSurface, fontWeight: FontWeight.w700)),
                             const SizedBox(height: 4),
-                            Text('${r.quantity} · ${r.pickupArea}', style: const TextStyle(color: AppColors.textMuted, fontSize: 12)),
-                            Text('${r.windowStart} - ${r.windowEnd}', style: const TextStyle(color: AppColors.textMuted, fontSize: 12)),
-                            if (r.budgetAmount != null) Text('৳${r.budgetAmount!.toStringAsFixed(0)}', style: const TextStyle(color: AppColors.deepBlue, fontSize: 12, fontWeight: FontWeight.w700)),
+                            Text('${r.quantity} · ${r.pickupArea}', style: TextStyle(color: colors.outline, fontSize: 12)),
+                            Text('${r.windowStart} - ${r.windowEnd}', style: TextStyle(color: colors.outline, fontSize: 12)),
+                            if (r.budgetAmount != null) Text('৳${r.budgetAmount!.toStringAsFixed(0)}', style: TextStyle(color: colors.primary, fontSize: 12, fontWeight: FontWeight.w700)),
                             const SizedBox(height: 10),
                             GlassButton(label: _isBn ? 'সাড়া দিন' : 'Respond', onPressed: () => _confirmRequest(r), width: double.infinity),
                           ]),
@@ -478,11 +485,12 @@ class _CookProviderScreenState extends State<CookProviderScreen> with SingleTick
   }
 
   Widget _buildJobsTab() {
-    if (_jobsLoading) return const Center(child: CircularProgressIndicator(color: AppColors.deepBlue));
-    if (_myJobs.isEmpty) return Center(child: Text(_isBn ? 'কোনো কাজ নেই' : 'No jobs yet', style: const TextStyle(color: AppColors.textMuted)));
+    final colors = Theme.of(context).colorScheme;
+    if (_jobsLoading) return Center(child: CircularProgressIndicator(color: colors.primary));
+    if (_myJobs.isEmpty) return Center(child: Text(_isBn ? 'কোনো কাজ নেই' : 'No jobs yet', style: TextStyle(color: colors.outline)));
     return RefreshIndicator(
       onRefresh: _loadMyJobs,
-      color: AppColors.deepBlue,
+      color: colors.primary,
       child: ListView.builder(
         padding: const EdgeInsets.fromLTRB(16, 16, 16, 40),
         itemCount: _myJobs.length,
@@ -498,23 +506,23 @@ class _CookProviderScreenState extends State<CookProviderScreen> with SingleTick
           return Container(
             margin: const EdgeInsets.only(bottom: 12),
             padding: const EdgeInsets.all(16),
-            decoration: BoxDecoration(color: AppColors.bgMid, borderRadius: BorderRadius.circular(16), border: Border.all(color: AppColors.glassBorder)),
+            decoration: BoxDecoration(color: colors.surface, borderRadius: BorderRadius.circular(16), border: Border.all(color: colors.outlineVariant)),
             child: Column(crossAxisAlignment: CrossAxisAlignment.start, children: [
               Row(children: [
-                Expanded(child: Text(req['dishName'] as String? ?? '', style: const TextStyle(color: AppColors.textPrimary, fontSize: 15, fontWeight: FontWeight.w700))),
-                Container(padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 4), decoration: BoxDecoration(color: AppColors.deepBlue.withOpacity(0.12), borderRadius: BorderRadius.circular(8)), child: Text(confirmationStatus.replaceAll('_', ' '), style: const TextStyle(color: AppColors.deepBlue, fontSize: 11, fontWeight: FontWeight.w700))),
+                Expanded(child: Text(req['dishName'] as String? ?? '', style: TextStyle(color: colors.onSurface, fontSize: 15, fontWeight: FontWeight.w700))),
+                Container(padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 4), decoration: BoxDecoration(color: colors.primary.withOpacity(0.12), borderRadius: BorderRadius.circular(8)), child: Text(confirmationStatus.replaceAll('_', ' '), style: TextStyle(color: colors.primary, fontSize: 11, fontWeight: FontWeight.w700))),
               ]),
               const SizedBox(height: 6),
-              Text('${req['pickupArea'] ?? ''}', style: const TextStyle(color: AppColors.textMuted, fontSize: 12)),
+              Text('${req['pickupArea'] ?? ''}', style: TextStyle(color: colors.outline, fontSize: 12)),
               if (isFinalized) ...[
                 const SizedBox(height: 4),
-                Text(_isBn ? 'রিকোয়েস্ট স্ট্যাটাস: $requestStatus' : 'Request status: $requestStatus', style: const TextStyle(color: AppColors.deepBlue, fontSize: 12, fontWeight: FontWeight.w600)),
+                Text(_isBn ? 'রিকোয়েস্ট স্ট্যাটাস: $requestStatus' : 'Request status: $requestStatus', style: TextStyle(color: colors.primary, fontSize: 12, fontWeight: FontWeight.w600)),
                 if (req['customerPhoneSnapshot'] != null) ...[
                   const SizedBox(height: 8),
                   Row(children: [
-                    const Icon(Icons.phone_rounded, color: AppColors.deepBlue, size: 18),
+                    Icon(Icons.phone_rounded, color: colors.primary, size: 18),
                     const SizedBox(width: 8),
-                    Text(req['customerPhoneSnapshot'] as String, style: const TextStyle(color: AppColors.textPrimary, fontSize: 14)),
+                    Text(req['customerPhoneSnapshot'] as String, style: TextStyle(color: colors.onSurface, fontSize: 14)),
                   ]),
                 ],
                 const SizedBox(height: 10),
@@ -522,10 +530,10 @@ class _CookProviderScreenState extends State<CookProviderScreen> with SingleTick
                   onTap: _openingChatRequestId == requestId ? null : () => _openChat(requestId),
                   child: Row(children: [
                     _openingChatRequestId == requestId
-                        ? const SizedBox(width: 16, height: 16, child: CircularProgressIndicator(strokeWidth: 2, color: AppColors.deepBlue))
-                        : const Icon(Icons.chat_bubble_outline_rounded, color: AppColors.deepBlue, size: 16),
+                        ? SizedBox(width: 16, height: 16, child: CircularProgressIndicator(strokeWidth: 2, color: colors.primary))
+                        : Icon(Icons.chat_bubble_outline_rounded, color: colors.primary, size: 16),
                     const SizedBox(width: 8),
-                    Text(_isBn ? 'গ্রাহকের সাথে চ্যাট করুন' : 'Chat with customer', style: const TextStyle(color: AppColors.deepBlue, fontSize: 13, fontWeight: FontWeight.w600)),
+                    Text(_isBn ? 'গ্রাহকের সাথে চ্যাট করুন' : 'Chat with customer', style: TextStyle(color: colors.primary, fontSize: 13, fontWeight: FontWeight.w600)),
                   ]),
                 ),
               ],
@@ -533,10 +541,10 @@ class _CookProviderScreenState extends State<CookProviderScreen> with SingleTick
                 const SizedBox(height: 12),
                 Row(children: [
                   if (isFinalized && requestStatus == 'confirmed')
-                    Expanded(child: OutlinedButton(onPressed: () => _updateStatus(requestId, 'preparing'), style: OutlinedButton.styleFrom(side: const BorderSide(color: AppColors.deepBlue), padding: const EdgeInsets.symmetric(vertical: 12)), child: Text(_isBn ? 'রান্না শুরু' : 'Start preparing', style: const TextStyle(color: AppColors.deepBlue, fontWeight: FontWeight.w700)))),
+                    Expanded(child: OutlinedButton(onPressed: () => _updateStatus(requestId, 'preparing'), style: OutlinedButton.styleFrom(side: BorderSide(color: colors.primary), padding: const EdgeInsets.symmetric(vertical: 12)), child: Text(_isBn ? 'রান্না শুরু' : 'Start preparing', style: TextStyle(color: colors.primary, fontWeight: FontWeight.w700)))),
                   if (isFinalized && requestStatus == 'preparing') ...[
                     const SizedBox(width: 8),
-                    Expanded(child: OutlinedButton(onPressed: () => _updateStatus(requestId, 'ready_for_pickup'), style: OutlinedButton.styleFrom(side: const BorderSide(color: AppColors.deepBlue), padding: const EdgeInsets.symmetric(vertical: 12)), child: Text(_isBn ? 'প্রস্তুত' : 'Ready for pickup', style: const TextStyle(color: AppColors.deepBlue, fontWeight: FontWeight.w700)))),
+                    Expanded(child: OutlinedButton(onPressed: () => _updateStatus(requestId, 'ready_for_pickup'), style: OutlinedButton.styleFrom(side: BorderSide(color: colors.primary), padding: const EdgeInsets.symmetric(vertical: 12)), child: Text(_isBn ? 'প্রস্তুত' : 'Ready for pickup', style: TextStyle(color: colors.primary, fontWeight: FontWeight.w700)))),
                   ],
                   if (canCancel && requestStatus != 'completed' && requestStatus != 'cancelled') ...[
                     const SizedBox(width: 8),
@@ -780,19 +788,21 @@ class _CookOnboardingScreenState extends State<CookOnboardingScreen> {
 
   @override
   Widget build(BuildContext context) {
+    final colors = Theme.of(context).colorScheme;
     _isBn = context.watch<LanguageNotifier>().isBengali;
     return Scaffold(
-      backgroundColor: AppColors.bgDark,
+      backgroundColor: colors.surfaceContainerHighest,
       appBar: AppBar(
-        backgroundColor: AppColors.bgMid,
+        backgroundColor: colors.surface,
         elevation: 0,
-        leading: IconButton(icon: const Icon(Icons.arrow_back_ios_new_rounded, color: AppColors.textPrimary, size: 18), onPressed: () => Navigator.of(context).pop()),
-        title: Text(_isBn ? 'রাঁধুনি হিসেবে যোগ দিন' : 'Become a Cook', style: const TextStyle(color: AppColors.textPrimary, fontSize: 17, fontWeight: FontWeight.w700)),
+        leading: IconButton(icon: Icon(Icons.arrow_back_ios_new_rounded, color: colors.onSurface, size: 18), onPressed: () => Navigator.of(context).pop()),
+        title: Text(_isBn ? 'রাঁধুনি হিসেবে যোগ দিন' : 'Become a Cook', style: TextStyle(color: colors.onSurface, fontSize: 17, fontWeight: FontWeight.w700)),
       ),
       body: SingleChildScrollView(
         padding: const EdgeInsets.fromLTRB(16, 16, 16, 40),
         child: Column(crossAxisAlignment: CrossAxisAlignment.stretch, children: [
           sectionCard(
+            colors: colors,
             title: _isBn ? 'প্রোফাইল ছবি' : 'Profile picture',
             child: Row(children: [
               GestureDetector(
@@ -802,33 +812,35 @@ class _CookOnboardingScreenState extends State<CookOnboardingScreen> {
                   height: 64,
                   decoration: BoxDecoration(
                     shape: BoxShape.circle,
-                    color: AppColors.glassWhite,
-                    border: Border.all(color: _profilePhotoUrl != null ? const Color(0xFF10B981) : AppColors.glassBorder, width: 1.5),
+                    color: colors.surface,
+                    border: Border.all(color: _profilePhotoUrl != null ? const Color(0xFF10B981) : colors.outlineVariant, width: 1.5),
                     image: _profilePhotoUrl != null ? DecorationImage(image: NetworkImage(_profilePhotoUrl!), fit: BoxFit.cover) : null,
                   ),
                   child: _uploadingProfilePhoto
                       ? const Center(child: SizedBox(width: 20, height: 20, child: CircularProgressIndicator(strokeWidth: 2)))
-                      : (_profilePhotoUrl == null ? const Icon(Icons.add_a_photo_rounded, color: AppColors.textMuted, size: 24) : null),
+                      : (_profilePhotoUrl == null ? Icon(Icons.add_a_photo_rounded, color: colors.outline, size: 24) : null),
                 ),
               ),
               const SizedBox(width: 14),
               Expanded(
                 child: Text(
                   _profilePhotoUrl != null ? (_isBn ? 'আপলোড হয়েছে ✓' : 'Uploaded ✓') : (_isBn ? 'একটি স্পষ্ট প্রোফাইল ছবি আপলোড করুন — গ্রাহকরা এটা দেখতে পাবেন' : 'Upload a clear profile photo — customers will see this'),
-                  style: TextStyle(color: _profilePhotoUrl != null ? const Color(0xFF10B981) : AppColors.textSecondary, fontSize: 13, fontWeight: FontWeight.w600),
+                  style: TextStyle(color: _profilePhotoUrl != null ? const Color(0xFF10B981) : colors.onSurfaceVariant, fontSize: 13, fontWeight: FontWeight.w600),
                 ),
               ),
             ]),
           ),
           const SizedBox(height: 14),
           sectionCard(
+            colors: colors,
             title: _isBn ? 'আপনার ফোন নম্বর' : 'Your phone number',
-            child: labeledField(controller: _ownPhoneCtrl, hint: _isBn ? 'নিজের ফোন নম্বর' : 'Your own phone number', keyboardType: TextInputType.phone),
+            child: labeledField(colors: colors, controller: _ownPhoneCtrl, hint: _isBn ? 'নিজের ফোন নম্বর' : 'Your own phone number', keyboardType: TextInputType.phone),
           ),
           const SizedBox(height: 14),
           sectionCard(
+            colors: colors,
             title: _isBn ? 'আপনার NID' : 'Your NID',
-            child: uploadRow(
+            child: uploadRow(colors: colors, 
               label: _ownNidUrl != null ? (_isBn ? 'আপলোড হয়েছে ✓' : 'Uploaded ✓') : (_isBn ? 'নিজের NID এর ছবি আপলোড করুন' : 'Upload a photo of your own NID'),
               uploaded: _ownNidUrl != null,
               loading: _uploadingOwnNid,
@@ -837,47 +849,51 @@ class _CookOnboardingScreenState extends State<CookOnboardingScreen> {
           ),
           const SizedBox(height: 14),
           sectionCard(
+            colors: colors,
             title: _isBn ? 'বাবা/স্বামীর NID' : "Father's/Husband's NID",
             child: Column(crossAxisAlignment: CrossAxisAlignment.start, children: [
-              uploadRow(
+              uploadRow(colors: colors, 
                 label: _guardianNidUrl != null ? (_isBn ? 'আপলোড হয়েছে ✓' : 'Uploaded ✓') : (_isBn ? 'NID এর ছবি আপলোড করুন' : 'Upload a photo of the NID'),
                 uploaded: _guardianNidUrl != null,
                 loading: _uploadingGuardianNid,
                 onTap: _uploadGuardianNid,
               ),
               const SizedBox(height: 10),
-              labeledField(controller: _guardianPhoneCtrl, hint: _isBn ? 'তার ফোন নম্বর' : 'Their phone number', keyboardType: TextInputType.phone),
+              labeledField(colors: colors, controller: _guardianPhoneCtrl, hint: _isBn ? 'তার ফোন নম্বর' : 'Their phone number', keyboardType: TextInputType.phone),
             ]),
           ),
           const SizedBox(height: 14),
           sectionCard(
+            colors: colors,
             title: _isBn ? 'আপনি কী কী রান্না ভালো পারেন' : 'Dishes you cook well',
             child: TextField(
               controller: _specialtyCtrl,
               maxLines: 3,
-              style: const TextStyle(color: AppColors.textPrimary, fontSize: 14),
+              style: TextStyle(color: colors.onSurface, fontSize: 14),
               decoration: InputDecoration(hintText: _isBn ? 'যেমন: বাঙালি ঘরোয়া রান্না, বিরিয়ানি, চাইনিজ' : 'e.g. Bengali home-style, Biryani, Chinese'),
             ),
           ),
           const SizedBox(height: 14),
           sectionCard(
+            colors: colors,
             title: _isBn ? 'আপনার বাসার ঠিকানা' : 'Your home address',
             child: TextField(
               controller: _addressCtrl,
               maxLines: 2,
-              style: const TextStyle(color: AppColors.textPrimary, fontSize: 14),
+              style: TextStyle(color: colors.onSurface, fontSize: 14),
               decoration: InputDecoration(hintText: _isBn ? 'বাসার পুরো ঠিকানা লিখুন' : 'Enter your full home address'),
             ),
           ),
           const SizedBox(height: 14),
           sectionCard(
+            colors: colors,
             title: _isBn ? 'প্ল্যাটফর্মের নির্ধারিত মূল্যে রান্না' : "Platform's fixed pricing",
             child: Column(crossAxisAlignment: CrossAxisAlignment.start, children: [
               Text(
                 _isBn
                     ? 'প্ল্যাটফর্মের নির্ধারিত মূল্যে (ফিক্সড প্রাইস) প্রতিটি পদ রান্না করতে রাজি আছেন?'
                     : 'Will you cook each dish at the platform\'s fixed price?',
-                style: const TextStyle(color: AppColors.textSecondary, fontSize: 13),
+                style: TextStyle(color: colors.onSurfaceVariant, fontSize: 13),
               ),
               const SizedBox(height: 10),
               Row(children: [
@@ -924,11 +940,12 @@ class _CookOnboardingScreenState extends State<CookOnboardingScreen> {
           ),
           const SizedBox(height: 14),
           sectionCard(
+            colors: colors,
             title: _isBn ? 'পদ ভিত্তিক দাম তালিকা' : 'Per-dish price list',
             child: Column(crossAxisAlignment: CrossAxisAlignment.start, children: [
               Text(
                 _isBn ? 'প্রতিটি পদের নাম, পরিমাণ/একক ও প্রত্যাশিত দাম যোগ করুন' : 'Add the name, quantity/unit, and your expected rate for each dish',
-                style: const TextStyle(color: AppColors.textMuted, fontSize: 12),
+                style: TextStyle(color: colors.outline, fontSize: 12),
               ),
               const SizedBox(height: 12),
               ..._menuItems.asMap().entries.map((e) => Padding(
@@ -936,31 +953,31 @@ class _CookOnboardingScreenState extends State<CookOnboardingScreen> {
                     child: Container(
                       padding: const EdgeInsets.all(12),
                       decoration: BoxDecoration(
-                        color: const Color(0xFFF9F7F0),
+                        color: colors.surfaceContainerLow,
                         borderRadius: BorderRadius.circular(12),
-                        border: Border.all(color: AppColors.glassBorder),
+                        border: Border.all(color: colors.outlineVariant),
                       ),
                       child: Column(crossAxisAlignment: CrossAxisAlignment.start, children: [
                         Row(children: [
-                          Expanded(child: Text(_isBn ? 'পদ #${e.key + 1}' : 'Dish #${e.key + 1}', style: const TextStyle(color: AppColors.textPrimary, fontSize: 12.5, fontWeight: FontWeight.w700))),
+                          Expanded(child: Text(_isBn ? 'পদ #${e.key + 1}' : 'Dish #${e.key + 1}', style: TextStyle(color: colors.onSurface, fontSize: 12.5, fontWeight: FontWeight.w700))),
                           if (_menuItems.length > 1)
                             IconButton(
-                              icon: const Icon(Icons.close_rounded, size: 18, color: AppColors.textMuted),
+                              icon: Icon(Icons.close_rounded, size: 18, color: colors.outline),
                               onPressed: () => setState(() { e.value.dispose(); _menuItems.removeAt(e.key); }),
                               padding: EdgeInsets.zero,
                               constraints: const BoxConstraints(),
                             ),
                         ]),
                         const SizedBox(height: 8),
-                        labeledField(controller: e.value.nameCtrl, hint: _isBn ? 'পদের নাম (যেমন: চিকেন বিরিয়ানি)' : 'Dish name (e.g. Chicken Biryani)'),
+                        labeledField(colors: colors, controller: e.value.nameCtrl, hint: _isBn ? 'পদের নাম (যেমন: চিকেন বিরিয়ানি)' : 'Dish name (e.g. Chicken Biryani)'),
                         const SizedBox(height: 8),
                         Row(children: [
-                          Expanded(child: labeledField(controller: e.value.quantityCtrl, hint: _isBn ? 'পরিমাণ/একক' : 'Quantity/unit')),
+                          Expanded(child: labeledField(colors: colors, controller: e.value.quantityCtrl, hint: _isBn ? 'পরিমাণ/একক' : 'Quantity/unit')),
                           const SizedBox(width: 8),
-                          Expanded(child: labeledField(controller: e.value.rateCtrl, hint: _isBn ? 'দাম ৳' : 'Rate ৳', keyboardType: const TextInputType.numberWithOptions(decimal: true))),
+                          Expanded(child: labeledField(colors: colors, controller: e.value.rateCtrl, hint: _isBn ? 'দাম ৳' : 'Rate ৳', keyboardType: const TextInputType.numberWithOptions(decimal: true))),
                         ]),
                         const SizedBox(height: 8),
-                        labeledField(controller: e.value.prepTimeCtrl, hint: _isBn ? 'রান্নার সময় (মিনিট, ঐচ্ছিক)' : 'Prep time (minutes, optional)', keyboardType: TextInputType.number),
+                        labeledField(colors: colors, controller: e.value.prepTimeCtrl, hint: _isBn ? 'রান্নার সময় (মিনিট, ঐচ্ছিক)' : 'Prep time (minutes, optional)', keyboardType: TextInputType.number),
                       ]),
                     ),
                   )),
@@ -973,13 +990,14 @@ class _CookOnboardingScreenState extends State<CookOnboardingScreen> {
           ),
           const SizedBox(height: 14),
           sectionCard(
+            colors: colors,
             title: _isBn ? 'নীতিমালা' : 'Policy',
             child: Column(crossAxisAlignment: CrossAxisAlignment.start, children: [
               Text(
                 _isBn
                     ? 'নির্ধারিত সময়ের মধ্যে কোনো পদ প্রস্তুত করতে না পারলে সময়-জরিমানা (টাইম পেনাল্টি) প্রযোজ্য হবে। কোনো অর্ডার সম্পূর্ণভাবে সম্পন্ন করতে ব্যর্থ হলে তার জন্য রেড কার্ড দেওয়া হবে, যা আপনার অ্যাকাউন্টের অবস্থাকে প্রভাবিত করবে।'
                     : "Policy: if a dish isn't finished within the agreed time, a time penalty applies. If a job isn't completed at all, it results in a red card, which affects your account standing.",
-                style: const TextStyle(color: AppColors.textSecondary, fontSize: 12.5, height: 1.5),
+                style: TextStyle(color: colors.onSurfaceVariant, fontSize: 12.5, height: 1.5),
               ),
               const SizedBox(height: 10),
               CheckboxListTile(
@@ -987,7 +1005,7 @@ class _CookOnboardingScreenState extends State<CookOnboardingScreen> {
                 onChanged: (v) => setState(() => _policyAcknowledged = v ?? false),
                 title: Text(
                   _isBn ? 'আমি উপরের নীতিমালা বুঝেছি এবং মেনে নিচ্ছি' : 'I understand and agree to the policy above',
-                  style: const TextStyle(color: AppColors.textPrimary, fontSize: 13, fontWeight: FontWeight.w600),
+                  style: TextStyle(color: colors.onSurface, fontSize: 13, fontWeight: FontWeight.w600),
                 ),
                 controlAffinity: ListTileControlAffinity.leading,
                 contentPadding: EdgeInsets.zero,
@@ -1003,18 +1021,19 @@ class _CookOnboardingScreenState extends State<CookOnboardingScreen> {
   }
 
   Widget _pricingChoiceChip({required String label, required bool selected, required VoidCallback onTap}) {
+    final colors = Theme.of(context).colorScheme;
     return GestureDetector(
       onTap: onTap,
       child: Container(
         padding: const EdgeInsets.symmetric(vertical: 10),
         alignment: Alignment.center,
         decoration: BoxDecoration(
-          gradient: selected ? AppColors.blueGradient : null,
-          color: selected ? null : const Color(0xFFF9F7F0),
+          gradient: selected ? AppGradients.primary(colors) : null,
+          color: selected ? null : colors.surfaceContainerLow,
           borderRadius: BorderRadius.circular(12),
-          border: Border.all(color: selected ? AppColors.deepBlue : AppColors.glassBorder, width: selected ? 1.5 : 1),
+          border: Border.all(color: selected ? colors.primary : colors.outlineVariant, width: selected ? 1.5 : 1),
         ),
-        child: Text(label, style: TextStyle(color: selected ? Colors.white : AppColors.textSecondary, fontSize: 13, fontWeight: selected ? FontWeight.w700 : FontWeight.w500)),
+        child: Text(label, style: TextStyle(color: selected ? Colors.white : colors.onSurfaceVariant, fontSize: 13, fontWeight: selected ? FontWeight.w700 : FontWeight.w500)),
       ),
     );
   }

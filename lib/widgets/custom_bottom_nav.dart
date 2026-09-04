@@ -1,7 +1,28 @@
 import 'dart:ui';
-import 'package:flutter/material.dart';
-import '../theme/app_theme.dart';
 
+import 'package:flashy_tab_bar2/flashy_tab_bar2.dart';
+import 'package:flutter/material.dart';
+import 'package:provider/provider.dart';
+
+import '../core/utils/app_strings.dart';
+
+/// Total height the floating nav occupies: the 80px pill plus its 8px vertical
+/// margins. The bottom safe-area inset is on top of this, which is why
+/// [bottomNavClearance] exists rather than a bare constant — the nav is taller
+/// than the old one, and screens that scroll under it (extendBody: true) were
+/// clearing it with a hardcoded 100.
+const double kBottomNavHeight = 96;
+
+/// Space a scrolling tab screen must leave at the end of its content so the
+/// last item is not hidden behind the floating nav.
+double bottomNavClearance(BuildContext context) =>
+    kBottomNavHeight + MediaQuery.paddingOf(context).bottom;
+
+/// ki_chai's floating bottom nav: a frosted, primary-tinted pill that page
+/// content scrolls behind, wrapping a [FlashyTabBar] whose selected item drops
+/// its icon and slides the label up under a moving indicator.
+///
+/// The tab set, their order and the onTap contract are unchanged.
 class CustomBottomNav extends StatelessWidget {
   final int currentIndex;
   final ValueChanged<int> onTap;
@@ -12,89 +33,77 @@ class CustomBottomNav extends StatelessWidget {
     required this.onTap,
   });
 
+  static const _items = [
+    _NavItem(icon: Icons.home_rounded, label: 'হোম', labelEn: 'Home'),
+    _NavItem(
+        icon: Icons.grid_view_rounded, label: 'সেবা', labelEn: 'Services'),
+    _NavItem(
+        icon: Icons.receipt_long_rounded, label: 'অর্ডার', labelEn: 'Orders'),
+    _NavItem(
+        icon: Icons.chat_bubble_rounded, label: 'বার্তা', labelEn: 'Messages'),
+    _NavItem(
+        icon: Icons.person_rounded, label: 'প্রোফাইল', labelEn: 'Profile'),
+  ];
+
   @override
   Widget build(BuildContext context) {
-    const items = [
-      _NavItem(icon: Icons.home_rounded, label: 'হোম', labelEn: 'Home'),
-      _NavItem(icon: Icons.grid_view_rounded, label: 'সেবা', labelEn: 'Services'),
-      _NavItem(icon: Icons.receipt_long_rounded, label: 'অর্ডার', labelEn: 'Orders'),
-      _NavItem(icon: Icons.chat_bubble_rounded, label: 'বার্তা', labelEn: 'Messages'),
-      _NavItem(icon: Icons.person_rounded, label: 'প্রোফাইল', labelEn: 'Profile'),
-    ];
+    final colors = Theme.of(context).colorScheme;
+    // labelEn was declared but never read, so the nav stayed Bengali whatever
+    // the language toggle said.
+    final isBn = context.watch<LanguageNotifier>().isBengali;
 
-    return Padding(
-      padding: const EdgeInsets.fromLTRB(16, 0, 16, 16),
-      child: ClipRRect(
-        borderRadius: BorderRadius.circular(28),
-        child: BackdropFilter(
-          filter: ImageFilter.blur(sigmaX: 20, sigmaY: 20),
-          child: Container(
-            height: 72,
-            decoration: BoxDecoration(
-              gradient: const LinearGradient(
-                begin: Alignment.topLeft,
-                end: Alignment.bottomRight,
-                colors: [Color(0x33FFFFFF), Color(0x0DFFFFFF)],
-              ),
-              borderRadius: BorderRadius.circular(28),
-              border: Border.all(
-                color: AppColors.glassBorder,
-                width: 1.5,
-              ),
-            ),
-            child: Row(
-              mainAxisAlignment: MainAxisAlignment.spaceAround,
-              children: List.generate(items.length, (index) {
-                final item = items[index];
-                final isActive = index == currentIndex;
-                return _buildNavItem(item, isActive, index);
-              }),
-            ),
-          ),
-        ),
-      ),
-    );
-  }
-
-  Widget _buildNavItem(_NavItem item, bool isActive, int index) {
-    return GestureDetector(
-      onTap: () => onTap(index),
-      behavior: HitTestBehavior.opaque,
-      child: AnimatedContainer(
-        duration: const Duration(milliseconds: 250),
-        curve: Curves.easeInOut,
-        padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 8),
-        decoration: isActive
-            ? BoxDecoration(
-                gradient: AppColors.blueGradient,
-                borderRadius: BorderRadius.circular(20),
-                boxShadow: [
-                  BoxShadow(
-                    color: AppColors.deepBlue.withOpacity(0.4),
-                    blurRadius: 12,
-                    offset: const Offset(0, 4),
-                  ),
-                ],
-              )
-            : null,
-        child: Column(
-          mainAxisSize: MainAxisSize.min,
-          children: [
-            Icon(
-              item.icon,
-              color: isActive ? AppColors.ivory : AppColors.textMuted,
-              size: 22,
-            ),
-            const SizedBox(height: 3),
-            Text(
-              item.label,
-              style: TextStyle(
-                color: isActive ? AppColors.ivory : AppColors.textMuted,
-                fontSize: 10,
-                fontWeight: isActive ? FontWeight.w600 : FontWeight.w400,
-              ),
+    return SafeArea(
+      child: Container(
+        height: 80,
+        margin: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
+        decoration: BoxDecoration(
+          borderRadius: BorderRadius.circular(24),
+          boxShadow: [
+            BoxShadow(
+              color: colors.primary.withValues(alpha: 0.30),
+              offset: const Offset(0, 12),
+              blurRadius: 20,
             ),
           ],
+        ),
+        // Frosted pill: the page content scrolling underneath shows through
+        // blurred, which is what makes it read as floating.
+        child: ClipRRect(
+          borderRadius: BorderRadius.circular(24),
+          child: BackdropFilter(
+            filter: ImageFilter.blur(sigmaX: 14, sigmaY: 14),
+            child: Container(
+              padding: const EdgeInsets.symmetric(horizontal: 10),
+              decoration: BoxDecoration(
+                color: colors.primary.withValues(alpha: 0.72),
+                borderRadius: BorderRadius.circular(24),
+                border: Border.all(
+                  color: colors.onPrimary.withValues(alpha: 0.25),
+                ),
+              ),
+              child: FlashyTabBar(
+                selectedIndex: currentIndex,
+                showElevation: false,
+                backgroundColor: Colors.transparent,
+                iconSize: 28,
+                onItemSelected: onTap,
+                items: [
+                  for (var i = 0; i < _items.length; i++)
+                    FlashyTabBarItem(
+                      icon: currentIndex == i
+                          ? const SizedBox()
+                          : Icon(_items[i].icon),
+                      title: Text(
+                        isBn ? _items[i].label : _items[i].labelEn,
+                        style: const TextStyle(fontSize: 14),
+                      ),
+                      activeColor: colors.onPrimary,
+                      inactiveColor: colors.secondaryContainer,
+                    ),
+                ],
+              ),
+            ),
+          ),
         ),
       ),
     );
@@ -105,5 +114,9 @@ class _NavItem {
   final IconData icon;
   final String label;
   final String labelEn;
-  const _NavItem({required this.icon, required this.label, required this.labelEn});
+  const _NavItem({
+    required this.icon,
+    required this.label,
+    required this.labelEn,
+  });
 }

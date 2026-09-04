@@ -8,12 +8,8 @@ import 'package:provider/provider.dart';
 import '../core/network/api_client.dart';
 import '../core/utils/app_strings.dart';
 import '../models/property_model.dart';
-import '../theme/app_theme.dart';
 import '../widgets/pin_picker_screen.dart';
 import 'post_mess_screen.dart';
-
-// App brand accent (pine) — used for save-heart, host button, price pill, CTA.
-const _accent = AppColors.deepBlue;
 
 // ── Screen ────────────────────────────────────────────────────────────────────
 class MessScreen extends StatefulWidget {
@@ -90,11 +86,12 @@ class _MessScreenState extends State<MessScreen> {
   /// Draws a rounded white "৳rent" pill (soft accent tint when selected) to a
   /// PNG so it can be used as a Google Maps marker — the Airbnb map look.
   Future<BitmapDescriptor> _pricePill(String text, {required bool selected}) async {
+    final colors = Theme.of(context).colorScheme;
     const scale = 3.0; // sharp on hi-dpi
     final tp = TextPainter(
       text: TextSpan(text: text, style: TextStyle(
         fontSize: 10.5 * scale, fontWeight: FontWeight.w700,
-        color: selected ? _accent : const Color(0xFF222222))),
+        color: selected ? colors.primary : colors.onSurface)),
       textDirection: TextDirection.ltr,
     )..layout();
     final padH = 9.0 * scale, padV = 5.0 * scale;
@@ -106,10 +103,10 @@ class _MessScreenState extends State<MessScreen> {
         Paint()..color = Colors.black26..maskFilter = MaskFilter.blur(BlurStyle.normal, 3 * scale));
     // Selected still reads as white/neutral — just a light accent tint + border,
     // not a solid saturated fill.
-    canvas.drawRRect(rrect, Paint()..color = selected ? _accent.withOpacity(0.10) : Colors.white);
+    canvas.drawRRect(rrect, Paint()..color = selected ? colors.primary.withOpacity(0.10) : Colors.white);
     canvas.drawRRect(rrect, Paint()
       ..style = PaintingStyle.stroke..strokeWidth = 1.5 * scale
-      ..color = selected ? _accent : const Color(0xFFDBDBDB));
+      ..color = selected ? colors.primary : const Color(0xFFDBDBDB));
     tp.paint(canvas, Offset(padH, padV + 3 * scale));
     final img = await rec.endRecording().toImage(w.ceil(), (h + 3 * scale).ceil());
     final bytes = await img.toByteData(format: ui.ImageByteFormat.png);
@@ -238,9 +235,10 @@ class _MessScreenState extends State<MessScreen> {
   // ── Build ────────────────────────────────────────────────────────────────────
   @override
   Widget build(BuildContext context) {
+    final colors = Theme.of(context).colorScheme;
     _isBn = context.watch<LanguageNotifier>().isBengali;
     return Scaffold(
-      backgroundColor: AppColors.bgDark,
+      backgroundColor: colors.surfaceContainerHighest,
       body: SafeArea(
         child: Column(
           children: [
@@ -258,6 +256,7 @@ class _MessScreenState extends State<MessScreen> {
   // the screen, overlapping the AI chat button and other bottom UI. A top toggle also reads
   // more naturally as a view switch (like a segmented control) than a floating action.
   Widget _mapToggleBar() {
+    final colors = Theme.of(context).colorScheme;
     return Padding(
       padding: const EdgeInsets.fromLTRB(16, 0, 16, 10),
       child: Align(
@@ -266,7 +265,7 @@ class _MessScreenState extends State<MessScreen> {
           onTap: () => setState(() => _view = _view == _View.list ? _View.map : _View.list),
           child: Container(
             padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 9),
-            decoration: BoxDecoration(color: AppColors.textPrimary, borderRadius: BorderRadius.circular(20)),
+            decoration: BoxDecoration(color: colors.onSurface, borderRadius: BorderRadius.circular(20)),
             child: Row(mainAxisSize: MainAxisSize.min, children: [
               Icon(_view == _View.list ? Icons.map_rounded : Icons.view_list_rounded, color: Colors.white, size: 17),
               const SizedBox(width: 6),
@@ -281,6 +280,7 @@ class _MessScreenState extends State<MessScreen> {
 
   // Airbnb-style rounded search pill + filter + post buttons.
   Widget _searchHeader() {
+    final colors = Theme.of(context).colorScheme;
     return Padding(
       padding: const EdgeInsets.fromLTRB(16, 8, 16, 10),
       child: Row(
@@ -289,9 +289,9 @@ class _MessScreenState extends State<MessScreen> {
             onTap: () => Navigator.of(context).pop(),
             child: Container(
               width: 44, height: 44,
-              decoration: const BoxDecoration(color: AppColors.bgMid, shape: BoxShape.circle,
-                  boxShadow: [BoxShadow(color: Color(0x14000000), blurRadius: 10, offset: Offset(0, 3))]),
-              child: const Icon(Icons.arrow_back_rounded, color: AppColors.textPrimary, size: 20),
+              decoration: BoxDecoration(color: colors.surface, shape: BoxShape.circle,
+                  boxShadow: const [BoxShadow(color: Color(0x14000000), blurRadius: 10, offset: Offset(0, 3))]),
+              child: Icon(Icons.arrow_back_rounded, color: colors.onSurface, size: 20),
             ),
           ),
           const SizedBox(width: 10),
@@ -300,24 +300,24 @@ class _MessScreenState extends State<MessScreen> {
               height: 48,
               padding: const EdgeInsets.symmetric(horizontal: 14),
               decoration: BoxDecoration(
-                color: AppColors.bgMid,
+                color: colors.surface,
                 borderRadius: BorderRadius.circular(30),
-                border: Border.all(color: AppColors.glassBorder, width: 1),
+                border: Border.all(color: colors.outlineVariant, width: 1),
                 boxShadow: const [BoxShadow(color: Color(0x14000000), blurRadius: 12, offset: Offset(0, 3))],
               ),
               child: Row(children: [
-                const Icon(Icons.search_rounded, color: AppColors.textPrimary, size: 20),
+                Icon(Icons.search_rounded, color: colors.onSurface, size: 20),
                 const SizedBox(width: 8),
                 Expanded(
                   child: TextField(
                     controller: _searchCtrl,
                     onChanged: _onSearch,
-                    style: const TextStyle(color: AppColors.textPrimary, fontSize: 14, fontWeight: FontWeight.w600),
+                    style: TextStyle(color: colors.onSurface, fontSize: 14, fontWeight: FontWeight.w600),
                     decoration: InputDecoration(
                       isCollapsed: true,
                       border: InputBorder.none,
                       hintText: _isBn ? 'কোথায় থাকতে চান?' : 'Where do you want to stay?',
-                      hintStyle: const TextStyle(color: AppColors.textMuted, fontSize: 14, fontWeight: FontWeight.w500),
+                      hintStyle: TextStyle(color: colors.outline, fontSize: 14, fontWeight: FontWeight.w500),
                     ),
                   ),
                 ),
@@ -332,18 +332,18 @@ class _MessScreenState extends State<MessScreen> {
               Container(
                 width: 44, height: 44,
                 decoration: BoxDecoration(
-                    color: AppColors.bgMid, shape: BoxShape.circle,
-                    border: Border.all(color: _activeFilterCount > 0 ? _accent : AppColors.glassBorder),
+                    color: colors.surface, shape: BoxShape.circle,
+                    border: Border.all(color: _activeFilterCount > 0 ? colors.primary : colors.outlineVariant),
                     boxShadow: const [BoxShadow(color: Color(0x14000000), blurRadius: 10, offset: Offset(0, 3))]),
                 child: Icon(Icons.tune_rounded,
-                    color: _activeFilterCount > 0 ? _accent : AppColors.textPrimary, size: 19),
+                    color: _activeFilterCount > 0 ? colors.primary : colors.onSurface, size: 19),
               ),
               if (_activeFilterCount > 0)
                 Positioned(
                   top: -3, right: -3,
                   child: Container(
                     width: 18, height: 18, alignment: Alignment.center,
-                    decoration: const BoxDecoration(color: _accent, shape: BoxShape.circle),
+                    decoration: BoxDecoration(color: colors.primary, shape: BoxShape.circle),
                     child: Text('$_activeFilterCount',
                         style: const TextStyle(color: Colors.white, fontSize: 10.5, fontWeight: FontWeight.w800)),
                   ),
@@ -360,8 +360,8 @@ class _MessScreenState extends State<MessScreen> {
             },
             child: Container(
               width: 44, height: 44,
-              decoration: const BoxDecoration(color: _accent, shape: BoxShape.circle,
-                  boxShadow: [BoxShadow(color: Color(0x330F5D45), blurRadius: 10, offset: Offset(0, 3))]),
+              decoration: BoxDecoration(color: colors.primary, shape: BoxShape.circle,
+                  boxShadow: [BoxShadow(color: colors.primary.withValues(alpha: 0.2), blurRadius: 10, offset: const Offset(0, 3))]),
               child: const Icon(Icons.add_home_rounded, color: Colors.white, size: 21),
             ),
           ),
@@ -372,6 +372,7 @@ class _MessScreenState extends State<MessScreen> {
 
   // [ মেস | বাসা | গ্যারেজ ] — the seeker never sees the other kinds.
   Widget _typeToggle() {
+    final colors = Theme.of(context).colorScheme;
     Widget seg(String type, String bn, String en) {
       final on = _listingType == type;
       return Expanded(
@@ -381,14 +382,14 @@ class _MessScreenState extends State<MessScreen> {
             duration: const Duration(milliseconds: 180),
             padding: const EdgeInsets.symmetric(vertical: 10),
             decoration: BoxDecoration(
-              color: on ? _accent : Colors.transparent,
+              color: on ? colors.primary : Colors.transparent,
               borderRadius: BorderRadius.circular(24),
             ),
             child: Text(_isBn ? bn : en,
                 textAlign: TextAlign.center,
                 maxLines: 1, overflow: TextOverflow.ellipsis,
                 style: TextStyle(
-                    color: on ? Colors.white : AppColors.textSecondary,
+                    color: on ? Colors.white : colors.onSurfaceVariant,
                     fontSize: 12.5, fontWeight: FontWeight.w700)),
           ),
         ),
@@ -400,9 +401,9 @@ class _MessScreenState extends State<MessScreen> {
       child: Container(
         padding: const EdgeInsets.all(4),
         decoration: BoxDecoration(
-          color: AppColors.bgMid,
+          color: colors.surface,
           borderRadius: BorderRadius.circular(28),
-          border: Border.all(color: AppColors.glassBorder),
+          border: Border.all(color: colors.outlineVariant),
         ),
         child: Row(children: [
           seg('MESS', 'মেস', 'Mess'),
@@ -414,22 +415,23 @@ class _MessScreenState extends State<MessScreen> {
   }
 
   Widget _body() {
-    if (_isLoading) return const Center(child: CircularProgressIndicator(color: _accent));
+    final colors = Theme.of(context).colorScheme;
+    if (_isLoading) return Center(child: CircularProgressIndicator(color: colors.primary));
     if (_error != null && _all.isEmpty) {
       return Center(child: Padding(
         padding: const EdgeInsets.all(28),
         child: Column(mainAxisSize: MainAxisSize.min, children: [
-          const Icon(Icons.wifi_off_rounded, color: AppColors.textMuted, size: 48),
+          Icon(Icons.wifi_off_rounded, color: colors.outline, size: 48),
           const SizedBox(height: 12),
-          Text(_error!, textAlign: TextAlign.center, style: const TextStyle(color: AppColors.textMuted)),
+          Text(_error!, textAlign: TextAlign.center, style: TextStyle(color: colors.outline)),
           const SizedBox(height: 16),
-          GestureDetector(onTap: _fetch, child: Text(_isBn ? 'আবার চেষ্টা করুন' : 'Try again', style: const TextStyle(color: _accent, fontWeight: FontWeight.w700))),
+          GestureDetector(onTap: _fetch, child: Text(_isBn ? 'আবার চেষ্টা করুন' : 'Try again', style: TextStyle(color: colors.primary, fontWeight: FontWeight.w700))),
         ]),
       ));
     }
     if (_filtered.isEmpty) {
       return Center(child: Column(mainAxisSize: MainAxisSize.min, children: [
-        const Icon(Icons.home_work_outlined, color: AppColors.textMuted, size: 56),
+        Icon(Icons.home_work_outlined, color: colors.outline, size: 56),
         const SizedBox(height: 12),
         Text(
             _isMessTab
@@ -437,13 +439,13 @@ class _MessScreenState extends State<MessScreen> {
                 : _isGarageTab
                     ? (_isBn ? 'কোনো গ্যারেজ পাওয়া যায়নি' : 'No garage found')
                     : (_isBn ? 'কোনো বাসা পাওয়া যায়নি' : 'No house found'),
-            style: const TextStyle(color: AppColors.textMuted, fontSize: 15)),
+            style: TextStyle(color: colors.outline, fontSize: 15)),
         if (_activeFilterCount > 0) ...[
           const SizedBox(height: 10),
           GestureDetector(
             onTap: () { _clearFilters(); _fetch(); },
             child: Text(_isBn ? 'ফিল্টার মুছে ফেলুন' : 'Clear filters',
-                style: const TextStyle(color: _accent, fontWeight: FontWeight.w700)),
+                style: TextStyle(color: colors.primary, fontWeight: FontWeight.w700)),
           ),
         ],
       ]));
@@ -463,6 +465,7 @@ class _MessScreenState extends State<MessScreen> {
 
   // ── Filter bottom sheet — every filter optional ───────────────────────────────
   Future<void> _openFilterSheet() async {
+    final colors = Theme.of(context).colorScheme;
     final minCtrl = TextEditingController(text: _minRent?.toString() ?? '');
     final maxCtrl = TextEditingController(text: _maxRent?.toString() ?? '');
     var radius = _radiusKm;
@@ -489,12 +492,12 @@ class _MessScreenState extends State<MessScreen> {
                 child: Container(
                   padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 8),
                   decoration: BoxDecoration(
-                    color: on ? _accent : AppColors.glassWhite,
+                    color: on ? colors.primary : colors.surface,
                     borderRadius: BorderRadius.circular(20),
-                    border: Border.all(color: on ? _accent : AppColors.glassBorder),
+                    border: Border.all(color: on ? colors.primary : colors.outlineVariant),
                   ),
                   child: Text(o.$2, style: TextStyle(
-                      color: on ? Colors.white : AppColors.textSecondary,
+                      color: on ? Colors.white : colors.onSurfaceVariant,
                       fontSize: 13, fontWeight: FontWeight.w600)),
                 ),
               );
@@ -505,18 +508,18 @@ class _MessScreenState extends State<MessScreen> {
         Widget label(String t, {String? hint}) => Padding(
           padding: const EdgeInsets.only(top: 18, bottom: 8),
           child: Row(crossAxisAlignment: CrossAxisAlignment.end, children: [
-            Text(t, style: const TextStyle(color: AppColors.textPrimary, fontSize: 14, fontWeight: FontWeight.w700)),
+            Text(t, style: TextStyle(color: colors.onSurface, fontSize: 14, fontWeight: FontWeight.w700)),
             if (hint != null) ...[
               const SizedBox(width: 8),
-              Expanded(child: Text(hint, style: const TextStyle(color: AppColors.textMuted, fontSize: 11.5))),
+              Expanded(child: Text(hint, style: TextStyle(color: colors.outline, fontSize: 11.5))),
             ],
           ]),
         );
 
         return Container(
           padding: EdgeInsets.only(bottom: MediaQuery.of(ctx).viewInsets.bottom),
-          decoration: const BoxDecoration(
-            color: AppColors.bgMid,
+          decoration: BoxDecoration(
+            color: colors.surface,
             borderRadius: BorderRadius.vertical(top: Radius.circular(24)),
           ),
           child: SafeArea(
@@ -528,11 +531,11 @@ class _MessScreenState extends State<MessScreen> {
                 crossAxisAlignment: CrossAxisAlignment.start,
                 children: [
                   Center(child: Container(width: 40, height: 4,
-                      decoration: BoxDecoration(color: AppColors.glassBorder, borderRadius: BorderRadius.circular(2)))),
+                      decoration: BoxDecoration(color: colors.outlineVariant, borderRadius: BorderRadius.circular(2)))),
                   const SizedBox(height: 10),
                   Row(children: [
                     Expanded(child: Text(_isBn ? 'ফিল্টার' : 'Filters',
-                        style: const TextStyle(color: AppColors.textPrimary, fontSize: 18, fontWeight: FontWeight.w800))),
+                        style: TextStyle(color: colors.onSurface, fontSize: 18, fontWeight: FontWeight.w800))),
                     GestureDetector(
                       onTap: () => setSheet(() {
                         minCtrl.clear(); maxCtrl.clear(); radius = 25;
@@ -541,7 +544,7 @@ class _MessScreenState extends State<MessScreen> {
                         bedrooms = null; tenant = null; carCapacity = null;
                       }),
                       child: Text(_isBn ? 'সব মুছুন' : 'Clear all',
-                          style: const TextStyle(color: AppColors.textMuted, fontSize: 13, fontWeight: FontWeight.w600)),
+                          style: TextStyle(color: colors.outline, fontSize: 13, fontWeight: FontWeight.w600)),
                     ),
                   ]),
                   Flexible(
@@ -557,8 +560,8 @@ class _MessScreenState extends State<MessScreen> {
                                       : (_isBn ? 'পুরো বাসা' : 'whole unit')),
                           Row(children: [
                             Expanded(child: _rentField(minCtrl, _isBn ? 'সর্বনিম্ন ৳' : 'Min ৳')),
-                            const Padding(padding: EdgeInsets.symmetric(horizontal: 10),
-                                child: Text('—', style: TextStyle(color: AppColors.textMuted))),
+                            Padding(padding: EdgeInsets.symmetric(horizontal: 10),
+                                child: Text('—', style: TextStyle(color: colors.outline))),
                             Expanded(child: _rentField(maxCtrl, _isBn ? 'সর্বোচ্চ ৳' : 'Max ৳')),
                           ]),
                           label(_isBn ? 'অবস্থান' : 'Location',
@@ -591,17 +594,17 @@ class _MessScreenState extends State<MessScreen> {
                                 child: Container(
                                   padding: const EdgeInsets.symmetric(vertical: 10),
                                   decoration: BoxDecoration(
-                                    color: !isCustomCenter && center != null ? _accent : AppColors.glassWhite,
+                                    color: !isCustomCenter && center != null ? colors.primary : colors.surface,
                                     borderRadius: BorderRadius.circular(20),
-                                    border: Border.all(color: !isCustomCenter && center != null ? _accent : AppColors.glassBorder),
+                                    border: Border.all(color: !isCustomCenter && center != null ? colors.primary : colors.outlineVariant),
                                   ),
                                   child: Row(mainAxisAlignment: MainAxisAlignment.center, children: [
                                     Icon(Icons.my_location_rounded, size: 15,
-                                        color: !isCustomCenter && center != null ? Colors.white : AppColors.textSecondary),
+                                        color: !isCustomCenter && center != null ? Colors.white : colors.onSurfaceVariant),
                                     const SizedBox(width: 6),
                                     Text(_isBn ? 'বর্তমান অবস্থান' : 'Current location',
                                         style: TextStyle(fontSize: 12.5, fontWeight: FontWeight.w600,
-                                            color: !isCustomCenter && center != null ? Colors.white : AppColors.textSecondary)),
+                                            color: !isCustomCenter && center != null ? Colors.white : colors.onSurfaceVariant)),
                                   ]),
                                 ),
                               ),
@@ -620,17 +623,17 @@ class _MessScreenState extends State<MessScreen> {
                                 child: Container(
                                   padding: const EdgeInsets.symmetric(vertical: 10),
                                   decoration: BoxDecoration(
-                                    color: isCustomCenter ? _accent : AppColors.glassWhite,
+                                    color: isCustomCenter ? colors.primary : colors.surface,
                                     borderRadius: BorderRadius.circular(20),
-                                    border: Border.all(color: isCustomCenter ? _accent : AppColors.glassBorder),
+                                    border: Border.all(color: isCustomCenter ? colors.primary : colors.outlineVariant),
                                   ),
                                   child: Row(mainAxisAlignment: MainAxisAlignment.center, children: [
                                     Icon(Icons.map_rounded, size: 15,
-                                        color: isCustomCenter ? Colors.white : AppColors.textSecondary),
+                                        color: isCustomCenter ? Colors.white : colors.onSurfaceVariant),
                                     const SizedBox(width: 6),
                                     Text(_isBn ? 'ম্যাপে বেছে নিন' : 'Pick on map',
                                         style: TextStyle(fontSize: 12.5, fontWeight: FontWeight.w600,
-                                            color: isCustomCenter ? Colors.white : AppColors.textSecondary)),
+                                            color: isCustomCenter ? Colors.white : colors.onSurfaceVariant)),
                                   ]),
                                 ),
                               ),
@@ -645,7 +648,7 @@ class _MessScreenState extends State<MessScreen> {
                           ], radius, (v) => radius = v ?? 25),
                           if (_isMessTab) ...[
                             const SizedBox(height: 18),
-                            const Divider(color: AppColors.glassBorder, height: 1),
+                            Divider(color: colors.outlineVariant, height: 1),
                             label(_isBn ? 'আমি কেমন সদস্য' : 'About me',
                                 hint: _isBn ? 'নিজের কথা বলুন — মালিকের চাওয়ার সাথে মিলবে'
                                             : 'describe yourself — matched to owner preferences'),
@@ -695,7 +698,7 @@ class _MessScreenState extends State<MessScreen> {
                     onTap: () => Navigator.pop(ctx, true),
                     child: Container(
                       padding: const EdgeInsets.symmetric(vertical: 15),
-                      decoration: BoxDecoration(color: _accent, borderRadius: BorderRadius.circular(14)),
+                      decoration: BoxDecoration(color: colors.primary, borderRadius: BorderRadius.circular(14)),
                       child: Center(child: Text(_isBn ? 'ফলাফল দেখুন' : 'Show results',
                           style: const TextStyle(color: Colors.white, fontSize: 15, fontWeight: FontWeight.w700))),
                     ),
@@ -725,30 +728,32 @@ class _MessScreenState extends State<MessScreen> {
   }
 
   Widget _rentField(TextEditingController c, String hint) {
+    final colors = Theme.of(context).colorScheme;
     return TextField(
       controller: c,
       keyboardType: TextInputType.number,
       inputFormatters: [FilteringTextInputFormatter.digitsOnly],
-      style: const TextStyle(color: AppColors.textPrimary, fontSize: 14, fontWeight: FontWeight.w600),
+      style: TextStyle(color: colors.onSurface, fontSize: 14, fontWeight: FontWeight.w600),
       decoration: InputDecoration(
         hintText: hint,
-        hintStyle: const TextStyle(color: AppColors.textMuted, fontSize: 13),
+        hintStyle: TextStyle(color: colors.outline, fontSize: 13),
         filled: true,
-        fillColor: AppColors.glassWhite,
+        fillColor: colors.surface,
         contentPadding: const EdgeInsets.symmetric(horizontal: 14, vertical: 11),
-        border: OutlineInputBorder(borderRadius: BorderRadius.circular(12), borderSide: const BorderSide(color: AppColors.glassBorder)),
-        enabledBorder: OutlineInputBorder(borderRadius: BorderRadius.circular(12), borderSide: const BorderSide(color: AppColors.glassBorder)),
-        focusedBorder: OutlineInputBorder(borderRadius: BorderRadius.circular(12), borderSide: const BorderSide(color: _accent, width: 1.5)),
+        border: OutlineInputBorder(borderRadius: BorderRadius.circular(12), borderSide: BorderSide(color: colors.outlineVariant)),
+        enabledBorder: OutlineInputBorder(borderRadius: BorderRadius.circular(12), borderSide: BorderSide(color: colors.outlineVariant)),
+        focusedBorder: OutlineInputBorder(borderRadius: BorderRadius.circular(12), borderSide: BorderSide(color: colors.primary, width: 1.5)),
       ),
     );
   }
 
   // ── List (compact square grid — 2 columns) ────────────────────────────────────
   Widget _listView() {
+    final colors = Theme.of(context).colorScheme;
     final items = _filtered;
     return RefreshIndicator(
-      color: _accent,
-      backgroundColor: AppColors.bgMid,
+      color: colors.primary,
+      backgroundColor: colors.surface,
       onRefresh: _fetch,
       child: GridView.builder(
         padding: const EdgeInsets.fromLTRB(16, 4, 16, 24),
@@ -765,6 +770,7 @@ class _MessScreenState extends State<MessScreen> {
   }
 
   Widget _airbnbCard(PropertyListing m) {
+    final colors = Theme.of(context).colorScheme;
     final saved = _saved.contains(m.id);
     return GestureDetector(
       onTap: () => _showDetail(m),
@@ -788,7 +794,7 @@ class _MessScreenState extends State<MessScreen> {
                   child: GestureDetector(
                     onTap: () => setState(() => saved ? _saved.remove(m.id) : _saved.add(m.id)),
                     child: Icon(saved ? Icons.favorite_rounded : Icons.favorite_border_rounded,
-                        color: saved ? _accent : Colors.white,
+                        color: saved ? colors.primary : Colors.white,
                         size: 18,
                         shadows: const [Shadow(color: Color(0x66000000), blurRadius: 5)]),
                   ),
@@ -798,9 +804,9 @@ class _MessScreenState extends State<MessScreen> {
                     top: 6, left: 6,
                     child: Container(
                       padding: const EdgeInsets.symmetric(horizontal: 6, vertical: 2.5),
-                      decoration: BoxDecoration(color: Colors.white, borderRadius: BorderRadius.circular(20)),
+                      decoration: BoxDecoration(color: colors.surface, borderRadius: BorderRadius.circular(20)),
                       child: Text('${m.distanceKm!.toStringAsFixed(1)}${_isBn ? " কিমি" : " km"}',
-                          style: const TextStyle(color: Color(0xFF222222), fontSize: 9, fontWeight: FontWeight.w700)),
+                          style: TextStyle(color: colors.onSurface, fontSize: 9, fontWeight: FontWeight.w700)),
                     ),
                   ),
               ],
@@ -813,28 +819,28 @@ class _MessScreenState extends State<MessScreen> {
               Expanded(
                 child: Text(m.messName,
                     maxLines: 1, overflow: TextOverflow.ellipsis,
-                    style: const TextStyle(color: AppColors.textPrimary, fontSize: 12.5, fontWeight: FontWeight.w700)),
+                    style: TextStyle(color: colors.onSurface, fontSize: 12.5, fontWeight: FontWeight.w700)),
               ),
               if (m.isMess && m.totalSeats != null) ...[
-                const Icon(Icons.event_seat_rounded, size: 11, color: AppColors.textPrimary),
+                Icon(Icons.event_seat_rounded, size: 11, color: colors.onSurface),
                 const SizedBox(width: 2),
-                Text('${m.totalSeats}', style: const TextStyle(color: AppColors.textPrimary, fontSize: 11, fontWeight: FontWeight.w700)),
+                Text('${m.totalSeats}', style: TextStyle(color: colors.onSurface, fontSize: 11, fontWeight: FontWeight.w700)),
               ] else if (m.isHouse && m.bedrooms != null) ...[
-                const Icon(Icons.bed_rounded, size: 11, color: AppColors.textPrimary),
+                Icon(Icons.bed_rounded, size: 11, color: colors.onSurface),
                 const SizedBox(width: 2),
-                Text('${m.bedrooms}', style: const TextStyle(color: AppColors.textPrimary, fontSize: 11, fontWeight: FontWeight.w700)),
+                Text('${m.bedrooms}', style: TextStyle(color: colors.onSurface, fontSize: 11, fontWeight: FontWeight.w700)),
               ] else if (m.isGarage && m.carCapacity != null) ...[
-                const Icon(Icons.directions_car_rounded, size: 11, color: AppColors.textPrimary),
+                Icon(Icons.directions_car_rounded, size: 11, color: colors.onSurface),
                 const SizedBox(width: 2),
-                Text('${m.carCapacity}', style: const TextStyle(color: AppColors.textPrimary, fontSize: 11, fontWeight: FontWeight.w700)),
+                Text('${m.carCapacity}', style: TextStyle(color: colors.onSurface, fontSize: 11, fontWeight: FontWeight.w700)),
               ],
             ],
           ),
           Text(m.address, maxLines: 1, overflow: TextOverflow.ellipsis,
-              style: const TextStyle(color: AppColors.textMuted, fontSize: 10.5)),
+              style: TextStyle(color: colors.outline, fontSize: 10.5)),
           if (m.rent != null)
             Text(_rentLabel(m),
-                style: const TextStyle(color: AppColors.textPrimary, fontSize: 12.5, fontWeight: FontWeight.w800)),
+                style: TextStyle(color: colors.onSurface, fontSize: 12.5, fontWeight: FontWeight.w800)),
         ],
       ),
     );
@@ -903,11 +909,12 @@ class _MessScreenState extends State<MessScreen> {
   }
 
   Widget _mapPreviewCard(PropertyListing m) {
+    final colors = Theme.of(context).colorScheme;
     return GestureDetector(
       onTap: () => _showDetail(m),
       child: Container(
         decoration: BoxDecoration(
-          color: AppColors.bgMid,
+          color: colors.surface,
           borderRadius: BorderRadius.circular(18),
           boxShadow: const [BoxShadow(color: Color(0x22000000), blurRadius: 20, offset: Offset(0, 8))],
         ),
@@ -921,20 +928,20 @@ class _MessScreenState extends State<MessScreen> {
               padding: const EdgeInsets.all(12),
               child: Column(crossAxisAlignment: CrossAxisAlignment.start, mainAxisAlignment: MainAxisAlignment.center, children: [
                 Text(m.messName, maxLines: 1, overflow: TextOverflow.ellipsis,
-                    style: const TextStyle(color: AppColors.textPrimary, fontSize: 14.5, fontWeight: FontWeight.w700)),
+                    style: TextStyle(color: colors.onSurface, fontSize: 14.5, fontWeight: FontWeight.w700)),
                 const SizedBox(height: 3),
                 Text(m.address, maxLines: 1, overflow: TextOverflow.ellipsis,
-                    style: const TextStyle(color: AppColors.textMuted, fontSize: 12)),
+                    style: TextStyle(color: colors.outline, fontSize: 12)),
                 const SizedBox(height: 4),
                 Text(
                   '${m.isMess ? _messInfoLine(m) : (m.isGarage ? _garageInfoLine(m) : _houseInfoLine(m))}${m.distanceKm != null ? ' · ${m.distanceKm!.toStringAsFixed(1)} ${_isBn ? 'কিমি' : 'km'}' : ''}',
                   maxLines: 1, overflow: TextOverflow.ellipsis,
-                  style: const TextStyle(color: AppColors.textMuted, fontSize: 12),
+                  style: TextStyle(color: colors.outline, fontSize: 12),
                 ),
                 if (m.rent != null) ...[
                   const SizedBox(height: 3),
                   Text(_rentLabel(m),
-                      style: const TextStyle(color: AppColors.textPrimary, fontSize: 14, fontWeight: FontWeight.w800)),
+                      style: TextStyle(color: colors.onSurface, fontSize: 14, fontWeight: FontWeight.w800)),
                 ],
               ]),
             ),
@@ -1001,19 +1008,20 @@ class _MessScreenState extends State<MessScreen> {
   }
 
   void _showContact(String? number) {
+    final colors = Theme.of(context).colorScheme;
     if (number == null || number.isEmpty) {
       ScaffoldMessenger.of(context).showSnackBar(SnackBar(
         content: Text(_isBn ? 'যোগাযোগ নম্বর নেই' : 'No contact number', style: const TextStyle(color: Colors.white)),
-        backgroundColor: _accent, behavior: SnackBarBehavior.floating));
+        backgroundColor: colors.primary, behavior: SnackBarBehavior.floating));
       return;
     }
     showDialog(
       context: context,
       builder: (ctx) => AlertDialog(
-        backgroundColor: AppColors.bgMid,
+        backgroundColor: colors.surface,
         shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(20)),
-        title: Text(_isBn ? 'যোগাযোগ নম্বর' : 'Contact number', style: const TextStyle(color: AppColors.textPrimary, fontSize: 17, fontWeight: FontWeight.w700)),
-        content: Text(number, style: const TextStyle(color: AppColors.textPrimary, fontSize: 20, fontWeight: FontWeight.w700, letterSpacing: 1)),
+        title: Text(_isBn ? 'যোগাযোগ নম্বর' : 'Contact number', style: TextStyle(color: colors.onSurface, fontSize: 17, fontWeight: FontWeight.w700)),
+        content: Text(number, style: TextStyle(color: colors.onSurface, fontSize: 20, fontWeight: FontWeight.w700, letterSpacing: 1)),
         actions: [
           TextButton(
             onPressed: () async {
@@ -1022,10 +1030,10 @@ class _MessScreenState extends State<MessScreen> {
               if (mounted) {
                 ScaffoldMessenger.of(context).showSnackBar(SnackBar(
                   content: Text(_isBn ? 'নম্বর কপি হয়েছে' : 'Number copied', style: const TextStyle(color: Colors.white)),
-                  backgroundColor: AppColors.deepBlue, behavior: SnackBarBehavior.floating));
+                  backgroundColor: colors.primary, behavior: SnackBarBehavior.floating));
               }
             },
-            child: Text(_isBn ? 'কপি করুন' : 'Copy', style: const TextStyle(color: _accent, fontWeight: FontWeight.w700)),
+            child: Text(_isBn ? 'কপি করুন' : 'Copy', style: TextStyle(color: colors.primary, fontWeight: FontWeight.w700)),
           ),
         ],
       ),
@@ -1055,8 +1063,9 @@ class _MessPhotosState extends State<_MessPhotos> {
 
   @override
   Widget build(BuildContext context) {
+    final colors = Theme.of(context).colorScheme;
     if (widget.photos.isEmpty) {
-      return Container(color: const Color(0xFFEDE8DE), child: const Center(child: Icon(Icons.home_work_rounded, color: AppColors.textMuted, size: 44)));
+      return Container(color: colors.surfaceContainerHighest, child: Center(child: Icon(Icons.home_work_rounded, color: colors.outline, size: 44)));
     }
     return Stack(fit: StackFit.expand, children: [
       PageView.builder(
@@ -1064,7 +1073,7 @@ class _MessPhotosState extends State<_MessPhotos> {
         onPageChanged: (i) => setState(() => _page = i),
         itemCount: widget.photos.length,
         itemBuilder: (_, i) => Image.network(widget.photos[i], fit: BoxFit.cover,
-            errorBuilder: (_, __, ___) => Container(color: const Color(0xFFEDE8DE), child: const Icon(Icons.home_work_rounded, color: AppColors.textMuted, size: 40))),
+            errorBuilder: (_, __, ___) => Container(color: colors.surfaceContainerHighest, child: Icon(Icons.home_work_rounded, color: colors.outline, size: 40))),
       ),
       if (widget.dots && widget.photos.length > 1)
         Positioned(
@@ -1099,17 +1108,18 @@ class _DetailSheet extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    final colors = Theme.of(context).colorScheme;
     final m = listing;
     return DraggableScrollableSheet(
       initialChildSize: 0.85, minChildSize: 0.5, maxChildSize: 0.95,
       builder: (_, scrollCtrl) => Container(
-        decoration: const BoxDecoration(
-          color: AppColors.bgMid,
+        decoration: BoxDecoration(
+          color: colors.surface,
           borderRadius: BorderRadius.vertical(top: Radius.circular(24)),
         ),
         child: Column(children: [
           const SizedBox(height: 10),
-          Container(width: 40, height: 4, decoration: BoxDecoration(color: AppColors.glassBorder, borderRadius: BorderRadius.circular(2))),
+          Container(width: 40, height: 4, decoration: BoxDecoration(color: colors.outlineVariant, borderRadius: BorderRadius.circular(2))),
           Expanded(
             child: ListView(
               controller: scrollCtrl,
@@ -1126,57 +1136,57 @@ class _DetailSheet extends StatelessWidget {
                 Padding(
                   padding: const EdgeInsets.fromLTRB(20, 16, 20, 28),
                   child: Column(crossAxisAlignment: CrossAxisAlignment.start, children: [
-                    Text(m.messName, style: const TextStyle(color: AppColors.textPrimary, fontSize: 22, fontWeight: FontWeight.w800)),
+                    Text(m.messName, style: TextStyle(color: colors.onSurface, fontSize: 22, fontWeight: FontWeight.w800)),
                     if (m.rent != null) ...[
                       const SizedBox(height: 6),
                       Text.rich(TextSpan(children: [
-                        TextSpan(text: takaFmt(m.rent!), style: const TextStyle(color: AppColors.textPrimary, fontSize: 20, fontWeight: FontWeight.w800)),
+                        TextSpan(text: takaFmt(m.rent!), style: TextStyle(color: colors.onSurface, fontSize: 20, fontWeight: FontWeight.w800)),
                         TextSpan(
                             text: m.isMess
                                 ? (isBn ? ' / মাস (প্রতি সিট)' : ' / month (per seat)')
                                 : m.isGarage
                                     ? (isBn ? ' / দিন' : ' / day')
                                     : (isBn ? ' / মাস (পুরো বাসা)' : ' / month (whole unit)'),
-                            style: const TextStyle(color: AppColors.textMuted, fontSize: 14, fontWeight: FontWeight.w500)),
+                            style: TextStyle(color: colors.outline, fontSize: 14, fontWeight: FontWeight.w500)),
                       ])),
                     ],
                     const SizedBox(height: 12),
-                    _row(Icons.location_on_rounded, m.address),
+                    _row(colors, Icons.location_on_rounded, m.address),
                     if (m.isMess && m.totalSeats != null) ...[
                       const SizedBox(height: 8),
-                      _row(Icons.event_seat_rounded, isBn ? 'মোট ${m.totalSeats} সিট' : '${m.totalSeats} seats'),
+                      _row(colors, Icons.event_seat_rounded, isBn ? 'মোট ${m.totalSeats} সিট' : '${m.totalSeats} seats'),
                     ],
                     if (m.isHouse) ...[
                       if (m.bedrooms != null) ...[
                         const SizedBox(height: 8),
-                        _row(Icons.bed_rounded, isBn ? '${m.bedrooms} বেডরুম' : '${m.bedrooms} bedrooms'),
+                        _row(colors, Icons.bed_rounded, isBn ? '${m.bedrooms} বেডরুম' : '${m.bedrooms} bedrooms'),
                       ],
                       if (m.bathrooms != null) ...[
                         const SizedBox(height: 8),
-                        _row(Icons.bathtub_outlined, isBn ? '${m.bathrooms} বাথরুম' : '${m.bathrooms} bathrooms'),
+                        _row(colors, Icons.bathtub_outlined, isBn ? '${m.bathrooms} বাথরুম' : '${m.bathrooms} bathrooms'),
                       ],
                       if (m.sizeSqft != null) ...[
                         const SizedBox(height: 8),
-                        _row(Icons.square_foot_rounded, isBn ? 'আয়তন ${m.sizeSqft} sqft' : '${m.sizeSqft} sqft'),
+                        _row(colors, Icons.square_foot_rounded, isBn ? 'আয়তন ${m.sizeSqft} sqft' : '${m.sizeSqft} sqft'),
                       ],
                       if (m.floor != null) ...[
                         const SizedBox(height: 8),
-                        _row(Icons.stairs_outlined, isBn ? '${m.floor} তলা' : 'Floor ${m.floor}'),
+                        _row(colors, Icons.stairs_outlined, isBn ? '${m.floor} তলা' : 'Floor ${m.floor}'),
                       ],
                       if (prefLabel(m.tenantType) != null) ...[
                         const SizedBox(height: 8),
-                        _row(Icons.family_restroom_rounded,
+                        _row(colors, Icons.family_restroom_rounded,
                             isBn ? 'ভাড়াটে: ${prefLabel(m.tenantType)}' : 'Tenant: ${prefLabel(m.tenantType)}'),
                       ],
                     ],
                     if (m.isGarage) ...[
                       if (m.carCapacity != null) ...[
                         const SizedBox(height: 8),
-                        _row(Icons.directions_car_rounded, isBn ? '${m.carCapacity} টা গাড়ি ধরে' : 'Fits ${m.carCapacity} car(s)'),
+                        _row(colors, Icons.directions_car_rounded, isBn ? '${m.carCapacity} টা গাড়ি ধরে' : 'Fits ${m.carCapacity} car(s)'),
                       ],
                       if (m.isCovered != null) ...[
                         const SizedBox(height: 8),
-                        _row(m.isCovered! ? Icons.garage_rounded : Icons.wb_sunny_outlined,
+                        _row(colors, m.isCovered! ? Icons.garage_rounded : Icons.wb_sunny_outlined,
                             m.isCovered! ? (isBn ? 'ছাদযুক্ত/শেড আছে' : 'Covered / has a shed') : (isBn ? 'খোলা জায়গা' : 'Open space')),
                       ],
                     ],
@@ -1188,24 +1198,24 @@ class _DetailSheet extends StatelessWidget {
                       ])
                         if (e.$2 != null) ...[
                           const SizedBox(height: 8),
-                          _row(e.$1, isBn ? 'চাওয়া: ${e.$2}' : 'Wants: ${e.$2}'),
+                          _row(colors, e.$1, isBn ? 'চাওয়া: ${e.$2}' : 'Wants: ${e.$2}'),
                         ],
                     ],
                     if (m.distanceKm != null) ...[
                       const SizedBox(height: 8),
-                      _row(Icons.near_me_rounded, isBn ? 'দূরত্ব ${m.distanceKm!.toStringAsFixed(1)} কিমি' : '${m.distanceKm!.toStringAsFixed(1)} km away'),
+                      _row(colors, Icons.near_me_rounded, isBn ? 'দূরত্ব ${m.distanceKm!.toStringAsFixed(1)} কিমি' : '${m.distanceKm!.toStringAsFixed(1)} km away'),
                     ],
                     if (m.ownerName != null) ...[
                       const SizedBox(height: 8),
-                      _row(Icons.person_rounded, isBn ? 'মালিক: ${m.ownerName}' : 'Owner: ${m.ownerName}'),
+                      _row(colors, Icons.person_rounded, isBn ? 'মালিক: ${m.ownerName}' : 'Owner: ${m.ownerName}'),
                     ],
                     if (m.rules != null && m.rules!.trim().isNotEmpty) ...[
                       const SizedBox(height: 18),
-                      const Divider(color: AppColors.glassBorder, height: 1),
+                      Divider(color: colors.outlineVariant, height: 1),
                       const SizedBox(height: 16),
-                      Text(isBn ? 'নিয়মকানুন' : 'House rules', style: const TextStyle(color: AppColors.textPrimary, fontSize: 16, fontWeight: FontWeight.w700)),
+                      Text(isBn ? 'নিয়মকানুন' : 'House rules', style: TextStyle(color: colors.onSurface, fontSize: 16, fontWeight: FontWeight.w700)),
                       const SizedBox(height: 8),
-                      Text(m.rules!, style: const TextStyle(color: AppColors.textSecondary, fontSize: 14, height: 1.6)),
+                      Text(m.rules!, style: TextStyle(color: colors.onSurfaceVariant, fontSize: 14, height: 1.6)),
                     ],
                     const SizedBox(height: 24),
                     Row(children: [
@@ -1214,7 +1224,7 @@ class _DetailSheet extends StatelessWidget {
                           onTap: onCall,
                           child: Container(
                             padding: const EdgeInsets.symmetric(vertical: 16),
-                            decoration: BoxDecoration(color: _accent, borderRadius: BorderRadius.circular(14)),
+                            decoration: BoxDecoration(color: colors.primary, borderRadius: BorderRadius.circular(14)),
                             child: Center(child: Text(isBn ? 'যোগাযোগ করুন' : 'Contact', style: const TextStyle(color: Colors.white, fontSize: 16, fontWeight: FontWeight.w700))),
                           ),
                         ),
@@ -1227,11 +1237,11 @@ class _DetailSheet extends StatelessWidget {
                             child: Container(
                               padding: const EdgeInsets.symmetric(vertical: 16),
                               decoration: BoxDecoration(
-                                color: AppColors.glassWhite,
+                                color: colors.surface,
                                 borderRadius: BorderRadius.circular(14),
-                                border: Border.all(color: _accent, width: 1.5),
+                                border: Border.all(color: colors.primary, width: 1.5),
                               ),
-                              child: Center(child: Text(isBn ? 'ভিজিট রিকোয়েস্ট' : 'Request Visit', style: const TextStyle(color: _accent, fontSize: 15, fontWeight: FontWeight.w700))),
+                              child: Center(child: Text(isBn ? 'ভিজিট রিকোয়েস্ট' : 'Request Visit', style: TextStyle(color: colors.primary, fontSize: 15, fontWeight: FontWeight.w700))),
                             ),
                           ),
                         ),
@@ -1247,11 +1257,11 @@ class _DetailSheet extends StatelessWidget {
     );
   }
 
-  Widget _row(IconData icon, String text) {
+  Widget _row(ColorScheme colors, IconData icon, String text) {
     return Row(crossAxisAlignment: CrossAxisAlignment.start, children: [
-      Icon(icon, color: AppColors.textMuted, size: 17),
+      Icon(icon, color: colors.outline, size: 17),
       const SizedBox(width: 10),
-      Expanded(child: Text(text, style: const TextStyle(color: AppColors.textSecondary, fontSize: 14.5))),
+      Expanded(child: Text(text, style: TextStyle(color: colors.onSurfaceVariant, fontSize: 14.5))),
     ]);
   }
 }

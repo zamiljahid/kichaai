@@ -4,7 +4,7 @@ import '../core/network/api_client.dart';
 import '../core/utils/app_strings.dart';
 import '../services/auth_service.dart';
 import '../services/onboarding_service.dart';
-import '../theme/app_theme.dart';
+import '../theme/app_gradients.dart';
 import '../widgets/animated_background.dart';
 import '../widgets/glass_button.dart';
 import '../widgets/glass_card.dart';
@@ -134,20 +134,21 @@ class _LawyerAreasScreenState extends State<LawyerAreasScreen> {
   }
 
   Widget _buildAppBar() {
+    final colors = Theme.of(context).colorScheme;
     return Padding(
       padding: const EdgeInsets.fromLTRB(4, 8, 16, 4),
       child: Row(
         children: [
           IconButton(
-            icon: const Icon(Icons.arrow_back_rounded,
-                color: AppColors.textPrimary),
+            icon: Icon(Icons.arrow_back_rounded,
+                color: colors.onSurface),
             onPressed: () => Navigator.of(context).pop(),
           ),
           Expanded(
             child: Text(
               _isBn ? 'আমার প্র্যাকটিস এরিয়া' : 'My Practice Areas',
-              style: const TextStyle(
-                  color: AppColors.textPrimary,
+              style: TextStyle(
+                  color: colors.onSurface,
                   fontSize: 18,
                   fontWeight: FontWeight.w700),
             ),
@@ -156,13 +157,13 @@ class _LawyerAreasScreenState extends State<LawyerAreasScreen> {
             Container(
               padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 5),
               decoration: BoxDecoration(
-                color: AppColors.deepBlue.withOpacity(0.12),
+                color: colors.primary.withOpacity(0.12),
                 borderRadius: BorderRadius.circular(12),
               ),
               child: Text(
                 '${_selected.length}',
-                style: const TextStyle(
-                    color: AppColors.deepBlue,
+                style: TextStyle(
+                    color: colors.primary,
                     fontWeight: FontWeight.w700,
                     fontSize: 13),
               ),
@@ -173,6 +174,7 @@ class _LawyerAreasScreenState extends State<LawyerAreasScreen> {
   }
 
   Widget _buildChipWrap(List<Map<String, dynamic>> options, Set<String> selectedSet) {
+    final colors = Theme.of(context).colorScheme;
     return Wrap(
       spacing: 8,
       runSpacing: 8,
@@ -192,11 +194,11 @@ class _LawyerAreasScreenState extends State<LawyerAreasScreen> {
             duration: const Duration(milliseconds: 180),
             padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 9),
             decoration: BoxDecoration(
-              gradient: isSelected ? AppColors.blueGradient : null,
-              color: isSelected ? null : AppColors.glassWhite,
+              gradient: isSelected ? AppGradients.primary(colors) : null,
+              color: isSelected ? null : colors.surface,
               borderRadius: BorderRadius.circular(100),
               border: Border.all(
-                color: isSelected ? AppColors.deepBlue : AppColors.glassBorder,
+                color: isSelected ? colors.primary : colors.outlineVariant,
                 width: 1.5,
               ),
             ),
@@ -210,7 +212,7 @@ class _LawyerAreasScreenState extends State<LawyerAreasScreen> {
                 Text(
                   label,
                   style: TextStyle(
-                    color: isSelected ? Colors.white : AppColors.textSecondary,
+                    color: isSelected ? Colors.white : colors.onSurfaceVariant,
                     fontSize: 13,
                     fontWeight: FontWeight.w600,
                   ),
@@ -224,9 +226,10 @@ class _LawyerAreasScreenState extends State<LawyerAreasScreen> {
   }
 
   Widget _buildBody() {
+    final colors = Theme.of(context).colorScheme;
     if (_loading) {
-      return const Center(
-          child: CircularProgressIndicator(color: AppColors.deepBlue));
+      return Center(
+          child: CircularProgressIndicator(color: colors.primary));
     }
     if (_error != null) {
       return Padding(
@@ -240,7 +243,7 @@ class _LawyerAreasScreenState extends State<LawyerAreasScreen> {
               const SizedBox(height: 12),
               Text(_error!,
                   textAlign: TextAlign.center,
-                  style: const TextStyle(color: AppColors.textSecondary)),
+                  style: TextStyle(color: colors.onSurfaceVariant)),
               const SizedBox(height: 16),
               GlassButton(
                   label: _isBn ? 'আবার চেষ্টা করুন' : 'Try again', isOutlined: true, onPressed: _load),
@@ -261,11 +264,11 @@ class _LawyerAreasScreenState extends State<LawyerAreasScreen> {
                   width: 36,
                   height: 36,
                   decoration: BoxDecoration(
-                    color: AppColors.deepBlue.withOpacity(0.12),
+                    color: colors.primary.withOpacity(0.12),
                     borderRadius: BorderRadius.circular(10),
                   ),
-                  child: const Icon(Icons.gavel_rounded,
-                      color: AppColors.deepBlue, size: 20),
+                  child: Icon(Icons.gavel_rounded,
+                      color: colors.primary, size: 20),
                 ),
                 const SizedBox(width: 12),
                 Expanded(
@@ -273,8 +276,8 @@ class _LawyerAreasScreenState extends State<LawyerAreasScreen> {
                     _isBn
                         ? 'যেসব বিষয়ে মামলা/পরামর্শ নেন সেগুলো টিক দিন — শুধু এই বিষয়ের অনুরোধই আপনার কাছে যাবে।'
                         : 'Tick the areas you take cases/consultations in — only requests for these will reach you.',
-                    style: const TextStyle(
-                        color: AppColors.textSecondary,
+                    style: TextStyle(
+                        color: colors.onSurfaceVariant,
                         fontSize: 12.5,
                         height: 1.4),
                   ),
@@ -291,8 +294,8 @@ class _LawyerAreasScreenState extends State<LawyerAreasScreen> {
               children: [
                 Text(
                   _isBn ? 'বিষয় (এরিয়া)' : 'Areas',
-                  style: const TextStyle(
-                      color: AppColors.textPrimary,
+                  style: TextStyle(
+                      color: colors.onSurface,
                       fontSize: 14,
                       fontWeight: FontWeight.w700),
                 ),
@@ -301,8 +304,8 @@ class _LawyerAreasScreenState extends State<LawyerAreasScreen> {
                 const SizedBox(height: 22),
                 Text(
                   _isBn ? 'নির্দিষ্ট সেবা' : 'Specific services',
-                  style: const TextStyle(
-                      color: AppColors.textPrimary,
+                  style: TextStyle(
+                      color: colors.onSurface,
                       fontSize: 14,
                       fontWeight: FontWeight.w700),
                 ),
@@ -311,8 +314,8 @@ class _LawyerAreasScreenState extends State<LawyerAreasScreen> {
                   _isBn
                       ? 'শুধু টিক দেওয়া সেবার অনুরোধই আপনার কাছে আসবে (যেমন জামিন আবেদন)।'
                       : 'Only requests for the ticked services will reach you (e.g. bail application).',
-                  style: const TextStyle(
-                      color: AppColors.textSecondary,
+                  style: TextStyle(
+                      color: colors.onSurfaceVariant,
                       fontSize: 12,
                       height: 1.4),
                 ),

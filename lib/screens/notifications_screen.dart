@@ -8,8 +8,8 @@ import '../core/utils/app_strings.dart';
 import '../models/notification_model.dart';
 import '../services/notification_service.dart';
 import '../services/push_service.dart';
-import '../theme/app_theme.dart';
 import 'notification_preferences_screen.dart';
+import '../widgets/animated_background.dart';
 
 // ── Notification Bell Widget ─────────────────────────────────────────────────
 
@@ -50,6 +50,7 @@ class _NotificationBellState extends State<NotificationBell> {
 
   @override
   Widget build(BuildContext context) {
+    final colors = Theme.of(context).colorScheme;
     return GestureDetector(
       onTap: () async {
         await Navigator.push(
@@ -65,14 +66,21 @@ class _NotificationBellState extends State<NotificationBell> {
           child: Container(
             padding: const EdgeInsets.all(8),
             decoration: BoxDecoration(
-              color: AppColors.glassWhite,
-              borderRadius: BorderRadius.circular(10),
-              border: Border.all(color: AppColors.glassBorder),
+              color: colors.surface,
+              borderRadius: BorderRadius.circular(20),
+              border: Border.all(color: colors.outlineVariant),
+              boxShadow: [
+                BoxShadow(
+                  color: colors.shadow.withValues(alpha: 0.06),
+                  blurRadius: 18,
+                  offset: const Offset(0, 8),
+                ),
+              ],
             ),
             child: Stack(
               clipBehavior: Clip.none,
               children: [
-                const Icon(Icons.notifications_outlined, color: AppColors.textPrimary, size: 20),
+                Icon(Icons.notifications_outlined, color: colors.onSurface, size: 20),
                 if (_unreadCount > 0)
                   Positioned(
                     right: -4,
@@ -250,56 +258,60 @@ class _NotificationListScreenState extends State<NotificationListScreen> {
 
   @override
   Widget build(BuildContext context) {
+    final colors = Theme.of(context).colorScheme;
     _isBn = context.watch<LanguageNotifier>().isBengali;
-    return Scaffold(
-      backgroundColor: AppColors.bgDark,
-      appBar: AppBar(
+    return AnimatedBackground(
+      child: Scaffold(
         backgroundColor: Colors.transparent,
-        elevation: 0,
-        title: Text(_isBn ? 'নোটিফিকেশন' : 'Notifications', style: const TextStyle(color: AppColors.textPrimary, fontSize: 18, fontWeight: FontWeight.w700)),
-        leading: IconButton(
-          icon: const Icon(Icons.arrow_back_ios_new_rounded, color: AppColors.textPrimary, size: 18),
-          onPressed: () => Navigator.pop(context),
+        appBar: AppBar(
+          backgroundColor: Colors.transparent,
+          elevation: 0,
+          title: Text(_isBn ? 'নোটিফিকেশন' : 'Notifications', style: TextStyle(color: colors.onSurface, fontSize: 18, fontWeight: FontWeight.w700)),
+          leading: IconButton(
+            icon: Icon(Icons.arrow_back_ios_new_rounded, color: colors.onSurface, size: 18),
+            onPressed: () => Navigator.pop(context),
+          ),
+          actions: [
+            TextButton(
+              onPressed: _markAllRead,
+              child: Text(_isBn ? 'সব পড়া হয়েছে' : 'Mark all read', style: TextStyle(color: colors.primary, fontSize: 12, fontWeight: FontWeight.w600)),
+            ),
+            IconButton(
+              icon: Icon(Icons.tune_rounded, color: colors.outline, size: 20),
+              onPressed: () => Navigator.push(context, MaterialPageRoute(builder: (_) => const NotificationPreferencesScreen())),
+              tooltip: _isBn ? 'সেটিংস' : 'Settings',
+            ),
+          ],
         ),
-        actions: [
-          TextButton(
-            onPressed: _markAllRead,
-            child: Text(_isBn ? 'সব পড়া হয়েছে' : 'Mark all read', style: const TextStyle(color: AppColors.deepBlue, fontSize: 12, fontWeight: FontWeight.w600)),
-          ),
-          IconButton(
-            icon: const Icon(Icons.tune_rounded, color: AppColors.textMuted, size: 20),
-            onPressed: () => Navigator.push(context, MaterialPageRoute(builder: (_) => const NotificationPreferencesScreen())),
-            tooltip: _isBn ? 'সেটিংস' : 'Settings',
-          ),
-        ],
-      ),
-      body: _isLoading && _notifications.isEmpty
-          ? const Center(child: CircularProgressIndicator(color: AppColors.deepBlue))
-          : _notifications.isEmpty
-              ? _buildEmpty()
-              : RefreshIndicator(
-                  color: AppColors.deepBlue,
-                  backgroundColor: AppColors.bgMid,
-                  onRefresh: () => _loadNotifications(reset: true),
-                  child: ListView.builder(
-                    controller: _scrollController,
-                    padding: const EdgeInsets.fromLTRB(16, 8, 16, 100),
-                    itemCount: _notifications.length + (_hasMore ? 1 : 0),
-                    itemBuilder: (ctx, i) {
-                      if (i == _notifications.length) {
-                        return const Center(child: Padding(
-                          padding: EdgeInsets.all(16),
-                          child: CircularProgressIndicator(color: AppColors.deepBlue, strokeWidth: 2),
-                        ));
-                      }
-                      return _buildTile(_notifications[i], i);
-                    },
+        body: _isLoading && _notifications.isEmpty
+            ? Center(child: CircularProgressIndicator(color: colors.primary))
+            : _notifications.isEmpty
+                ? _buildEmpty()
+                : RefreshIndicator(
+                    color: colors.primary,
+                    backgroundColor: colors.surface,
+                    onRefresh: () => _loadNotifications(reset: true),
+                    child: ListView.builder(
+                      controller: _scrollController,
+                      padding: const EdgeInsets.fromLTRB(16, 8, 16, 100),
+                      itemCount: _notifications.length + (_hasMore ? 1 : 0),
+                      itemBuilder: (ctx, i) {
+                        if (i == _notifications.length) {
+                          return Center(child: Padding(
+                            padding: EdgeInsets.all(16),
+                            child: CircularProgressIndicator(color: colors.primary, strokeWidth: 2),
+                          ));
+                        }
+                        return _buildTile(_notifications[i], i);
+                      },
+                    ),
                   ),
-                ),
+      ),
     );
   }
 
   Widget _buildTile(NotificationModel n, int index) {
+    final colors = Theme.of(context).colorScheme;
     final color = _typeColor(n.type);
     return Dismissible(
       key: Key(n.id),
@@ -323,7 +335,7 @@ class _NotificationListScreenState extends State<NotificationListScreen> {
         child: Container(
           margin: const EdgeInsets.only(bottom: 10),
           decoration: BoxDecoration(
-            color: AppColors.bgMid,
+            color: colors.surface,
             borderRadius: BorderRadius.circular(16),
             border: Border(
               left: BorderSide(
@@ -358,7 +370,7 @@ class _NotificationListScreenState extends State<NotificationListScreen> {
                           Text(
                             n.title,
                             style: TextStyle(
-                              color: AppColors.textPrimary,
+                              color: colors.onSurface,
                               fontSize: 14,
                               fontWeight: n.isRead ? FontWeight.w500 : FontWeight.w700,
                             ),
@@ -368,12 +380,12 @@ class _NotificationListScreenState extends State<NotificationListScreen> {
                             n.body,
                             maxLines: 1,
                             overflow: TextOverflow.ellipsis,
-                            style: const TextStyle(color: AppColors.textMuted, fontSize: 12),
+                            style: TextStyle(color: colors.outline, fontSize: 12),
                           ),
                           const SizedBox(height: 6),
                           Text(
                             _relativeTime(n.createdAt),
-                            style: const TextStyle(color: AppColors.textMuted, fontSize: 10),
+                            style: TextStyle(color: colors.outline, fontSize: 10),
                           ),
                         ],
                       ),
@@ -396,13 +408,14 @@ class _NotificationListScreenState extends State<NotificationListScreen> {
   }
 
   Widget _buildEmpty() {
+    final colors = Theme.of(context).colorScheme;
     return Center(
       child: Column(
         mainAxisAlignment: MainAxisAlignment.center,
         children: [
-          Icon(Icons.notifications_none_rounded, color: AppColors.textMuted, size: 64),
+          Icon(Icons.notifications_none_rounded, color: colors.outline, size: 64),
           const SizedBox(height: 16),
-          Text(_isBn ? 'কোনো নোটিফিকেশন নেই' : 'No notifications', style: const TextStyle(color: AppColors.textMuted, fontSize: 16)),
+          Text(_isBn ? 'কোনো নোটিফিকেশন নেই' : 'No notifications', style: TextStyle(color: colors.outline, fontSize: 16)),
         ],
       ),
     );

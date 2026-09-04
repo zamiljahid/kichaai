@@ -8,12 +8,11 @@ import 'package:provider/provider.dart';
 import '../core/network/api_client.dart';
 import '../core/utils/app_strings.dart';
 import '../models/property_model.dart';
-import '../theme/app_theme.dart';
+import '../theme/app_gradients.dart';
 import '../widgets/pin_picker_screen.dart';
 import '../widgets/policy_agreement_checkbox.dart';
 import 'payment_waiting_screen.dart';
 
-const _accent = AppColors.deepBlue;
 // ৳5/day — keep in sync with auth-service's createPropertyListing.
 const _kListingFeePerDay = 5;
 const _kDurationOptions = [7, 15, 30, 60, 90];
@@ -310,29 +309,30 @@ class _PostPropertyScreenState extends State<PostPropertyScreen> {
 
   /// "ঠিকানাটি ম্যাপে পাওয়া যায়নি" → let the owner drop a pin, then PATCH it.
   Future<void> _offerManualPin(String id) async {
+    final colors = Theme.of(context).colorScheme;
     if (!mounted) return;
     final wantsPin = await showDialog<bool>(
       context: context,
       barrierDismissible: false,
       builder: (ctx) => AlertDialog(
-        backgroundColor: AppColors.bgMid,
+        backgroundColor: colors.surface,
         shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(20)),
         title: Text(_isBn ? 'ঠিকানাটি ম্যাপে পাওয়া যায়নি' : 'Address not found on the map',
-            style: const TextStyle(color: AppColors.textPrimary, fontSize: 17, fontWeight: FontWeight.w700)),
+            style: TextStyle(color: colors.onSurface, fontSize: 17, fontWeight: FontWeight.w700)),
         content: Text(
             _isBn
                 ? 'ম্যাপে পিন না দিলে বিজ্ঞাপনটি আশেপাশের খোঁজে দেখা যাবে না। এখনই ম্যাপে পিন দিন।'
                 : 'Without a map pin this listing will not appear in nearby search. Drop a pin now.',
-            style: const TextStyle(color: AppColors.textSecondary, fontSize: 14, height: 1.5)),
+            style: TextStyle(color: colors.onSurfaceVariant, fontSize: 14, height: 1.5)),
         actions: [
           TextButton(
             onPressed: () => Navigator.pop(ctx, false),
-            child: Text(_isBn ? 'পরে করব' : 'Later', style: const TextStyle(color: AppColors.textMuted)),
+            child: Text(_isBn ? 'পরে করব' : 'Later', style: TextStyle(color: colors.outline)),
           ),
           TextButton(
             onPressed: () => Navigator.pop(ctx, true),
             child: Text(_isBn ? 'ম্যাপে পিন দিন' : 'Drop a pin',
-                style: const TextStyle(color: _accent, fontWeight: FontWeight.w700)),
+                style: TextStyle(color: colors.primary, fontWeight: FontWeight.w700)),
           ),
         ],
       ),
@@ -353,9 +353,10 @@ class _PostPropertyScreenState extends State<PostPropertyScreen> {
   // ── UI ────────────────────────────────────────────────────────────────────────
   @override
   Widget build(BuildContext context) {
+    final colors = Theme.of(context).colorScheme;
     _isBn = context.watch<LanguageNotifier>().isBengali;
     return Scaffold(
-      backgroundColor: AppColors.bgDark,
+      backgroundColor: colors.surfaceContainerHighest,
       appBar: AppBar(
         backgroundColor: Colors.transparent,
         elevation: 0,
@@ -363,9 +364,9 @@ class _PostPropertyScreenState extends State<PostPropertyScreen> {
             _isEdit
                 ? (_isBn ? 'বিজ্ঞাপন সম্পাদনা' : 'Edit listing')
                 : (_isBn ? 'নতুন বিজ্ঞাপন' : 'New listing'),
-            style: const TextStyle(color: AppColors.textPrimary, fontSize: 18, fontWeight: FontWeight.w700)),
+            style: TextStyle(color: colors.onSurface, fontSize: 18, fontWeight: FontWeight.w700)),
         leading: IconButton(
-          icon: const Icon(Icons.arrow_back_ios_new_rounded, color: AppColors.textPrimary, size: 18),
+          icon: Icon(Icons.arrow_back_ios_new_rounded, color: colors.onSurface, size: 18),
           onPressed: () => Navigator.pop(context),
         ),
       ),
@@ -380,7 +381,7 @@ class _PostPropertyScreenState extends State<PostPropertyScreen> {
               _isBn
                   ? 'ঠিকানা দিলেই ম্যাপে নিজে থেকে বসে যাবে — ভাড়া সহ পিন দেখাবে।'
                   : 'Just type the address — it auto-pins on the map with the rent.',
-              style: const TextStyle(color: AppColors.textMuted, fontSize: 13, height: 1.5)),
+              style: TextStyle(color: colors.outline, fontSize: 13, height: 1.5)),
           const SizedBox(height: 20),
           if (_isMess) ..._messForm() else if (_isHouse) ..._houseForm() else ..._garageForm(),
           const SizedBox(height: 16),
@@ -398,14 +399,14 @@ class _PostPropertyScreenState extends State<PostPropertyScreen> {
             child: Container(
               padding: const EdgeInsets.symmetric(vertical: 16),
               alignment: Alignment.center,
-              decoration: BoxDecoration(gradient: AppColors.blueGradient, borderRadius: BorderRadius.circular(14)),
+              decoration: BoxDecoration(gradient: AppGradients.primary(colors), borderRadius: BorderRadius.circular(14)),
               child: _saving
                   ? const SizedBox(width: 22, height: 22, child: CircularProgressIndicator(strokeWidth: 2, color: Colors.white))
                   : Text(
                       _isEdit
                           ? (_isBn ? 'সংরক্ষণ করুন' : 'Save changes')
                           : (_isBn ? 'বিজ্ঞাপন পোস্ট করুন' : 'Post listing'),
-                      style: const TextStyle(color: AppColors.ivory, fontSize: 16, fontWeight: FontWeight.w700)),
+                      style: TextStyle(color: colors.onPrimary, fontSize: 16, fontWeight: FontWeight.w700)),
             ),
           ),
         ],
@@ -415,6 +416,7 @@ class _PostPropertyScreenState extends State<PostPropertyScreen> {
 
   // [ মেস | বাসা ভাড়া ] — swaps the whole form. Locked in edit mode.
   Widget _typeToggle() {
+    final colors = Theme.of(context).colorScheme;
     Widget seg(String type, String bn, String en) {
       final on = _listingType == type;
       return Expanded(
@@ -424,7 +426,7 @@ class _PostPropertyScreenState extends State<PostPropertyScreen> {
             duration: const Duration(milliseconds: 180),
             padding: const EdgeInsets.symmetric(vertical: 11),
             decoration: BoxDecoration(
-              color: on ? _accent : Colors.transparent,
+              color: on ? colors.primary : Colors.transparent,
               borderRadius: BorderRadius.circular(24),
             ),
             child: Text(_isBn ? bn : en,
@@ -433,7 +435,7 @@ class _PostPropertyScreenState extends State<PostPropertyScreen> {
                 style: TextStyle(
                     color: on
                         ? Colors.white
-                        : (_isEdit ? AppColors.textMuted : AppColors.textSecondary),
+                        : (_isEdit ? colors.outline : colors.onSurfaceVariant),
                     fontSize: 13, fontWeight: FontWeight.w700)),
           ),
         ),
@@ -443,9 +445,9 @@ class _PostPropertyScreenState extends State<PostPropertyScreen> {
     return Container(
       padding: const EdgeInsets.all(4),
       decoration: BoxDecoration(
-        color: AppColors.bgMid,
+        color: colors.surface,
         borderRadius: BorderRadius.circular(28),
-        border: Border.all(color: AppColors.glassBorder),
+        border: Border.all(color: colors.outlineVariant),
       ),
       child: Row(children: [
         seg('MESS', 'মেস', 'Mess'),
@@ -459,6 +461,7 @@ class _PostPropertyScreenState extends State<PostPropertyScreen> {
   // you" (MESS→mess owner, HOUSE_RENT→house owner, GARAGE→garage owner), so the fields
   // collected here just follow _listingType directly instead of a separate picker.
   Widget _nestFinderVerificationSection() {
+    final colors = Theme.of(context).colorScheme;
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
@@ -468,21 +471,21 @@ class _PostPropertyScreenState extends State<PostPropertyScreen> {
           child: Container(
             padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 12),
             decoration: BoxDecoration(
-              color: AppColors.glassWhite,
+              color: colors.surface,
               borderRadius: BorderRadius.circular(12),
-              border: Border.all(color: (_nidUrl != null || _nidPicked != null) ? const Color(0xFF10B981) : AppColors.glassBorder),
+              border: Border.all(color: (_nidUrl != null || _nidPicked != null) ? const Color(0xFF10B981) : colors.outlineVariant),
             ),
             child: Row(children: [
               Icon(
                 (_nidUrl != null || _nidPicked != null) ? Icons.check_circle_rounded : Icons.upload_file_rounded,
-                color: (_nidUrl != null || _nidPicked != null) ? const Color(0xFF10B981) : AppColors.textMuted,
+                color: (_nidUrl != null || _nidPicked != null) ? const Color(0xFF10B981) : colors.outline,
                 size: 20,
               ),
               const SizedBox(width: 10),
               Expanded(
                 child: Text(
                   (_nidUrl != null || _nidPicked != null) ? (_isBn ? 'NID আপলোড হয়েছে ✓' : 'NID uploaded ✓') : (_isBn ? 'আপনার NID আপলোড করুন' : 'Upload your NID'),
-                  style: TextStyle(color: (_nidUrl != null || _nidPicked != null) ? const Color(0xFF10B981) : AppColors.textSecondary, fontSize: 13, fontWeight: FontWeight.w600),
+                  style: TextStyle(color: (_nidUrl != null || _nidPicked != null) ? const Color(0xFF10B981) : colors.onSurfaceVariant, fontSize: 13, fontWeight: FontWeight.w600),
                 ),
               ),
             ]),
@@ -499,9 +502,9 @@ class _PostPropertyScreenState extends State<PostPropertyScreen> {
           InkWell(
             onTap: () => setState(() => _isStudent = !_isStudent),
             child: Row(children: [
-              Icon(_isStudent ? Icons.check_box_rounded : Icons.check_box_outline_blank_rounded, color: _isStudent ? _accent : AppColors.textMuted, size: 22),
+              Icon(_isStudent ? Icons.check_box_rounded : Icons.check_box_outline_blank_rounded, color: _isStudent ? colors.primary : colors.outline, size: 22),
               const SizedBox(width: 8),
-              Text(_isBn ? 'আমি একজন স্টুডেন্ট' : 'I am a student', style: const TextStyle(color: AppColors.textSecondary, fontSize: 13)),
+              Text(_isBn ? 'আমি একজন স্টুডেন্ট' : 'I am a student', style: TextStyle(color: colors.onSurfaceVariant, fontSize: 13)),
             ]),
           ),
           if (_isStudent) ...[
@@ -631,6 +634,7 @@ class _PostPropertyScreenState extends State<PostPropertyScreen> {
   }
 
   List<Widget> _garageForm() {
+    final colors = Theme.of(context).colorScheme;
     return [
       _label(_isBn ? 'শিরোনাম *' : 'Title *'),
       _field(_name, _isBn ? 'যেমন: বনানী খালি গ্যারেজ' : 'e.g. Banani spare garage'),
@@ -642,7 +646,7 @@ class _PostPropertyScreenState extends State<PostPropertyScreen> {
           _isBn
               ? 'যারা কিছুদিনের জন্য ঢাকার বাইরে যাচ্ছেন বা ঢাকায় আসছেন, তারা এই কয়দিন গাড়ি রাখার জন্য ব্যবহার করতে পারবেন — মাসিক ভাড়া না, দৈনিক হিসেবে।'
               : 'For people leaving town (or visiting) who need somewhere to park their car for a few days — charged daily, not monthly.',
-          style: const TextStyle(color: AppColors.textMuted, fontSize: 12, height: 1.5)),
+          style: TextStyle(color: colors.outline, fontSize: 12, height: 1.5)),
       const SizedBox(height: 16),
       Row(children: [
         Expanded(child: Column(crossAxisAlignment: CrossAxisAlignment.start, children: [
@@ -670,19 +674,23 @@ class _PostPropertyScreenState extends State<PostPropertyScreen> {
     ];
   }
 
-  Widget _garageTypeChip(String label, bool on) => Container(
+  Widget _garageTypeChip(String label, bool on) {
+    final colors = Theme.of(context).colorScheme;
+    return Container(
         padding: const EdgeInsets.symmetric(horizontal: 15, vertical: 8),
         decoration: BoxDecoration(
-          color: on ? _accent : AppColors.glassWhite,
+          color: on ? colors.primary : colors.surface,
           borderRadius: BorderRadius.circular(20),
-          border: Border.all(color: on ? _accent : AppColors.glassBorder),
+          border: Border.all(color: on ? colors.primary : colors.outlineVariant),
         ),
         child: Text(label, style: TextStyle(
-            color: on ? Colors.white : AppColors.textSecondary,
+            color: on ? Colors.white : colors.onSurfaceVariant,
             fontSize: 13, fontWeight: FontWeight.w600)),
       );
+  }
 
   Widget _photoSection() {
+    final colors = Theme.of(context).colorScheme;
     return Column(crossAxisAlignment: CrossAxisAlignment.start, children: [
       _label(_isBn ? 'ছবি (ঐচ্ছিক)' : 'Photos (optional)'),
       const SizedBox(height: 4),
@@ -690,7 +698,7 @@ class _PostPropertyScreenState extends State<PostPropertyScreen> {
         for (var i = 0; i < _existingPhotos.length; i++)
           _thumb(
             Image.network(_existingPhotos[i], fit: BoxFit.cover,
-                errorBuilder: (_, __, ___) => const ColoredBox(color: Color(0xFFEDE8DE))),
+                errorBuilder: (_, __, ___) => ColoredBox(color: colors.surfaceContainerHighest)),
             () => setState(() => _existingPhotos.removeAt(i)),
           ),
         for (var i = 0; i < _newPhotos.length; i++)
@@ -703,14 +711,14 @@ class _PostPropertyScreenState extends State<PostPropertyScreen> {
           child: Container(
             width: 84, height: 84,
             decoration: BoxDecoration(
-              color: AppColors.glassWhite,
+              color: colors.surface,
               borderRadius: BorderRadius.circular(12),
-              border: Border.all(color: AppColors.glassBorder),
+              border: Border.all(color: colors.outlineVariant),
             ),
-            child: const Column(mainAxisAlignment: MainAxisAlignment.center, children: [
-              Icon(Icons.add_photo_alternate_outlined, color: AppColors.textSecondary, size: 26),
+            child: Column(mainAxisAlignment: MainAxisAlignment.center, children: [
+              Icon(Icons.add_photo_alternate_outlined, color: colors.onSurfaceVariant, size: 26),
               SizedBox(height: 4),
-              Text('+', style: TextStyle(color: AppColors.textSecondary, fontSize: 12, fontWeight: FontWeight.w700)),
+              Text('+', style: TextStyle(color: colors.onSurfaceVariant, fontSize: 12, fontWeight: FontWeight.w700)),
             ]),
           ),
         ),
@@ -739,12 +747,13 @@ class _PostPropertyScreenState extends State<PostPropertyScreen> {
   }
 
   Widget _sectionHeader(String title, String hint) {
+    final colors = Theme.of(context).colorScheme;
     return Column(crossAxisAlignment: CrossAxisAlignment.start, children: [
-      const Divider(color: AppColors.glassBorder, height: 1),
+      Divider(color: colors.outlineVariant, height: 1),
       const SizedBox(height: 14),
-      Text(title, style: const TextStyle(color: AppColors.textPrimary, fontSize: 14.5, fontWeight: FontWeight.w700)),
+      Text(title, style: TextStyle(color: colors.onSurface, fontSize: 14.5, fontWeight: FontWeight.w700)),
       const SizedBox(height: 3),
-      Text(hint, style: const TextStyle(color: AppColors.textMuted, fontSize: 12)),
+      Text(hint, style: TextStyle(color: colors.outline, fontSize: 12)),
     ]);
   }
 
@@ -753,6 +762,7 @@ class _PostPropertyScreenState extends State<PostPropertyScreen> {
     required void Function(String) onPick,
     required List<(String, String)> options,
   }) {
+    final colors = Theme.of(context).colorScheme;
     return Wrap(
       spacing: 8, runSpacing: 8,
       children: options.map((o) {
@@ -762,12 +772,12 @@ class _PostPropertyScreenState extends State<PostPropertyScreen> {
           child: Container(
             padding: const EdgeInsets.symmetric(horizontal: 15, vertical: 8),
             decoration: BoxDecoration(
-              color: on ? _accent : AppColors.glassWhite,
+              color: on ? colors.primary : colors.surface,
               borderRadius: BorderRadius.circular(20),
-              border: Border.all(color: on ? _accent : AppColors.glassBorder),
+              border: Border.all(color: on ? colors.primary : colors.outlineVariant),
             ),
             child: Text(o.$2, style: TextStyle(
-                color: on ? Colors.white : AppColors.textSecondary,
+                color: on ? Colors.white : colors.onSurfaceVariant,
                 fontSize: 13, fontWeight: FontWeight.w600)),
           ),
         );
@@ -776,6 +786,7 @@ class _PostPropertyScreenState extends State<PostPropertyScreen> {
   }
 
   Widget _durationSection() {
+    final colors = Theme.of(context).colorScheme;
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
@@ -790,11 +801,11 @@ class _PostPropertyScreenState extends State<PostPropertyScreen> {
               child: Container(
                 padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 9),
                 decoration: BoxDecoration(
-                  color: on ? _accent : Colors.transparent,
+                  color: on ? colors.primary : Colors.transparent,
                   borderRadius: BorderRadius.circular(20),
-                  border: Border.all(color: on ? _accent : AppColors.glassBorder),
+                  border: Border.all(color: on ? colors.primary : colors.outlineVariant),
                 ),
-                child: Text(_isBn ? '$d দিন' : '$d days', style: TextStyle(color: on ? Colors.white : AppColors.textSecondary, fontSize: 13, fontWeight: FontWeight.w600)),
+                child: Text(_isBn ? '$d দিন' : '$d days', style: TextStyle(color: on ? Colors.white : colors.onSurfaceVariant, fontSize: 13, fontWeight: FontWeight.w600)),
               ),
             );
           }).toList(),
@@ -802,34 +813,38 @@ class _PostPropertyScreenState extends State<PostPropertyScreen> {
         const SizedBox(height: 8),
         Text(
           _isBn ? 'মোট: ৳${_durationDays * _kListingFeePerDay} — পোস্ট করার পর পেমেন্ট করতে হবে, তারপর সবাই দেখতে পাবে' : 'Total: ৳${_durationDays * _kListingFeePerDay} — payment happens right after posting, then it becomes visible to everyone',
-          style: const TextStyle(color: AppColors.textMuted, fontSize: 12),
+          style: TextStyle(color: colors.outline, fontSize: 12),
         ),
       ],
     );
   }
 
-  Widget _label(String t) => Padding(
+  Widget _label(String t) {
+    final colors = Theme.of(context).colorScheme;
+    return Padding(
         padding: const EdgeInsets.only(bottom: 7),
-        child: Text(t, style: const TextStyle(color: AppColors.textSecondary, fontSize: 13, fontWeight: FontWeight.w600)),
+        child: Text(t, style: TextStyle(color: colors.onSurfaceVariant, fontSize: 13, fontWeight: FontWeight.w600)),
       );
+  }
 
   Widget _field(TextEditingController c, String hint,
       {int maxLines = 1, TextInputType? keyboard, bool digitsOnly = false}) {
+    final colors = Theme.of(context).colorScheme;
     return TextField(
       controller: c,
       maxLines: maxLines,
       keyboardType: keyboard,
       inputFormatters: digitsOnly ? [FilteringTextInputFormatter.digitsOnly] : null,
-      style: const TextStyle(color: AppColors.textPrimary, fontSize: 14),
+      style: TextStyle(color: colors.onSurface, fontSize: 14),
       decoration: InputDecoration(
         hintText: hint,
-        hintStyle: const TextStyle(color: AppColors.textMuted, fontSize: 13),
+        hintStyle: TextStyle(color: colors.outline, fontSize: 13),
         filled: true,
-        fillColor: AppColors.glassWhite,
+        fillColor: colors.surface,
         contentPadding: const EdgeInsets.symmetric(horizontal: 14, vertical: 12),
-        border: OutlineInputBorder(borderRadius: BorderRadius.circular(12), borderSide: const BorderSide(color: AppColors.glassBorder)),
-        enabledBorder: OutlineInputBorder(borderRadius: BorderRadius.circular(12), borderSide: const BorderSide(color: AppColors.glassBorder)),
-        focusedBorder: OutlineInputBorder(borderRadius: BorderRadius.circular(12), borderSide: const BorderSide(color: _accent, width: 1.5)),
+        border: OutlineInputBorder(borderRadius: BorderRadius.circular(12), borderSide: BorderSide(color: colors.outlineVariant)),
+        enabledBorder: OutlineInputBorder(borderRadius: BorderRadius.circular(12), borderSide: BorderSide(color: colors.outlineVariant)),
+        focusedBorder: OutlineInputBorder(borderRadius: BorderRadius.circular(12), borderSide: BorderSide(color: colors.primary, width: 1.5)),
       ),
     );
   }

@@ -1,6 +1,6 @@
 import 'dart:ui';
 import 'package:flutter/material.dart';
-import '../theme/app_theme.dart';
+import '../theme/app_gradients.dart';
 
 class GlassButton extends StatelessWidget {
   final String label;
@@ -24,23 +24,24 @@ class GlassButton extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    final colors = Theme.of(context).colorScheme;
     return SizedBox(
       width: width ?? double.infinity,
       height: 56,
-      child: isOutlined ? _buildOutlined() : _buildFilled(),
+      child: isOutlined ? _buildOutlined(colors) : _buildFilled(colors),
     );
   }
 
-  Widget _buildFilled() {
+  Widget _buildFilled(ColorScheme colors) {
     return DecoratedBox(
       decoration: BoxDecoration(
         gradient: color != null
-            ? LinearGradient(colors: [color!, color!.withOpacity(0.8)])
-            : AppColors.blueGradient,
+            ? LinearGradient(colors: [color!, color!.withValues(alpha: 0.8)])
+            : AppGradients.primary(colors),
         borderRadius: BorderRadius.circular(16),
         boxShadow: [
           BoxShadow(
-            color: (color ?? AppColors.deepBlue).withOpacity(0.4),
+            color: (color ?? colors.primary).withValues(alpha: 0.4),
             blurRadius: 16,
             offset: const Offset(0, 6),
           ),
@@ -56,12 +57,12 @@ class GlassButton extends StatelessWidget {
           ),
         ),
         child: isLoading
-            ? const SizedBox(
+            ? SizedBox(
                 width: 22,
                 height: 22,
                 child: CircularProgressIndicator(
                   strokeWidth: 2.5,
-                  color: AppColors.ivory,
+                  color: colors.onPrimary,
                 ),
               )
             : FittedBox(
@@ -71,14 +72,14 @@ class GlassButton extends StatelessWidget {
                   mainAxisSize: MainAxisSize.min,
                   children: [
                     if (icon != null) ...[
-                      Icon(icon, color: AppColors.ivory, size: 20),
+                      Icon(icon, color: colors.onPrimary, size: 20),
                       const SizedBox(width: 8),
                     ],
                     Text(
                       label,
                       overflow: TextOverflow.ellipsis,
-                      style: const TextStyle(
-                        color: AppColors.ivory,
+                      style: TextStyle(
+                        color: colors.onPrimary,
                         fontSize: 16,
                         fontWeight: FontWeight.w600,
                         letterSpacing: 0.3,
@@ -91,7 +92,7 @@ class GlassButton extends StatelessWidget {
     );
   }
 
-  Widget _buildOutlined() {
+  Widget _buildOutlined(ColorScheme colors) {
     return ClipRRect(
       borderRadius: BorderRadius.circular(16),
       child: BackdropFilter(
@@ -99,8 +100,8 @@ class GlassButton extends StatelessWidget {
         child: OutlinedButton(
           onPressed: isLoading ? null : onPressed,
           style: OutlinedButton.styleFrom(
-            backgroundColor: AppColors.glassWhite,
-            side: const BorderSide(color: AppColors.glassBorder, width: 1.5),
+            backgroundColor: colors.surface,
+            side: BorderSide(color: colors.outlineVariant, width: 1.5),
             shape: RoundedRectangleBorder(
               borderRadius: BorderRadius.circular(16),
             ),
@@ -112,14 +113,14 @@ class GlassButton extends StatelessWidget {
               mainAxisSize: MainAxisSize.min,
               children: [
                 if (icon != null) ...[
-                  Icon(icon, color: AppColors.textPrimary, size: 20),
+                  Icon(icon, color: colors.onSurface, size: 20),
                   const SizedBox(width: 8),
                 ],
                 Text(
                   label,
                   overflow: TextOverflow.ellipsis,
-                  style: const TextStyle(
-                    color: AppColors.textPrimary,
+                  style: TextStyle(
+                    color: colors.onSurface,
                     fontSize: 16,
                     fontWeight: FontWeight.w600,
                   ),
@@ -157,7 +158,7 @@ class FuchsiaButton extends StatelessWidget {
       icon: icon,
       isLoading: isLoading,
       width: width,
-      color: AppColors.fuchsia,
+      color: Theme.of(context).colorScheme.secondary,
     );
   }
 }

@@ -6,7 +6,7 @@ import '../core/utils/app_strings.dart';
 import '../models/dispatch_model.dart';
 import '../services/catalog_service.dart';
 import '../services/dispatch_service.dart';
-import '../theme/app_theme.dart';
+import '../theme/app_gradients.dart';
 import '../widgets/glass_card.dart';
 import 'courses_screen.dart';
 import 'grocery_screen.dart';
@@ -22,6 +22,7 @@ import 'scrap_screen.dart';
 import 'service_mode_hub_screen.dart';
 import 'service_selection_screen.dart';
 import 'skill_share_screen.dart';
+import '../widgets/custom_bottom_nav.dart';
 
 class _ServiceItem {
   final String nameBn;
@@ -152,13 +153,14 @@ class _HomeScreenState extends State<HomeScreen> {
 
   @override
   Widget build(BuildContext context) {
+    final colors = Theme.of(context).colorScheme;
     return RefreshIndicator(
       onRefresh: _loadData,
-      color: AppColors.deepBlue,
-      backgroundColor: AppColors.bgMid,
+      color: colors.primary,
+      backgroundColor: colors.surface,
       child: CustomScrollView(
         slivers: [
-          _buildAppBar(context),
+          SliverToBoxAdapter(child: _buildGreetingHeader(context)),
           SliverToBoxAdapter(child: _buildSearchBar(context)),
           SliverToBoxAdapter(child: _buildActiveRequest(context)),
           SliverToBoxAdapter(child: _buildMealGroupBanner(context)),
@@ -173,42 +175,46 @@ class _HomeScreenState extends State<HomeScreen> {
                 ? _buildSkeletonProviderRow()
                 : _buildFeaturedProviders(),
           ),
-          const SliverToBoxAdapter(child: SizedBox(height: 100)),
+          SliverToBoxAdapter(child: SizedBox(height: bottomNavClearance(context))),
         ],
       ),
     );
   }
 
-  Widget _buildAppBar(BuildContext context) {
+  /// A plain scrolling sliver, not a floating [SliverAppBar].
+  ///
+  /// It used to be `SliverAppBar(floating: true, snap: true)` with a
+  /// transparent background. A floating bar keeps painting over the list while
+  /// the list scrolls underneath it, and with nothing opaque behind it the
+  /// greeting sat directly on top of the search field and the cards below —
+  /// the two overlapped as soon as you scrolled a little. Nothing here needs to
+  /// stay pinned, so the header simply scrolls away with the rest of the
+  /// content and can no longer collide with anything.
+  Widget _buildGreetingHeader(BuildContext context) {
+    final colors = Theme.of(context).colorScheme;
     final strings = AppStrings.of(context);
-    return SliverAppBar(
-      expandedHeight: 96,
-      floating: true,
-      snap: true,
-      backgroundColor: Colors.transparent,
-      flexibleSpace: FlexibleSpaceBar(
-        background: Padding(
-          padding: const EdgeInsets.fromLTRB(20, 34, 20, 10),
-          child: Column(
-            mainAxisAlignment: MainAxisAlignment.end,
-            crossAxisAlignment: CrossAxisAlignment.start,
-            children: [
-              Text(strings.greeting, style: const TextStyle(color: AppColors.textMuted, fontSize: 13)),
-              const SizedBox(height: 2),
-              Text(
-                strings.homeQuestion,
-                maxLines: 1,
-                overflow: TextOverflow.ellipsis,
-                style: const TextStyle(color: AppColors.textPrimary, fontSize: 21, fontWeight: FontWeight.w700),
-              ),
-            ],
+    // The status-bar inset the removed SliverAppBar used to absorb.
+    final topInset = MediaQuery.paddingOf(context).top;
+    return Padding(
+      padding: EdgeInsets.fromLTRB(20, topInset + 16, 20, 14),
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          Text(strings.greeting, style: TextStyle(color: colors.outline, fontSize: 13)),
+          const SizedBox(height: 2),
+          Text(
+            strings.homeQuestion,
+            maxLines: 1,
+            overflow: TextOverflow.ellipsis,
+            style: TextStyle(color: colors.onSurface, fontSize: 21, fontWeight: FontWeight.w700),
           ),
-        ),
+        ],
       ),
     );
   }
 
   Widget _buildSearchBar(BuildContext context) {
+    final colors = Theme.of(context).colorScheme;
     final strings = AppStrings.of(context);
     return Padding(
       padding: const EdgeInsets.fromLTRB(16, 0, 16, 20),
@@ -218,21 +224,21 @@ class _HomeScreenState extends State<HomeScreen> {
           filter: ImageFilter.blur(sigmaX: 10, sigmaY: 10),
           child: TextField(
             controller: _searchController,
-            style: const TextStyle(color: AppColors.textPrimary),
+            style: TextStyle(color: colors.onSurface),
             decoration: InputDecoration(
               hintText: strings.searchHint,
-              prefixIcon: const Icon(Icons.search_rounded, color: AppColors.textMuted),
+              prefixIcon: Icon(Icons.search_rounded, color: colors.outline),
               suffixIcon: Container(
                 margin: const EdgeInsets.all(8),
                 padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 6),
                 decoration: BoxDecoration(
-                  gradient: AppColors.blueGradient,
+                  gradient: AppGradients.primary(colors),
                   borderRadius: BorderRadius.circular(10),
                 ),
                 child: Text(
                   strings.filterLabel,
-                  style: const TextStyle(
-                    color: AppColors.ivory,
+                  style: TextStyle(
+                    color: colors.onPrimary,
                     fontSize: 12,
                     fontWeight: FontWeight.w600,
                   ),
@@ -246,6 +252,7 @@ class _HomeScreenState extends State<HomeScreen> {
   }
 
   Widget _buildActiveRequest(BuildContext context) {
+    final colors = Theme.of(context).colorScheme;
     final strings = AppStrings.of(context);
     return Padding(
       padding: const EdgeInsets.fromLTRB(16, 0, 16, 20),
@@ -255,21 +262,21 @@ class _HomeScreenState extends State<HomeScreen> {
         ),
         child: GlassCard(
         padding: const EdgeInsets.all(16),
-        glassColor: AppColors.glassBlue,
-        borderColor: AppColors.glassBorderBlue,
+        glassColor: colors.primary.withValues(alpha: 0.08),
+        borderColor: colors.primary.withValues(alpha: 0.20),
         child: Row(
           children: [
             Container(
               width: 46,
               height: 46,
               decoration: BoxDecoration(
-                gradient: AppColors.blueGradient,
+                gradient: AppGradients.primary(colors),
                 borderRadius: BorderRadius.circular(14),
                 boxShadow: [
-                  BoxShadow(color: AppColors.deepBlue.withOpacity(0.4), blurRadius: 12),
+                  BoxShadow(color: colors.primary.withOpacity(0.4), blurRadius: 12),
                 ],
               ),
-              child: const Icon(Icons.add_circle_rounded, color: AppColors.ivory, size: 26),
+              child: Icon(Icons.add_circle_rounded, color: colors.onPrimary, size: 26),
             ),
             const SizedBox(width: 14),
             Expanded(
@@ -278,20 +285,20 @@ class _HomeScreenState extends State<HomeScreen> {
                 children: [
                   Text(
                     strings.newRequest,
-                    style: const TextStyle(
-                      color: AppColors.textPrimary,
+                    style: TextStyle(
+                      color: colors.onSurface,
                       fontSize: 15,
                       fontWeight: FontWeight.w600,
                     ),
                   ),
                   Text(
                     'Post a new service request',
-                    style: TextStyle(color: AppColors.textMuted, fontSize: 12),
+                    style: TextStyle(color: colors.outline, fontSize: 12),
                   ),
                 ],
               ),
             ),
-            const Icon(Icons.arrow_forward_ios_rounded, color: AppColors.deepBlue, size: 16),
+            Icon(Icons.arrow_forward_ios_rounded, color: colors.primary, size: 16),
           ],
         ),
       ),
@@ -303,6 +310,7 @@ class _HomeScreenState extends State<HomeScreen> {
   // gradient + a subtle shimmer sweep) — this is the daily-open retention feature, so
   // it needs to catch the eye every single time, not blend into the category grid.
   Widget _buildMealGroupBanner(BuildContext context) {
+    final colors = Theme.of(context).colorScheme;
     return Padding(
       padding: const EdgeInsets.fromLTRB(16, 0, 16, 20),
       child: GestureDetector(
@@ -312,9 +320,9 @@ class _HomeScreenState extends State<HomeScreen> {
         child: Container(
           padding: const EdgeInsets.all(16),
           decoration: BoxDecoration(
-            gradient: AppColors.fuchsiaGradient,
+            gradient: AppGradients.accent(colors),
             borderRadius: BorderRadius.circular(20),
-            boxShadow: [BoxShadow(color: AppColors.fuchsia.withOpacity(0.35), blurRadius: 18, offset: const Offset(0, 8))],
+            boxShadow: [BoxShadow(color: colors.secondary.withOpacity(0.35), blurRadius: 18, offset: const Offset(0, 8))],
           ),
           child: Row(
             children: [
@@ -322,13 +330,13 @@ class _HomeScreenState extends State<HomeScreen> {
                   .animate(onPlay: (c) => c.repeat(reverse: true))
                   .scaleXY(end: 1.15, duration: 900.ms, curve: Curves.easeInOut),
               const SizedBox(width: 14),
-              const Expanded(
+              Expanded(
                 child: Column(
                   crossAxisAlignment: CrossAxisAlignment.start,
                   children: [
                     Text(
                       'মিল গ্রুপ — বাসার মিল হিসাব',
-                      style: TextStyle(color: AppColors.ivory, fontSize: 15, fontWeight: FontWeight.w700),
+                      style: TextStyle(color: colors.onPrimary, fontSize: 15, fontWeight: FontWeight.w700),
                     ),
                     SizedBox(height: 2),
                     Text(
@@ -338,7 +346,7 @@ class _HomeScreenState extends State<HomeScreen> {
                   ],
                 ),
               ),
-              const Icon(Icons.arrow_forward_ios_rounded, color: AppColors.ivory, size: 16),
+              Icon(Icons.arrow_forward_ios_rounded, color: colors.onPrimary, size: 16),
             ],
           ),
         ),
@@ -351,6 +359,7 @@ class _HomeScreenState extends State<HomeScreen> {
   }
 
   Widget _buildSectionTitle(BuildContext context) {
+    final colors = Theme.of(context).colorScheme;
     final strings = AppStrings.of(context);
     return Padding(
       padding: const EdgeInsets.fromLTRB(20, 0, 20, 14),
@@ -362,15 +371,15 @@ class _HomeScreenState extends State<HomeScreen> {
               children: [
                 Text(
                   strings.categories,
-                  style: const TextStyle(
-                    color: AppColors.textPrimary,
+                  style: TextStyle(
+                    color: colors.onSurface,
                     fontSize: 18,
                     fontWeight: FontWeight.w700,
                   ),
                 ),
                 Text(
                   'Service Categories',
-                  style: TextStyle(color: AppColors.textMuted, fontSize: 11),
+                  style: TextStyle(color: colors.outline, fontSize: 11),
                 ),
               ],
             ),
@@ -381,7 +390,7 @@ class _HomeScreenState extends State<HomeScreen> {
             ),
             child: Text(
               strings.viewAll,
-              style: const TextStyle(color: AppColors.deepBlue, fontSize: 13, fontWeight: FontWeight.w600),
+              style: TextStyle(color: colors.primary, fontSize: 13, fontWeight: FontWeight.w600),
             ),
           ),
         ],
@@ -390,6 +399,7 @@ class _HomeScreenState extends State<HomeScreen> {
   }
 
   Widget _buildProviderSectionTitle(BuildContext context) {
+    final colors = Theme.of(context).colorScheme;
     final strings = AppStrings.of(context);
     return Padding(
       padding: const EdgeInsets.fromLTRB(20, 0, 20, 14),
@@ -399,8 +409,8 @@ class _HomeScreenState extends State<HomeScreen> {
             child: Column(
               crossAxisAlignment: CrossAxisAlignment.start,
               children: [
-                Text(strings.topProviders, style: const TextStyle(color: AppColors.textPrimary, fontSize: 18, fontWeight: FontWeight.w700)),
-                Text('Top Providers', style: const TextStyle(color: AppColors.textMuted, fontSize: 11)),
+                Text(strings.topProviders, style: TextStyle(color: colors.onSurface, fontSize: 18, fontWeight: FontWeight.w700)),
+                Text('Top Providers', style: TextStyle(color: colors.outline, fontSize: 11)),
               ],
             ),
           ),
@@ -408,7 +418,7 @@ class _HomeScreenState extends State<HomeScreen> {
             onPressed: () => Navigator.of(context).push(
               MaterialPageRoute(builder: (_) => const ProviderBrowseScreen(kind: '', label: 'সব প্রোভাইডার')),
             ),
-            child: Text(strings.viewAll, style: const TextStyle(color: AppColors.deepBlue, fontSize: 13, fontWeight: FontWeight.w600)),
+            child: Text(strings.viewAll, style: TextStyle(color: colors.primary, fontSize: 13, fontWeight: FontWeight.w600)),
           ),
         ],
       ),
@@ -477,14 +487,15 @@ class _HomeScreenState extends State<HomeScreen> {
   }
 
   Widget _buildCategoryItem(_ServiceItem item, int index, bool isBn) {
+    final colors = Theme.of(context).colorScheme;
     final color = _colorForIndex(index);
     return GestureDetector(
       onTap: () => _onServiceTap(item),
       child: Container(
         decoration: BoxDecoration(
-          color: AppColors.glassWhite,
+          color: colors.surface,
           borderRadius: BorderRadius.circular(18),
-          border: Border.all(color: AppColors.glassBorder),
+          border: Border.all(color: colors.outlineVariant),
         ),
         padding: const EdgeInsets.symmetric(vertical: 12, horizontal: 4),
         child: Column(
@@ -501,9 +512,9 @@ class _HomeScreenState extends State<HomeScreen> {
                         end: Alignment.bottomRight,
                       )
                     : null,
-                color: item.imagePath != null ? AppColors.glassWhite : null,
+                color: item.imagePath != null ? colors.surface : null,
                 borderRadius: BorderRadius.circular(14),
-                border: item.imagePath != null ? Border.all(color: AppColors.glassBorder) : null,
+                border: item.imagePath != null ? Border.all(color: colors.outlineVariant) : null,
                 boxShadow: item.imagePath == null
                     ? [BoxShadow(color: color.withValues(alpha: 0.4), blurRadius: 10, offset: const Offset(0, 4))]
                     : null,
@@ -518,7 +529,7 @@ class _HomeScreenState extends State<HomeScreen> {
             const SizedBox(height: 8),
             Text(
               isBn ? item.nameBn : item.nameEn,
-              style: const TextStyle(color: AppColors.textPrimary, fontSize: 11, fontWeight: FontWeight.w600, height: 1.15),
+              style: TextStyle(color: colors.onSurface, fontSize: 11, fontWeight: FontWeight.w600, height: 1.15),
               textAlign: TextAlign.center,
               maxLines: 2,
               overflow: TextOverflow.ellipsis,
@@ -535,6 +546,7 @@ class _HomeScreenState extends State<HomeScreen> {
   // ── Skeleton loaders ──────────────────────────────────────────────
 
   Widget _buildSkeletonProviderRow() {
+    final colors = Theme.of(context).colorScheme;
     return SizedBox(
       height: 160,
       child: ListView.builder(
@@ -546,9 +558,9 @@ class _HomeScreenState extends State<HomeScreen> {
           child: Container(
             width: 160,
             decoration: BoxDecoration(
-              color: AppColors.glassWhite,
+              color: colors.surface,
               borderRadius: BorderRadius.circular(20),
-              border: Border.all(color: AppColors.glassBorder, width: 1.5),
+              border: Border.all(color: colors.outlineVariant, width: 1.5),
             ),
           )
               .animate(onPlay: (c) => c.repeat(reverse: true))
@@ -574,6 +586,7 @@ class _HomeScreenState extends State<HomeScreen> {
   }
 
   Widget _buildProviderCard(NearbyProviderModel provider, int index) {
+    final colors = Theme.of(context).colorScheme;
     final badge = _badgeLabel(provider.level);
     final kind = provider.serviceKinds.isNotEmpty ? provider.serviceKinds.first : '';
     return GestureDetector(
@@ -593,11 +606,11 @@ class _HomeScreenState extends State<HomeScreen> {
                   Container(
                     width: 40,
                     height: 40,
-                    decoration: BoxDecoration(gradient: AppColors.blueGradient, shape: BoxShape.circle),
+                    decoration: BoxDecoration(gradient: AppGradients.primary(colors), shape: BoxShape.circle),
                     child: Center(
                       child: Text(
                         provider.name.isNotEmpty ? provider.name[0].toUpperCase() : '?',
-                        style: const TextStyle(color: AppColors.ivory, fontSize: 18, fontWeight: FontWeight.w700),
+                        style: TextStyle(color: colors.onPrimary, fontSize: 18, fontWeight: FontWeight.w700),
                       ),
                     ),
                   ),
@@ -605,25 +618,25 @@ class _HomeScreenState extends State<HomeScreen> {
                   if (badge != null)
                     Container(
                       padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 3),
-                      decoration: BoxDecoration(gradient: AppColors.fuchsiaGradient, borderRadius: BorderRadius.circular(8)),
-                      child: Text(badge, style: const TextStyle(color: AppColors.ivory, fontSize: 9, fontWeight: FontWeight.w700)),
+                      decoration: BoxDecoration(gradient: AppGradients.accent(colors), borderRadius: BorderRadius.circular(8)),
+                      child: Text(badge, style: TextStyle(color: colors.onPrimary, fontSize: 9, fontWeight: FontWeight.w700)),
                     ),
                 ],
               ),
               const SizedBox(height: 10),
-              Text(provider.name, style: const TextStyle(color: AppColors.textPrimary, fontSize: 13, fontWeight: FontWeight.w600), maxLines: 1, overflow: TextOverflow.ellipsis),
-              Text(kind, style: const TextStyle(color: AppColors.textMuted, fontSize: 11)),
+              Text(provider.name, style: TextStyle(color: colors.onSurface, fontSize: 13, fontWeight: FontWeight.w600), maxLines: 1, overflow: TextOverflow.ellipsis),
+              Text(kind, style: TextStyle(color: colors.outline, fontSize: 11)),
               const SizedBox(height: 8),
               Row(
                 children: [
                   if (provider.rating != null) ...[
                     const Icon(Icons.star_rounded, color: Color(0xFFFFC107), size: 14),
                     const SizedBox(width: 4),
-                    Text(provider.rating!.toStringAsFixed(1), style: const TextStyle(color: AppColors.textPrimary, fontSize: 12, fontWeight: FontWeight.w600)),
+                    Text(provider.rating!.toStringAsFixed(1), style: TextStyle(color: colors.onSurface, fontSize: 12, fontWeight: FontWeight.w600)),
                   ],
                   const Spacer(),
                   if (provider.distanceKm != null)
-                    Text('${provider.distanceKm!.toStringAsFixed(1)} km', style: const TextStyle(color: AppColors.textMuted, fontSize: 11)),
+                    Text('${provider.distanceKm!.toStringAsFixed(1)} km', style: TextStyle(color: colors.outline, fontSize: 11)),
                 ],
               ),
             ],

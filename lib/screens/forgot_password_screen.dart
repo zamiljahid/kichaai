@@ -3,7 +3,7 @@ import 'package:flutter_animate/flutter_animate.dart';
 import 'package:provider/provider.dart';
 import '../core/network/api_client.dart';
 import '../core/utils/app_strings.dart';
-import '../theme/app_theme.dart';
+import '../theme/app_gradients.dart';
 import '../widgets/glass_button.dart';
 import '../widgets/glass_card.dart';
 import 'auth_screen.dart';
@@ -76,14 +76,15 @@ class _ForgotPasswordScreenState extends State<ForgotPasswordScreen> {
 
   @override
   Widget build(BuildContext context) {
+    final colors = Theme.of(context).colorScheme;
     final isBn = context.watch<LanguageNotifier>().isBengali;
     return Scaffold(
-      backgroundColor: AppColors.bgDark,
+      backgroundColor: colors.surfaceContainerHighest,
       appBar: AppBar(
         backgroundColor: Colors.transparent,
         elevation: 0,
         leading: IconButton(
-          icon: const Icon(Icons.arrow_back_ios_new_rounded, color: AppColors.textPrimary, size: 18),
+          icon: Icon(Icons.arrow_back_ios_new_rounded, color: colors.onSurface, size: 18),
           onPressed: () => Navigator.pop(context),
         ),
       ),
@@ -98,7 +99,7 @@ class _ForgotPasswordScreenState extends State<ForgotPasswordScreen> {
                 width: 64,
                 height: 64,
                 decoration: BoxDecoration(
-                  gradient: AppColors.blueGradient,
+                  gradient: AppGradients.primary(colors),
                   borderRadius: BorderRadius.circular(20),
                 ),
                 child: const Icon(Icons.lock_reset_rounded, color: Colors.white, size: 32),
@@ -106,12 +107,12 @@ class _ForgotPasswordScreenState extends State<ForgotPasswordScreen> {
               const SizedBox(height: 24),
               Text(
                 isBn ? 'পাসওয়ার্ড ভুলে গেছেন?' : 'Forgot password?',
-                style: const TextStyle(color: AppColors.textPrimary, fontSize: 26, fontWeight: FontWeight.w800),
+                style: TextStyle(color: colors.onSurface, fontSize: 26, fontWeight: FontWeight.w800),
               ).animate().fadeIn(delay: 100.ms),
               const SizedBox(height: 8),
               Text(
                 isBn ? 'ইমেইল/ফোন ও নতুন পাসওয়ার্ড দিন' : 'Enter your email/phone and a new password',
-                style: const TextStyle(color: AppColors.textMuted, fontSize: 14),
+                style: TextStyle(color: colors.outline, fontSize: 14),
               ).animate().fadeIn(delay: 150.ms),
               const SizedBox(height: 40),
               GlassCard(
@@ -162,10 +163,13 @@ class _ForgotPasswordScreenState extends State<ForgotPasswordScreen> {
     );
   }
 
-  Widget _label(String text) => Padding(
+  Widget _label(String text) {
+    final colors = Theme.of(context).colorScheme;
+    return Padding(
     padding: const EdgeInsets.only(bottom: 8, top: 16),
-    child: Text(text, style: const TextStyle(color: AppColors.textMuted, fontSize: 12, fontWeight: FontWeight.w600)),
+    child: Text(text, style: TextStyle(color: colors.outline, fontSize: 12, fontWeight: FontWeight.w600)),
   );
+  }
 
   Widget _field({
     required TextEditingController controller,
@@ -175,23 +179,24 @@ class _ForgotPasswordScreenState extends State<ForgotPasswordScreen> {
     bool obscure = false,
     VoidCallback? toggleObscure,
   }) {
+    final colors = Theme.of(context).colorScheme;
     return TextField(
       controller: controller,
       obscureText: obscure,
       keyboardType: keyboardType,
-      style: const TextStyle(color: AppColors.textPrimary),
+      style: TextStyle(color: colors.onSurface),
       decoration: InputDecoration(
         hintText: hint,
-        hintStyle: const TextStyle(color: AppColors.textMuted),
-        prefixIcon: Icon(icon, color: AppColors.textMuted, size: 18),
+        hintStyle: TextStyle(color: colors.outline),
+        prefixIcon: Icon(icon, color: colors.outline, size: 18),
         suffixIcon: toggleObscure != null
             ? IconButton(
-                icon: Icon(obscure ? Icons.visibility_outlined : Icons.visibility_off_outlined, color: AppColors.textMuted, size: 18),
+                icon: Icon(obscure ? Icons.visibility_outlined : Icons.visibility_off_outlined, color: colors.outline, size: 18),
                 onPressed: toggleObscure,
               )
             : null,
         filled: true,
-        fillColor: AppColors.glassWhite,
+        fillColor: colors.surface,
         border: OutlineInputBorder(borderRadius: BorderRadius.circular(12), borderSide: BorderSide.none),
       ),
     );

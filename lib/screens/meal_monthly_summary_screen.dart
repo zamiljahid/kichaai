@@ -3,7 +3,8 @@ import 'package:flutter/material.dart';
 import 'package:flutter_animate/flutter_animate.dart';
 import '../models/meal_model.dart';
 import '../services/meal_service.dart';
-import '../theme/app_theme.dart';
+import '../theme/app_gradients.dart';
+import '../theme/status_colors.dart';
 import '../widgets/glass_button.dart';
 import '../widgets/glass_card.dart';
 
@@ -63,6 +64,7 @@ class _MealMonthlySummaryScreenState extends State<MealMonthlySummaryScreen> {
   }
 
   Future<void> _showAddExpenseSheet() async {
+    final colors = Theme.of(context).colorScheme;
     final amountCtrl = TextEditingController();
     final descCtrl = TextEditingController();
     bool isSubmitting = false;
@@ -80,31 +82,31 @@ class _MealMonthlySummaryScreenState extends State<MealMonthlySummaryScreen> {
             child: BackdropFilter(
               filter: ImageFilter.blur(sigmaX: 12, sigmaY: 12),
               child: Container(
-                color: AppColors.bgMid,
+                color: colors.surface,
                 padding: const EdgeInsets.fromLTRB(20, 20, 20, 32),
                 child: Column(
                   mainAxisSize: MainAxisSize.min,
                   crossAxisAlignment: CrossAxisAlignment.start,
                   children: [
-                    Center(child: Container(width: 40, height: 4, decoration: BoxDecoration(color: AppColors.glassBorder, borderRadius: BorderRadius.circular(2)))),
+                    Center(child: Container(width: 40, height: 4, decoration: BoxDecoration(color: colors.outlineVariant, borderRadius: BorderRadius.circular(2)))),
                     const SizedBox(height: 16),
-                    const Text('বাজার খরচ যোগ করুন', style: TextStyle(color: AppColors.textPrimary, fontSize: 18, fontWeight: FontWeight.w700)),
+                    Text('বাজার খরচ যোগ করুন', style: TextStyle(color: colors.onSurface, fontSize: 18, fontWeight: FontWeight.w700)),
                     const SizedBox(height: 16),
                     TextField(
                       controller: amountCtrl,
                       keyboardType: const TextInputType.numberWithOptions(decimal: true),
-                      style: const TextStyle(color: AppColors.textPrimary),
+                      style: TextStyle(color: colors.onSurface),
                       decoration: const InputDecoration(hintText: 'টাকার পরিমাণ', prefixText: '৳ '),
                     ),
                     const SizedBox(height: 12),
                     TextField(
                       controller: descCtrl,
-                      style: const TextStyle(color: AppColors.textPrimary),
+                      style: TextStyle(color: colors.onSurface),
                       decoration: const InputDecoration(hintText: 'কী কিনেছেন? (যেমন: চাল, ডাল, সবজি)'),
                     ),
                     if (error != null) ...[
                       const SizedBox(height: 8),
-                      Text(error!, style: const TextStyle(color: AppColors.softRed, fontSize: 12)),
+                      Text(error!, style: TextStyle(color: colors.error, fontSize: 12)),
                     ],
                     const SizedBox(height: 20),
                     GlassButton(
@@ -143,6 +145,7 @@ class _MealMonthlySummaryScreenState extends State<MealMonthlySummaryScreen> {
   }
 
   Future<void> _showAddDepositSheet() async {
+    final colors = Theme.of(context).colorScheme;
     final amountCtrl = TextEditingController();
     final noteCtrl = TextEditingController();
     bool isSubmitting = false;
@@ -158,33 +161,33 @@ class _MealMonthlySummaryScreenState extends State<MealMonthlySummaryScreen> {
           child: ClipRRect(
             borderRadius: const BorderRadius.vertical(top: Radius.circular(24)),
             child: Container(
-              color: AppColors.bgMid,
+              color: colors.surface,
               padding: const EdgeInsets.fromLTRB(20, 20, 20, 32),
               child: Column(
                 mainAxisSize: MainAxisSize.min,
                 crossAxisAlignment: CrossAxisAlignment.start,
                 children: [
-                  Center(child: Container(width: 40, height: 4, decoration: BoxDecoration(color: AppColors.glassBorder, borderRadius: BorderRadius.circular(2)))),
+                  Center(child: Container(width: 40, height: 4, decoration: BoxDecoration(color: colors.outlineVariant, borderRadius: BorderRadius.circular(2)))),
                   const SizedBox(height: 16),
-                  const Text('বাজার ফান্ডে জমা দিন', style: TextStyle(color: AppColors.textPrimary, fontSize: 18, fontWeight: FontWeight.w700)),
+                  Text('বাজার ফান্ডে জমা দিন', style: TextStyle(color: colors.onSurface, fontSize: 18, fontWeight: FontWeight.w700)),
                   const SizedBox(height: 4),
-                  const Text('এটা কোনো কেনাকাটা না — শুধু বাজারের জন্য আগাম টাকা জমা দেওয়া হচ্ছে', style: TextStyle(color: AppColors.textMuted, fontSize: 11)),
+                  Text('এটা কোনো কেনাকাটা না — শুধু বাজারের জন্য আগাম টাকা জমা দেওয়া হচ্ছে', style: TextStyle(color: colors.outline, fontSize: 11)),
                   const SizedBox(height: 16),
                   TextField(
                     controller: amountCtrl,
                     keyboardType: const TextInputType.numberWithOptions(decimal: true),
-                    style: const TextStyle(color: AppColors.textPrimary),
+                    style: TextStyle(color: colors.onSurface),
                     decoration: const InputDecoration(hintText: 'টাকার পরিমাণ', prefixText: '৳ '),
                   ),
                   const SizedBox(height: 12),
                   TextField(
                     controller: noteCtrl,
-                    style: const TextStyle(color: AppColors.textPrimary),
+                    style: TextStyle(color: colors.onSurface),
                     decoration: const InputDecoration(hintText: 'নোট (ঐচ্ছিক)'),
                   ),
                   if (error != null) ...[
                     const SizedBox(height: 8),
-                    Text(error!, style: const TextStyle(color: AppColors.softRed, fontSize: 12)),
+                    Text(error!, style: TextStyle(color: colors.error, fontSize: 12)),
                   ],
                   const SizedBox(height: 20),
                   GlassButton(
@@ -223,8 +226,9 @@ class _MealMonthlySummaryScreenState extends State<MealMonthlySummaryScreen> {
 
   @override
   Widget build(BuildContext context) {
+    final colors = Theme.of(context).colorScheme;
     return Scaffold(
-      backgroundColor: AppColors.bgDark,
+      backgroundColor: colors.surfaceContainerHighest,
       appBar: AppBar(title: const Text('মাসিক হিসাব')),
       floatingActionButton: Column(
         mainAxisSize: MainAxisSize.min,
@@ -232,27 +236,27 @@ class _MealMonthlySummaryScreenState extends State<MealMonthlySummaryScreen> {
           FloatingActionButton.extended(
             heroTag: 'addDeposit',
             onPressed: _showAddDepositSheet,
-            backgroundColor: AppColors.softAmber,
-            icon: const Icon(Icons.add_card_rounded, color: AppColors.ivory),
-            label: const Text('জমা দিন', style: TextStyle(color: AppColors.ivory)),
+            backgroundColor: StatusColors.amber,
+            icon: Icon(Icons.add_card_rounded, color: colors.onPrimary),
+            label: Text('জমা দিন', style: TextStyle(color: colors.onPrimary)),
           ),
           const SizedBox(height: 12),
           FloatingActionButton.extended(
             heroTag: 'addExpense',
             onPressed: _showAddExpenseSheet,
-            backgroundColor: AppColors.deepBlue,
-            icon: const Icon(Icons.add_shopping_cart_rounded, color: AppColors.ivory),
-            label: const Text('খরচ যোগ করুন', style: TextStyle(color: AppColors.ivory)),
+            backgroundColor: colors.primary,
+            icon: Icon(Icons.add_shopping_cart_rounded, color: colors.onPrimary),
+            label: Text('খরচ যোগ করুন', style: TextStyle(color: colors.onPrimary)),
           ),
         ],
       ),
       body: DecoratedBox(
-        decoration: BoxDecoration(gradient: AppColors.bgGradient),
+        decoration: BoxDecoration(gradient: AppGradients.background(colors)),
         child: _isLoading
-            ? const Center(child: CircularProgressIndicator(color: AppColors.deepBlue))
+            ? Center(child: CircularProgressIndicator(color: colors.primary))
             : RefreshIndicator(
                 onRefresh: _load,
-                color: AppColors.deepBlue,
+                color: colors.primary,
                 child: ListView(
                   padding: const EdgeInsets.fromLTRB(16, 16, 16, 100),
                   children: [
@@ -273,24 +277,26 @@ class _MealMonthlySummaryScreenState extends State<MealMonthlySummaryScreen> {
   }
 
   Widget _buildMonthSelector() {
+    final colors = Theme.of(context).colorScheme;
     return Row(
       mainAxisAlignment: MainAxisAlignment.center,
       children: [
-        IconButton(icon: const Icon(Icons.chevron_left_rounded, color: AppColors.deepBlue), onPressed: () => _changeMonth(-1)),
+        IconButton(icon: Icon(Icons.chevron_left_rounded, color: colors.primary), onPressed: () => _changeMonth(-1)),
         Text(
           '${_kBnMonths[_month.month - 1]} ${_month.year}',
-          style: const TextStyle(color: AppColors.textPrimary, fontSize: 16, fontWeight: FontWeight.w700),
+          style: TextStyle(color: colors.onSurface, fontSize: 16, fontWeight: FontWeight.w700),
         ),
-        IconButton(icon: const Icon(Icons.chevron_right_rounded, color: AppColors.deepBlue), onPressed: () => _changeMonth(1)),
+        IconButton(icon: Icon(Icons.chevron_right_rounded, color: colors.primary), onPressed: () => _changeMonth(1)),
       ],
     );
   }
 
   Widget _buildOverviewCard() {
+    final colors = Theme.of(context).colorScheme;
     final s = _summary;
     return GlassCard(
-      glassColor: AppColors.glassBlue,
-      borderColor: AppColors.glassBorderBlue,
+      glassColor: colors.primary.withValues(alpha: 0.08),
+      borderColor: colors.primary.withValues(alpha: 0.20),
       child: Column(
         children: [
           Row(
@@ -313,35 +319,40 @@ class _MealMonthlySummaryScreenState extends State<MealMonthlySummaryScreen> {
     ).animate().fadeIn(duration: 300.ms).slideY(begin: 0.08);
   }
 
-  Widget _divider() => Container(width: 1, height: 40, color: AppColors.glassBorder);
+  Widget _divider() {
+    final colors = Theme.of(context).colorScheme;
+    return Container(width: 1, height: 40, color: colors.outlineVariant);
+  }
 
   Widget _overviewStat(String label, String value, IconData icon) {
+    final colors = Theme.of(context).colorScheme;
     return Expanded(
       child: Column(
         children: [
-          Icon(icon, color: AppColors.deepBlue, size: 20),
+          Icon(icon, color: colors.primary, size: 20),
           const SizedBox(height: 6),
-          Text(value, style: const TextStyle(color: AppColors.textPrimary, fontSize: 16, fontWeight: FontWeight.w800)),
-          Text(label, style: const TextStyle(color: AppColors.textMuted, fontSize: 11)),
+          Text(value, style: TextStyle(color: colors.onSurface, fontSize: 16, fontWeight: FontWeight.w800)),
+          Text(label, style: TextStyle(color: colors.outline, fontSize: 11)),
         ],
       ),
     );
   }
 
   Widget _buildBalancesCard() {
+    final colors = Theme.of(context).colorScheme;
     final members = _summary?.members ?? [];
     return GlassCard(
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
-          const Text('সদস্যদের হিসাব', style: TextStyle(color: AppColors.textPrimary, fontSize: 16, fontWeight: FontWeight.w700)),
+          Text('সদস্যদের হিসাব', style: TextStyle(color: colors.onSurface, fontSize: 16, fontWeight: FontWeight.w700)),
           const SizedBox(height: 4),
-          const Text('সবুজ মানে টাকা ফেরত পাবে, লাল মানে গ্রুপকে টাকা দিতে হবে', style: TextStyle(color: AppColors.textMuted, fontSize: 11)),
+          Text('সবুজ মানে টাকা ফেরত পাবে, লাল মানে গ্রুপকে টাকা দিতে হবে', style: TextStyle(color: colors.outline, fontSize: 11)),
           const SizedBox(height: 14),
           if (members.isEmpty)
-            const Padding(
+            Padding(
               padding: EdgeInsets.symmetric(vertical: 12),
-              child: Text('এই মাসে এখনো কোনো হিসাব নেই', style: TextStyle(color: AppColors.textMuted, fontSize: 13)),
+              child: Text('এই মাসে এখনো কোনো হিসাব নেই', style: TextStyle(color: colors.outline, fontSize: 13)),
             )
           else
             ...members.asMap().entries.map((entry) => _buildBalanceRow(entry.value, entry.key)),
@@ -351,24 +362,25 @@ class _MealMonthlySummaryScreenState extends State<MealMonthlySummaryScreen> {
   }
 
   Widget _buildBalanceRow(MemberBalance m, int index) {
+    final colors = Theme.of(context).colorScheme;
     final positive = m.balance >= 0;
-    final color = positive ? const Color(0xFF15803D) : AppColors.softRed;
+    final color = positive ? const Color(0xFF15803D) : colors.error;
     return Padding(
       padding: const EdgeInsets.only(bottom: 12),
       child: Row(
         children: [
-          CircleAvatar(radius: 16, backgroundColor: AppColors.deepBlue, child: Text(m.name.isNotEmpty ? m.name[0].toUpperCase() : '?', style: const TextStyle(color: AppColors.ivory, fontSize: 13, fontWeight: FontWeight.w700))),
+          CircleAvatar(radius: 16, backgroundColor: colors.primary, child: Text(m.name.isNotEmpty ? m.name[0].toUpperCase() : '?', style: TextStyle(color: colors.onPrimary, fontSize: 13, fontWeight: FontWeight.w700))),
           const SizedBox(width: 10),
           Expanded(
             child: Column(
               crossAxisAlignment: CrossAxisAlignment.start,
               children: [
-                Text(m.name, style: const TextStyle(color: AppColors.textPrimary, fontSize: 13, fontWeight: FontWeight.w600)),
+                Text(m.name, style: TextStyle(color: colors.onSurface, fontSize: 13, fontWeight: FontWeight.w600)),
                 Text(
                   m.deposited > 0
                       ? '${m.mealCount} মিল · মোট ৳${m.paid.toStringAsFixed(0)} (জমা ৳${m.deposited.toStringAsFixed(0)})'
                       : '${m.mealCount} মিল · মোট ৳${m.paid.toStringAsFixed(0)}',
-                  style: const TextStyle(color: AppColors.textMuted, fontSize: 11),
+                  style: TextStyle(color: colors.outline, fontSize: 11),
                 ),
               ],
             ),
@@ -387,34 +399,35 @@ class _MealMonthlySummaryScreenState extends State<MealMonthlySummaryScreen> {
   }
 
   Widget _buildExpensesCard() {
+    final colors = Theme.of(context).colorScheme;
     return GlassCard(
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
-          const Text('বাজার খরচের তালিকা', style: TextStyle(color: AppColors.textPrimary, fontSize: 16, fontWeight: FontWeight.w700)),
+          Text('বাজার খরচের তালিকা', style: TextStyle(color: colors.onSurface, fontSize: 16, fontWeight: FontWeight.w700)),
           const SizedBox(height: 12),
           if (_expenses.isEmpty)
-            const Padding(
+            Padding(
               padding: EdgeInsets.symmetric(vertical: 12),
-              child: Text('এই মাসে এখনো কোনো বাজার খরচ যোগ হয়নি', style: TextStyle(color: AppColors.textMuted, fontSize: 13)),
+              child: Text('এই মাসে এখনো কোনো বাজার খরচ যোগ হয়নি', style: TextStyle(color: colors.outline, fontSize: 13)),
             )
           else
             ..._expenses.map((ex) => Padding(
                   padding: const EdgeInsets.only(bottom: 10),
                   child: Row(
                     children: [
-                      const Icon(Icons.shopping_basket_rounded, color: AppColors.softAmber, size: 18),
+                      const Icon(Icons.shopping_basket_rounded, color: StatusColors.amber, size: 18),
                       const SizedBox(width: 10),
                       Expanded(
                         child: Column(
                           crossAxisAlignment: CrossAxisAlignment.start,
                           children: [
-                            Text(ex.description?.isNotEmpty == true ? ex.description! : 'বাজার খরচ', style: const TextStyle(color: AppColors.textPrimary, fontSize: 13, fontWeight: FontWeight.w600)),
-                            Text('${ex.date.day}/${ex.date.month}/${ex.date.year}', style: const TextStyle(color: AppColors.textMuted, fontSize: 11)),
+                            Text(ex.description?.isNotEmpty == true ? ex.description! : 'বাজার খরচ', style: TextStyle(color: colors.onSurface, fontSize: 13, fontWeight: FontWeight.w600)),
+                            Text('${ex.date.day}/${ex.date.month}/${ex.date.year}', style: TextStyle(color: colors.outline, fontSize: 11)),
                           ],
                         ),
                       ),
-                      Text('৳${ex.amount.toStringAsFixed(0)}', style: const TextStyle(color: AppColors.textPrimary, fontSize: 14, fontWeight: FontWeight.w700)),
+                      Text('৳${ex.amount.toStringAsFixed(0)}', style: TextStyle(color: colors.onSurface, fontSize: 14, fontWeight: FontWeight.w700)),
                     ],
                   ),
                 )),
@@ -431,37 +444,38 @@ class _MealMonthlySummaryScreenState extends State<MealMonthlySummaryScreen> {
   }
 
   Widget _buildDepositsCard() {
+    final colors = Theme.of(context).colorScheme;
     return GlassCard(
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
-          const Text('বাজার ফান্ডে জমার তালিকা', style: TextStyle(color: AppColors.textPrimary, fontSize: 16, fontWeight: FontWeight.w700)),
+          Text('বাজার ফান্ডে জমার তালিকা', style: TextStyle(color: colors.onSurface, fontSize: 16, fontWeight: FontWeight.w700)),
           const SizedBox(height: 12),
           if (_deposits.isEmpty)
-            const Padding(
+            Padding(
               padding: EdgeInsets.symmetric(vertical: 12),
-              child: Text('এই মাসে এখনো কোনো জমা যোগ হয়নি', style: TextStyle(color: AppColors.textMuted, fontSize: 13)),
+              child: Text('এই মাসে এখনো কোনো জমা যোগ হয়নি', style: TextStyle(color: colors.outline, fontSize: 13)),
             )
           else
             ..._deposits.map((d) => Padding(
                   padding: const EdgeInsets.only(bottom: 10),
                   child: Row(
                     children: [
-                      const Icon(Icons.savings_rounded, color: AppColors.softAmber, size: 18),
+                      const Icon(Icons.savings_rounded, color: StatusColors.amber, size: 18),
                       const SizedBox(width: 10),
                       Expanded(
                         child: Column(
                           crossAxisAlignment: CrossAxisAlignment.start,
                           children: [
-                            Text(_nameForUser(d.userId), style: const TextStyle(color: AppColors.textPrimary, fontSize: 13, fontWeight: FontWeight.w600)),
+                            Text(_nameForUser(d.userId), style: TextStyle(color: colors.onSurface, fontSize: 13, fontWeight: FontWeight.w600)),
                             Text(
                               '${d.date.day}/${d.date.month}/${d.date.year}${d.note?.isNotEmpty == true ? ' · ${d.note}' : ''}',
-                              style: const TextStyle(color: AppColors.textMuted, fontSize: 11),
+                              style: TextStyle(color: colors.outline, fontSize: 11),
                             ),
                           ],
                         ),
                       ),
-                      Text('৳${d.amount.toStringAsFixed(0)}', style: const TextStyle(color: AppColors.textPrimary, fontSize: 14, fontWeight: FontWeight.w700)),
+                      Text('৳${d.amount.toStringAsFixed(0)}', style: TextStyle(color: colors.onSurface, fontSize: 14, fontWeight: FontWeight.w700)),
                     ],
                   ),
                 )),
