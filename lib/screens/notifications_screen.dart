@@ -260,30 +260,30 @@ class _NotificationListScreenState extends State<NotificationListScreen> {
   Widget build(BuildContext context) {
     final colors = Theme.of(context).colorScheme;
     _isBn = context.watch<LanguageNotifier>().isBengali;
-    return Scaffold(
-      backgroundColor: Colors.transparent,
-      appBar: AppBar(
+    return AnimatedBackground(
+      child: Scaffold(
         backgroundColor: Colors.transparent,
-        elevation: 0,
-        title: Text(_isBn ? 'নোটিফিকেশন' : 'Notifications', style: TextStyle(color: colors.onSurface, fontSize: 18, fontWeight: FontWeight.w700)),
-        leading: IconButton(
-          icon: Icon(Icons.arrow_back_ios_new_rounded, color: colors.onSurface, size: 18),
-          onPressed: () => Navigator.pop(context),
+        appBar: AppBar(
+          backgroundColor: Colors.transparent,
+          elevation: 0,
+          title: Text(_isBn ? 'নোটিফিকেশন' : 'Notifications', style: TextStyle(color: colors.onSurface, fontSize: 18, fontWeight: FontWeight.w700)),
+          leading: IconButton(
+            icon: Icon(Icons.arrow_back_ios_new_rounded, color: colors.onSurface, size: 18),
+            onPressed: () => Navigator.pop(context),
+          ),
+          actions: [
+            TextButton(
+              onPressed: _markAllRead,
+              child: Text(_isBn ? 'সব পড়া হয়েছে' : 'Mark all read', style: TextStyle(color: colors.primary, fontSize: 12, fontWeight: FontWeight.w600)),
+            ),
+            IconButton(
+              icon: Icon(Icons.tune_rounded, color: colors.outline, size: 20),
+              onPressed: () => Navigator.push(context, MaterialPageRoute(builder: (_) => const NotificationPreferencesScreen())),
+              tooltip: _isBn ? 'সেটিংস' : 'Settings',
+            ),
+          ],
         ),
-        actions: [
-          TextButton(
-            onPressed: _markAllRead,
-            child: Text(_isBn ? 'সব পড়া হয়েছে' : 'Mark all read', style: TextStyle(color: colors.primary, fontSize: 12, fontWeight: FontWeight.w600)),
-          ),
-          IconButton(
-            icon: Icon(Icons.tune_rounded, color: colors.outline, size: 20),
-            onPressed: () => Navigator.push(context, MaterialPageRoute(builder: (_) => const NotificationPreferencesScreen())),
-            tooltip: _isBn ? 'সেটিংস' : 'Settings',
-          ),
-        ],
-      ),
-      body: AnimatedBackground(
-          child: _isLoading && _notifications.isEmpty
+        body: _isLoading && _notifications.isEmpty
             ? Center(child: CircularProgressIndicator(color: colors.primary))
             : _notifications.isEmpty
                 ? _buildEmpty()
@@ -306,7 +306,7 @@ class _NotificationListScreenState extends State<NotificationListScreen> {
                       },
                     ),
                   ),
-        ),
+      ),
     );
   }
 

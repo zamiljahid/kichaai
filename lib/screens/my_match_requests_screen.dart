@@ -14,7 +14,16 @@ import 'payment_waiting_screen.dart';
 const _kMeetFeeAmount = 100.0;
 
 class MyMatchRequestsScreen extends StatefulWidget {
-  const MyMatchRequestsScreen({super.key});
+  const MyMatchRequestsScreen({super.key, this.embedded = false});
+
+  /// True when this screen is rendered *inside* another screen — the Orders
+  /// screen's "Requests" tab — rather than pushed as its own route.
+  ///
+  /// An embedded copy has nothing to pop back to: the route underneath it is
+  /// [MainNavigation] itself, so the back arrow either did nothing or backed
+  /// the user out of the whole app. It is hidden in that case. Pushed uses
+  /// (the `/match-requests` route and the Profile tile) keep it.
+  final bool embedded;
 
   @override
   State<MyMatchRequestsScreen> createState() => _MyMatchRequestsScreenState();
@@ -436,18 +445,23 @@ class _MyMatchRequestsScreenState extends State<MyMatchRequestsScreen> {
     return AppBar(
       backgroundColor: colors.surface,
       elevation: 0,
-      leading: GestureDetector(
-        onTap: () => Navigator.of(context).pop(),
-        child: Container(
-          margin: const EdgeInsets.all(8),
-          decoration: BoxDecoration(
-            color: colors.surface,
-            borderRadius: BorderRadius.circular(10),
-            border: Border.all(color: colors.outlineVariant, width: 1.5),
-          ),
-          child: Icon(Icons.arrow_back_ios_new_rounded, color: colors.onSurface, size: 16),
-        ),
-      ),
+      // Without this, Flutter would substitute its own back button for the
+      // null leading below.
+      automaticallyImplyLeading: !widget.embedded,
+      leading: widget.embedded
+          ? null
+          : GestureDetector(
+              onTap: () => Navigator.of(context).pop(),
+              child: Container(
+                margin: const EdgeInsets.all(8),
+                decoration: BoxDecoration(
+                  color: colors.surface,
+                  borderRadius: BorderRadius.circular(10),
+                  border: Border.all(color: colors.outlineVariant, width: 1.5),
+                ),
+                child: Icon(Icons.arrow_back_ios_new_rounded, color: colors.onSurface, size: 16),
+              ),
+            ),
       title: Text(
         _isBn ? 'আমার অনুরোধ' : 'My Requests',
         style: TextStyle(color: colors.onSurface, fontSize: 18, fontWeight: FontWeight.w700),

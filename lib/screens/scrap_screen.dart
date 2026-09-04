@@ -241,33 +241,36 @@ class _ScrapScreenState extends State<ScrapScreen>
   Widget build(BuildContext context) {
     final colors = Theme.of(context).colorScheme;
     _isBn = context.watch<LanguageNotifier>().isBengali;
-    return Scaffold(
-      backgroundColor: Colors.transparent,
-      appBar: AppBar(
-        backgroundColor: colors.surface,
-        elevation: 0,
-        leading: IconButton(
-          icon: Icon(Icons.arrow_back_ios_new_rounded, color: colors.onSurface, size: 18),
-          onPressed: () => Navigator.of(context).pop(),
+    return AnimatedBackground(
+      child: Scaffold(
+        backgroundColor: Colors.transparent,
+        appBar: AppBar(
+          // Transparent so the AnimatedBackground now wrapping this Scaffold
+          // shows through: the canvas runs unbroken from the status bar down,
+          // instead of the bar sitting as an opaque slab over a black gap.
+          backgroundColor: Colors.transparent,
+          elevation: 0,
+          leading: IconButton(
+            icon: Icon(Icons.arrow_back_ios_new_rounded, color: colors.onSurface, size: 18),
+            onPressed: () => Navigator.of(context).pop(),
+          ),
+          title: Text(_isBn ? 'স্ক্র্যাপ সংগ্রহ' : 'Scrap Collection', style: TextStyle(color: colors.onSurface, fontSize: 18, fontWeight: FontWeight.w700)),
+          bottom: TabBar(
+            controller: _tabController,
+            labelColor: colors.primary,
+            unselectedLabelColor: colors.outline,
+            indicatorColor: colors.primary,
+            indicatorWeight: 2.5,
+            labelStyle: const TextStyle(fontSize: 14, fontWeight: FontWeight.w600),
+            unselectedLabelStyle: const TextStyle(fontSize: 14, fontWeight: FontWeight.w400),
+            tabs: [Tab(text: _isBn ? 'নতুন অনুরোধ' : 'New Request'), Tab(text: _isBn ? 'আমার অনুরোধ' : 'My Requests')],
+          ),
         ),
-        title: Text(_isBn ? 'স্ক্র্যাপ সংগ্রহ' : 'Scrap Collection', style: TextStyle(color: colors.onSurface, fontSize: 18, fontWeight: FontWeight.w700)),
-        bottom: TabBar(
-          controller: _tabController,
-          labelColor: colors.primary,
-          unselectedLabelColor: colors.outline,
-          indicatorColor: colors.primary,
-          indicatorWeight: 2.5,
-          labelStyle: const TextStyle(fontSize: 14, fontWeight: FontWeight.w600),
-          unselectedLabelStyle: const TextStyle(fontSize: 14, fontWeight: FontWeight.w400),
-          tabs: [Tab(text: _isBn ? 'নতুন অনুরোধ' : 'New Request'), Tab(text: _isBn ? 'আমার অনুরোধ' : 'My Requests')],
-        ),
-      ),
-      body: AnimatedBackground(
-          child: TabBarView(
+        body: TabBarView(
           controller: _tabController,
           children: [_buildNewRequestTab(), _buildMyRequestsTab()],
         ),
-        ),
+      ),
     );
   }
 

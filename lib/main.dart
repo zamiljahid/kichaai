@@ -26,8 +26,6 @@ void main() async {
 
   DeepLinkService.instance.init(PushService.instance.navigatorKey);
 
-  // Read the persisted colour + mode before the first frame so the app never
-  // paints one theme and then snaps to another.
   final themeSettings = await ThemeProvider.loadPersisted();
 
   runApp(KichaaiApp(themeSettings: themeSettings));

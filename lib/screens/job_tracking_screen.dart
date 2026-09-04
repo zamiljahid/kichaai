@@ -234,12 +234,27 @@ class _JobTrackingScreenState extends State<JobTrackingScreen> {
       padding: const EdgeInsets.fromLTRB(20, 16, 20, 20),
       child: Row(
         children: [
+          // Back, not home. This screen is a notification target — tapping a
+          // job notification opens it on top of the notification list, and a
+          // popUntil(isFirst) threw that list away and dumped the user on the
+          // dashboard with no way back to what they were reading. Popping one
+          // route returns them wherever they came from: the list, Orders, or
+          // the service picker after a request was submitted.
           GestureDetector(
-            onTap: () => Navigator.of(context).popUntil((r) => r.isFirst),
+            onTap: () {
+              final nav = Navigator.of(context);
+              // Only reachable as a route on top of something, but a cold-start
+              // deep link could in principle land here first.
+              if (nav.canPop()) {
+                nav.pop();
+              } else {
+                nav.popUntil((r) => r.isFirst);
+              }
+            },
             child: Container(
               width: 40, height: 40,
               decoration: BoxDecoration(color: colors.surface, borderRadius: BorderRadius.circular(12), border: Border.all(color: colors.outlineVariant, width: 1.5)),
-              child: Icon(Icons.home_rounded, color: colors.onSurface, size: 20),
+              child: Icon(Icons.arrow_back_ios_new_rounded, color: colors.onSurface, size: 18),
             ),
           ),
           const SizedBox(width: 16),

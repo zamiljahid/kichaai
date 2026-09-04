@@ -226,19 +226,19 @@ class _PortfolioScreenState extends State<PortfolioScreen> {
   Widget build(BuildContext context) {
     final colors = Theme.of(context).colorScheme;
     _isBn = context.watch<LanguageNotifier>().isBengali;
-    return Scaffold(
-      backgroundColor: Colors.transparent,
-      appBar: AppBar(
+    return AnimatedBackground(
+      child: Scaffold(
         backgroundColor: Colors.transparent,
-        elevation: 0,
-        title: Text(_isBn ? 'পোর্টফোলিও' : 'Portfolio', style: TextStyle(color: colors.onSurface, fontSize: 18, fontWeight: FontWeight.w700)),
-        leading: IconButton(
-          icon: Icon(Icons.arrow_back_ios_new_rounded, color: colors.onSurface, size: 18),
-          onPressed: () => Navigator.pop(context),
+        appBar: AppBar(
+          backgroundColor: Colors.transparent,
+          elevation: 0,
+          title: Text(_isBn ? 'পোর্টফোলিও' : 'Portfolio', style: TextStyle(color: colors.onSurface, fontSize: 18, fontWeight: FontWeight.w700)),
+          leading: IconButton(
+            icon: Icon(Icons.arrow_back_ios_new_rounded, color: colors.onSurface, size: 18),
+            onPressed: () => Navigator.pop(context),
+          ),
         ),
-      ),
-      body: AnimatedBackground(
-          child: _isLoading
+        body: _isLoading
             ? Center(child: CircularProgressIndicator(color: colors.primary))
             : RefreshIndicator(
                 color: colors.primary,
@@ -263,18 +263,18 @@ class _PortfolioScreenState extends State<PortfolioScreen> {
                   ],
                 ),
               ),
-        ),
-      floatingActionButton: _isUploading
-          ? FloatingActionButton(
-              onPressed: null,
-              backgroundColor: colors.primary,
-              child: const SizedBox(width: 24, height: 24, child: CircularProgressIndicator(color: Colors.white, strokeWidth: 2)),
-            )
-          : FloatingActionButton(
-              onPressed: _addImage,
-              backgroundColor: colors.primary,
-              child: const Icon(Icons.add_a_photo_rounded, color: Colors.white),
-            ),
+        floatingActionButton: _isUploading
+            ? FloatingActionButton(
+                onPressed: null,
+                backgroundColor: colors.primary,
+                child: const SizedBox(width: 24, height: 24, child: CircularProgressIndicator(color: Colors.white, strokeWidth: 2)),
+              )
+            : FloatingActionButton(
+                onPressed: _addImage,
+                backgroundColor: colors.primary,
+                child: const Icon(Icons.add_a_photo_rounded, color: Colors.white),
+              ),
+      ),
     );
   }
 

@@ -209,26 +209,26 @@ class _WalletScreenState extends State<WalletScreen> with SingleTickerProviderSt
   Widget build(BuildContext context) {
     final colors = Theme.of(context).colorScheme;
     _isBn = context.watch<LanguageNotifier>().isBengali;
-    return Scaffold(
-      backgroundColor: Colors.transparent,
-      appBar: AppBar(
+    return AnimatedBackground(
+      child: Scaffold(
         backgroundColor: Colors.transparent,
-        elevation: 0,
-        title: Text(_isBn ? 'আমার ওয়ালেট' : 'My Wallet', style: TextStyle(color: colors.onSurface, fontSize: 18, fontWeight: FontWeight.w700)),
-        leading: IconButton(
-          icon: Icon(Icons.arrow_back_ios_new_rounded, color: colors.onSurface, size: 18),
-          onPressed: () => Navigator.pop(context),
+        appBar: AppBar(
+          backgroundColor: Colors.transparent,
+          elevation: 0,
+          title: Text(_isBn ? 'আমার ওয়ালেট' : 'My Wallet', style: TextStyle(color: colors.onSurface, fontSize: 18, fontWeight: FontWeight.w700)),
+          leading: IconButton(
+            icon: Icon(Icons.arrow_back_ios_new_rounded, color: colors.onSurface, size: 18),
+            onPressed: () => Navigator.pop(context),
+          ),
+          bottom: TabBar(
+            controller: _tabController,
+            labelColor: colors.primary,
+            unselectedLabelColor: colors.outline,
+            indicatorColor: colors.primary,
+            tabs: [Tab(text: _isBn ? 'লেনদেন' : 'Transactions'), Tab(text: _isBn ? 'পেআউট' : 'Payouts')],
+          ),
         ),
-        bottom: TabBar(
-          controller: _tabController,
-          labelColor: colors.primary,
-          unselectedLabelColor: colors.outline,
-          indicatorColor: colors.primary,
-          tabs: [Tab(text: _isBn ? 'লেনদেন' : 'Transactions'), Tab(text: _isBn ? 'পেআউট' : 'Payouts')],
-        ),
-      ),
-      body: AnimatedBackground(
-          child: _isLoading
+        body: _isLoading
             ? Center(child: CircularProgressIndicator(color: colors.primary))
             : _providerId == null
                 ? Center(child: Text(_isBn ? 'প্রোভাইডার একাউন্ট প্রয়োজন' : 'Provider account required', style: TextStyle(color: colors.outline)))
@@ -246,12 +246,12 @@ class _WalletScreenState extends State<WalletScreen> with SingleTickerProviderSt
                       ),
                     ],
                   ),
+        floatingActionButton: _providerId == null ? null : FloatingActionButton.extended(
+          onPressed: _showPayoutSheet,
+          backgroundColor: colors.primary,
+          icon: const Icon(Icons.arrow_upward_rounded, color: Colors.white),
+          label: Text(_isBn ? 'উত্তোলন' : 'Withdraw', style: const TextStyle(color: Colors.white, fontWeight: FontWeight.w700)),
         ),
-      floatingActionButton: _providerId == null ? null : FloatingActionButton.extended(
-        onPressed: _showPayoutSheet,
-        backgroundColor: colors.primary,
-        icon: const Icon(Icons.arrow_upward_rounded, color: Colors.white),
-        label: Text(_isBn ? 'উত্তোলন' : 'Withdraw', style: const TextStyle(color: Colors.white, fontWeight: FontWeight.w700)),
       ),
     );
   }

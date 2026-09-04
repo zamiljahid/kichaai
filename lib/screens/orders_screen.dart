@@ -189,7 +189,8 @@ class _OrdersScreenState extends State<OrdersScreen> with SingleTickerProviderSt
                 children: [
                   _buildJobsTab(),
                   _buildGroceryTab(),
-                  const MyMatchRequestsScreen(),
+                  // Embedded in a tab, not pushed — so no back arrow.
+                  const MyMatchRequestsScreen(embedded: true),
                 ],
                ),
             ),

@@ -69,19 +69,19 @@ class _ReferralScreenState extends State<ReferralScreen> {
   Widget build(BuildContext context) {
     final colors = Theme.of(context).colorScheme;
     _isBn = context.watch<LanguageNotifier>().isBengali;
-    return Scaffold(
-      backgroundColor: Colors.transparent,
-      appBar: AppBar(
+    return AnimatedBackground(
+      child: Scaffold(
         backgroundColor: Colors.transparent,
-        elevation: 0,
-        title: Text(_isBn ? 'রেফারেল' : 'Referral', style: TextStyle(color: colors.onSurface, fontSize: 18, fontWeight: FontWeight.w700)),
-        leading: IconButton(
-          icon: Icon(Icons.arrow_back_ios_new_rounded, color: colors.onSurface, size: 18),
-          onPressed: () => Navigator.pop(context),
+        appBar: AppBar(
+          backgroundColor: Colors.transparent,
+          elevation: 0,
+          title: Text(_isBn ? 'রেফারেল' : 'Referral', style: TextStyle(color: colors.onSurface, fontSize: 18, fontWeight: FontWeight.w700)),
+          leading: IconButton(
+            icon: Icon(Icons.arrow_back_ios_new_rounded, color: colors.onSurface, size: 18),
+            onPressed: () => Navigator.pop(context),
+          ),
         ),
-      ),
-      body: AnimatedBackground(
-          child: _isLoading
+        body: _isLoading
             ? Center(child: CircularProgressIndicator(color: colors.primary))
             : RefreshIndicator(
                 color: colors.primary,
@@ -108,7 +108,7 @@ class _ReferralScreenState extends State<ReferralScreen> {
                   ],
                 ),
               ),
-        ),
+      ),
     );
   }
 

@@ -91,6 +91,17 @@ class _ServiceSelectionScreenState extends State<ServiceSelectionScreen> {
     } catch (_) {}
   }
 
+  /// Space to leave under the last row.
+  ///
+  /// This screen is used two ways: as the Services tab inside
+  /// [MainNavigation], where the floating nav overlaps the bottom of the body,
+  /// and as a route pushed from the home screen, where there is no nav at all.
+  /// Reserving the nav's height in the pushed case was pure dead space.
+  double _bottomInset(BuildContext context) =>
+      ModalRoute.of(context)?.isFirst ?? true
+          ? bottomNavClearance(context)
+          : 16 + MediaQuery.paddingOf(context).bottom;
+
   void _navigate(BuildContext context, _Service s) {
     final nav = Navigator.of(context);
     switch (s.flow) {
@@ -143,23 +154,26 @@ class _ServiceSelectionScreenState extends State<ServiceSelectionScreen> {
             children: [
               _buildHeader(context, isBn),
               Expanded(
-                child: Padding(
-                  // Clears the floating nav — the grid scrolls under it
-                  // (extendBody: true), so 16 left the last row hidden.
+                // The nav clearance belongs to the GRID's own padding, not to a
+                // Padding wrapped around it. Wrapping it shrank the viewport by
+                // ~130px, so an empty band sat permanently below the last
+                // visible row no matter where you were in the list. As scroll
+                // padding it is trailing content instead: the grid fills the
+                // screen and only leaves room past the final row, where the
+                // floating nav actually is.
+                child: GridView.builder(
                   padding: EdgeInsets.fromLTRB(
-                      16, 0, 16, bottomNavClearance(context)),
-                  child: GridView.builder(
-                    itemCount: visible.length,
-                    // Max-extent keeps each card a sensible width on any screen
-                    // (fixed 2-column made cards huge on wide displays).
-                    gridDelegate: const SliverGridDelegateWithMaxCrossAxisExtent(
-                      maxCrossAxisExtent: 260,
-                      crossAxisSpacing: 12,
-                      mainAxisSpacing: 12,
-                      mainAxisExtent: 74,
-                    ),
-                    itemBuilder: (context, i) => _buildCard(context, visible[i], i, isBn),
+                      16, 0, 16, _bottomInset(context)),
+                  itemCount: visible.length,
+                  // Max-extent keeps each card a sensible width on any screen
+                  // (fixed 2-column made cards huge on wide displays).
+                  gridDelegate: const SliverGridDelegateWithMaxCrossAxisExtent(
+                    maxCrossAxisExtent: 260,
+                    crossAxisSpacing: 12,
+                    mainAxisSpacing: 12,
+                    mainAxisExtent: 74,
                   ),
+                  itemBuilder: (context, i) => _buildCard(context, visible[i], i, isBn),
                 ),
               ),
             ],

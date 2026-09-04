@@ -5,6 +5,7 @@ import 'package:provider/provider.dart';
 import '../core/utils/app_strings.dart';
 import '../services/auth_service.dart';
 import '../theme/app_gradients.dart';
+import '../widgets/app_logo.dart';
 import '../widgets/animated_background.dart';
 import '../widgets/glass_card.dart';
 import '../widgets/glass_button.dart';
@@ -150,28 +151,7 @@ class _AuthScreenState extends State<AuthScreen> with SingleTickerProviderStateM
     return Column(
       children: [
         // The real app logo, not a stand-in Material glyph.
-        Container(
-          width: 88,
-          height: 88,
-          decoration: BoxDecoration(
-            color: colors.surface,
-            shape: BoxShape.circle,
-            border: Border.all(color: colors.primary.withValues(alpha: 0.7), width: 3),
-            boxShadow: [
-              BoxShadow(
-                color: colors.primary.withValues(alpha: 0.35),
-                blurRadius: 24,
-                offset: const Offset(0, 8),
-              ),
-            ],
-          ),
-          child: ClipOval(
-            child: Padding(
-              padding: const EdgeInsets.all(3),
-              child: Image.asset('assets/images/logo.png', fit: BoxFit.cover),
-            ),
-          ),
-        ),
+        const AppLogo(size: 88),
         const SizedBox(height: 12),
         Text(
           'কিচাই',

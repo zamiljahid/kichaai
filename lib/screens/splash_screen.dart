@@ -9,6 +9,7 @@ import '../services/push_service.dart';
 import 'auth_screen.dart';
 import 'main_navigation.dart';
 import 'onboarding_screen.dart';
+import '../widgets/app_logo.dart';
 
 /// ki_chai's animated splash: a gradient whose corners sweep continuously
 /// behind a stacked-circle logo, which then slides away into the next screen.
@@ -232,27 +233,7 @@ class _SplashScreenState extends State<SplashScreen>
                 ],
               ),
             ),
-            Container(
-              width: 180,
-              height: 180,
-              decoration: BoxDecoration(
-                color: colors.surface,
-                shape: BoxShape.circle,
-                boxShadow: [
-                  BoxShadow(
-                    color: colors.shadow.withValues(alpha: 0.22),
-                    blurRadius: 8,
-                    offset: const Offset(2, 4),
-                  ),
-                ],
-              ),
-              child: ClipOval(
-                child: Image.asset(
-                  'assets/images/logo.png',
-                  fit: BoxFit.cover,
-                ),
-              ),
-            ),
+            const AppLogo(size: 180, borderWidth: 0),
           ],
         ),
         const SizedBox(height: 30),

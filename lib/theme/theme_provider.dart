@@ -152,6 +152,19 @@ class ThemeProvider with ChangeNotifier {
             bottomRight: Radius.circular(30),
           ),
         ),
+        // Defining this at all changes how a per-screen AppBar must override
+        // the title colour. AppBar resolves the style as
+        //   widget.titleTextStyle ?? appBarTheme.titleTextStyle
+        //     ?? defaults.titleTextStyle.copyWith(color: foregroundColor)
+        // so this non-null entry short-circuits the only branch that reads
+        // `foregroundColor`. A screen with a TRANSPARENT bar therefore cannot
+        // fix its title with `foregroundColor: onSurface` — that recolours the
+        // icons and leaves the title on onPrimary, i.e. near-invisible on the
+        // light canvas. Such screens must pass their own `titleTextStyle`;
+        // the established form is
+        //   Theme.of(context).appBarTheme.titleTextStyle
+        //       ?.copyWith(color: colors.onSurface)
+        // which keeps the font, size and weight below in one place.
         titleTextStyle: TextStyle(
           fontFamily: kBengaliFont,
           color: colorScheme.onPrimary,

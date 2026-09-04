@@ -181,19 +181,19 @@ class _SubscriptionScreenState extends State<SubscriptionScreen> {
     _isBn = context.watch<LanguageNotifier>().isBengali;
     final currentPlan = _subscription?['plan'] as String? ?? 'FREE';
 
-    return Scaffold(
-      backgroundColor: Colors.transparent,
-      appBar: AppBar(
+    return AnimatedBackground(
+      child: Scaffold(
         backgroundColor: Colors.transparent,
-        elevation: 0,
-        title: Text(_isBn ? 'সাবস্ক্রিপশন' : 'Subscription', style: TextStyle(color: colors.onSurface, fontSize: 18, fontWeight: FontWeight.w700)),
-        leading: IconButton(
-          icon: Icon(Icons.arrow_back_ios_new_rounded, color: colors.onSurface, size: 18),
-          onPressed: () => Navigator.pop(context),
+        appBar: AppBar(
+          backgroundColor: Colors.transparent,
+          elevation: 0,
+          title: Text(_isBn ? 'সাবস্ক্রিপশন' : 'Subscription', style: TextStyle(color: colors.onSurface, fontSize: 18, fontWeight: FontWeight.w700)),
+          leading: IconButton(
+            icon: Icon(Icons.arrow_back_ios_new_rounded, color: colors.onSurface, size: 18),
+            onPressed: () => Navigator.pop(context),
+          ),
         ),
-      ),
-      body: AnimatedBackground(
-          child: _isLoading
+        body: _isLoading
             ? Center(child: CircularProgressIndicator(color: colors.primary))
             : ListView(
                 padding: const EdgeInsets.fromLTRB(16, 12, 16, 100),
@@ -220,7 +220,7 @@ class _SubscriptionScreenState extends State<SubscriptionScreen> {
                   ],
                 ],
               ),
-        ),
+      ),
     );
   }
 

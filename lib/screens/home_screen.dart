@@ -160,7 +160,7 @@ class _HomeScreenState extends State<HomeScreen> {
       backgroundColor: colors.surface,
       child: CustomScrollView(
         slivers: [
-          _buildAppBar(context),
+          SliverToBoxAdapter(child: _buildGreetingHeader(context)),
           SliverToBoxAdapter(child: _buildSearchBar(context)),
           SliverToBoxAdapter(child: _buildActiveRequest(context)),
           SliverToBoxAdapter(child: _buildMealGroupBanner(context)),
@@ -181,34 +181,34 @@ class _HomeScreenState extends State<HomeScreen> {
     );
   }
 
-  Widget _buildAppBar(BuildContext context) {
+  /// A plain scrolling sliver, not a floating [SliverAppBar].
+  ///
+  /// It used to be `SliverAppBar(floating: true, snap: true)` with a
+  /// transparent background. A floating bar keeps painting over the list while
+  /// the list scrolls underneath it, and with nothing opaque behind it the
+  /// greeting sat directly on top of the search field and the cards below —
+  /// the two overlapped as soon as you scrolled a little. Nothing here needs to
+  /// stay pinned, so the header simply scrolls away with the rest of the
+  /// content and can no longer collide with anything.
+  Widget _buildGreetingHeader(BuildContext context) {
     final colors = Theme.of(context).colorScheme;
     final strings = AppStrings.of(context);
-    return SliverAppBar(
-      expandedHeight: 96,
-      floating: true,
-      snap: true,
-      backgroundColor: Colors.transparent,
-      foregroundColor: colors.onSurface,
-      shape: const RoundedRectangleBorder(),
-      flexibleSpace: FlexibleSpaceBar(
-        background: Padding(
-          padding: const EdgeInsets.fromLTRB(20, 34, 20, 10),
-          child: Column(
-            mainAxisAlignment: MainAxisAlignment.end,
-            crossAxisAlignment: CrossAxisAlignment.start,
-            children: [
-              Text(strings.greeting, style: TextStyle(color: colors.outline, fontSize: 13)),
-              const SizedBox(height: 2),
-              Text(
-                strings.homeQuestion,
-                maxLines: 1,
-                overflow: TextOverflow.ellipsis,
-                style: TextStyle(color: colors.onSurface, fontSize: 21, fontWeight: FontWeight.w700),
-              ),
-            ],
+    // The status-bar inset the removed SliverAppBar used to absorb.
+    final topInset = MediaQuery.paddingOf(context).top;
+    return Padding(
+      padding: EdgeInsets.fromLTRB(20, topInset + 16, 20, 14),
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          Text(strings.greeting, style: TextStyle(color: colors.outline, fontSize: 13)),
+          const SizedBox(height: 2),
+          Text(
+            strings.homeQuestion,
+            maxLines: 1,
+            overflow: TextOverflow.ellipsis,
+            style: TextStyle(color: colors.onSurface, fontSize: 21, fontWeight: FontWeight.w700),
           ),
-        ),
+        ],
       ),
     );
   }

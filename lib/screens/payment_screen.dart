@@ -79,19 +79,19 @@ class _PaymentScreenState extends State<PaymentScreen> {
   Widget build(BuildContext context) {
     final colors = Theme.of(context).colorScheme;
     _isBn = context.watch<LanguageNotifier>().isBengali;
-    return Scaffold(
-      backgroundColor: Colors.transparent,
-      appBar: AppBar(
+    return AnimatedBackground(
+      child: Scaffold(
         backgroundColor: Colors.transparent,
-        elevation: 0,
-        title: Text(_isBn ? 'পেমেন্ট ইতিহাস' : 'Payment History', style: TextStyle(color: colors.onSurface, fontSize: 18, fontWeight: FontWeight.w700)),
-        leading: IconButton(
-          icon: Icon(Icons.arrow_back_ios_new_rounded, color: colors.onSurface, size: 18),
-          onPressed: () => Navigator.pop(context),
+        appBar: AppBar(
+          backgroundColor: Colors.transparent,
+          elevation: 0,
+          title: Text(_isBn ? 'পেমেন্ট ইতিহাস' : 'Payment History', style: TextStyle(color: colors.onSurface, fontSize: 18, fontWeight: FontWeight.w700)),
+          leading: IconButton(
+            icon: Icon(Icons.arrow_back_ios_new_rounded, color: colors.onSurface, size: 18),
+            onPressed: () => Navigator.pop(context),
+          ),
         ),
-      ),
-      body: AnimatedBackground(
-          child: _isLoading && _payments.isEmpty
+        body: _isLoading && _payments.isEmpty
             ? Center(child: CircularProgressIndicator(color: colors.primary))
             : _payments.isEmpty
                 ? Center(child: Text(_isBn ? 'কোনো পেমেন্ট নেই' : 'No payments', style: TextStyle(color: colors.outline)))
@@ -121,7 +121,7 @@ class _PaymentScreenState extends State<PaymentScreen> {
                       ),
                     ],
                   ),
-        ),
+      ),
     );
   }
 

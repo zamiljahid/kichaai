@@ -88,14 +88,26 @@ class ServiceModeHubScreen extends StatelessWidget {
   Widget build(BuildContext context) {
     final colors = Theme.of(context).colorScheme;
     final isBn = context.watch<LanguageNotifier>().isBengali;
-    return Scaffold(
-      appBar: AppBar(
-        title: Text(isBn ? config.titleBn : config.titleEn),
+    return AnimatedBackground(
+      child: Scaffold(
+        // Transparent so the AnimatedBackground wrapping this Scaffold is what
+        // you see; the theme's opaque scaffoldBackgroundColor would cover it.
         backgroundColor: Colors.transparent,
-        elevation: 0,
-      ),
-      body: AnimatedBackground(
-        child: SafeArea(
+        appBar: AppBar(
+          title: Text(isBn ? config.titleBn : config.titleEn),
+          backgroundColor: Colors.transparent,
+          elevation: 0,
+          foregroundColor: colors.onSurface,
+          // The title needs its own style: foregroundColor colours the icons,
+          // but AppBarTheme.titleTextStyle (onPrimary, for the opaque bars)
+          // takes precedence for the title and would leave it near-white on
+          // this transparent bar. See profile_screen.dart.
+          titleTextStyle: Theme.of(context)
+              .appBarTheme
+              .titleTextStyle
+              ?.copyWith(color: colors.onSurface),
+        ),
+        body: SafeArea(
           child: SingleChildScrollView(
             padding: const EdgeInsets.fromLTRB(20, 8, 20, 32),
             child: Column(

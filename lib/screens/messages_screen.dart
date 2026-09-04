@@ -103,8 +103,15 @@ class _MessagesScreenState extends State<MessagesScreen> {
             snap: true,
             backgroundColor: Colors.transparent,
             foregroundColor: colors.onSurface,
+            // foregroundColor reaches the icons but NOT the title — a non-null
+            // AppBarTheme.titleTextStyle (this app defines one, in onPrimary)
+            // wins outright. See profile_screen.dart for the full precedence.
+            titleTextStyle: Theme.of(context)
+                .appBarTheme
+                .titleTextStyle
+                ?.copyWith(color: colors.onSurface),
             // This bar is transparent over the light canvas, so it must not
-            // inherit the theme's primary-bar rounding or white foreground.
+            // inherit the theme's primary-bar rounding either.
             shape: const RoundedRectangleBorder(),
             actions: [
               // Global language toggle is in the nav bar — no per-screen chip.

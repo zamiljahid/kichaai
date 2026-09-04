@@ -254,8 +254,23 @@ class _ProfileScreenState extends State<ProfileScreen> {
             snap: true,
             backgroundColor: Colors.transparent,
             foregroundColor: colors.onSurface,
+            // foregroundColor recolours the ICONS but never the title: AppBar
+            // resolves the title as
+            //   widget.titleTextStyle ?? appBarTheme.titleTextStyle
+            //     ?? defaults.titleTextStyle.copyWith(color: foregroundColor)
+            // and this app's AppBarTheme *does* define titleTextStyle (with
+            // onPrimary, for the opaque primary-filled bars), so the third
+            // branch — the only one that reads foregroundColor — is never
+            // reached. On this transparent bar that left "Profile" painted
+            // near-white on the light canvas, i.e. invisible. Re-colour the
+            // theme's own style so the font, size and weight still come from
+            // one place.
+            titleTextStyle: Theme.of(context)
+                .appBarTheme
+                .titleTextStyle
+                ?.copyWith(color: colors.onSurface),
             // This bar is transparent over the light canvas, so it must not
-            // inherit the theme's primary-bar rounding or white foreground.
+            // inherit the theme's primary-bar rounding either.
             shape: const RoundedRectangleBorder(),
           ),
           if (_isLoading)

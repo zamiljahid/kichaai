@@ -120,27 +120,27 @@ class _MyAdsScreenState extends State<MyAdsScreen> {
   Widget build(BuildContext context) {
     final colors = Theme.of(context).colorScheme;
     _isBn = context.watch<LanguageNotifier>().isBengali;
-    return Scaffold(
-      backgroundColor: Colors.transparent,
-      appBar: AppBar(
+    return AnimatedBackground(
+      child: Scaffold(
         backgroundColor: Colors.transparent,
-        elevation: 0,
-        title: Text(_isBn ? 'আমার বিজ্ঞাপন' : 'My listings',
-            style: TextStyle(color: colors.onSurface, fontSize: 18, fontWeight: FontWeight.w700)),
-        leading: IconButton(
-          icon: Icon(Icons.arrow_back_ios_new_rounded, color: colors.onSurface, size: 18),
-          onPressed: () => Navigator.pop(context),
+        appBar: AppBar(
+          backgroundColor: Colors.transparent,
+          elevation: 0,
+          title: Text(_isBn ? 'আমার বিজ্ঞাপন' : 'My listings',
+              style: TextStyle(color: colors.onSurface, fontSize: 18, fontWeight: FontWeight.w700)),
+          leading: IconButton(
+            icon: Icon(Icons.arrow_back_ios_new_rounded, color: colors.onSurface, size: 18),
+            onPressed: () => Navigator.pop(context),
+          ),
         ),
-      ),
-      body: AnimatedBackground(
-          child: _body(),
+        body: _body(),
+        floatingActionButton: FloatingActionButton.extended(
+          onPressed: () => _openPost(),
+          backgroundColor: colors.primary,
+          icon: const Icon(Icons.add_rounded, color: Colors.white, size: 20),
+          label: Text(_isBn ? 'নতুন বিজ্ঞাপন' : 'New listing',
+              style: const TextStyle(color: Colors.white, fontWeight: FontWeight.w700, fontSize: 13.5)),
         ),
-      floatingActionButton: FloatingActionButton.extended(
-        onPressed: () => _openPost(),
-        backgroundColor: colors.primary,
-        icon: const Icon(Icons.add_rounded, color: Colors.white, size: 20),
-        label: Text(_isBn ? 'নতুন বিজ্ঞাপন' : 'New listing',
-            style: const TextStyle(color: Colors.white, fontWeight: FontWeight.w700, fontSize: 13.5)),
       ),
     );
   }
